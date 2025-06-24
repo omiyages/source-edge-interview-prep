@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Building2, Briefcase, Star, Clock } from "lucide-react";
+import { Plus, Search, Building2, Briefcase, Star, Clock, Globe, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
+import { ScrapeQuestionsForm } from "@/components/ScrapeQuestionsForm";
 
 interface InterviewQuestion {
   id: string;
@@ -22,6 +24,10 @@ interface InterviewQuestion {
   submitted_by: string | null;
   additional_context: string | null;
   created_at: string;
+  question_type: string;
+  source_url: string | null;
+  source_website: string | null;
+  scraped_at: string | null;
 }
 
 const Index = () => {
@@ -29,6 +35,7 @@ const Index = () => {
   const [companyFilter, setCompanyFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [questionTypeFilter, setQuestionTypeFilter] = useState("all");
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
 
   const { data: questions, isLoading, refetch } = useQuery({
@@ -51,8 +58,9 @@ const Index = () => {
     const matchesCompany = companyFilter === "all" || question.company === companyFilter;
     const matchesDifficulty = difficultyFilter === "all" || question.difficulty === difficultyFilter;
     const matchesCategory = categoryFilter === "all" || question.category === categoryFilter;
+    const matchesType = questionTypeFilter === "all" || question.question_type === questionTypeFilter;
     
-    return matchesSearch && matchesCompany && matchesDifficulty && matchesCategory;
+    return matchesSearch && matchesCompany && matchesDifficulty && matchesCategory && matchesType;
   });
 
   const uniqueCompanies = [...new Set(questions?.map(q => q.company) || [])];
@@ -73,6 +81,14 @@ const Index = () => {
       case 'System Design': return <Building2 className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
+  };
+
+  const getQuestionTypeIcon = (type: string) => {
+    return type === 'online_sourced' ? <Globe className="w-4 h-4" /> : <User className="w-4 h-4" />;
+  };
+
+  const getQuestionTypeColor = (type: string) => {
+    return type === 'online_sourced' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800';
   };
 
   return (
@@ -139,6 +155,17 @@ const Index = () => {
                 <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={questionTypeFilter} onValueChange={setQuestionTypeFilter}>
+              <SelectTrigger className="w-full lg:w-48">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="user_submitted">User Submitted</SelectItem>
+                <SelectItem value="online_sourced">Online Sourced</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-between items-center">
@@ -150,19 +177,35 @@ const Index = () => {
               <DialogTrigger asChild>
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="w-4 h-4 mr-2" />
-                  Submit Question
+                  Add Questions
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Submit Interview Question</DialogTitle>
+                  <DialogTitle>Add Interview Questions</DialogTitle>
                 </DialogHeader>
-                <SubmitQuestionForm 
-                  onSuccess={() => {
-                    setIsSubmitDialogOpen(false);
-                    refetch();
-                  }} 
-                />
+                <Tabs defaultValue="submit" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="submit">Submit Question</TabsTrigger>
+                    <TabsTrigger value="scrape">Scrape Questions</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="submit">
+                    <SubmitQuestionForm 
+                      onSuccess={() => {
+                        setIsSubmitDialogOpen(false);
+                        refetch();
+                      }} 
+                    />
+                  </TabsContent>
+                  <TabsContent value="scrape">
+                    <ScrapeQuestionsForm 
+                      onSuccess={() => {
+                        setIsSubmitDialogOpen(false);
+                        refetch();
+                      }} 
+                    />
+                  </TabsContent>
+                </Tabs>
               </DialogContent>
             </Dialog>
           </div>
@@ -179,16 +222,26 @@ const Index = () => {
             {filteredQuestions?.map((question) => (
               <Card key={question.id} className="hover:shadow-lg transition-shadow duration-200">
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       {getCategoryIcon(question.category)}
                       <span className="text-sm font-medium text-gray-600 truncate">
                         {question.category}
                       </span>
                     </div>
-                    <Badge className={getDifficultyColor(question.difficulty)}>
-                      {question.difficulty}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Badge className={getDifficultyColor(question.difficulty)}>
+                        {question.difficulty}
+                      </Badge>
+                      <Badge className={getQuestionTypeColor(question.question_type)}>
+                        <div className="flex items-center gap-1">
+                          {getQuestionTypeIcon(question.question_type)}
+                          <span className="text-xs">
+                            {question.question_type === 'online_sourced' ? 'Sourced' : 'User'}
+                          </span>
+                        </div>
+                      </Badge>
+                    </div>
                   </div>
                   <CardTitle className="text-lg leading-tight">
                     {question.question}
@@ -210,6 +263,20 @@ const Index = () => {
                       <Clock className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-500">{question.interview_stage}</span>
                     </div>
+                    
+                    {question.source_url && (
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-gray-400" />
+                        <a 
+                          href={question.source_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline truncate"
+                        >
+                          {question.source_website}
+                        </a>
+                      </div>
+                    )}
                     
                     {question.additional_context && (
                       <div className="mt-3 p-3 bg-gray-50 rounded-md">

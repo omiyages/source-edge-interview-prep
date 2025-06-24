@@ -19,7 +19,11 @@ export type Database = {
           id: string
           interview_stage: string | null
           question: string
+          question_type: string | null
           role: string
+          scraped_at: string | null
+          source_url: string | null
+          source_website: string | null
           submitted_by: string | null
           updated_at: string
         }
@@ -32,7 +36,11 @@ export type Database = {
           id?: string
           interview_stage?: string | null
           question: string
+          question_type?: string | null
           role: string
+          scraped_at?: string | null
+          source_url?: string | null
+          source_website?: string | null
           submitted_by?: string | null
           updated_at?: string
         }
@@ -45,7 +53,11 @@ export type Database = {
           id?: string
           interview_stage?: string | null
           question?: string
+          question_type?: string | null
           role?: string
+          scraped_at?: string | null
+          source_url?: string | null
+          source_website?: string | null
           submitted_by?: string | null
           updated_at?: string
         }
