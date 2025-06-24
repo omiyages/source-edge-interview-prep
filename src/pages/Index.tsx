@@ -32,8 +32,7 @@ interface InterviewQuestion {
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("all");
-  const [difficultyFilter, setDifficultyFilter] = useState("all");
+  const [roleTypeFilter, setRoleTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [questionTypeFilter, setQuestionTypeFilter] = useState("all");
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
@@ -55,21 +54,19 @@ const Index = () => {
     const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          question.role.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCompany = companyFilter === "all" || question.company === companyFilter;
-    const matchesDifficulty = difficultyFilter === "all" || question.difficulty === difficultyFilter;
+    const matchesRoleType = roleTypeFilter === "all" || question.role === roleTypeFilter;
     const matchesCategory = categoryFilter === "all" || question.category === categoryFilter;
     const matchesType = questionTypeFilter === "all" || question.question_type === questionTypeFilter;
     
-    return matchesSearch && matchesCompany && matchesDifficulty && matchesCategory && matchesType;
+    return matchesSearch && matchesRoleType && matchesCategory && matchesType;
   });
 
-  const uniqueCompanies = [...new Set(questions?.map(q => q.company) || [])];
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Hard': return 'bg-red-100 text-red-800';
+  const getRoleTypeColor = (roleType: string) => {
+    switch (roleType) {
+      case 'Backend Engineer': return 'bg-blue-100 text-blue-800';
+      case 'Frontend Engineer': return 'bg-green-100 text-green-800';
+      case 'SRE/DevOps': return 'bg-orange-100 text-orange-800';
+      case 'Engineering Manager': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -116,28 +113,17 @@ const Index = () => {
                 className="pl-10"
               />
             </div>
-            
-            <Select value={companyFilter} onValueChange={setCompanyFilter}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="All Companies" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Companies</SelectItem>
-                {uniqueCompanies.map(company => (
-                  <SelectItem key={company} value={company}>{company}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
-            <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+            <Select value={roleTypeFilter} onValueChange={setRoleTypeFilter}>
               <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="All Difficulties" />
+                <SelectValue placeholder="All Role Types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Difficulties</SelectItem>
-                <SelectItem value="Easy">Easy</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="Hard">Hard</SelectItem>
+                <SelectItem value="all">All Role Types</SelectItem>
+                <SelectItem value="Backend Engineer">Backend Engineer</SelectItem>
+                <SelectItem value="Frontend Engineer">Frontend Engineer</SelectItem>
+                <SelectItem value="SRE/DevOps">SRE/DevOps</SelectItem>
+                <SelectItem value="Engineering Manager">Engineering Manager</SelectItem>
               </SelectContent>
             </Select>
 
@@ -230,8 +216,8 @@ const Index = () => {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Badge className={getDifficultyColor(question.difficulty)}>
-                        {question.difficulty}
+                      <Badge className={getRoleTypeColor(question.role)}>
+                        {question.role}
                       </Badge>
                       <Badge className={getQuestionTypeColor(question.question_type)}>
                         <div className="flex items-center gap-1">
