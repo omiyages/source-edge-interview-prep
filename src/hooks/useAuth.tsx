@@ -1,5 +1,6 @@
 
 import { useState, useEffect, createContext, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
@@ -101,6 +102,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       title: "Signed out",
       description: "You have been successfully signed out.",
     });
+    // Navigate to login page after logout
+    window.location.href = '/auth';
   };
 
   const isAdmin = user?.role === 'admin';
