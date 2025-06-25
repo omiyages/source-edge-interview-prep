@@ -12,6 +12,8 @@ export type Database = {
       interview_questions: {
         Row: {
           additional_context: string | null
+          approved_at: string | null
+          approved_by: string | null
           category: string | null
           company: string
           created_at: string
@@ -24,11 +26,14 @@ export type Database = {
           scraped_at: string | null
           source_url: string | null
           source_website: string | null
+          status: string | null
           submitted_by: string | null
           updated_at: string
         }
         Insert: {
           additional_context?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           category?: string | null
           company: string
           created_at?: string
@@ -41,11 +46,14 @@ export type Database = {
           scraped_at?: string | null
           source_url?: string | null
           source_website?: string | null
+          status?: string | null
           submitted_by?: string | null
           updated_at?: string
         }
         Update: {
           additional_context?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           category?: string | null
           company?: string
           created_at?: string
@@ -58,20 +66,80 @@ export type Database = {
           scraped_at?: string | null
           source_url?: string | null
           source_website?: string | null
+          status?: string | null
           submitted_by?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      question_likes: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_likes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "interview_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "user" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -186,6 +254,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["user", "admin"],
+    },
   },
 } as const

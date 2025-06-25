@@ -1,17 +1,18 @@
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Building2, Briefcase, Star, Clock, Globe, User } from "lucide-react";
+import { Plus, Search, LogOut, Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
 import { ScrapeQuestionsForm } from "@/components/ScrapeQuestionsForm";
+import QuestionCard from "@/components/QuestionCard";
 
 interface InterviewQuestion {
   id: string;
@@ -31,11 +32,17 @@ interface InterviewQuestion {
 }
 
 const Index = () => {
+  const { user, profile, loading, signOut, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleTypeFilter, setRoleTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [questionTypeFilter, setQuestionTypeFilter] = useState("all");
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+
+  // Redirect to auth if not authenticated
+  if (!loading && !user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const { data: questions, isLoading, refetch } = useQuery({
     queryKey: ['interview-questions'],
@@ -48,6 +55,7 @@ const Index = () => {
       if (error) throw error;
       return data as InterviewQuestion[];
     },
+    enabled: !!user,
   });
 
   const filteredQuestions = questions?.filter(question => {
@@ -61,43 +69,48 @@ const Index = () => {
     return matchesSearch && matchesRoleType && matchesCategory && matchesType;
   });
 
-  const getRoleTypeColor = (roleType: string) => {
-    switch (roleType) {
-      case 'Backend Engineer': return 'bg-blue-100 text-blue-800';
-      case 'Frontend Engineer': return 'bg-green-100 text-green-800';
-      case 'SRE/DevOps': return 'bg-orange-100 text-orange-800';
-      case 'Engineering Manager': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Technical': return <Star className="w-4 h-4" />;
-      case 'Behavioral': return <Briefcase className="w-4 h-4" />;
-      case 'System Design': return <Building2 className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  const getQuestionTypeIcon = (type: string) => {
-    return type === 'online_sourced' ? <Globe className="w-4 h-4" /> : <User className="w-4 h-4" />;
-  };
-
-  const getQuestionTypeColor = (type: string) => {
-    return type === 'online_sourced' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800';
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Interview Questions Directory
-          </h1>
+          <div className="flex justify-between items-center mb-4">
+            <div></div>
+            <h1 className="text-4xl font-bold text-gray-900">
+              Interview Questions Directory
+            </h1>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = '/admin'}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Admin
+                </Button>
+              )}
+              <Button variant="outline" onClick={signOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Browse real interview questions from top companies. Learn from others' experiences and contribute your own.
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Welcome back, {profile?.email} ({profile?.role})
           </p>
         </div>
 
@@ -206,79 +219,7 @@ const Index = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredQuestions?.map((question) => (
-              <Card key={question.id} className="hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {getCategoryIcon(question.category)}
-                      <span className="text-sm font-medium text-gray-600 truncate">
-                        {question.category}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge className={getRoleTypeColor(question.role)}>
-                        {question.role}
-                      </Badge>
-                      <Badge className={getQuestionTypeColor(question.question_type)}>
-                        <div className="flex items-center gap-1">
-                          {getQuestionTypeIcon(question.question_type)}
-                          <span className="text-xs">
-                            {question.question_type === 'online_sourced' ? 'Sourced' : 'User'}
-                          </span>
-                        </div>
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg leading-tight">
-                    {question.question}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-gray-400" />
-                      <span className="font-semibold text-gray-900">{question.company}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600">{question.role}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-500">{question.interview_stage}</span>
-                    </div>
-                    
-                    {question.source_url && (
-                      <div className="flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-gray-400" />
-                        <a 
-                          href={question.source_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:underline truncate"
-                        >
-                          {question.source_website}
-                        </a>
-                      </div>
-                    )}
-                    
-                    {question.additional_context && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                        <p className="text-sm text-gray-700">
-                          {question.additional_context}
-                        </p>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t">
-                      <span>By {question.submitted_by || 'Anonymous'}</span>
-                      <span>{new Date(question.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <QuestionCard key={question.id} question={question} />
             ))}
           </div>
         )}
