@@ -73,14 +73,6 @@ const Auth = () => {
               Sign In
             </Button>
           </form>
-          
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-sm text-gray-700 mb-2">Demo Credentials:</h3>
-            <div className="text-xs text-gray-600 space-y-1">
-              <div><strong>Admin:</strong> sourceedge / sourceedge2025</div>
-              <div><strong>User:</strong> sourceuser / user2025</div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

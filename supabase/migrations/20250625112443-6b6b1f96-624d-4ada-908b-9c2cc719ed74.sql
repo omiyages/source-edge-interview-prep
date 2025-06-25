@@ -1,4 +1,3 @@
-
 -- Create user roles enum
 CREATE TYPE public.app_role AS ENUM ('user', 'admin');
 
@@ -148,3 +147,137 @@ CREATE TRIGGER auto_approve_admin_questions_trigger
 CREATE INDEX idx_interview_questions_status ON public.interview_questions(status);
 CREATE INDEX idx_profiles_role ON public.profiles(role);
 CREATE INDEX idx_question_likes_question_id ON public.question_likes(question_id);
+
+-- Add some demo questions with approved status
+INSERT INTO public.interview_questions (
+  question,
+  company,
+  role,
+  difficulty,
+  interview_stage,
+  category,
+  submitted_by,
+  additional_context,
+  question_type,
+  status
+) VALUES
+(
+  'Implement a function to reverse a linked list iteratively and recursively.',
+  'Google',
+  'Backend Engineer',
+  'Medium',
+  'Technical',
+  'Technical',
+  'sourceedge',
+  'Expected to implement both approaches and discuss time/space complexity.',
+  'user_submitted',
+  'approved'
+),
+(
+  'Tell me about a time when you had to work with a difficult team member and how you handled it.',
+  'Microsoft',
+  'Engineering Manager',
+  'Medium',
+  'Behavioral',
+  'Behavioral',
+  'sourceedge',
+  'Standard behavioral question focusing on conflict resolution and teamwork.',
+  'user_submitted',
+  'approved'
+),
+(
+  'Design a URL shortening service like bit.ly. Consider scalability and performance.',
+  'Amazon',
+  'Backend Engineer',
+  'Hard',
+  'Technical',
+  'System Design',
+  'sourceedge',
+  'Need to discuss database design, caching strategies, and handling millions of requests.',
+  'user_submitted',
+  'approved'
+),
+(
+  'How would you optimize a React application that is rendering slowly?',
+  'Meta',
+  'Frontend Engineer',
+  'Medium',
+  'Technical',
+  'Technical',
+  'sourceedge',
+  'Should cover React.memo, useMemo, useCallback, and virtual scrolling.',
+  'user_submitted',
+  'approved'
+),
+(
+  'Implement a LRU (Least Recently Used) cache with O(1) operations.',
+  'Netflix',
+  'Backend Engineer',
+  'Medium',
+  'Technical',
+  'Technical',
+  'sourceedge',
+  'Expected to use HashMap + Doubly Linked List approach.',
+  'user_submitted',
+  'approved'
+),
+(
+  'Describe a challenging project you worked on and how you overcame obstacles.',
+  'Apple',
+  'Engineering Manager',
+  'Easy',
+  'Behavioral',
+  'Behavioral',
+  'sourceedge',
+  'Looking for leadership skills and problem-solving approach.',
+  'user_submitted',
+  'approved'
+),
+(
+  'Design a real-time chat application architecture.',
+  'Slack',
+  'Backend Engineer',
+  'Hard',
+  'Technical',
+  'System Design',
+  'sourceedge',
+  'Should cover WebSockets, message queues, database design, and scaling.',
+  'user_submitted',
+  'approved'
+),
+(
+  'How do you handle state management in large React applications?',
+  'Airbnb',
+  'Frontend Engineer',
+  'Medium',
+  'Technical',
+  'Technical',
+  'sourceedge',
+  'Discuss Redux, Context API, Zustand, and when to use each.',
+  'user_submitted',
+  'approved'
+),
+(
+  'Write a function to find the longest palindromic substring.',
+  'Uber',
+  'Backend Engineer',
+  'Medium',
+  'Technical',
+  'Technical',
+  'sourceedge',
+  'Should discuss multiple approaches including expand around centers.',
+  'user_submitted',
+  'approved'
+),
+(
+  'How would you implement monitoring and alerting for a microservices architecture?',
+  'Twitter',
+  'SRE/DevOps',
+  'Hard',
+  'Technical',
+  'System Design',
+  'sourceedge',
+  'Cover distributed tracing, metrics collection, log aggregation, and alerting strategies.',
+  'user_submitted',
+  'approved'
+);
