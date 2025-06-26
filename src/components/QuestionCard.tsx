@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -5,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Briefcase, Clock, Globe, User, ThumbsUp, Edit } from "lucide-react";
+import { Building2, Briefcase, Clock, Globe, User, ThumbsUp, Edit, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { EditQuestionForm } from "@/components/EditQuestionForm";
 import { useToast } from "@/hooks/use-toast";
 
@@ -111,6 +113,35 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
     },
   });
 
+  const deleteQuestionMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('interview_questions')
+        .delete()
+        .eq('id', question.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stage-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['all-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-all-questions'] });
+      
+      toast({
+        title: "Question deleted",
+        description: "The question has been successfully deleted.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete question.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getRoleTypeColor = (roleType: string) => {
     switch (roleType) {
       case 'Backend Engineer': return 'bg-blue-100 text-blue-800';
@@ -161,30 +192,56 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
               </div>
             </Badge>
             {isAdmin && (
-              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                    <Edit className="w-3 h-3" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Edit Question</DialogTitle>
-                  </DialogHeader>
-                  <EditQuestionForm 
-                    question={question}
-                    onSuccess={() => {
-                      setIsEditDialogOpen(false);
-                      queryClient.invalidateQueries({ queryKey: ['stage-questions'] });
-                      queryClient.invalidateQueries({ queryKey: ['all-questions'] });
-                      toast({
-                        title: "Question updated",
-                        description: "The question has been successfully updated.",
-                      });
-                    }} 
-                  />
-                </DialogContent>
-              </Dialog>
+              <div className="flex gap-1">
+                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Edit Question</DialogTitle>
+                    </DialogHeader>
+                    <EditQuestionForm 
+                      question={question}
+                      onSuccess={() => {
+                        setIsEditDialogOpen(false);
+                        queryClient.invalidateQueries({ queryKey: ['stage-questions'] });
+                        queryClient.invalidateQueries({ queryKey: ['all-questions'] });
+                        toast({
+                          title: "Question updated",
+                          description: "The question has been successfully updated.",
+                        });
+                      }} 
+                    />
+                  </DialogContent>
+                </Dialog>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="outline" className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Question</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this question? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteQuestionMutation.mutate()}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             )}
           </div>
         </div>
