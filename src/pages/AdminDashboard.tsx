@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, X, Clock, User, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CSVImportForm } from "@/components/CSVImportForm";
+import { AutoGenerateCourseForm } from "@/components/AutoGenerateCourseForm";
 
 interface InterviewQuestion {
   id: string;
@@ -147,7 +148,7 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
             </TabsTrigger>
@@ -156,6 +157,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="import">
               Bulk Import
+            </TabsTrigger>
+            <TabsTrigger value="ai-generate">
+              AI Course Generator
             </TabsTrigger>
           </TabsList>
 
@@ -287,6 +291,20 @@ const AdminDashboard = () => {
           <TabsContent value="import">
             <div className="max-w-2xl mx-auto">
               <CSVImportForm />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ai-generate">
+            <div className="max-w-4xl mx-auto">
+              <AutoGenerateCourseForm 
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ['courses'] });
+                  toast({
+                    title: "Success",
+                    description: "AI-generated course created successfully!",
+                  });
+                }} 
+              />
             </div>
           </TabsContent>
         </Tabs>
