@@ -12,7 +12,7 @@ import QuestionCard from "@/components/QuestionCard";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
 import { Search, Filter, Plus, User, Settings, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 interface InterviewQuestion {
   id: string;
@@ -35,6 +35,7 @@ interface InterviewQuestion {
 const Index = () => {
   const { user, profile, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCompany, setSelectedCompany] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
@@ -105,6 +106,11 @@ const Index = () => {
     setSelectedStage("");
   };
 
+  const handleAdminDashboard = () => {
+    console.log('Navigating to admin dashboard, user profile:', profile);
+    navigate('/admin');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -122,7 +128,7 @@ const Index = () => {
             {profile?.role === 'admin' && (
               <Button 
                 variant="outline" 
-                onClick={() => window.location.href = '/admin'}
+                onClick={handleAdminDashboard}
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Admin Dashboard
