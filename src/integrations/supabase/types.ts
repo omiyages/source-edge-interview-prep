@@ -143,23 +143,38 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          created_by: string | null
           email: string
+          full_name: string | null
           id: string
+          is_active: boolean | null
+          last_login_at: string | null
           role: Database["public"]["Enums"]["app_role"]
+          total_session_time_minutes: number | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           email: string
+          full_name?: string | null
           id: string
+          is_active?: boolean | null
+          last_login_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          total_session_time_minutes?: number | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           email?: string
+          full_name?: string | null
           id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          total_session_time_minutes?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -228,6 +243,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          ended_at: string | null
+          id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -13,7 +13,65 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const { toast } = useToast();
+
+  // Track user session
+  const startSession = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_sessions')
+        .insert([{ user_id: userId }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setSessionId(data.id);
+      setSessionStartTime(new Date());
+    } catch (error) {
+      console.error('Error starting session:', error);
+    }
+  };
+
+  const endSession = async () => {
+    if (sessionId && sessionStartTime) {
+      try {
+        const endTime = new Date();
+        const durationMinutes = Math.round((endTime.getTime() - sessionStartTime.getTime()) / (1000 * 60));
+        
+        await supabase
+          .from('user_sessions')
+          .update({
+            ended_at: endTime.toISOString(),
+            duration_minutes: durationMinutes
+          })
+          .eq('id', sessionId);
+
+        // Update total session time in profile
+        if (user) {
+          const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('total_session_time_minutes')
+            .eq('id', user.id)
+            .single();
+
+          const currentTotal = currentProfile?.total_session_time_minutes || 0;
+          await supabase
+            .from('profiles')
+            .update({
+              total_session_time_minutes: currentTotal + durationMinutes
+            })
+            .eq('id', user.id);
+        }
+      } catch (error) {
+        console.error('Error ending session:', error);
+      }
+    }
+    setSessionId(null);
+    setSessionStartTime(null);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -33,9 +91,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (!mounted) return;
           const userProfile = await loadOrCreateProfile(session.user);
           setProfile(userProfile);
+          
+          // Start session tracking
+          if (event === 'SIGNED_IN') {
+            await startSession(session.user.id);
+          }
         }, 0);
       } else {
         setProfile(null);
+        // End session tracking
+        if (event === 'SIGNED_OUT') {
+          await endSession();
+        }
       }
       
       setLoading(false);
@@ -52,6 +119,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loadOrCreateProfile(session.user).then(userProfile => {
           if (mounted) {
             setProfile(userProfile);
+            // Start session for existing users
+            startSession(session.user.id);
           }
         });
       }
@@ -59,9 +128,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     });
 
+    // End session when user closes the browser
+    const handleBeforeUnload = () => {
+      endSession();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      endSession();
     };
   }, []);
 
@@ -138,6 +216,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    // End session before signing out
+    await endSession();
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Sign out error:', error);

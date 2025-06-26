@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, User, LogOut } from "lucide-react";
+import { Check, X, Clock, User, LogOut, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CSVImportForm } from "@/components/CSVImportForm";
 import { AutoGenerateCourseForm } from "@/components/AutoGenerateCourseForm";
+import { CreateUserForm } from "@/components/CreateUserForm";
+import { UsersList } from "@/components/UsersList";
 
 interface InterviewQuestion {
   id: string;
@@ -119,6 +121,10 @@ const AdminDashboard = () => {
     }
   };
 
+  const refreshUsersList = () => {
+    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -148,12 +154,16 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="all">
               All Questions ({allQuestions?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="users">
+              <Users className="w-4 h-4 mr-2" />
+              User Management
             </TabsTrigger>
             <TabsTrigger value="import">
               Bulk Import
@@ -286,6 +296,16 @@ const AdminDashboard = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="users">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+                <CreateUserForm onSuccess={refreshUsersList} />
+              </div>
+              <UsersList />
+            </div>
           </TabsContent>
 
           <TabsContent value="import">
