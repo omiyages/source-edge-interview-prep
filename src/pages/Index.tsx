@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuestionCard from "@/components/QuestionCard";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
-import { Search, Filter, Plus, User, Settings, LogOut } from "lucide-react";
+import { Search, Filter, Plus, User, Settings, LogOut, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 
 interface InterviewQuestion {
   id: string;
@@ -125,6 +125,12 @@ const Index = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            <Link to="/track">
+              <Button variant="outline">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Interview Tracks
+              </Button>
+            </Link>
             {profile?.role === 'admin' && (
               <Button 
                 variant="outline" 

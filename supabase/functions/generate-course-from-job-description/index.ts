@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { jobDescription } = await req.json();
+    const { jobDescription, jobTitle = "", company = "" } = await req.json();
     
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -45,20 +45,52 @@ serve(async (req) => {
 
     console.log(`Found ${questions?.length || 0} approved questions in database`);
 
+    // Build the job context
+    let jobContext = `Job Description:\n${jobDescription}`;
+    if (jobTitle) {
+      jobContext = `Job Title: ${jobTitle}\n` + jobContext;
+    }
+    if (company) {
+      jobContext = `Company: ${company}\n` + jobContext;
+    }
+
+    // Special handling for Woven by Toyota
+    const isWovenToyota = company.toLowerCase().includes('woven') && company.toLowerCase().includes('toyota');
+    
+    let stageGuidance = '';
+    if (isWovenToyota) {
+      stageGuidance = `
+      Since this is for Woven by Toyota, the interview stages should be:
+      1. HR Screening - Focus on cultural fit, communication skills, and basic qualifications
+      2. Technical Assignment - Take-home coding challenge reflecting real-world problems
+      3. Technical Assessment/Cross-Functional - Technical deep-dive with collaboration scenarios
+      4. Final Interview - Leadership potential and strategic thinking assessment
+      
+      Make the descriptions comprehensive and helpful for candidate preparation.
+      `;
+    }
+
     // Use OpenAI to analyze the job description and generate course structure
     const analysisPrompt = `
-    Analyze this job description and create a structured interview course:
+    Analyze this job information and create a structured interview course:
 
-    Job Description:
-    ${jobDescription}
+    ${jobContext}
 
-    Based on this job description, provide a JSON response with:
-    1. Course title (concise, professional)
-    2. Course description (2-3 sentences)
+    ${stageGuidance}
+
+    Based on this information, provide a JSON response with:
+    1. Course title (concise, professional, incorporating job title and company if provided)
+    2. Course description (2-3 sentences that mention the specific role and company)
     3. Suggested interview stages (array of objects with title, description, stage_order)
     4. Key skills and technologies mentioned
     5. Role level (entry, mid, senior, principal)
     6. Primary role category (Backend Engineer, Frontend Engineer, SRE/DevOps, Engineering Manager, etc.)
+
+    For stage descriptions, make them comprehensive (3-4 sentences) and include:
+    - What to expect in the interview
+    - How candidates can prepare
+    - What skills/qualities are being assessed
+    - Practical tips for success
 
     Here are the available questions in the database:
     ${questions?.map(q => `- ID: ${q.id}, Question: ${q.question} (${q.role}, ${q.category}, ${q.difficulty})`).join('\n')}
@@ -72,7 +104,7 @@ serve(async (req) => {
       "stages": [
         {
           "title": "string",
-          "description": "string",
+          "description": "string (comprehensive, 3-4 sentences)",
           "stage_order": number,
           "recommendedQuestionIds": ["uuid1", "uuid2"]
         }
@@ -96,7 +128,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert technical recruiter and interview designer. Analyze job descriptions and create comprehensive interview courses. Always respond with valid JSON only, no markdown formatting or code blocks.'
+            content: 'You are an expert technical recruiter and interview designer. Analyze job descriptions and create comprehensive interview courses. Always respond with valid JSON only, no markdown formatting or code blocks. Make stage descriptions detailed and helpful for candidate preparation.'
           },
           {
             role: 'user',
@@ -104,7 +136,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.3,
-        max_tokens: 2000,
+        max_tokens: 3000,
       }),
     });
 
