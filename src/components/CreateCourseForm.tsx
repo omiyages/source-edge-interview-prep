@@ -33,7 +33,7 @@ interface InterviewQuestion {
 }
 
 export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -118,8 +118,8 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user?.id) {
-      console.error('No user ID available');
+    if (!user?.id || !profile?.id) {
+      console.error('No user ID or profile ID available');
       toast({
         title: "Error",
         description: "User not authenticated. Please log in again.",
@@ -131,16 +131,16 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     setIsSubmitting(true);
 
     try {
-      console.log('Creating course with user ID:', user.id);
+      console.log('Creating course with profile ID:', profile.id);
       console.log('Form data:', formData);
 
-      // Create the course
+      // Create the course using profile.id
       const { data: course, error: courseError } = await supabase
         .from('courses')
         .insert({
           title: formData.title,
           description: formData.description,
-          created_by: user.id, // Use user.id instead of user?.id
+          created_by: profile.id, // Use profile.id instead of user.id
         })
         .select()
         .single();
