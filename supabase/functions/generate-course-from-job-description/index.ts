@@ -21,8 +21,17 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!openAIApiKey || !supabaseUrl || !supabaseKey) {
+      console.error('Missing environment variables:', {
+        hasOpenAI: !!openAIApiKey,
+        hasSupabaseUrl: !!supabaseUrl,
+        hasSupabaseKey: !!supabaseKey
+      });
       throw new Error('Missing required environment variables');
     }
+
+    console.log('OpenAI API Key exists:', !!openAIApiKey);
+    console.log('OpenAI API Key length:', openAIApiKey.length);
+    console.log('OpenAI API Key prefix:', openAIApiKey.substring(0, 10) + '...');
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     
@@ -99,19 +108,27 @@ serve(async (req) => {
       }),
     });
 
+    console.log('OpenAI response status:', response.status);
+    console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API Error:', response.status, response.statusText, errorText);
+      console.error('OpenAI API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: errorText
+      });
       
       // Handle specific error cases
       if (response.status === 429) {
         throw new Error('Rate limit exceeded. Please wait a moment before trying again, or upgrade your OpenAI plan for higher limits.');
       } else if (response.status === 401) {
-        throw new Error('Invalid OpenAI API key. Please check your API key configuration.');
+        throw new Error('Invalid OpenAI API key or insufficient permissions. Please check your API key configuration and ensure it has access to GPT models.');
       } else if (response.status === 403) {
-        throw new Error('OpenAI API access forbidden. Please check your API key permissions.');
+        throw new Error('OpenAI API access forbidden. Please check your API key permissions and billing status.');
       } else {
-        throw new Error(`OpenAI API error (${response.status}): ${response.statusText}`);
+        throw new Error(`OpenAI API error (${response.status}): ${response.statusText}. Details: ${errorText}`);
       }
     }
 
@@ -119,6 +136,7 @@ serve(async (req) => {
     console.log('OpenAI response received successfully');
 
     if (!aiResponse.choices || !aiResponse.choices[0] || !aiResponse.choices[0].message) {
+      console.error('Invalid OpenAI response structure:', aiResponse);
       throw new Error('Invalid response format from OpenAI API');
     }
 
