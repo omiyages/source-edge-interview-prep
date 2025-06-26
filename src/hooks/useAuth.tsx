@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { loadOrCreateProfile, mapCredentials, isDemoUser, getDemoUser } from "@/services/authService";
+import { loadOrCreateProfile } from "@/services/authService";
 import type { User, Session } from '@supabase/supabase-js';
 import type { AuthContextType, Profile } from "@/types/auth";
 
@@ -65,73 +65,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const signIn = async (emailOrUsername: string, password: string) => {
+  const signIn = async (email: string, password: string) => {
     try {
-      console.log('Sign in attempt with:', emailOrUsername);
-      const { email, password: mappedPassword } = mapCredentials(emailOrUsername, password);
-      console.log('Mapped to email:', email);
+      console.log('Sign in attempt with:', email);
 
-      // Check if this is a demo user that might not exist yet
-      if (isDemoUser(email)) {
-        const demoUser = getDemoUser(email);
-        if (password === demoUser.password) {
-          // Try to sign in first
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-          if (error && error.message.includes('Invalid login credentials')) {
-            // User doesn't exist, create them
-            const { error: signUpError } = await supabase.auth.signUp({
-              email,
-              password,
-              options: {
-                emailRedirectTo: `${window.location.origin}/`,
-                data: {
-                  role: demoUser.role
-                }
-              }
-            });
-
-            if (signUpError) {
-              console.error('Sign up error:', signUpError);
-              toast({
-                title: "Sign Up Failed",
-                description: signUpError.message,
-                variant: "destructive",
-              });
-              return { error: signUpError };
-            }
-
-            toast({
-              title: `Welcome ${demoUser.role}!`,
-              description: "Demo account created and signed in successfully.",
-            });
-            return { error: null };
-          }
-
-          if (error) {
-            toast({
-              title: "Sign In Failed",
-              description: error.message,
-              variant: "destructive",
-            });
-            return { error };
-          }
-
-          toast({
-            title: `Welcome back!`,
-            description: "Successfully signed in.",
-          });
-          return { error: null };
-        }
-      }
-
-      // Regular sign in for non-demo users
       const { error } = await supabase.auth.signInWithPassword({
         email,
-        password: mappedPassword,
+        password,
       });
 
       if (error) {
@@ -143,6 +83,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error };
       }
 
+      toast({
+        title: "Welcome back!",
+        description: "Successfully signed in.",
+      });
       return { error: null };
     } catch (error) {
       console.error('Sign in error:', error);
