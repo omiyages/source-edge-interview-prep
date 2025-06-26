@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,7 @@ interface SubmitQuestionFormProps {
 }
 
 export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,18 +27,35 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to submit questions.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      console.log('Submitting question with user ID:', user.id);
+      console.log('User profile:', profile);
+      
       const { error } = await supabase
         .from('interview_questions')
         .insert({
           ...formData,
-          submitted_by: profile?.email || null,
+          submitted_by: profile?.email || user.email,
           question_type: 'user_submitted',
+          status: profile?.role === 'admin' ? 'approved' : 'pending',
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error submitting question:', error);
+        throw error;
+      }
 
       toast({
         title: "Question submitted!",
