@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -93,9 +92,18 @@ serve(async (req) => {
     - Practical tips for success
 
     Here are the available questions in the database:
-    ${questions?.map(q => `- ID: ${q.id}, Question: ${q.question} (${q.role}, ${q.category}, ${q.difficulty})`).join('\n')}
+    ${questions?.map(q => `- ID: ${q.id}, Question: ${q.question} (${q.role}, ${q.category}, ${q.difficulty}, ${q.interview_stage})`).join('\n')}
 
-    For each suggested stage, recommend specific question IDs from the list above that would be most relevant.
+    For each suggested stage, recommend specific question IDs from the list above that would be most relevant based on:
+    - The stage type (HR Screening, Technical Assessment, etc.)
+    - The role and company context
+    - The difficulty level appropriate for the role level
+    - The question category and interview stage
+
+    Match questions intelligently:
+    - HR Screening: behavioral, cultural fit questions
+    - Technical Assignment/Assessment: coding, system design, technical questions
+    - Final Interview: leadership, strategic thinking questions
 
     Respond with valid JSON in this format:
     {
@@ -106,7 +114,7 @@ serve(async (req) => {
           "title": "string",
           "description": "string (comprehensive, 3-4 sentences)",
           "stage_order": number,
-          "recommendedQuestionIds": ["uuid1", "uuid2"]
+          "recommendedQuestionIds": ["uuid1", "uuid2", "uuid3"]
         }
       ],
       "keySkills": ["skill1", "skill2"],
@@ -128,7 +136,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert technical recruiter and interview designer. Analyze job descriptions and create comprehensive interview courses. Always respond with valid JSON only, no markdown formatting or code blocks. Make stage descriptions detailed and helpful for candidate preparation.'
+            content: 'You are an expert technical recruiter and interview designer. Analyze job descriptions and create comprehensive interview courses with relevant question selection. Always respond with valid JSON only, no markdown formatting or code blocks. Make stage descriptions detailed and helpful for candidate preparation. Select 2-4 relevant questions per stage based on the stage type, role context, and question metadata.'
           },
           {
             role: 'user',
@@ -188,6 +196,38 @@ serve(async (req) => {
       console.error('Failed to parse OpenAI response:', aiResponse.choices[0].message.content);
       console.error('Parse error:', parseError);
       throw new Error('Failed to parse AI response. Please try again.');
+    }
+
+    // Special handling for Woven by Toyota - override with predefined stages but keep question selection
+    if (isWovenToyota && analysis.stages) {
+      const wovenStages = [
+        {
+          title: "HR Screening",
+          description: "This initial screening focuses on cultural fit, communication skills, and basic qualifications. Expect questions about your background, motivation for joining Woven by Toyota, understanding of our mobility vision, and general behavioral questions. Prepare by researching Toyota's values, Woven's mission in mobility technology, and be ready to discuss your career goals and how they align with our company culture. This stage typically lasts 30-45 minutes and sets the foundation for the technical rounds.",
+          stage_order: 1,
+          recommendedQuestionIds: analysis.stages[0]?.recommendedQuestionIds || []
+        },
+        {
+          title: "Technical Assignment",
+          description: "A take-home coding challenge that reflects real-world problems you'd solve at Woven by Toyota. This assignment tests your ability to write clean, maintainable code, follow best practices, and solve complex technical problems independently. You'll typically have 2-3 days to complete it. Focus on code quality, documentation, testing, and architectural decisions. The assignment often involves data processing, API integration, or system design relevant to mobility and automotive technology.",
+          stage_order: 2,
+          recommendedQuestionIds: analysis.stages[1]?.recommendedQuestionIds || []
+        },
+        {
+          title: "Technical Assessment/Cross-Functional",
+          description: "This comprehensive interview combines technical deep-dive discussions with cross-functional collaboration scenarios. You'll review your technical assignment with engineers, discuss architectural decisions, and demonstrate problem-solving skills through coding exercises. The cross-functional aspect involves collaboration scenarios with product managers, designers, and other stakeholders. Prepare to explain your technical choices, discuss trade-offs, handle code reviews, and demonstrate how you work in interdisciplinary teams typical of automotive technology development.",
+          stage_order: 3,
+          recommendedQuestionIds: analysis.stages[2]?.recommendedQuestionIds || []
+        },
+        {
+          title: "Final Interview",
+          description: "The final round focuses on leadership potential, strategic thinking, and long-term fit with Woven by Toyota's vision. Expect discussions about your career aspirations, how you handle challenges, your approach to innovation in mobility technology, and your understanding of the automotive industry's future. This stage often involves senior leadership and covers topics like mentoring, project leadership, and your potential contributions to Woven's mission of creating safer, more sustainable mobility solutions.",
+          stage_order: 4,
+          recommendedQuestionIds: analysis.stages[3]?.recommendedQuestionIds || []
+        }
+      ];
+      
+      analysis.stages = wovenStages;
     }
 
     console.log('Course analysis completed successfully');

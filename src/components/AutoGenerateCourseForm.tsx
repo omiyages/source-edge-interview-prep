@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
+import { Label } from "@/components/ui/label";
 
 interface GeneratedCourse {
   courseTitle: string;
@@ -61,6 +62,7 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCourse, setGeneratedCourse] = useState<GeneratedCourse | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -182,6 +184,7 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
             course_id: course.id,
             title: stage.title,
             description: stage.description,
+            information: stage.description, // Use description as information for now
             stage_order: stage.stage_order,
           })
           .select()
@@ -210,6 +213,10 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
       });
 
       onSuccess();
+      setGeneratedCourse(null);
+      setJobTitle("");
+      setCompany("");
+      setJobDescription("");
     } catch (error) {
       console.error('Error creating course:', error);
       toast({
@@ -220,6 +227,18 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const updateCourseField = (field: keyof GeneratedCourse, value: any) => {
+    if (!generatedCourse) return;
+    setGeneratedCourse({ ...generatedCourse, [field]: value });
+  };
+
+  const updateStage = (index: number, field: string, value: any) => {
+    if (!generatedCourse) return;
+    const updatedStages = [...generatedCourse.stages];
+    updatedStages[index] = { ...updatedStages[index], [field]: value };
+    setGeneratedCourse({ ...generatedCourse, stages: updatedStages });
   };
 
   const getQuestionsForStage = (questionIds: string[]) => {
@@ -296,94 +315,158 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
       {generatedCourse && (
         <Card>
           <CardHeader>
-            <CardTitle>Generated Course Preview</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Generated Course {isEditing ? "(Editing)" : "(Preview)"}</CardTitle>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                {isEditing ? "Preview Mode" : "Edit Mode"}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-lg">{generatedCourse.courseTitle}</h3>
-              <p className="text-gray-600 mt-1">{generatedCourse.courseDescription}</p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">Role: {generatedCourse.primaryRole}</Badge>
-              <Badge variant="outline">Level: {generatedCourse.roleLevel}</Badge>
-              {generatedCourse.keySkills.slice(0, 3).map((skill, index) => (
-                <Badge key={index} variant="secondary">{skill}</Badge>
-              ))}
-            </div>
-
-            <div>
-              <h4 className="font-medium mb-3">Interview Stages ({generatedCourse.stages.length})</h4>
-              <div className="space-y-3">
-                {generatedCourse.stages.map((stage, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h5 className="font-medium text-lg mb-2">{stage.title}</h5>
-                        <p className="text-sm text-gray-600 mb-3">{stage.description}</p>
-                      </div>
-                      <div className="flex gap-2 ml-4">
-                        <Badge variant="outline">{stage.recommendedQuestionIds.length} questions</Badge>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button size="sm" variant="outline">
-                              <Eye className="w-4 h-4 mr-1" />
-                              Preview
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh]">
-                            <DialogHeader>
-                              <DialogTitle>{stage.title} - Preview</DialogTitle>
-                            </DialogHeader>
-                            <ScrollArea className="h-[60vh] pr-4">
-                              <div className="space-y-4">
-                                <div>
-                                  <h4 className="font-medium mb-2">Stage Description</h4>
-                                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                                    {stage.description}
-                                  </p>
-                                </div>
-                                
-                                <div>
-                                  <h4 className="font-medium mb-2">Recommended Questions ({stage.recommendedQuestionIds.length})</h4>
-                                  {stage.recommendedQuestionIds.length > 0 ? (
-                                    <div className="space-y-3">
-                                      {getQuestionsForStage(stage.recommendedQuestionIds).map((question, qIndex) => (
-                                        <div key={qIndex} className="border rounded-lg p-3 bg-white">
-                                          <div className="flex justify-between items-start mb-2">
-                                            <h5 className="font-medium">{question.question}</h5>
-                                            <div className="flex gap-1">
-                                              <Badge variant="secondary" className="text-xs">{question.category}</Badge>
-                                              <Badge variant="outline" className="text-xs">{question.difficulty}</Badge>
-                                            </div>
-                                          </div>
-                                          <div className="text-xs text-gray-500 flex gap-4">
-                                            <span>Company: {question.company}</span>
-                                            <span>Role: {question.role}</span>
-                                            <span>Stage: {question.interview_stage}</span>
-                                          </div>
-                                          {question.additional_context && (
-                                            <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
-                                              {question.additional_context}
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className="text-sm text-gray-500 italic">No questions selected for this stage.</p>
-                                  )}
-                                </div>
-                              </div>
-                            </ScrollArea>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </div>
+            {isEditing ? (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="course-title">Course Title</Label>
+                    <Input
+                      id="course-title"
+                      value={generatedCourse.courseTitle}
+                      onChange={(e) => updateCourseField('courseTitle', e.target.value)}
+                    />
                   </div>
-                ))}
+                  <div>
+                    <Label htmlFor="course-description">Course Description</Label>
+                    <Textarea
+                      id="course-description"
+                      value={generatedCourse.courseDescription}
+                      onChange={(e) => updateCourseField('courseDescription', e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-3">Interview Stages</h4>
+                  <div className="space-y-4">
+                    {generatedCourse.stages.map((stage, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="space-y-3">
+                          <div>
+                            <Label htmlFor={`stage-title-${index}`}>Stage Title</Label>
+                            <Input
+                              id={`stage-title-${index}`}
+                              value={stage.title}
+                              onChange={(e) => updateStage(index, 'title', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`stage-description-${index}`}>Stage Description</Label>
+                            <Textarea
+                              id={`stage-description-${index}`}
+                              value={stage.description}
+                              onChange={(e) => updateStage(index, 'description', e.target.value)}
+                              rows={4}
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-lg">{generatedCourse.courseTitle}</h3>
+                  <p className="text-gray-600 mt-1">{generatedCourse.courseDescription}</p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">Role: {generatedCourse.primaryRole}</Badge>
+                  <Badge variant="outline">Level: {generatedCourse.roleLevel}</Badge>
+                  {generatedCourse.keySkills.slice(0, 3).map((skill, index) => (
+                    <Badge key={index} variant="secondary">{skill}</Badge>
+                  ))}
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-3">Interview Stages ({generatedCourse.stages.length})</h4>
+                  <div className="space-y-3">
+                    {generatedCourse.stages.map((stage, index) => (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h5 className="font-medium text-lg mb-2">{stage.title}</h5>
+                            <p className="text-sm text-gray-600 mb-3">{stage.description}</p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <Badge variant="outline">{stage.recommendedQuestionIds.length} questions</Badge>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="outline">
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  Preview
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl max-h-[80vh]">
+                                <DialogHeader>
+                                  <DialogTitle>{stage.title} - Preview</DialogTitle>
+                                </DialogHeader>
+                                <ScrollArea className="h-[60vh] pr-4">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="font-medium mb-2">Stage Description</h4>
+                                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                                        {stage.description}
+                                      </p>
+                                    </div>
+                                    
+                                    <div>
+                                      <h4 className="font-medium mb-2">Recommended Questions ({stage.recommendedQuestionIds.length})</h4>
+                                      {stage.recommendedQuestionIds.length > 0 ? (
+                                        <div className="space-y-3">
+                                          {getQuestionsForStage(stage.recommendedQuestionIds).map((question, qIndex) => (
+                                            <div key={qIndex} className="border rounded-lg p-3 bg-white">
+                                              <div className="flex justify-between items-start mb-2">
+                                                <h5 className="font-medium">{question.question}</h5>
+                                                <div className="flex gap-1">
+                                                  <Badge variant="secondary" className="text-xs">{question.category}</Badge>
+                                                  <Badge variant="outline" className="text-xs">{question.difficulty}</Badge>
+                                                </div>
+                                              </div>
+                                              <div className="text-xs text-gray-500 flex gap-4">
+                                                <span>Company: {question.company}</span>
+                                                <span>Role: {question.role}</span>
+                                                <span>Stage: {question.interview_stage}</span>
+                                              </div>
+                                              {question.additional_context && (
+                                                <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
+                                                  {question.additional_context}
+                                                </div>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-gray-500 italic">No questions selected for this stage.</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </ScrollArea>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button 
