@@ -9,9 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, LogOut, Settings, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
-import { ScrapeQuestionsForm } from "@/components/ScrapeQuestionsForm";
 import QuestionCard from "@/components/QuestionCard";
 
 interface InterviewQuestion {
@@ -183,35 +181,19 @@ const Index = () => {
               <DialogTrigger asChild>
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Questions
+                  Add Question
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Add Interview Questions</DialogTitle>
+                  <DialogTitle>Add Interview Question</DialogTitle>
                 </DialogHeader>
-                <Tabs defaultValue="submit" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="submit">Submit Question</TabsTrigger>
-                    <TabsTrigger value="scrape">Scrape Questions</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="submit">
-                    <SubmitQuestionForm 
-                      onSuccess={() => {
-                        setIsSubmitDialogOpen(false);
-                        refetch();
-                      }} 
-                    />
-                  </TabsContent>
-                  <TabsContent value="scrape">
-                    <ScrapeQuestionsForm 
-                      onSuccess={() => {
-                        setIsSubmitDialogOpen(false);
-                        refetch();
-                      }} 
-                    />
-                  </TabsContent>
-                </Tabs>
+                <SubmitQuestionForm 
+                  onSuccess={() => {
+                    setIsSubmitDialogOpen(false);
+                    refetch();
+                  }} 
+                />
               </DialogContent>
             </Dialog>
           </div>
