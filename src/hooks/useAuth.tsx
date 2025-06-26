@@ -1,34 +1,12 @@
 
 import { useState, useEffect, createContext, useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { loadOrCreateProfile, mapCredentials, isDemoUser, getDemoUser } from "@/services/authService";
 import type { User, Session } from '@supabase/supabase-js';
-
-interface Profile {
-  id: string;
-  email: string;
-  role: 'user' | 'admin';
-}
-
-interface AuthContextType {
-  user: User | null;
-  profile: Profile | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
-  isAdmin: boolean;
-}
+import type { AuthContextType, Profile } from "@/types/auth";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Demo credentials with valid email formats
-const DEMO_USERS = {
-  'admin@example.com': { password: 'sourceedge2025', role: 'admin' as const },
-  'user@example.com': { password: 'user2025', role: 'user' as const }
-};
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -53,7 +31,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Load or create profile
         setTimeout(async () => {
           if (!mounted) return;
-          await loadOrCreateProfile(session.user);
+          const userProfile = await loadOrCreateProfile(session.user);
+          setProfile(userProfile);
         }, 0);
       } else {
         setProfile(null);
@@ -70,7 +49,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        loadOrCreateProfile(session.user);
+        loadOrCreateProfile(session.user).then(userProfile => {
+          if (mounted) {
+            setProfile(userProfile);
+          }
+        });
       }
       
       setLoading(false);
@@ -82,67 +65,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const loadOrCreateProfile = async (user: User) => {
-    try {
-      // First try to get existing profile
-      const { data: existingProfile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (existingProfile) {
-        setProfile(existingProfile);
-        return;
-      }
-
-      // If no profile exists, create one
-      if (error?.code === 'PGRST116') {
-        // Determine role based on email
-        const email = user.email || '';
-        let role: 'user' | 'admin' = 'user';
-        
-        if (email === 'admin@example.com') {
-          role = 'admin';
-        }
-
-        const { data: newProfile } = await supabase
-          .from('profiles')
-          .insert([{ 
-            id: user.id, 
-            email: email,
-            role: role 
-          }])
-          .select()
-          .single();
-
-        if (newProfile) {
-          setProfile(newProfile);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    }
-  };
-
   const signIn = async (emailOrUsername: string, password: string) => {
     try {
-      // Handle demo credentials with username mapping
-      let email = emailOrUsername;
-      let actualPassword = password;
-
-      // Map usernames to emails for demo
-      if (emailOrUsername === 'sourceedge' && password === 'sourceedge2025') {
-        email = 'admin@example.com';
-      } else if (emailOrUsername === 'sourceuser' && password === 'user2025') {
-        email = 'user@example.com';
-      }
+      const { email, password: mappedPassword } = mapCredentials(emailOrUsername, password);
 
       // Check if this is a demo user that might not exist yet
-      const isDemoUser = email in DEMO_USERS;
-      
-      if (isDemoUser) {
-        const demoUser = DEMO_USERS[email as keyof typeof DEMO_USERS];
+      if (isDemoUser(email)) {
+        const demoUser = getDemoUser(email);
         if (password === demoUser.password) {
           // Try to sign in first
           const { data, error } = await supabase.auth.signInWithPassword({
@@ -200,7 +129,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Regular sign in for non-demo users
       const { error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password: mappedPassword,
       });
 
       if (error) {
