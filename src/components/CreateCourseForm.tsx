@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,21 +117,39 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user?.id) {
+      console.error('No user ID available');
+      toast({
+        title: "Error",
+        description: "User not authenticated. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      console.log('Creating course with user ID:', user.id);
+      console.log('Form data:', formData);
+
       // Create the course
       const { data: course, error: courseError } = await supabase
         .from('courses')
         .insert({
           title: formData.title,
           description: formData.description,
-          created_by: user?.id,
+          created_by: user.id, // Use user.id instead of user?.id
         })
         .select()
         .single();
 
-      if (courseError) throw courseError;
+      if (courseError) {
+        console.error('Error creating course:', courseError);
+        throw courseError;
+      }
+      console.log('Course created successfully:', course);
 
       // Create the stages with information field
       const stageInserts = stages.map(stage => ({
@@ -143,12 +160,18 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
         stage_order: stage.order,
       }));
 
+      console.log('Creating stages:', stageInserts);
+
       const { data: createdStages, error: stagesError } = await supabase
         .from('course_stages')
         .insert(stageInserts)
         .select();
 
-      if (stagesError) throw stagesError;
+      if (stagesError) {
+        console.error('Error creating stages:', stagesError);
+        throw stagesError;
+      }
+      console.log('Stages created successfully:', createdStages);
 
       // Add questions to stages
       const questionInserts = [];
@@ -165,11 +188,16 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
       }
 
       if (questionInserts.length > 0) {
+        console.log('Adding questions to stages:', questionInserts);
         const { error: questionsError } = await supabase
           .from('stage_questions')
           .insert(questionInserts);
 
-        if (questionsError) throw questionsError;
+        if (questionsError) {
+          console.error('Error adding questions to stages:', questionsError);
+          throw questionsError;
+        }
+        console.log('Questions added to stages successfully');
       }
 
       toast({

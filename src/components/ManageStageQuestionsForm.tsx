@@ -34,6 +34,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
     queryKey: ['all-questions'],
     queryFn: async () => {
+      console.log('Fetching all approved questions...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, difficulty, category')
@@ -44,6 +45,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
         console.error('Error fetching questions:', error);
         throw error;
       }
+      console.log('Fetched questions:', data?.length);
       return data as InterviewQuestion[];
     },
   });
@@ -52,6 +54,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
   const { data: currentQuestions, isLoading: isLoadingCurrent } = useQuery({
     queryKey: ['current-stage-questions', stageId],
     queryFn: async () => {
+      console.log('Fetching current stage questions for stage:', stageId);
       const { data, error } = await supabase
         .from('stage_questions')
         .select('question_id')
@@ -61,6 +64,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
         console.error('Error fetching current stage questions:', error);
         throw error;
       }
+      console.log('Current stage questions:', data);
       return new Set(data.map(item => item.question_id));
     },
   });
@@ -91,6 +95,10 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      console.log('Starting to save stage questions...');
+      console.log('Stage ID:', stageId);
+      console.log('Selected questions:', Array.from(selectedQuestions));
+
       // First, remove all existing questions for this stage
       const { error: deleteError } = await supabase
         .from('stage_questions')
@@ -101,6 +109,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
         console.error('Error deleting existing stage questions:', deleteError);
         throw deleteError;
       }
+      console.log('Successfully deleted existing stage questions');
 
       // Then, add the selected questions
       if (selectedQuestions.size > 0) {
@@ -108,6 +117,8 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
           stage_id: stageId,
           question_id: questionId,
         }));
+
+        console.log('Inserting new stage questions:', questionsToInsert);
 
         const { error: insertError } = await supabase
           .from('stage_questions')
@@ -117,6 +128,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
           console.error('Error inserting stage questions:', insertError);
           throw insertError;
         }
+        console.log('Successfully inserted new stage questions');
       }
 
       toast({
