@@ -61,7 +61,7 @@ serve(async (req) => {
     6. Primary role category (Backend Engineer, Frontend Engineer, SRE/DevOps, Engineering Manager, etc.)
 
     Here are the available questions in the database:
-    ${questions?.map(q => `- ${q.question} (${q.role}, ${q.category}, ${q.difficulty})`).join('\n')}
+    ${questions?.map(q => `- ID: ${q.id}, Question: ${q.question} (${q.role}, ${q.category}, ${q.difficulty})`).join('\n')}
 
     For each suggested stage, recommend specific question IDs from the list above that would be most relevant.
 
@@ -96,7 +96,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert technical recruiter and interview designer. Analyze job descriptions and create comprehensive interview courses. Always respond with valid JSON only.'
+            content: 'You are an expert technical recruiter and interview designer. Analyze job descriptions and create comprehensive interview courses. Always respond with valid JSON only, no markdown formatting or code blocks.'
           },
           {
             role: 'user',
@@ -142,9 +142,19 @@ serve(async (req) => {
 
     let analysis;
     try {
-      analysis = JSON.parse(aiResponse.choices[0].message.content);
+      let content = aiResponse.choices[0].message.content;
+      console.log('Raw OpenAI response content:', content);
+      
+      // Remove markdown code blocks if present
+      if (content.includes('```json')) {
+        content = content.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
+        console.log('Cleaned content after removing markdown:', content);
+      }
+      
+      analysis = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', aiResponse.choices[0].message.content);
+      console.error('Parse error:', parseError);
       throw new Error('Failed to parse AI response. Please try again.');
     }
 
