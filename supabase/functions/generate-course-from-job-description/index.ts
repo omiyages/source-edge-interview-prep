@@ -34,6 +34,8 @@ serve(async (req) => {
     
     if (questionsError) throw questionsError;
 
+    console.log(`Found ${questions?.length || 0} approved questions in database`);
+
     // Use OpenAI to analyze the job description and generate course structure
     const analysisPrompt = `
     Analyze this job description and create a structured interview course:
@@ -72,6 +74,8 @@ serve(async (req) => {
     }
     `;
 
+    console.log('Making request to OpenAI API...');
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -96,11 +100,37 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI API Error:', response.status, response.statusText, errorText);
+      
+      // Handle specific error cases
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please wait a moment before trying again, or upgrade your OpenAI plan for higher limits.');
+      } else if (response.status === 401) {
+        throw new Error('Invalid OpenAI API key. Please check your API key configuration.');
+      } else if (response.status === 403) {
+        throw new Error('OpenAI API access forbidden. Please check your API key permissions.');
+      } else {
+        throw new Error(`OpenAI API error (${response.status}): ${response.statusText}`);
+      }
     }
 
     const aiResponse = await response.json();
-    const analysis = JSON.parse(aiResponse.choices[0].message.content);
+    console.log('OpenAI response received successfully');
+
+    if (!aiResponse.choices || !aiResponse.choices[0] || !aiResponse.choices[0].message) {
+      throw new Error('Invalid response format from OpenAI API');
+    }
+
+    let analysis;
+    try {
+      analysis = JSON.parse(aiResponse.choices[0].message.content);
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', aiResponse.choices[0].message.content);
+      throw new Error('Failed to parse AI response. Please try again.');
+    }
+
+    console.log('Course analysis completed successfully');
 
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -108,7 +138,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-course-from-job-description:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: 'Check the function logs for more information'
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
