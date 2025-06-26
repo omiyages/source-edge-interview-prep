@@ -2,13 +2,15 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, X, Minus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Minus, Search } from "lucide-react";
 
 interface CreateCourseFormProps {
   onSuccess: () => void;
@@ -19,6 +21,16 @@ interface CourseStage {
   description: string;
   information: string;
   order: number;
+  selectedQuestions: Set<string>;
+}
+
+interface InterviewQuestion {
+  id: string;
+  question: string;
+  company: string;
+  role: string;
+  difficulty: string;
+  category: string;
 }
 
 export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
@@ -31,11 +43,27 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
   });
   const [stageCount, setStageCount] = useState(4);
   const [stages, setStages] = useState<CourseStage[]>([
-    { title: "HR Screen", description: "Initial screening with HR team", information: "This stage focuses on cultural fit and basic qualifications. **Preparation tips:**\n\n• Research company values\n• Prepare STAR method examples\n• Review your resume thoroughly", order: 1 },
-    { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "Technical evaluation of your coding skills. **What to expect:**\n\n• Data structures and algorithms\n• System design questions\n• Live coding sessions", order: 2 },
-    { title: "Cross Interview", description: "Cross-functional team interviews", information: "Meet with potential teammates and stakeholders. **Focus areas:**\n\n• Collaboration skills\n• Communication abilities\n• Problem-solving approach", order: 3 },
-    { title: "Final Interview", description: "Final round with senior leadership", information: "Last step in the interview process. **Key points:**\n\n• Executive presence\n• Strategic thinking\n• Long-term vision alignment", order: 4 },
+    { title: "HR Screen", description: "Initial screening with HR team", information: "This stage focuses on cultural fit and basic qualifications. **Preparation tips:**\n\n• Research company values\n• Prepare STAR method examples\n• Review your resume thoroughly", order: 1, selectedQuestions: new Set() },
+    { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "Technical evaluation of your coding skills. **What to expect:**\n\n• Data structures and algorithms\n• System design questions\n• Live coding sessions", order: 2, selectedQuestions: new Set() },
+    { title: "Cross Interview", description: "Cross-functional team interviews", information: "Meet with potential teammates and stakeholders. **Focus areas:**\n\n• Collaboration skills\n• Communication abilities\n• Problem-solving approach", order: 3, selectedQuestions: new Set() },
+    { title: "Final Interview", description: "Final round with senior leadership", information: "Last step in the interview process. **Key points:**\n\n• Executive presence\n• Strategic thinking\n• Long-term vision alignment", order: 4, selectedQuestions: new Set() },
   ]);
+  const [searchTerms, setSearchTerms] = useState<{ [key: number]: string }>({});
+
+  // Fetch all approved questions
+  const { data: allQuestions } = useQuery({
+    queryKey: ['all-questions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('interview_questions')
+        .select('id, question, company, role, difficulty, category')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as InterviewQuestion[];
+    },
+  });
 
   const updateStageCount = (newCount: number) => {
     if (newCount < 1) return;
@@ -50,7 +78,8 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
           title: `Stage ${i + 1}`,
           description: "",
           information: "",
-          order: i + 1
+          order: i + 1,
+          selectedQuestions: new Set()
         });
       }
     } else if (newCount < stages.length) {
@@ -61,10 +90,30 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     setStages(currentStages);
   };
 
-  const updateStage = (index: number, field: keyof CourseStage, value: string | number) => {
+  const updateStage = (index: number, field: keyof CourseStage, value: string | number | Set<string>) => {
     const updatedStages = [...stages];
     updatedStages[index] = { ...updatedStages[index], [field]: value };
     setStages(updatedStages);
+  };
+
+  const toggleQuestionForStage = (stageIndex: number, questionId: string) => {
+    const stage = stages[stageIndex];
+    const newSelected = new Set(stage.selectedQuestions);
+    if (newSelected.has(questionId)) {
+      newSelected.delete(questionId);
+    } else {
+      newSelected.add(questionId);
+    }
+    updateStage(stageIndex, 'selectedQuestions', newSelected);
+  };
+
+  const getFilteredQuestionsForStage = (stageIndex: number) => {
+    const searchTerm = searchTerms[stageIndex] || "";
+    return allQuestions?.filter(question => 
+      question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      question.role.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,26 +143,50 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
         stage_order: stage.order,
       }));
 
-      const { error: stagesError } = await supabase
+      const { data: createdStages, error: stagesError } = await supabase
         .from('course_stages')
-        .insert(stageInserts);
+        .insert(stageInserts)
+        .select();
 
       if (stagesError) throw stagesError;
 
+      // Add questions to stages
+      const questionInserts = [];
+      for (let i = 0; i < stages.length; i++) {
+        const stage = stages[i];
+        const createdStage = createdStages[i];
+        
+        for (const questionId of stage.selectedQuestions) {
+          questionInserts.push({
+            stage_id: createdStage.id,
+            question_id: questionId,
+          });
+        }
+      }
+
+      if (questionInserts.length > 0) {
+        const { error: questionsError } = await supabase
+          .from('stage_questions')
+          .insert(questionInserts);
+
+        if (questionsError) throw questionsError;
+      }
+
       toast({
         title: "Course created!",
-        description: "Your course has been created successfully with all stages.",
+        description: "Your course has been created successfully with all stages and questions.",
       });
 
       // Reset form
       setFormData({ title: "", description: "" });
       setStageCount(4);
       setStages([
-        { title: "HR Screen", description: "Initial screening with HR team", information: "", order: 1 },
-        { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "", order: 2 },
-        { title: "Cross Interview", description: "Cross-functional team interviews", information: "", order: 3 },
-        { title: "Final Interview", description: "Final round with senior leadership", information: "", order: 4 },
+        { title: "HR Screen", description: "Initial screening with HR team", information: "", order: 1, selectedQuestions: new Set() },
+        { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "", order: 2, selectedQuestions: new Set() },
+        { title: "Cross Interview", description: "Cross-functional team interviews", information: "", order: 3, selectedQuestions: new Set() },
+        { title: "Final Interview", description: "Final round with senior leadership", information: "", order: 4, selectedQuestions: new Set() },
       ]);
+      setSearchTerms({});
 
       onSuccess();
     } catch (error) {
@@ -180,7 +253,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {stages.map((stage, index) => (
             <Card key={index}>
               <CardHeader className="pb-3">
@@ -223,6 +296,52 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                     rows={4}
                     className="font-mono text-sm"
                   />
+                </div>
+                
+                {/* Practice Questions Section */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Practice Questions ({stage.selectedQuestions.size} selected)</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search questions for this stage..."
+                      value={searchTerms[index] || ""}
+                      onChange={(e) => setSearchTerms({...searchTerms, [index]: e.target.value})}
+                      className="pl-10"
+                    />
+                  </div>
+                  <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
+                    {getFilteredQuestionsForStage(index).map((question) => (
+                      <div key={question.id} className="flex items-start gap-2 p-2 border rounded">
+                        <Checkbox
+                          checked={stage.selectedQuestions.has(question.id)}
+                          onCheckedChange={() => toggleQuestionForStage(index, question.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-900 line-clamp-1 mb-1">
+                            {question.question}
+                          </p>
+                          <div className="flex flex-wrap gap-1 text-xs">
+                            <span className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">
+                              {question.company}
+                            </span>
+                            <span className="bg-green-100 text-green-800 px-1 py-0.5 rounded text-xs">
+                              {question.role}
+                            </span>
+                            <span className="bg-orange-100 text-orange-800 px-1 py-0.5 rounded text-xs">
+                              {question.difficulty}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {getFilteredQuestionsForStage(index).length === 0 && (
+                      <p className="text-xs text-gray-500 text-center py-4">
+                        No questions found. Try adjusting your search.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

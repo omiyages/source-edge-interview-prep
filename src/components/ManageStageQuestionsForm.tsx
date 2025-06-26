@@ -31,7 +31,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch all approved questions
-  const { data: allQuestions } = useQuery({
+  const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
     queryKey: ['all-questions'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -40,13 +40,16 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching questions:', error);
+        throw error;
+      }
       return data as InterviewQuestion[];
     },
   });
 
   // Fetch currently assigned questions for this stage
-  const { data: currentQuestions } = useQuery({
+  const { data: currentQuestions, isLoading: isLoadingCurrent } = useQuery({
     queryKey: ['current-stage-questions', stageId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -54,7 +57,10 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
         .select('question_id')
         .eq('stage_id', stageId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching current stage questions:', error);
+        throw error;
+      }
       return new Set(data.map(item => item.question_id));
     },
   });
@@ -86,10 +92,15 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
     setIsSaving(true);
     try {
       // First, remove all existing questions for this stage
-      await supabase
+      const { error: deleteError } = await supabase
         .from('stage_questions')
         .delete()
         .eq('stage_id', stageId);
+
+      if (deleteError) {
+        console.error('Error deleting existing stage questions:', deleteError);
+        throw deleteError;
+      }
 
       // Then, add the selected questions
       if (selectedQuestions.size > 0) {
@@ -98,11 +109,14 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
           question_id: questionId,
         }));
 
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from('stage_questions')
           .insert(questionsToInsert);
 
-        if (error) throw error;
+        if (insertError) {
+          console.error('Error inserting stage questions:', insertError);
+          throw insertError;
+        }
       }
 
       toast({
@@ -122,6 +136,15 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
       setIsSaving(false);
     }
   };
+
+  if (isLoadingQuestions || isLoadingCurrent) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading questions...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
