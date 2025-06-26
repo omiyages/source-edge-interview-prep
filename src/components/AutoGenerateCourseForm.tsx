@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,11 +46,27 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
 
     setIsGenerating(true);
     try {
+      console.log('Starting course generation...');
+      
       const { data, error } = await supabase.functions.invoke('generate-course-from-job-description', {
         body: { jobDescription }
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Unknown error occurred');
+      }
+
+      if (data?.error) {
+        console.error('API error:', data.error);
+        throw new Error(data.error);
+      }
+
+      if (!data) {
+        throw new Error('No data received from the AI service');
+      }
 
       setGeneratedCourse(data);
       toast({
@@ -60,9 +75,24 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
       });
     } catch (error) {
       console.error('Error generating course:', error);
+      
+      let errorMessage = "Failed to generate course. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Rate limit')) {
+          errorMessage = "OpenAI rate limit exceeded. Please wait a moment before trying again.";
+        } else if (error.message.includes('API key')) {
+          errorMessage = "OpenAI API key issue. Please check your API key configuration.";
+        } else if (error.message.includes('quota') || error.message.includes('billing')) {
+          errorMessage = "OpenAI quota exceeded. Please check your billing and usage limits.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Generation Failed",
-        description: "Failed to generate course. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
