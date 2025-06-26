@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -57,10 +57,14 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
       if (error) throw error;
       return new Set(data.map(item => item.question_id));
     },
-    onSuccess: (data) => {
-      setSelectedQuestions(data);
-    },
   });
+
+  // Update selected questions when current questions data changes
+  useEffect(() => {
+    if (currentQuestions) {
+      setSelectedQuestions(currentQuestions);
+    }
+  }, [currentQuestions]);
 
   const filteredQuestions = allQuestions?.filter(question => 
     question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
