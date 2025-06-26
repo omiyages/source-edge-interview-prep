@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Minus } from "lucide-react";
 
 interface CreateCourseFormProps {
   onSuccess: () => void;
@@ -17,6 +17,7 @@ interface CreateCourseFormProps {
 interface CourseStage {
   title: string;
   description: string;
+  information: string;
   order: number;
 }
 
@@ -28,22 +29,36 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     title: "",
     description: "",
   });
+  const [stageCount, setStageCount] = useState(4);
   const [stages, setStages] = useState<CourseStage[]>([
-    { title: "HR Screen", description: "Initial screening with HR team", order: 1 },
-    { title: "Technical Assessment", description: "Coding challenges and technical questions", order: 2 },
-    { title: "Cross Interview", description: "Cross-functional team interviews", order: 3 },
-    { title: "Final Interview", description: "Final round with senior leadership", order: 4 },
+    { title: "HR Screen", description: "Initial screening with HR team", information: "This stage focuses on cultural fit and basic qualifications. **Preparation tips:**\n\n• Research company values\n• Prepare STAR method examples\n• Review your resume thoroughly", order: 1 },
+    { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "Technical evaluation of your coding skills. **What to expect:**\n\n• Data structures and algorithms\n• System design questions\n• Live coding sessions", order: 2 },
+    { title: "Cross Interview", description: "Cross-functional team interviews", information: "Meet with potential teammates and stakeholders. **Focus areas:**\n\n• Collaboration skills\n• Communication abilities\n• Problem-solving approach", order: 3 },
+    { title: "Final Interview", description: "Final round with senior leadership", information: "Last step in the interview process. **Key points:**\n\n• Executive presence\n• Strategic thinking\n• Long-term vision alignment", order: 4 },
   ]);
 
-  const addStage = () => {
-    setStages([...stages, { title: "", description: "", order: stages.length + 1 }]);
-  };
-
-  const removeStage = (index: number) => {
-    const updatedStages = stages.filter((_, i) => i !== index);
-    // Reorder stages
-    const reorderedStages = updatedStages.map((stage, i) => ({ ...stage, order: i + 1 }));
-    setStages(reorderedStages);
+  const updateStageCount = (newCount: number) => {
+    if (newCount < 1) return;
+    
+    setStageCount(newCount);
+    const currentStages = [...stages];
+    
+    if (newCount > stages.length) {
+      // Add new stages
+      for (let i = stages.length; i < newCount; i++) {
+        currentStages.push({
+          title: `Stage ${i + 1}`,
+          description: "",
+          information: "",
+          order: i + 1
+        });
+      }
+    } else if (newCount < stages.length) {
+      // Remove excess stages
+      currentStages.splice(newCount);
+    }
+    
+    setStages(currentStages);
   };
 
   const updateStage = (index: number, field: keyof CourseStage, value: string | number) => {
@@ -70,11 +85,12 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
 
       if (courseError) throw courseError;
 
-      // Create the stages
+      // Create the stages with information field
       const stageInserts = stages.map(stage => ({
         course_id: course.id,
         title: stage.title,
         description: stage.description,
+        information: stage.information,
         stage_order: stage.order,
       }));
 
@@ -89,12 +105,14 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
         description: "Your course has been created successfully with all stages.",
       });
 
+      // Reset form
       setFormData({ title: "", description: "" });
+      setStageCount(4);
       setStages([
-        { title: "HR Screen", description: "Initial screening with HR team", order: 1 },
-        { title: "Technical Assessment", description: "Coding challenges and technical questions", order: 2 },
-        { title: "Cross Interview", description: "Cross-functional team interviews", order: 3 },
-        { title: "Final Interview", description: "Final round with senior leadership", order: 4 },
+        { title: "HR Screen", description: "Initial screening with HR team", information: "", order: 1 },
+        { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "", order: 2 },
+        { title: "Cross Interview", description: "Cross-functional team interviews", information: "", order: 3 },
+        { title: "Final Interview", description: "Final round with senior leadership", information: "", order: 4 },
       ]);
 
       onSuccess();
@@ -139,49 +157,71 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <Label className="text-lg font-semibold">Interview Stages</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addStage}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Stage
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => updateStageCount(stageCount - 1)}
+              disabled={stageCount <= 1}
+            >
+              <Minus className="w-4 h-4" />
+            </Button>
+            <span className="text-sm font-medium px-2">{stageCount} stages</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => updateStageCount(stageCount + 1)}
+              disabled={stageCount >= 10}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-4">
           {stages.map((stage, index) => (
             <Card key={index}>
               <CardHeader className="pb-3">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-sm">Stage {stage.order}</CardTitle>
-                  {stages.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeStage(index)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
+                <CardTitle className="text-sm">Stage {stage.order}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor={`stage-title-${index}`}>Stage Title *</Label>
-                  <Input
-                    id={`stage-title-${index}`}
-                    placeholder="e.g., Technical Assessment"
-                    value={stage.title}
-                    onChange={(e) => updateStage(index, 'title', e.target.value)}
-                    required
-                  />
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`stage-title-${index}`}>Stage Title *</Label>
+                    <Input
+                      id={`stage-title-${index}`}
+                      placeholder="e.g., Technical Assessment"
+                      value={stage.title}
+                      onChange={(e) => updateStage(index, 'title', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`stage-description-${index}`}>Short Description</Label>
+                    <Input
+                      id={`stage-description-${index}`}
+                      placeholder="Brief description..."
+                      value={stage.description}
+                      onChange={(e) => updateStage(index, 'description', e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`stage-description-${index}`}>Stage Description</Label>
+                  <Label htmlFor={`stage-information-${index}`}>
+                    Detailed Information 
+                    <span className="text-xs text-gray-500 ml-2">
+                      (Use **text** for bold, line breaks for formatting)
+                    </span>
+                  </Label>
                   <Textarea
-                    id={`stage-description-${index}`}
-                    placeholder="What happens in this stage..."
-                    value={stage.description}
-                    onChange={(e) => updateStage(index, 'description', e.target.value)}
-                    rows={2}
+                    id={`stage-information-${index}`}
+                    placeholder="Detailed information about this stage, preparation tips, what to expect, etc. Use **bold text** for emphasis..."
+                    value={stage.information}
+                    onChange={(e) => updateStage(index, 'information', e.target.value)}
+                    rows={4}
+                    className="font-mono text-sm"
                   />
                 </div>
               </CardContent>
