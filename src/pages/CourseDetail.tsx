@@ -7,9 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Settings2, Plus } from "lucide-react";
+import { ArrowLeft, Settings2, Plus, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
+import { EditCourseForm } from "@/components/EditCourseForm";
 import QuestionCard from "@/components/QuestionCard";
 
 interface Course {
@@ -49,13 +50,14 @@ const CourseDetail = () => {
   const { user, loading, isAdmin } = useAuth();
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
+  const [isEditCourseDialogOpen, setIsEditCourseDialogOpen] = useState(false);
 
   // Redirect to auth if not authenticated
   if (!loading && !user) {
     return <Navigate to="/auth" replace />;
   }
 
-  const { data: course } = useQuery({
+  const { data: course, refetch: refetchCourse } = useQuery({
     queryKey: ['course', courseId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -70,7 +72,7 @@ const CourseDetail = () => {
     enabled: !!user && !!courseId,
   });
 
-  const { data: stages } = useQuery({
+  const { data: stages, refetch: refetchStages } = useQuery({
     queryKey: ['course-stages', courseId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -168,28 +170,56 @@ const CourseDetail = () => {
             Back to Tracks
           </Button>
           
-          {isAdmin && selectedStage && (
-            <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Settings2 className="w-4 h-4 mr-2" />
-                  Manage Questions
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Manage Questions for {selectedStage.title}</DialogTitle>
-                </DialogHeader>
-                <ManageStageQuestionsForm 
-                  stageId={selectedStage.id}
-                  onSuccess={() => {
-                    setIsManageDialogOpen(false);
-                    refetchQuestions();
-                  }} 
-                />
-              </DialogContent>
-            </Dialog>
-          )}
+          <div className="flex gap-2">
+            {isAdmin && (
+              <>
+                <Dialog open={isEditCourseDialogOpen} onOpenChange={setIsEditCourseDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Course
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Edit Course</DialogTitle>
+                    </DialogHeader>
+                    <EditCourseForm 
+                      course={course}
+                      onSuccess={() => {
+                        setIsEditCourseDialogOpen(false);
+                        refetchCourse();
+                        refetchStages();
+                      }} 
+                    />
+                  </DialogContent>
+                </Dialog>
+                
+                {selectedStage && (
+                  <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Settings2 className="w-4 h-4 mr-2" />
+                        Manage Questions
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Manage Questions for {selectedStage.title}</DialogTitle>
+                      </DialogHeader>
+                      <ManageStageQuestionsForm 
+                        stageId={selectedStage.id}
+                        onSuccess={() => {
+                          setIsManageDialogOpen(false);
+                          refetchQuestions();
+                        }} 
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Course Info */}

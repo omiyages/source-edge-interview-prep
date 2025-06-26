@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -6,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Briefcase, Clock, Globe, User, ThumbsUp } from "lucide-react";
+import { Building2, Briefcase, Clock, Globe, User, ThumbsUp, Edit } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { EditQuestionForm } from "@/components/EditQuestionForm";
 import { useToast } from "@/hooks/use-toast";
 
 interface InterviewQuestion {
@@ -31,9 +32,10 @@ interface QuestionCardProps {
 }
 
 const QuestionCard = ({ question }: QuestionCardProps) => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const { data: likesCount } = useQuery({
     queryKey: ['question-likes-count', question.id],
@@ -158,6 +160,32 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                 </span>
               </div>
             </Badge>
+            {isAdmin && (
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                    <Edit className="w-3 h-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Edit Question</DialogTitle>
+                  </DialogHeader>
+                  <EditQuestionForm 
+                    question={question}
+                    onSuccess={() => {
+                      setIsEditDialogOpen(false);
+                      queryClient.invalidateQueries({ queryKey: ['stage-questions'] });
+                      queryClient.invalidateQueries({ queryKey: ['all-questions'] });
+                      toast({
+                        title: "Question updated",
+                        description: "The question has been successfully updated.",
+                      });
+                    }} 
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
         <CardTitle className="text-lg leading-tight">
