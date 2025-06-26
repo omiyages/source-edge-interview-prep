@@ -52,7 +52,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           company: formData.company,
           role: formData.role,
           category: formData.category || 'Technical',
-          interview_stage: formData.interview_stage || 'Technical',
+          interview_stage: formData.interview_stage || 'Technical Interview',
           additional_context: formData.additional_context,
           submitted_by: profile?.email || user.email,
           question_type: 'user_submitted',
@@ -163,12 +163,10 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               <SelectValue placeholder="Select stage" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Phone Screen">Phone Screen</SelectItem>
-              <SelectItem value="Technical">Technical</SelectItem>
-              <SelectItem value="Behavioral">Behavioral</SelectItem>
-              <SelectItem value="System Design">System Design</SelectItem>
-              <SelectItem value="Final Round">Final Round</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
+              <SelectItem value="HR Screen">HR Screen</SelectItem>
+              <SelectItem value="Technical Interview">Technical Interview</SelectItem>
+              <SelectItem value="Cross-Functional">Cross-Functional</SelectItem>
+              <SelectItem value="Final Interview">Final Interview</SelectItem>
             </SelectContent>
           </Select>
         </div>

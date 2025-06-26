@@ -1,16 +1,13 @@
 
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Briefcase, Clock, Globe, User, ThumbsUp, Edit, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { EditQuestionForm } from "@/components/EditQuestionForm";
+import { Trash2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface InterviewQuestion {
   id: string;
@@ -34,109 +31,30 @@ interface QuestionCardProps {
 }
 
 const QuestionCard = ({ question }: QuestionCardProps) => {
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  const { data: likesCount } = useQuery({
-    queryKey: ['question-likes-count', question.id],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('question_likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('question_id', question.id);
-      
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  const { data: userLiked } = useQuery({
-    queryKey: ['user-liked', question.id, user?.id],
-    queryFn: async () => {
-      if (!user) return false;
-      
-      const { data, error } = await supabase
-        .from('question_likes')
-        .select('id')
-        .eq('question_id', question.id)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      return !!data;
-    },
-    enabled: !!user,
-  });
-
-  const likeMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error('Not authenticated');
-      
-      if (userLiked) {
-        // Unlike
-        const { error } = await supabase
-          .from('question_likes')
-          .delete()
-          .eq('question_id', question.id)
-          .eq('user_id', user.id);
-        
-        if (error) throw error;
-      } else {
-        // Like
-        const { error } = await supabase
-          .from('question_likes')
-          .insert({
-            question_id: question.id,
-            user_id: user.id,
-          });
-        
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['question-likes-count', question.id] });
-      queryClient.invalidateQueries({ queryKey: ['user-liked', question.id, user?.id] });
-      
-      toast({
-        title: userLiked ? "Like removed" : "Question liked!",
-        description: userLiked ? "You've unliked this question." : "Thanks for your feedback!",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update like status.",
-        variant: "destructive",
-      });
-    },
-  });
 
   const deleteQuestionMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (questionId: string) => {
       const { error } = await supabase
         .from('interview_questions')
         .delete()
-        .eq('id', question.id);
+        .eq('id', questionId);
       
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stage-questions'] });
-      queryClient.invalidateQueries({ queryKey: ['all-questions'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-pending-questions'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-all-questions'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['interview-questions'] });
       toast({
-        title: "Question deleted",
+        title: "Question Deleted",
         description: "The question has been successfully deleted.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete question.",
+        description: "Failed to delete question. Please try again.",
         variant: "destructive",
       });
     },
@@ -152,160 +70,63 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Technical': return <Building2 className="w-4 h-4" />;
-      case 'Behavioral': return <Briefcase className="w-4 h-4" />;
-      case 'System Design': return <Building2 className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return 'bg-green-100 text-green-800';
+      case 'Medium': return 'bg-yellow-100 text-yellow-800';
+      case 'Hard': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getQuestionTypeIcon = (type: string) => {
-    return type === 'online_sourced' ? <Globe className="w-4 h-4" /> : <User className="w-4 h-4" />;
-  };
-
-  const getQuestionTypeColor = (type: string) => {
-    return type === 'online_sourced' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800';
-  };
-
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
+    <Card className="hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {getCategoryIcon(question.category)}
-            <span className="text-sm font-medium text-gray-600 truncate">
-              {question.category}
-            </span>
-          </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-1">
             <Badge className={getRoleTypeColor(question.role)}>
               {question.role}
             </Badge>
-            <Badge className={getQuestionTypeColor(question.question_type)}>
-              <div className="flex items-center gap-1">
-                {getQuestionTypeIcon(question.question_type)}
-                <span className="text-xs">
-                  {question.question_type === 'online_sourced' ? 'Sourced' : 'User'}
-                </span>
-              </div>
+            <Badge className={getDifficultyColor(question.difficulty)}>
+              {question.difficulty}
             </Badge>
-            {isAdmin && (
-              <div className="flex gap-1">
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                      <Edit className="w-3 h-3" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Edit Question</DialogTitle>
-                    </DialogHeader>
-                    <EditQuestionForm 
-                      question={question}
-                      onSuccess={() => {
-                        setIsEditDialogOpen(false);
-                        queryClient.invalidateQueries({ queryKey: ['stage-questions'] });
-                        queryClient.invalidateQueries({ queryKey: ['all-questions'] });
-                        toast({
-                          title: "Question updated",
-                          description: "The question has been successfully updated.",
-                        });
-                      }} 
-                    />
-                  </DialogContent>
-                </Dialog>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="outline" className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Question</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this question? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => deleteQuestionMutation.mutate()}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            )}
           </div>
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteQuestionMutation.mutate(question.id)}
+              disabled={deleteQuestionMutation.isPending}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
         <CardTitle className="text-lg leading-tight">
           {question.question}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-gray-400" />
-            <span className="font-semibold text-gray-900">{question.company}</span>
+      <CardContent className="pt-0 flex-1 flex flex-col">
+        <div className="space-y-3 flex-1">
+          <div className="text-sm text-gray-600">
+            <strong>Company:</strong> {question.company}
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-600">{question.role}</span>
+          <div className="text-sm text-gray-600">
+            <strong>Category:</strong> {question.category}
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-500">{question.interview_stage}</span>
+          <div className="text-sm text-gray-600">
+            <strong>Interview Stage:</strong> {question.interview_stage}
           </div>
-          
-          {question.source_url && (
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-gray-400" />
-              <a 
-                href={question.source_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:underline truncate"
-              >
-                {question.source_website}
-              </a>
-            </div>
-          )}
-          
           {question.additional_context && (
-            <div className="mt-3 p-3 bg-gray-50 rounded-md">
-              <p className="text-sm text-gray-700">
-                {question.additional_context}
-              </p>
+            <div className="p-3 bg-gray-50 rounded-md text-sm">
+              <strong>Additional Context:</strong>
+              <p className="mt-1">{question.additional_context}</p>
             </div>
           )}
-          
-          <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t">
-            <span>By {question.submitted_by || 'Anonymous'}</span>
-            <div className="flex items-center gap-2">
-              <span>{new Date(question.created_at).toLocaleDateString()}</span>
-              {user && (
-                <Button
-                  size="sm"
-                  variant={userLiked ? "default" : "outline"}
-                  className="h-8 px-2"
-                  onClick={() => likeMutation.mutate()}
-                  disabled={likeMutation.isPending}
-                >
-                  <ThumbsUp className={`w-3 h-3 mr-1 ${userLiked ? 'fill-current' : ''}`} />
-                  {likesCount || 0}
-                </Button>
-              )}
-            </div>
-          </div>
+        </div>
+        <div className="text-xs text-gray-400 mt-4 pt-3 border-t">
+          Added {new Date(question.created_at).toLocaleDateString()}
         </div>
       </CardContent>
     </Card>
