@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, LogOut, Settings } from "lucide-react";
+import { Plus, Search, LogOut, Settings, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
@@ -91,6 +91,13 @@ const Index = () => {
               Interview Questions Directory
             </h1>
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.href = '/track'}
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Tracks
+              </Button>
               {isAdmin && (
                 <Button 
                   variant="outline" 
