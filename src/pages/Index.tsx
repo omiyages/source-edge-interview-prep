@@ -1,16 +1,18 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, LogOut, Settings, BookOpen } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { QuestionCard } from "@/components/QuestionCard";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
-import QuestionCard from "@/components/QuestionCard";
+import { Search, Filter, Plus, User, Settings, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Navigate } from "react-router-dom";
 
 interface InterviewQuestion {
   id: string;
@@ -27,103 +29,137 @@ interface InterviewQuestion {
   source_url: string | null;
   source_website: string | null;
   scraped_at: string | null;
+  status: string;
 }
 
 const Index = () => {
-  const { user, profile, loading, signOut, isAdmin } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleTypeFilter, setRoleTypeFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [questionTypeFilter, setQuestionTypeFilter] = useState("all");
-  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedStage, setSelectedStage] = useState("");
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
 
-  // Redirect to auth if not authenticated
-  if (!loading && !user) {
+  // Redirect to auth if not logged in
+  if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
   const { data: questions, isLoading, refetch } = useQuery({
-    queryKey: ['interview-questions'],
+    queryKey: ['interview-questions', searchTerm, selectedCompany, selectedRole, selectedCategory, selectedStage],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('interview_questions')
         .select('*')
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
+
+      if (searchTerm) {
+        query = query.or(`question.ilike.%${searchTerm}%,company.ilike.%${searchTerm}%,role.ilike.%${searchTerm}%`);
+      }
       
+      if (selectedCompany) {
+        query = query.eq('company', selectedCompany);
+      }
+      
+      if (selectedRole) {
+        query = query.eq('role', selectedRole);
+      }
+      
+      if (selectedCategory) {
+        query = query.eq('category', selectedCategory);
+      }
+      
+      if (selectedStage) {
+        query = query.eq('interview_stage', selectedStage);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as InterviewQuestion[];
     },
-    enabled: !!user,
   });
 
-  const filteredQuestions = questions?.filter(question => {
-    const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         question.role.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRoleType = roleTypeFilter === "all" || question.role === roleTypeFilter;
-    const matchesCategory = categoryFilter === "all" || question.category === categoryFilter;
-    const matchesType = questionTypeFilter === "all" || question.question_type === questionTypeFilter;
-    
-    return matchesSearch && matchesRoleType && matchesCategory && matchesType;
-  });
+  // Get unique values for filters
+  const companies = [...new Set(questions?.map(q => q.company) || [])].sort();
+  const roles = [...new Set(questions?.map(q => q.role) || [])].sort();
+  const categories = [...new Set(questions?.map(q => q.category) || [])].sort();
+  const stages = [...new Set(questions?.map(q => q.interview_stage) || [])].sort();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleQuestionSubmitted = () => {
+    setShowSubmitForm(false);
+    refetch();
+    toast({
+      title: "Question Submitted",
+      description: "Your question has been submitted for review.",
+    });
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedCompany("");
+    setSelectedRole("");
+    setSelectedCategory("");
+    setSelectedStage("");
+  };
+
+  const getRoleTypeColor = (roleType: string) => {
+    switch (roleType) {
+      case 'Backend Engineer': return 'bg-blue-100 text-blue-800';
+      case 'Frontend Engineer': return 'bg-green-100 text-green-800';
+      case 'SRE/DevOps': return 'bg-orange-100 text-orange-800';
+      case 'Engineering Manager': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case 'HR Screen': return 'bg-pink-100 text-pink-800';
+      case 'Technical Interview': return 'bg-blue-100 text-blue-800';
+      case 'Cross-Functional': return 'bg-green-100 text-green-800';
+      case 'Final Interview': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div></div>
-            <h1 className="text-4xl font-bold text-gray-900">
-              Interview Questions Directory
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Interview Questions Database
             </h1>
-            <div className="flex gap-2">
+            <p className="text-lg text-gray-600">
+              Discover and share real interview experiences from top tech companies
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {profile?.role === 'admin' && (
               <Button 
                 variant="outline" 
-                onClick={() => window.location.href = '/track'}
+                onClick={() => window.location.href = '/admin'}
               >
-                <BookOpen className="w-4 h-4 mr-2" />
-                Tracks
+                <Settings className="w-4 h-4 mr-2" />
+                Admin Dashboard
               </Button>
-              {isAdmin && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.href = '/admin'}
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Admin
-                </Button>
-              )}
-              <Button variant="outline" onClick={signOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+            )}
+            <Button variant="outline" onClick={signOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Browse real interview questions from top companies. Learn from others' experiences and contribute your own.
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Welcome back, {profile?.email} ({profile?.role})
-          </p>
         </div>
 
         {/* Filters and Submit Button */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 mb-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Search questions, companies, or roles..."
                 value={searchTerm}
@@ -131,72 +167,81 @@ const Index = () => {
                 className="pl-10"
               />
             </div>
-
-            <Select value={roleTypeFilter} onValueChange={setRoleTypeFilter}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="All Role Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Role Types</SelectItem>
-                <SelectItem value="Backend Engineer">Backend Engineer</SelectItem>
-                <SelectItem value="Frontend Engineer">Frontend Engineer</SelectItem>
-                <SelectItem value="SRE/DevOps">SRE/DevOps</SelectItem>
-                <SelectItem value="Engineering Manager">Engineering Manager</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="Technical">Technical</SelectItem>
-                <SelectItem value="Behavioral">Behavioral</SelectItem>
-                <SelectItem value="System Design">System Design</SelectItem>
-                <SelectItem value="Problem Solving">Problem Solving</SelectItem>
-                <SelectItem value="Culture Fit">Culture Fit</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={questionTypeFilter} onValueChange={setQuestionTypeFilter}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="user_submitted">User Submitted</SelectItem>
-                <SelectItem value="online_sourced">Online Sourced</SelectItem>
-              </SelectContent>
-            </Select>
+            <Button onClick={clearFilters} variant="outline">
+              Clear Filters
+            </Button>
           </div>
-
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-600">
-              {filteredQuestions?.length || 0} questions found
-            </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Company" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map(company => (
+                  <SelectItem key={company} value={company}>{company}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
-            <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Question
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Add Interview Question</DialogTitle>
-                </DialogHeader>
-                <SubmitQuestionForm 
-                  onSuccess={() => {
-                    setIsSubmitDialogOpen(false);
-                    refetch();
-                  }} 
-                />
-              </DialogContent>
-            </Dialog>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Role" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map(role => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={selectedStage} onValueChange={setSelectedStage}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Stage" />
+              </SelectTrigger>
+              <SelectContent>
+                {stages.map(stage => (
+                  <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+        </div>
+
+        {/* Submit Question Button */}
+        <div className="mb-8">
+          <Button 
+            onClick={() => setShowSubmitForm(!showSubmitForm)}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {showSubmitForm ? 'Cancel' : 'Submit a Question'}
+          </Button>
+        </div>
+
+        {/* Submit Question Form */}
+        {showSubmitForm && (
+          <div className="mb-8">
+            <SubmitQuestionForm onSubmit={handleQuestionSubmitted} />
+          </div>
+        )}
+
+        {/* Results Summary */}
+        <div className="mb-6">
+          <p className="text-gray-600">
+            Showing {questions?.length || 0} interview questions
+          </p>
         </div>
 
         {/* Questions Grid */}
@@ -207,19 +252,22 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredQuestions?.map((question) => (
-              <QuestionCard key={question.id} question={question} />
+            {questions?.map((question) => (
+              <QuestionCard
+                key={question.id}
+                question={question}
+                getRoleTypeColor={getRoleTypeColor}
+                getStageColor={getStageColor}
+              />
             ))}
           </div>
         )}
 
-        {filteredQuestions?.length === 0 && !isLoading && (
+        {questions?.length === 0 && !isLoading && (
           <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <Search className="w-16 h-16 mx-auto" />
-            </div>
+            <Filter className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold text-gray-600 mb-2">No questions found</h3>
-            <p className="text-gray-500">Try adjusting your filters or search terms.</p>
+            <p className="text-gray-500">Try adjusting your search criteria or submit a new question.</p>
           </div>
         )}
       </div>
