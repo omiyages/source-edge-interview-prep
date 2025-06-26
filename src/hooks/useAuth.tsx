@@ -67,7 +67,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (emailOrUsername: string, password: string) => {
     try {
+      console.log('Sign in attempt with:', emailOrUsername);
       const { email, password: mappedPassword } = mapCredentials(emailOrUsername, password);
+      console.log('Mapped to email:', email);
 
       // Check if this is a demo user that might not exist yet
       if (isDemoUser(email)) {

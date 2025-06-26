@@ -50,11 +50,9 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
 export const mapCredentials = (emailOrUsername: string, password: string) => {
   let email = emailOrUsername;
   
-  // Map usernames to emails for demo
-  if (emailOrUsername === 'sourceedge' && password === 'sourceedge2025') {
-    email = 'admin@example.com';
-  } else if (emailOrUsername === 'sourceuser' && password === 'user2025') {
-    email = 'user@example.com';
+  // Map usernames to emails for demo - ensure exact mapping
+  if (emailOrUsername in USERNAME_TO_EMAIL_MAP) {
+    email = USERNAME_TO_EMAIL_MAP[emailOrUsername as keyof typeof USERNAME_TO_EMAIL_MAP];
   }
   
   return { email, password };
