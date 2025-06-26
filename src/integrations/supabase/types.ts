@@ -88,6 +88,7 @@ export type Database = {
           difficulty: string | null
           id: string
           interview_stage: string | null
+          position_name: string | null
           question: string
           question_type: string | null
           role: string
@@ -96,6 +97,7 @@ export type Database = {
           source_website: string | null
           status: string | null
           submitted_by: string | null
+          team: string | null
           updated_at: string
         }
         Insert: {
@@ -108,6 +110,7 @@ export type Database = {
           difficulty?: string | null
           id?: string
           interview_stage?: string | null
+          position_name?: string | null
           question: string
           question_type?: string | null
           role: string
@@ -116,6 +119,7 @@ export type Database = {
           source_website?: string | null
           status?: string | null
           submitted_by?: string | null
+          team?: string | null
           updated_at?: string
         }
         Update: {
@@ -128,6 +132,7 @@ export type Database = {
           difficulty?: string | null
           id?: string
           interview_stage?: string | null
+          position_name?: string | null
           question?: string
           question_type?: string | null
           role?: string
@@ -136,6 +141,7 @@ export type Database = {
           source_website?: string | null
           status?: string | null
           submitted_by?: string | null
+          team?: string | null
           updated_at?: string
         }
         Relationships: []

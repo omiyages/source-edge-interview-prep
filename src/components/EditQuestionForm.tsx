@@ -18,6 +18,8 @@ interface InterviewQuestion {
   interview_stage: string;
   category: string;
   additional_context: string | null;
+  team: string | null;
+  position_name: string | null;
 }
 
 interface EditQuestionFormProps {
@@ -37,6 +39,8 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
     difficulty: question.difficulty,
     interview_stage: question.interview_stage,
     additional_context: question.additional_context || "",
+    team: question.team || "",
+    position_name: question.position_name || "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +58,8 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
           difficulty: formData.difficulty,
           interview_stage: formData.interview_stage,
           additional_context: formData.additional_context || null,
+          team: formData.team || null,
+          position_name: formData.position_name || null,
         })
         .eq('id', question.id);
 
@@ -119,6 +125,32 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="team">Team</Label>
+          <Select value={formData.team} onValueChange={(value) => setFormData({ ...formData, team: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select team (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Cloud & AI">Cloud & AI</SelectItem>
+              <SelectItem value="Enterprise Technology">Enterprise Technology</SelectItem>
+              <SelectItem value="Dojo">Dojo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="position_name">Position Name</Label>
+          <Input
+            id="position_name"
+            placeholder="e.g., Senior Software Engineer (optional)"
+            value={formData.position_name}
+            onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
+          />
+        </div>
+      </div>
+
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
@@ -130,7 +162,7 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
               <SelectItem value="Technical">Technical</SelectItem>
               <SelectItem value="Behavioral">Behavioral</SelectItem>
               <SelectItem value="System Design">System Design</SelectItem>
-              <SelectItem value="Problem Solving">Problem Solving</SelectItem>
+              <SelectItem value="Background">Background</SelectItem>
               <SelectItem value="Culture Fit">Culture Fit</SelectItem>
               <SelectItem value="Other">Other</SelectItem>
             </SelectContent>

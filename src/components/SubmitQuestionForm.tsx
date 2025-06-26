@@ -24,6 +24,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     category: "",
     interview_stage: "",
     additional_context: "",
+    team: "",
+    position_name: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +56,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           category: formData.category || 'Technical',
           interview_stage: formData.interview_stage || 'Technical Interview',
           additional_context: formData.additional_context,
+          team: formData.team || null,
+          position_name: formData.position_name || null,
           submitted_by: profile?.email || user.email,
           question_type: 'user_submitted',
           status: profile?.role === 'admin' ? 'approved' : 'pending',
@@ -78,6 +82,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         category: "",
         interview_stage: "",
         additional_context: "",
+        team: "",
+        position_name: "",
       });
 
       onSuccess();
@@ -140,6 +146,32 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
+          <Label htmlFor="team">Team</Label>
+          <Select value={formData.team} onValueChange={(value) => setFormData({ ...formData, team: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select team (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Cloud & AI">Cloud & AI</SelectItem>
+              <SelectItem value="Enterprise Technology">Enterprise Technology</SelectItem>
+              <SelectItem value="Dojo">Dojo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="position_name">Position Name</Label>
+          <Input
+            id="position_name"
+            placeholder="e.g., Senior Software Engineer (optional)"
+            value={formData.position_name}
+            onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
             <SelectTrigger>
@@ -149,7 +181,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               <SelectItem value="Technical">Technical</SelectItem>
               <SelectItem value="Behavioral">Behavioral</SelectItem>
               <SelectItem value="System Design">System Design</SelectItem>
-              <SelectItem value="Problem Solving">Problem Solving</SelectItem>
+              <SelectItem value="Background">Background</SelectItem>
               <SelectItem value="Culture Fit">Culture Fit</SelectItem>
               <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
