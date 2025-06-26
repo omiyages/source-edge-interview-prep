@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
@@ -10,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, X, Clock, User, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CSVImportForm } from "@/components/CSVImportForm";
 
 interface InterviewQuestion {
   id: string;
@@ -147,12 +147,15 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="all">
               All Questions ({allQuestions?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="import">
+              Bulk Import
             </TabsTrigger>
           </TabsList>
 
@@ -273,15 +276,18 @@ const AdminDashboard = () => {
                             {question.additional_context}
                           </div>
                         )}
-                        <div className="text-xs text-gray-400 pt-2 border-t">
-                          Submitted by: {question.submitted_by || 'Anonymous'}
-                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="import">
+            <div className="max-w-2xl mx-auto">
+              <CSVImportForm />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
