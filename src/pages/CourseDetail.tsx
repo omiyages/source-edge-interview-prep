@@ -23,6 +23,7 @@ interface CourseStage {
   id: string;
   title: string;
   description: string | null;
+  information: string | null;
   stage_order: number;
 }
 
@@ -108,6 +109,27 @@ const CourseDetail = () => {
       setSelectedStage(stages[0]);
     }
   }, [stages, selectedStage]);
+
+  // Function to format text with markdown-like bold syntax
+  const formatText = (text: string) => {
+    if (!text) return text;
+    
+    // Split by ** to find bold sections
+    const parts = text.split('**');
+    return parts.map((part, index) => {
+      // Every odd index should be bold
+      if (index % 2 === 1) {
+        return <strong key={index}>{part}</strong>;
+      }
+      // Convert line breaks to <br> tags for regular text
+      return part.split('\n').map((line, lineIndex, lines) => (
+        <span key={`${index}-${lineIndex}`}>
+          {line}
+          {lineIndex < lines.length - 1 && <br />}
+        </span>
+      ));
+    });
+  };
 
   if (loading) {
     return (
@@ -201,7 +223,8 @@ const CourseDetail = () => {
 
         {/* Selected Stage Content */}
         {selectedStage && (
-          <div className="mb-8">
+          <div className="space-y-8">
+            {/* Stage Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -211,6 +234,34 @@ const CourseDetail = () => {
                 {selectedStage.description && (
                   <p className="text-gray-600 mt-2">{selectedStage.description}</p>
                 )}
+              </CardHeader>
+              {selectedStage.information && (
+                <CardContent>
+                  <div className="prose prose-blue max-w-none">
+                    <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {formatText(selectedStage.information)}
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+
+            {/* Stage Questions */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Practice Questions</CardTitle>
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsManageDialogOpen(true)}
+                    >
+                      <Settings2 className="w-4 h-4 mr-2" />
+                      Manage Questions
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {stageQuestions && stageQuestions.length > 0 ? (
