@@ -23,7 +23,7 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
       const email = user.email || '';
       let role: 'user' | 'admin' = 'user';
       
-      if (email === 'admin@example.com') {
+      if (email === 'admin@sourceedge.dev') {
         role = 'admin';
       }
 
