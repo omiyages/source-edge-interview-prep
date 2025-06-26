@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,11 +43,17 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     try {
       console.log('Submitting question with user ID:', user.id);
       console.log('User profile:', profile);
+      console.log('Form data:', formData);
       
       const { error } = await supabase
         .from('interview_questions')
         .insert({
-          ...formData,
+          question: formData.question,
+          company: formData.company,
+          role: formData.role,
+          category: formData.category || 'technical',
+          interview_stage: formData.interview_stage || 'technical',
+          additional_context: formData.additional_context,
           submitted_by: profile?.email || user.email,
           question_type: 'user_submitted',
           status: profile?.role === 'admin' ? 'approved' : 'pending',
@@ -136,12 +143,12 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Technical">Technical</SelectItem>
-              <SelectItem value="Behavioral">Behavioral</SelectItem>
-              <SelectItem value="System Design">System Design</SelectItem>
-              <SelectItem value="Problem Solving">Problem Solving</SelectItem>
-              <SelectItem value="Culture Fit">Culture Fit</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
+              <SelectItem value="technical">Technical</SelectItem>
+              <SelectItem value="behavioral">Behavioral</SelectItem>
+              <SelectItem value="system_design">System Design</SelectItem>
+              <SelectItem value="problem_solving">Problem Solving</SelectItem>
+              <SelectItem value="culture_fit">Culture Fit</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -153,11 +160,11 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               <SelectValue placeholder="Select stage" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Phone Screen">Phone Screen</SelectItem>
-              <SelectItem value="Technical">Technical</SelectItem>
-              <SelectItem value="Onsite">Onsite</SelectItem>
-              <SelectItem value="Final">Final</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
+              <SelectItem value="phone_screen">Phone Screen</SelectItem>
+              <SelectItem value="technical">Technical</SelectItem>
+              <SelectItem value="onsite">Onsite</SelectItem>
+              <SelectItem value="final">Final</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
