@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, Users, Calendar, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 import type { Course } from "@/types/course";
 
 interface CourseCardProps {
@@ -19,6 +20,7 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -55,8 +57,12 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
     },
   });
 
+  const handleCardClick = () => {
+    navigate(`/track/${course.id}`);
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
+    <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer" onClick={handleCardClick}>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -68,7 +74,7 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
             )}
           </div>
           {isAdmin && (
-            <div className="flex gap-2 ml-4">
+            <div className="flex gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
               {onEdit && (
                 <Button
                   size="sm"

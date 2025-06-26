@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -59,12 +59,11 @@ const Track = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-between items-center mb-4">
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/'}
-            >
-              ← Back to Questions
-            </Button>
+            <Link to="/">
+              <Button variant="outline">
+                ← Back to Questions
+              </Button>
+            </Link>
             <h1 className="text-4xl font-bold text-gray-900">
               Interview Tracks
             </h1>
