@@ -105,26 +105,6 @@ const Index = () => {
     setSelectedStage("");
   };
 
-  const getRoleTypeColor = (roleType: string) => {
-    switch (roleType) {
-      case 'Backend Engineer': return 'bg-blue-100 text-blue-800';
-      case 'Frontend Engineer': return 'bg-green-100 text-green-800';
-      case 'SRE/DevOps': return 'bg-orange-100 text-orange-800';
-      case 'Engineering Manager': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'HR Screen': return 'bg-pink-100 text-pink-800';
-      case 'Technical Interview': return 'bg-blue-100 text-blue-800';
-      case 'Cross-Functional': return 'bg-green-100 text-green-800';
-      case 'Final Interview': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -256,8 +236,6 @@ const Index = () => {
               <QuestionCard
                 key={question.id}
                 question={question}
-                getRoleTypeColor={getRoleTypeColor}
-                getStageColor={getStageColor}
               />
             ))}
           </div>
