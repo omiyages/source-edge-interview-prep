@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Save } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ManageStageQuestionsFormProps {
   stageId: string;
@@ -22,6 +23,7 @@ interface InterviewQuestion {
   role: string;
   difficulty: string;
   category: string;
+  interview_stage: string;
 }
 
 export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQuestionsFormProps) => {
@@ -29,6 +31,12 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
+  const [filters, setFilters] = useState({
+    company: "",
+    role: "",
+    category: "",
+    interview_stage: ""
+  });
 
   // Fetch all approved questions
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
@@ -37,7 +45,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
       console.log('Fetching all approved questions...');
       const { data, error } = await supabase
         .from('interview_questions')
-        .select('id, question, company, role, difficulty, category')
+        .select('id, question, company, role, difficulty, category, interview_stage')
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
       
@@ -76,11 +84,24 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
     }
   }, [currentQuestions]);
 
-  const filteredQuestions = allQuestions?.filter(question => 
-    question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    question.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get unique filter options
+  const getUniqueValues = (field: keyof InterviewQuestion) => {
+    if (!allQuestions) return [];
+    return [...new Set(allQuestions.map(q => q[field]))].filter(Boolean).sort();
+  };
+
+  const filteredQuestions = allQuestions?.filter(question => {
+    const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      question.role.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCompany = !filters.company || question.company === filters.company;
+    const matchesRole = !filters.role || question.role === filters.role;
+    const matchesCategory = !filters.category || question.category === filters.category;
+    const matchesStage = !filters.interview_stage || question.interview_stage === filters.interview_stage;
+    
+    return matchesSearch && matchesCompany && matchesRole && matchesCategory && matchesStage;
+  });
 
   const toggleQuestion = (questionId: string) => {
     const newSelected = new Set(selectedQuestions);
@@ -90,6 +111,16 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
       newSelected.add(questionId);
     }
     setSelectedQuestions(newSelected);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      company: "",
+      role: "",
+      category: "",
+      interview_stage: ""
+    });
+    setSearchTerm("");
   };
 
   const handleSave = async () => {
@@ -179,6 +210,75 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
         </div>
       </div>
 
+      {/* Filter Section */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="space-y-2">
+          <Label>Company</Label>
+          <Select value={filters.company} onValueChange={(value) => setFilters({...filters, company: value})}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="All Companies" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border shadow-lg z-50">
+              <SelectItem value="">All Companies</SelectItem>
+              {getUniqueValues('company').map((company) => (
+                <SelectItem key={company} value={company}>{company}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Role</Label>
+          <Select value={filters.role} onValueChange={(value) => setFilters({...filters, role: value})}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border shadow-lg z-50">
+              <SelectItem value="">All Roles</SelectItem>
+              {getUniqueValues('role').map((role) => (
+                <SelectItem key={role} value={role}>{role}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select value={filters.category} onValueChange={(value) => setFilters({...filters, category: value})}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border shadow-lg z-50">
+              <SelectItem value="">All Categories</SelectItem>
+              {getUniqueValues('category').map((category) => (
+                <SelectItem key={category} value={category}>{category}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Interview Stage</Label>
+          <Select value={filters.interview_stage} onValueChange={(value) => setFilters({...filters, interview_stage: value})}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="All Stages" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border shadow-lg z-50">
+              <SelectItem value="">All Stages</SelectItem>
+              {getUniqueValues('interview_stage').map((stage) => (
+                <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="md:col-span-4 flex justify-end">
+          <Button variant="outline" onClick={clearFilters} size="sm">
+            Clear Filters
+          </Button>
+        </div>
+      </div>
+
       <div className="max-h-96 overflow-y-auto space-y-2">
         {filteredQuestions?.map((question) => (
           <Card key={question.id} className="p-4">
@@ -205,6 +305,9 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
                   <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded">
                     {question.difficulty}
                   </span>
+                  <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                    {question.interview_stage}
+                  </span>
                 </div>
               </div>
             </div>
@@ -214,7 +317,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
 
       {filteredQuestions?.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-500">No questions found matching your search.</p>
+          <p className="text-gray-500">No questions found matching your filters.</p>
         </div>
       )}
 

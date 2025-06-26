@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Minus, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CreateCourseFormProps {
   onSuccess: () => void;
@@ -21,6 +22,12 @@ interface CourseStage {
   information: string;
   order: number;
   selectedQuestions: Set<string>;
+  filters: {
+    company: string;
+    role: string;
+    category: string;
+    interview_stage: string;
+  };
 }
 
 interface InterviewQuestion {
@@ -30,6 +37,7 @@ interface InterviewQuestion {
   role: string;
   difficulty: string;
   category: string;
+  interview_stage: string;
 }
 
 export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
@@ -42,10 +50,38 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
   });
   const [stageCount, setStageCount] = useState(4);
   const [stages, setStages] = useState<CourseStage[]>([
-    { title: "HR Screen", description: "Initial screening with HR team", information: "This stage focuses on cultural fit and basic qualifications. **Preparation tips:**\n\n• Research company values\n• Prepare STAR method examples\n• Review your resume thoroughly", order: 1, selectedQuestions: new Set() },
-    { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "Technical evaluation of your coding skills. **What to expect:**\n\n• Data structures and algorithms\n• System design questions\n• Live coding sessions", order: 2, selectedQuestions: new Set() },
-    { title: "Cross Interview", description: "Cross-functional team interviews", information: "Meet with potential teammates and stakeholders. **Focus areas:**\n\n• Collaboration skills\n• Communication abilities\n• Problem-solving approach", order: 3, selectedQuestions: new Set() },
-    { title: "Final Interview", description: "Final round with senior leadership", information: "Last step in the interview process. **Key points:**\n\n• Executive presence\n• Strategic thinking\n• Long-term vision alignment", order: 4, selectedQuestions: new Set() },
+    { 
+      title: "HR Screen", 
+      description: "Initial screening with HR team", 
+      information: "This stage focuses on cultural fit and basic qualifications. **Preparation tips:**\n\n• Research company values\n• Prepare STAR method examples\n• Review your resume thoroughly", 
+      order: 1, 
+      selectedQuestions: new Set(),
+      filters: { company: "", role: "", category: "", interview_stage: "" }
+    },
+    { 
+      title: "Technical Assessment", 
+      description: "Coding challenges and technical questions", 
+      information: "Technical evaluation of your coding skills. **What to expect:**\n\n• Data structures and algorithms\n• System design questions\n• Live coding sessions", 
+      order: 2, 
+      selectedQuestions: new Set(),
+      filters: { company: "", role: "", category: "", interview_stage: "" }
+    },
+    { 
+      title: "Cross Interview", 
+      description: "Cross-functional team interviews", 
+      information: "Meet with potential teammates and stakeholders. **Focus areas:**\n\n• Collaboration skills\n• Communication abilities\n• Problem-solving approach", 
+      order: 3, 
+      selectedQuestions: new Set(),
+      filters: { company: "", role: "", category: "", interview_stage: "" }
+    },
+    { 
+      title: "Final Interview", 
+      description: "Final round with senior leadership", 
+      information: "Last step in the interview process. **Key points:**\n\n• Executive presence\n• Strategic thinking\n• Long-term vision alignment", 
+      order: 4, 
+      selectedQuestions: new Set(),
+      filters: { company: "", role: "", category: "", interview_stage: "" }
+    },
   ]);
   const [searchTerms, setSearchTerms] = useState<{ [key: number]: string }>({});
 
@@ -55,7 +91,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('interview_questions')
-        .select('id, question, company, role, difficulty, category')
+        .select('id, question, company, role, difficulty, category, interview_stage')
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
       
@@ -63,6 +99,12 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
       return data as InterviewQuestion[];
     },
   });
+
+  // Get unique values for filter dropdowns
+  const getUniqueValues = (field: keyof InterviewQuestion) => {
+    if (!allQuestions) return [];
+    return [...new Set(allQuestions.map(q => q[field]))].filter(Boolean).sort();
+  };
 
   const updateStageCount = (newCount: number) => {
     if (newCount < 1) return;
@@ -78,7 +120,8 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
           description: "",
           information: "",
           order: i + 1,
-          selectedQuestions: new Set()
+          selectedQuestions: new Set(),
+          filters: { company: "", role: "", category: "", interview_stage: "" }
         });
       }
     } else if (newCount < stages.length) {
@@ -89,10 +132,27 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     setStages(currentStages);
   };
 
-  const updateStage = (index: number, field: keyof CourseStage, value: string | number | Set<string>) => {
+  const updateStage = (index: number, field: keyof CourseStage, value: any) => {
     const updatedStages = [...stages];
     updatedStages[index] = { ...updatedStages[index], [field]: value };
     setStages(updatedStages);
+  };
+
+  const updateStageFilter = (stageIndex: number, filterField: string, value: string) => {
+    const updatedStages = [...stages];
+    updatedStages[stageIndex] = {
+      ...updatedStages[stageIndex],
+      filters: {
+        ...updatedStages[stageIndex].filters,
+        [filterField]: value
+      }
+    };
+    setStages(updatedStages);
+  };
+
+  const clearStageFilters = (stageIndex: number) => {
+    updateStage(stageIndex, 'filters', { company: "", role: "", category: "", interview_stage: "" });
+    setSearchTerms({...searchTerms, [stageIndex]: ""});
   };
 
   const toggleQuestionForStage = (stageIndex: number, questionId: string) => {
@@ -108,11 +168,20 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
 
   const getFilteredQuestionsForStage = (stageIndex: number) => {
     const searchTerm = searchTerms[stageIndex] || "";
-    return allQuestions?.filter(question => 
-      question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      question.role.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    const filters = stages[stageIndex].filters;
+    
+    return allQuestions?.filter(question => {
+      const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        question.role.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCompany = !filters.company || question.company === filters.company;
+      const matchesRole = !filters.role || question.role === filters.role;
+      const matchesCategory = !filters.category || question.category === filters.category;
+      const matchesStage = !filters.interview_stage || question.interview_stage === filters.interview_stage;
+      
+      return matchesSearch && matchesCompany && matchesRole && matchesCategory && matchesStage;
+    }) || [];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -209,10 +278,10 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
       setFormData({ title: "", description: "" });
       setStageCount(4);
       setStages([
-        { title: "HR Screen", description: "Initial screening with HR team", information: "", order: 1, selectedQuestions: new Set() },
-        { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "", order: 2, selectedQuestions: new Set() },
-        { title: "Cross Interview", description: "Cross-functional team interviews", information: "", order: 3, selectedQuestions: new Set() },
-        { title: "Final Interview", description: "Final round with senior leadership", information: "", order: 4, selectedQuestions: new Set() },
+        { title: "HR Screen", description: "Initial screening with HR team", information: "", order: 1, selectedQuestions: new Set(), filters: { company: "", role: "", category: "", interview_stage: "" } },
+        { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "", order: 2, selectedQuestions: new Set(), filters: { company: "", role: "", category: "", interview_stage: "" } },
+        { title: "Cross Interview", description: "Cross-functional team interviews", information: "", order: 3, selectedQuestions: new Set(), filters: { company: "", role: "", category: "", interview_stage: "" } },
+        { title: "Final Interview", description: "Final round with senior leadership", information: "", order: 4, selectedQuestions: new Set(), filters: { company: "", role: "", category: "", interview_stage: "" } },
       ]);
       setSearchTerms({});
 
@@ -329,6 +398,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                 {/* Practice Questions Section */}
                 <div className="space-y-3">
                   <Label className="text-sm font-semibold">Practice Questions ({stage.selectedQuestions.size} selected)</Label>
+                  
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
@@ -338,6 +408,82 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                       className="pl-10"
                     />
                   </div>
+
+                  {/* Filter Section */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-gray-50 rounded-md">
+                    <Select 
+                      value={stage.filters.company} 
+                      onValueChange={(value) => updateStageFilter(index, 'company', value)}
+                    >
+                      <SelectTrigger className="bg-white h-8 text-xs">
+                        <SelectValue placeholder="Company" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border shadow-lg z-50">
+                        <SelectItem value="">All Companies</SelectItem>
+                        {getUniqueValues('company').map((company) => (
+                          <SelectItem key={company} value={company}>{company}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select 
+                      value={stage.filters.role} 
+                      onValueChange={(value) => updateStageFilter(index, 'role', value)}
+                    >
+                      <SelectTrigger className="bg-white h-8 text-xs">
+                        <SelectValue placeholder="Role" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border shadow-lg z-50">
+                        <SelectItem value="">All Roles</SelectItem>
+                        {getUniqueValues('role').map((role) => (
+                          <SelectItem key={role} value={role}>{role}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select 
+                      value={stage.filters.category} 
+                      onValueChange={(value) => updateStageFilter(index, 'category', value)}
+                    >
+                      <SelectTrigger className="bg-white h-8 text-xs">
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border shadow-lg z-50">
+                        <SelectItem value="">All Categories</SelectItem>
+                        {getUniqueValues('category').map((category) => (
+                          <SelectItem key={category} value={category}>{category}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select 
+                      value={stage.filters.interview_stage} 
+                      onValueChange={(value) => updateStageFilter(index, 'interview_stage', value)}
+                    >
+                      <SelectTrigger className="bg-white h-8 text-xs">
+                        <SelectValue placeholder="Stage" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border shadow-lg z-50">
+                        <SelectItem value="">All Stages</SelectItem>
+                        {getUniqueValues('interview_stage').map((stage) => (
+                          <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="md:col-span-4 flex justify-end">
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        onClick={() => clearStageFilters(index)} 
+                        size="sm"
+                        className="text-xs h-6"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
                     {getFilteredQuestionsForStage(index).map((question) => (
                       <div key={question.id} className="flex items-start gap-2 p-2 border rounded">
@@ -357,8 +503,14 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                             <span className="bg-green-100 text-green-800 px-1 py-0.5 rounded text-xs">
                               {question.role}
                             </span>
+                            <span className="bg-purple-100 text-purple-800 px-1 py-0.5 rounded text-xs">
+                              {question.category}
+                            </span>
                             <span className="bg-orange-100 text-orange-800 px-1 py-0.5 rounded text-xs">
                               {question.difficulty}
+                            </span>
+                            <span className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs">
+                              {question.interview_stage}
                             </span>
                           </div>
                         </div>
@@ -366,7 +518,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                     ))}
                     {getFilteredQuestionsForStage(index).length === 0 && (
                       <p className="text-xs text-gray-500 text-center py-4">
-                        No questions found. Try adjusting your search.
+                        No questions found. Try adjusting your search or filters.
                       </p>
                     )}
                   </div>
