@@ -47,7 +47,7 @@ const Auth = () => {
             <p className="font-semibold mb-2">Demo Credentials:</p>
             <p><strong>Admin:</strong> sourceedge / sourceedge2025</p>
             <p><strong>User:</strong> sourceuser / user2025</p>
-            <p className="text-xs text-gray-600 mt-2">You can also use the email format: admin@sourceedge.dev or user@sourceedge.dev</p>
+            <p className="text-xs text-gray-600 mt-2">You can also use: admin@example.com or user@example.com</p>
           </div>
         </CardHeader>
         <CardContent>

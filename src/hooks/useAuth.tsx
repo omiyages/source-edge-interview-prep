@@ -24,10 +24,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hardcoded credentials for demo purposes - now with proper email formats
-const DEMO_CREDENTIALS = {
-  admin: { email: "admin@sourceedge.dev", password: "sourceedge2025", role: "admin" as const },
-  user: { email: "user@sourceedge.dev", password: "user2025", role: "user" as const }
+// Demo credentials with valid email formats
+const DEMO_USERS = {
+  'admin@example.com': { password: 'sourceedge2025', role: 'admin' as const },
+  'user@example.com': { password: 'user2025', role: 'user' as const }
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -38,160 +38,169 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      }
-      setLoading(false);
-    });
+    let mounted = true;
 
-    // Listen for auth changes
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
+      
+      if (!mounted) return;
+
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        loadProfile(session.user.id);
+        // Load or create profile
+        setTimeout(async () => {
+          if (!mounted) return;
+          await loadOrCreateProfile(session.user);
+        }, 0);
       } else {
         setProfile(null);
       }
+      
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        loadOrCreateProfile(session.user);
+      }
+      
+      setLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const loadProfile = async (userId: string) => {
+  const loadOrCreateProfile = async (user: User) => {
     try {
-      const { data, error } = await supabase
+      // First try to get existing profile
+      const { data: existingProfile, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
+      if (existingProfile) {
+        setProfile(existingProfile);
         return;
       }
 
-      if (data) {
-        setProfile(data);
+      // If no profile exists, create one
+      if (error?.code === 'PGRST116') {
+        // Determine role based on email
+        const email = user.email || '';
+        let role: 'user' | 'admin' = 'user';
+        
+        if (email === 'admin@example.com') {
+          role = 'admin';
+        }
+
+        const { data: newProfile } = await supabase
+          .from('profiles')
+          .insert([{ 
+            id: user.id, 
+            email: email,
+            role: role 
+          }])
+          .select()
+          .single();
+
+        if (newProfile) {
+          setProfile(newProfile);
+        }
       }
     } catch (error) {
       console.error('Error loading profile:', error);
     }
   };
 
-  const createProfile = async (userId: string, email: string, role: 'user' | 'admin') => {
+  const signIn = async (emailOrUsername: string, password: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert([{ id: userId, email, role }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating profile:', error);
-        return null;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error creating profile:', error);
-      return null;
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      // Check if this matches demo credentials (support both email and username input)
-      let actualEmail = email;
+      // Handle demo credentials with username mapping
+      let email = emailOrUsername;
       let actualPassword = password;
-      let userRole: 'user' | 'admin' | null = null;
 
-      // Check if user entered username instead of email
-      if (email === "sourceedge" && password === "sourceedge2025") {
-        actualEmail = DEMO_CREDENTIALS.admin.email;
-        actualPassword = DEMO_CREDENTIALS.admin.password;
-        userRole = 'admin';
-      } else if (email === "sourceuser" && password === "user2025") {
-        actualEmail = DEMO_CREDENTIALS.user.email;
-        actualPassword = DEMO_CREDENTIALS.user.password;
-        userRole = 'user';
-      } else if (email === DEMO_CREDENTIALS.admin.email && password === DEMO_CREDENTIALS.admin.password) {
-        userRole = 'admin';
-      } else if (email === DEMO_CREDENTIALS.user.email && password === DEMO_CREDENTIALS.user.password) {
-        userRole = 'user';
+      // Map usernames to emails for demo
+      if (emailOrUsername === 'sourceedge' && password === 'sourceedge2025') {
+        email = 'admin@example.com';
+      } else if (emailOrUsername === 'sourceuser' && password === 'user2025') {
+        email = 'user@example.com';
       }
 
-      // If it's a demo credential, handle special flow
-      if (userRole) {
-        // Try to sign in with Supabase first
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: actualEmail,
-          password: actualPassword,
-        });
-
-        if (error) {
-          // If user doesn't exist, create them
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: actualEmail,
-            password: actualPassword,
-            options: {
-              emailRedirectTo: `${window.location.origin}/`,
-              data: {
-                role: userRole
-              }
-            }
+      // Check if this is a demo user that might not exist yet
+      const isDemoUser = email in DEMO_USERS;
+      
+      if (isDemoUser) {
+        const demoUser = DEMO_USERS[email as keyof typeof DEMO_USERS];
+        if (password === demoUser.password) {
+          // Try to sign in first
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
           });
 
-          if (signUpError) {
-            console.error('Sign up error:', signUpError);
-            return { error: signUpError };
-          }
-
-          if (signUpData.user) {
-            // Create profile
-            await createProfile(signUpData.user.id, actualEmail, userRole);
-            
-            toast({
-              title: `Welcome ${userRole}`,
-              description: "Account created and signed in successfully.",
+          if (error && error.message.includes('Invalid login credentials')) {
+            // User doesn't exist, create them
+            const { error: signUpError } = await supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                emailRedirectTo: `${window.location.origin}/`,
+                data: {
+                  role: demoUser.role
+                }
+              }
             });
+
+            if (signUpError) {
+              console.error('Sign up error:', signUpError);
+              toast({
+                title: "Sign Up Failed",
+                description: signUpError.message,
+                variant: "destructive",
+              });
+              return { error: signUpError };
+            }
+
+            toast({
+              title: `Welcome ${demoUser.role}!`,
+              description: "Demo account created and signed in successfully.",
+            });
+            return { error: null };
           }
 
-          return { error: null };
-        }
-
-        if (data.user) {
-          // Make sure profile exists
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-
-          if (!existingProfile) {
-            await createProfile(data.user.id, actualEmail, userRole);
+          if (error) {
+            toast({
+              title: "Sign In Failed",
+              description: error.message,
+              variant: "destructive",
+            });
+            return { error };
           }
 
           toast({
-            title: `Welcome ${userRole}`,
+            title: `Welcome back!`,
             description: "Successfully signed in.",
           });
+          return { error: null };
         }
-
-        return { error: null };
       }
 
-      // For non-demo credentials, try regular sign in
+      // Regular sign in for non-demo users
       const { error } = await supabase.auth.signInWithPassword({
-        email: actualEmail,
-        password: actualPassword,
+        email,
+        password,
       });
 
       if (error) {
