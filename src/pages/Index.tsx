@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QuestionCard } from "@/components/QuestionCard";
+import QuestionCard from "@/components/QuestionCard";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
 import { Search, Filter, Plus, User, Settings, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -233,7 +233,7 @@ const Index = () => {
         {/* Submit Question Form */}
         {showSubmitForm && (
           <div className="mb-8">
-            <SubmitQuestionForm onSubmit={handleQuestionSubmitted} />
+            <SubmitQuestionForm onSuccess={handleQuestionSubmitted} />
           </div>
         )}
 
