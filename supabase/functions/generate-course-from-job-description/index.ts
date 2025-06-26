@@ -69,6 +69,18 @@ serve(async (req) => {
       `;
     }
 
+    // Create a more detailed question summary for better AI matching
+    const questionSummary = questions?.map(q => {
+      return `ID: ${q.id}
+Question: "${q.question}"
+Company: ${q.company}
+Role: ${q.role}
+Category: ${q.category}
+Difficulty: ${q.difficulty}
+Interview Stage: ${q.interview_stage}
+${q.additional_context ? `Context: ${q.additional_context}` : ''}`;
+    }).join('\n\n');
+
     // Use OpenAI to analyze the job description and generate course structure
     const analysisPrompt = `
     Analyze this job information and create a structured interview course:
@@ -85,25 +97,33 @@ serve(async (req) => {
     5. Role level (entry, mid, senior, principal)
     6. Primary role category (Backend Engineer, Frontend Engineer, SRE/DevOps, Engineering Manager, etc.)
 
-    For stage descriptions, make them comprehensive (3-4 sentences) and include:
+    For stage descriptions, make them comprehensive (4-5 sentences) and include:
     - What to expect in the interview
     - How candidates can prepare
     - What skills/qualities are being assessed
     - Practical tips for success
 
     Here are the available questions in the database:
-    ${questions?.map(q => `- ID: ${q.id}, Question: ${q.question} (${q.role}, ${q.category}, ${q.difficulty}, ${q.interview_stage})`).join('\n')}
+    ${questionSummary}
 
-    For each suggested stage, recommend specific question IDs from the list above that would be most relevant based on:
-    - The stage type (HR Screening, Technical Assessment, etc.)
-    - The role and company context
+    For each suggested stage, recommend 3-5 specific question IDs from the list above that would be most relevant based on:
+    - The stage type and purpose (HR Screening should get behavioral/cultural questions, Technical stages should get coding/system design questions, etc.)
+    - The role and company context from the job description
     - The difficulty level appropriate for the role level
-    - The question category and interview stage
+    - The question category and stated interview stage
 
-    Match questions intelligently:
-    - HR Screening: behavioral, cultural fit questions
-    - Technical Assignment/Assessment: coding, system design, technical questions
-    - Final Interview: leadership, strategic thinking questions
+    IMPORTANT: You MUST select actual question IDs from the provided list. Be very selective and choose only the most relevant questions for each stage type:
+
+    Stage Matching Guidelines:
+    - HR Screening/Initial: Select questions with interview_stage "HR" or "Behavioral", categories like "Behavioral", "Cultural Fit", "Communication"
+    - Technical Assignment/Coding: Select questions with categories "Coding", "Algorithms", "Data Structures", "Problem Solving"
+    - Technical Assessment/System Design: Select questions with categories "System Design", "Architecture", "Technical", "Scalability"
+    - Final/Leadership: Select questions with categories "Leadership", "Management", "Strategic Thinking", "Vision"
+
+    Company and Role Matching:
+    - Prioritize questions from the same company or similar companies
+    - Match questions to the specific role (Backend, Frontend, etc.)
+    - Consider the difficulty level (entry-level roles get Easy/Medium, senior roles get Medium/Hard)
 
     Respond with valid JSON in this format:
     {
@@ -112,9 +132,9 @@ serve(async (req) => {
       "stages": [
         {
           "title": "string",
-          "description": "string (comprehensive, 3-4 sentences)",
+          "description": "string (comprehensive, 4-5 sentences)",
           "stage_order": number,
-          "recommendedQuestionIds": ["uuid1", "uuid2", "uuid3"]
+          "recommendedQuestionIds": ["actual-uuid-from-list", "another-actual-uuid"]
         }
       ],
       "keySkills": ["skill1", "skill2"],
@@ -136,7 +156,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert technical recruiter and interview designer. Analyze job descriptions and create comprehensive interview courses with relevant question selection. Always respond with valid JSON only, no markdown formatting or code blocks. Make stage descriptions detailed and helpful for candidate preparation. Select 2-4 relevant questions per stage based on the stage type, role context, and question metadata.'
+            content: 'You are an expert technical recruiter and interview designer. Analyze job descriptions and create comprehensive interview courses with intelligent question selection. Always respond with valid JSON only, no markdown formatting or code blocks. Make stage descriptions detailed and helpful for candidate preparation. You MUST select actual question IDs from the provided database - do not make up IDs. Select 3-5 most relevant questions per stage based on stage type, role context, company, and difficulty level. Be very selective and match questions intelligently to stage purposes.'
           },
           {
             role: 'user',
@@ -144,7 +164,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.3,
-        max_tokens: 3000,
+        max_tokens: 4000,
       }),
     });
 
@@ -198,7 +218,23 @@ serve(async (req) => {
       throw new Error('Failed to parse AI response. Please try again.');
     }
 
-    // Special handling for Woven by Toyota - override with predefined stages but keep question selection
+    // Validate that recommended question IDs exist in the database
+    if (analysis.stages) {
+      const allQuestionIds = questions?.map(q => q.id) || [];
+      
+      for (const stage of analysis.stages) {
+        if (stage.recommendedQuestionIds) {
+          // Filter out any IDs that don't exist in the database
+          stage.recommendedQuestionIds = stage.recommendedQuestionIds.filter((id: string) => 
+            allQuestionIds.includes(id)
+          );
+          
+          console.log(`Stage "${stage.title}" has ${stage.recommendedQuestionIds.length} valid question IDs`);
+        }
+      }
+    }
+
+    // Special handling for Woven by Toyota - override with predefined stages but keep AI-selected questions
     if (isWovenToyota && analysis.stages) {
       const wovenStages = [
         {

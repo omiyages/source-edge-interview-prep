@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
+import { ManageStageQuestionsForm } from "./ManageStageQuestionsForm";
 
 interface GeneratedCourse {
   courseTitle: string;
@@ -63,10 +63,11 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
   const [generatedCourse, setGeneratedCourse] = useState<GeneratedCourse | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [editingStageIndex, setEditingStageIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch all approved questions for preview
+  // Fetch all approved questions for preview and selection
   const { data: allQuestions } = useQuery({
     queryKey: ['all-questions'],
     queryFn: async () => {
@@ -118,12 +119,14 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
         throw new Error('No data received from the AI service');
       }
 
-      // If company is Woven by Toyota, use predefined stages
+      // If company is Woven by Toyota, use predefined stages but keep AI-selected questions
       if (company.toLowerCase().includes('woven') && company.toLowerCase().includes('toyota')) {
-        data.stages = wovenStages.map(stage => ({
-          ...stage,
-          recommendedQuestionIds: []
+        const updatedStages = wovenStages.map((wovenStage, index) => ({
+          ...wovenStage,
+          // Keep the AI-selected questions if they exist
+          recommendedQuestionIds: data.stages[index]?.recommendedQuestionIds || []
         }));
+        data.stages = updatedStages;
       }
 
       setGeneratedCourse(data);
@@ -239,6 +242,14 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
     const updatedStages = [...generatedCourse.stages];
     updatedStages[index] = { ...updatedStages[index], [field]: value };
     setGeneratedCourse({ ...generatedCourse, stages: updatedStages });
+  };
+
+  const updateStageQuestions = (stageIndex: number, questionIds: string[]) => {
+    if (!generatedCourse) return;
+    const updatedStages = [...generatedCourse.stages];
+    updatedStages[stageIndex] = { ...updatedStages[stageIndex], recommendedQuestionIds: questionIds };
+    setGeneratedCourse({ ...generatedCourse, stages: updatedStages });
+    setEditingStageIndex(null);
   };
 
   const getQuestionsForStage = (questionIds: string[]) => {
@@ -372,6 +383,48 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
                               rows={4}
                             />
                           </div>
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <Label>Questions ({stage.recommendedQuestionIds.length} selected)</Label>
+                              <Dialog open={editingStageIndex === index} onOpenChange={(open) => setEditingStageIndex(open ? index : null)}>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <Edit className="w-4 h-4 mr-1" />
+                                    Select Questions
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[80vh]">
+                                  <DialogHeader>
+                                    <DialogTitle>Select Questions for {stage.title}</DialogTitle>  
+                                  </DialogHeader>
+                                  <ScrollArea className="h-[60vh]">
+                                    <StageQuestionSelector
+                                      allQuestions={allQuestions || []}
+                                      selectedQuestionIds={stage.recommendedQuestionIds}
+                                      onQuestionsChange={(questionIds) => updateStageQuestions(index, questionIds)}
+                                    />
+                                  </ScrollArea>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                            {stage.recommendedQuestionIds.length > 0 && (
+                              <div className="space-y-2 max-h-32 overflow-y-auto">
+                                {getQuestionsForStage(stage.recommendedQuestionIds).slice(0, 3).map((question, qIndex) => (
+                                  <div key={qIndex} className="text-sm p-2 bg-gray-50 rounded">
+                                    <span className="font-medium">{question.question}</span>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {question.company} • {question.role} • {question.difficulty}
+                                    </div>
+                                  </div>
+                                ))}
+                                {stage.recommendedQuestionIds.length > 3 && (
+                                  <div className="text-xs text-gray-500 text-center">
+                                    +{stage.recommendedQuestionIds.length - 3} more questions
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </Card>
                     ))}
@@ -498,6 +551,97 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+};
+
+// Question selector component for editing mode
+const StageQuestionSelector = ({ 
+  allQuestions, 
+  selectedQuestionIds, 
+  onQuestionsChange 
+}: {
+  allQuestions: any[];
+  selectedQuestionIds: string[];
+  onQuestionsChange: (questionIds: string[]) => void;
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set(selectedQuestionIds));
+
+  const filteredQuestions = allQuestions.filter(question => 
+    question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    question.role.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const toggleQuestion = (questionId: string) => {
+    const newSelected = new Set(selectedQuestions);
+    if (newSelected.has(questionId)) {
+      newSelected.delete(questionId);
+    } else {
+      newSelected.add(questionId);
+    }
+    setSelectedQuestions(newSelected);
+  };
+
+  const handleSave = () => {
+    onQuestionsChange(Array.from(selectedQuestions));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search questions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="text-sm text-gray-600">
+          {selectedQuestions.size} questions selected
+        </div>
+      </div>
+
+      <div className="max-h-96 overflow-y-auto space-y-2">
+        {filteredQuestions.map((question) => (
+          <Card key={question.id} className="p-3">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={selectedQuestions.has(question.id)}
+                onChange={() => toggleQuestion(question.id)}
+                className="mt-1"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 mb-2">
+                  {question.question}
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    {question.company}
+                  </span>
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                    {question.role}
+                  </span>
+                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                    {question.category}
+                  </span>
+                  <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                    {question.difficulty}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="flex justify-end pt-4 border-t">
+        <Button onClick={handleSave}>
+          Save Question Selection
+        </Button>
+      </div>
     </div>
   );
 };
