@@ -24,10 +24,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hardcoded credentials for demo purposes
+// Hardcoded credentials for demo purposes - now with proper email formats
 const DEMO_CREDENTIALS = {
-  admin: { email: "sourceedge", password: "sourceedge2025", role: "admin" as const },
-  user: { email: "sourceuser", password: "user2025", role: "user" as const }
+  admin: { email: "admin@sourceedge.dev", password: "sourceedge2025", role: "admin" as const },
+  user: { email: "user@sourceedge.dev", password: "user2025", role: "user" as const }
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -108,28 +108,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Check if this is a demo credential
-      const isDemoAdmin = email === DEMO_CREDENTIALS.admin.email && password === DEMO_CREDENTIALS.admin.password;
-      const isDemoUser = email === DEMO_CREDENTIALS.user.email && password === DEMO_CREDENTIALS.user.password;
+      // Check if this matches demo credentials (support both email and username input)
+      let actualEmail = email;
+      let actualPassword = password;
+      let userRole: 'user' | 'admin' | null = null;
 
-      if (isDemoAdmin || isDemoUser) {
-        const role = isDemoAdmin ? 'admin' : 'user';
-        
+      // Check if user entered username instead of email
+      if (email === "sourceedge" && password === "sourceedge2025") {
+        actualEmail = DEMO_CREDENTIALS.admin.email;
+        actualPassword = DEMO_CREDENTIALS.admin.password;
+        userRole = 'admin';
+      } else if (email === "sourceuser" && password === "user2025") {
+        actualEmail = DEMO_CREDENTIALS.user.email;
+        actualPassword = DEMO_CREDENTIALS.user.password;
+        userRole = 'user';
+      } else if (email === DEMO_CREDENTIALS.admin.email && password === DEMO_CREDENTIALS.admin.password) {
+        userRole = 'admin';
+      } else if (email === DEMO_CREDENTIALS.user.email && password === DEMO_CREDENTIALS.user.password) {
+        userRole = 'user';
+      }
+
+      // If it's a demo credential, handle special flow
+      if (userRole) {
         // Try to sign in with Supabase first
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: actualEmail,
+          password: actualPassword,
         });
 
         if (error) {
           // If user doesn't exist, create them
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
+            email: actualEmail,
+            password: actualPassword,
             options: {
               emailRedirectTo: `${window.location.origin}/`,
               data: {
-                role: role
+                role: userRole
               }
             }
           });
@@ -141,10 +156,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           if (signUpData.user) {
             // Create profile
-            await createProfile(signUpData.user.id, email, role);
+            await createProfile(signUpData.user.id, actualEmail, userRole);
             
             toast({
-              title: `Welcome ${role}`,
+              title: `Welcome ${userRole}`,
               description: "Account created and signed in successfully.",
             });
           }
@@ -161,11 +176,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .single();
 
           if (!existingProfile) {
-            await createProfile(data.user.id, email, role);
+            await createProfile(data.user.id, actualEmail, userRole);
           }
 
           toast({
-            title: `Welcome ${role}`,
+            title: `Welcome ${userRole}`,
             description: "Successfully signed in.",
           });
         }
@@ -175,8 +190,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // For non-demo credentials, try regular sign in
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: actualEmail,
+        password: actualPassword,
       });
 
       if (error) {

@@ -43,6 +43,12 @@ const Auth = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Login</CardTitle>
           <p className="text-gray-600">Enter your credentials to access interview questions</p>
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg text-sm">
+            <p className="font-semibold mb-2">Demo Credentials:</p>
+            <p><strong>Admin:</strong> sourceedge / sourceedge2025</p>
+            <p><strong>User:</strong> sourceuser / user2025</p>
+            <p className="text-xs text-gray-600 mt-2">You can also use the email format: admin@sourceedge.dev or user@sourceedge.dev</p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignIn} className="space-y-4">
@@ -51,7 +57,7 @@ const Auth = () => {
               <Input
                 id="email"
                 type="text"
-                placeholder="Enter your username"
+                placeholder="Enter your username or email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
