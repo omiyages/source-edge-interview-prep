@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, User, LogOut, Users } from "lucide-react";
+import { Check, X, Clock, User, LogOut, Users, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CSVImportForm } from "@/components/CSVImportForm";
 import { AutoGenerateCourseForm } from "@/components/AutoGenerateCourseForm";
 import { CreateUserForm } from "@/components/CreateUserForm";
 import { UsersList } from "@/components/UsersList";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface InterviewQuestion {
   id: string;
@@ -35,39 +36,70 @@ interface InterviewQuestion {
 }
 
 const AdminDashboard = () => {
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Show loading while auth is still loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated or not admin
   if (!user || !isAdmin) {
     return <Navigate to="/auth" replace />;
   }
 
-  const { data: pendingQuestions, isLoading: loadingPending } = useQuery({
+  const { data: pendingQuestions, isLoading: loadingPending, error: pendingError } = useQuery({
     queryKey: ['admin-pending-questions'],
     queryFn: async () => {
+      console.log('📥 Fetching pending questions...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching pending questions:', error);
+        throw error;
+      }
+      
+      console.log('✅ Pending questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
+    enabled: !!user && isAdmin, // Only run query if user is authenticated and admin
+    retry: 3,
+    retryDelay: 1000,
   });
 
-  const { data: allQuestions, isLoading: loadingAll } = useQuery({
+  const { data: allQuestions, isLoading: loadingAll, error: allError } = useQuery({
     queryKey: ['admin-all-questions'],
     queryFn: async () => {
+      console.log('📥 Fetching all questions...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching all questions:', error);
+        throw error;
+      }
+      
+      console.log('✅ All questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
+    enabled: !!user && isAdmin, // Only run query if user is authenticated and admin
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const approveQuestionMutation = useMutation({
@@ -94,6 +126,7 @@ const AdminDashboard = () => {
       });
     },
     onError: (error) => {
+      console.error('❌ Error updating question status:', error);
       toast({
         title: "Error",
         description: "Failed to update question status.",
@@ -153,6 +186,17 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Error Alerts */}
+        {(pendingError || allError) && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {pendingError ? `Error loading pending questions: ${pendingError.message}` : ''}
+              {allError ? `Error loading all questions: ${allError.message}` : ''}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Tabs defaultValue="pending" className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="pending">
@@ -178,6 +222,15 @@ const AdminDashboard = () => {
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-4 text-gray-600">Loading pending questions...</p>
+              </div>
+            ) : pendingError ? (
+              <div className="text-center py-12">
+                <AlertCircle className="w-16 h-16 mx-auto text-red-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">Failed to load pending questions</h3>
+                <p className="text-gray-500 mb-4">There was an error loading the data.</p>
+                <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-pending-questions'] })}>
+                  Try Again
+                </Button>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -248,7 +301,7 @@ const AdminDashboard = () => {
               </div>
             )}
             
-            {pendingQuestions?.length === 0 && !loadingPending && (
+            {pendingQuestions?.length === 0 && !loadingPending && !pendingError && (
               <div className="text-center py-12">
                 <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">No pending questions</h3>
@@ -262,6 +315,15 @@ const AdminDashboard = () => {
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-4 text-gray-600">Loading all questions...</p>
+              </div>
+            ) : allError ? (
+              <div className="text-center py-12">
+                <AlertCircle className="w-16 h-16 mx-auto text-red-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">Failed to load questions</h3>
+                <p className="text-gray-500 mb-4">There was an error loading the data.</p>
+                <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-all-questions'] })}>
+                  Try Again
+                </Button>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

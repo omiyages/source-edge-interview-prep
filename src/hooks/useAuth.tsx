@@ -78,57 +78,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setSessionStartTime(null);
   }, [sessionId, sessionStartTime, user]);
 
-  const handleAuthStateChange = useCallback(async (event: string, session: Session | null) => {
-    console.log('🔐 Auth state changed:', event, session?.user?.email);
-    
-    if (session?.user) {
-      console.log('👤 User found, loading profile for:', session.user.email);
-      setUser(session.user);
-      setSession(session);
-      
-      try {
-        const userProfile = await loadOrCreateProfile(session.user);
-        console.log('📋 Profile loaded:', userProfile);
-        console.log('🔑 User role:', userProfile?.role);
-        console.log('👑 Is admin?', userProfile?.role === 'admin');
-        
-        setProfile(userProfile);
-        
-        if (event === 'SIGNED_IN') {
-          await startSession(session.user.id);
-        }
-      } catch (error) {
-        console.error('❌ Error loading profile:', error);
-        setProfile(null);
-      }
-    } else {
-      console.log('🚪 No user session found');
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-      
-      if (event === 'SIGNED_OUT') {
-        await endSession();
-      }
-    }
-    
-    // Always set loading to false after handling auth state
-    setLoading(false);
-  }, [startSession, endSession]);
-
   useEffect(() => {
     let mounted = true;
     let timeoutId: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
-        // Set a timeout to prevent infinite loading
+        console.log('🚀 Initializing auth...');
+        
+        // Set a reasonable timeout to prevent infinite loading
         timeoutId = setTimeout(() => {
           if (mounted) {
-            console.log('⏰ Auth initialization timeout, setting loading to false');
+            console.log('⏰ Auth initialization timeout - setting loading to false');
             setLoading(false);
           }
-        }, 5000);
+        }, 3000); // Reduced from 5000 to 3000ms
 
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -136,19 +100,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (error) {
           console.error('❌ Error getting initial session:', error);
           if (mounted) {
+            clearTimeout(timeoutId);
             setLoading(false);
           }
           return;
         }
 
-        console.log('🚀 Initial session check:', session?.user?.email);
-        
+        console.log('📋 Initial session:', session?.user?.email || 'No session');
+
         if (mounted) {
           clearTimeout(timeoutId);
-          await handleAuthStateChange('INITIAL_SESSION', session);
+          
+          if (session?.user) {
+            console.log('👤 Setting user and loading profile...');
+            setUser(session.user);
+            setSession(session);
+            
+            try {
+              const userProfile = await loadOrCreateProfile(session.user);
+              console.log('📋 Profile loaded:', userProfile?.role);
+              setProfile(userProfile);
+              
+              // Start session for new logins
+              await startSession(session.user.id);
+            } catch (profileError) {
+              console.error('❌ Error loading profile:', profileError);
+              setProfile(null);
+            }
+          } else {
+            console.log('🚪 No active session');
+            setUser(null);
+            setSession(null);
+            setProfile(null);
+          }
+          
+          setLoading(false);
         }
       } catch (error) {
-        console.error('❌ Error in initial auth check:', error);
+        console.error('❌ Error in auth initialization:', error);
         if (mounted) {
           clearTimeout(timeoutId);
           setLoading(false);
@@ -159,9 +148,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (mounted && event !== 'INITIAL_SESSION') {
-          await handleAuthStateChange(event, session);
+        console.log('🔐 Auth state changed:', event);
+        
+        if (!mounted) return;
+
+        if (session?.user) {
+          setUser(session.user);
+          setSession(session);
+          
+          if (event === 'SIGNED_IN') {
+            try {
+              const userProfile = await loadOrCreateProfile(session.user);
+              setProfile(userProfile);
+              await startSession(session.user.id);
+            } catch (error) {
+              console.error('❌ Error handling sign in:', error);
+              setProfile(null);
+            }
+          }
+        } else {
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          
+          if (event === 'SIGNED_OUT') {
+            await endSession();
+          }
         }
+        
+        setLoading(false);
       }
     );
 
@@ -181,7 +196,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       endSession();
     };
-  }, [handleAuthStateChange, endSession]);
+  }, [startSession, endSession]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -196,6 +211,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       console.log('🔐 Sign in attempt with:', email);
+      setLoading(true);
 
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -204,6 +220,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.error('❌ Sign in error:', error);
+        setLoading(false);
         toast({
           title: "Sign In Failed",
           description: error.message,
@@ -219,6 +236,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { error: null };
     } catch (error) {
       console.error('❌ Unexpected sign in error:', error);
+      setLoading(false);
       const errorMessage = { message: "An unexpected error occurred" };
       toast({
         title: "Sign In Failed",
