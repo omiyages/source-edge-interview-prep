@@ -21,8 +21,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     question: "",
     company: "",
     role: "",
-    category: "",
-    interview_stage: "",
+    category: "Technical",
+    interview_stage: "Technical Interview",
     additional_context: "",
     team: "",
     position_name: "",
@@ -40,33 +40,50 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
+    if (!formData.question.trim() || !formData.company || !formData.role) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields (Question, Company, Role).",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      console.log('Submitting question with user ID:', user.id);
-      console.log('User profile:', profile);
-      console.log('Form data before submission:', formData);
+      console.log('📝 Submitting question...');
+      console.log('User:', user.email);
+      console.log('Profile:', profile);
       
-      const { error } = await supabase
+      const questionData = {
+        question: formData.question.trim(),
+        company: formData.company,
+        role: formData.role,
+        category: formData.category,
+        interview_stage: formData.interview_stage,
+        additional_context: formData.additional_context.trim() || null,
+        team: formData.team || null,
+        position_name: formData.position_name.trim() || null,
+        submitted_by: profile?.email || user.email,
+        question_type: 'user_submitted',
+        status: profile?.role === 'admin' ? 'approved' : 'pending',
+        difficulty: 'Medium', // Default difficulty
+      };
+
+      console.log('Question data:', questionData);
+      
+      const { data, error } = await supabase
         .from('interview_questions')
-        .insert({
-          question: formData.question,
-          company: formData.company,
-          role: formData.role,
-          category: formData.category || 'Technical',
-          interview_stage: formData.interview_stage || 'Technical Interview',
-          additional_context: formData.additional_context,
-          team: formData.team || null,
-          position_name: formData.position_name || null,
-          submitted_by: profile?.email || user.email,
-          question_type: 'user_submitted',
-          status: profile?.role === 'admin' ? 'approved' : 'pending',
-        });
+        .insert(questionData)
+        .select();
 
       if (error) {
-        console.error('Error submitting question:', error);
+        console.error('❌ Error submitting question:', error);
         throw error;
       }
+
+      console.log('✅ Question submitted successfully:', data);
 
       toast({
         title: "Question submitted!",
@@ -75,23 +92,24 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           : "Your question has been submitted for review and will appear once approved.",
       });
 
+      // Reset form
       setFormData({
         question: "",
         company: "",
         role: "",
-        category: "",
-        interview_stage: "",
+        category: "Technical",
+        interview_stage: "Technical Interview",
         additional_context: "",
         team: "",
         position_name: "",
       });
 
       onSuccess();
-    } catch (error) {
-      console.error('Error submitting question:', error);
+    } catch (error: any) {
+      console.error('❌ Error submitting question:', error);
       toast({
         title: "Error",
-        description: "Failed to submit question. Please try again.",
+        description: error.message || "Failed to submit question. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -124,6 +142,12 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               <SelectItem value="Woven by Toyota">Woven by Toyota</SelectItem>
               <SelectItem value="LexxPluss">LexxPluss</SelectItem>
               <SelectItem value="Wismettac">Wismettac</SelectItem>
+              <SelectItem value="Google">Google</SelectItem>
+              <SelectItem value="Microsoft">Microsoft</SelectItem>
+              <SelectItem value="Amazon">Amazon</SelectItem>
+              <SelectItem value="Meta">Meta</SelectItem>
+              <SelectItem value="Apple">Apple</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -137,36 +161,13 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
             <SelectContent>
               <SelectItem value="Backend Engineer">Backend Engineer</SelectItem>
               <SelectItem value="Frontend Engineer">Frontend Engineer</SelectItem>
+              <SelectItem value="Full Stack Engineer">Full Stack Engineer</SelectItem>
               <SelectItem value="SRE/DevOps">SRE/DevOps</SelectItem>
               <SelectItem value="Engineering Manager">Engineering Manager</SelectItem>
+              <SelectItem value="Product Manager">Product Manager</SelectItem>
+              <SelectItem value="Data Engineer">Data Engineer</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="team">Team</Label>
-          <Select value={formData.team} onValueChange={(value) => setFormData({ ...formData, team: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select team (optional)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Cloud & AI">Cloud & AI</SelectItem>
-              <SelectItem value="Enterprise Technology">Enterprise Technology</SelectItem>
-              <SelectItem value="Dojo">Dojo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="position_name">Position Name</Label>
-          <Input
-            id="position_name"
-            placeholder="e.g., Senior Software Engineer (optional)"
-            value={formData.position_name}
-            onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
-          />
         </div>
       </div>
 
@@ -204,6 +205,28 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="team">Team</Label>
+          <Input
+            id="team"
+            placeholder="e.g., Cloud & AI (optional)"
+            value={formData.team}
+            onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="position_name">Position Name</Label>
+          <Input
+            id="position_name"
+            placeholder="e.g., Senior Software Engineer (optional)"
+            value={formData.position_name}
+            onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
+          />
+        </div>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
         <Textarea
@@ -218,6 +241,10 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Submitting..." : "Submit Question"}
       </Button>
+      
+      <p className="text-xs text-gray-500 text-center">
+        * Required fields. {profile?.role === 'admin' ? 'Questions will be published immediately.' : 'Questions will be reviewed before publishing.'}
+      </p>
     </form>
   );
 };

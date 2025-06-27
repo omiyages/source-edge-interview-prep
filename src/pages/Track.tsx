@@ -1,12 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, LogOut, Settings, BookOpen } from "lucide-react";
+import { Plus, LogOut, Settings, BookOpen, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateCourseForm } from "@/components/CreateCourseForm";
 import { CourseCard } from "@/components/CourseCard";
@@ -31,12 +31,18 @@ const Track = () => {
   const { data: courses, isLoading, refetch } = useQuery({
     queryKey: ['courses'],
     queryFn: async () => {
+      console.log('🔄 Fetching courses...');
       const { data, error } = await supabase
         .from('courses')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching courses:', error);
+        throw error;
+      }
+      
+      console.log('✅ Courses fetched:', data?.length || 0);
       return data as Course[];
     },
     enabled: !!user,
@@ -61,7 +67,8 @@ const Track = () => {
           <div className="flex justify-between items-center mb-4">
             <Link to="/">
               <Button variant="outline">
-                ← Back to Questions
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Questions
               </Button>
             </Link>
             <h1 className="text-4xl font-bold text-gray-900">

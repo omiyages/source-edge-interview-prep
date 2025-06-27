@@ -6,10 +6,7 @@ import { useResources } from "@/hooks/useResources";
 import { HeroSection } from "@/components/HeroSection";
 import { ResourcesPreview } from "@/components/ResourcesPreview";
 import { QuestionsSection } from "@/components/QuestionsSection";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EditQuestionForm } from "@/components/EditQuestionForm";
 import { useToast } from "@/hooks/use-toast";
-import { InterviewQuestion } from "@/services/questionsService";
 
 const Index = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -21,29 +18,12 @@ const Index = () => {
   const { resources, loading: resourcesLoading } = useResources(shouldFetchData);
   
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<InterviewQuestion | null>(null);
 
   const handleSubmitSuccess = () => {
     setDialogOpen(false);
     toast({
       title: "Question submitted!",
       description: "Your question has been submitted for review.",
-    });
-    refetchQuestions();
-  };
-
-  const handleEdit = (question: InterviewQuestion) => {
-    setEditingQuestion(question);
-    setEditDialogOpen(true);
-  };
-
-  const handleEditSuccess = () => {
-    setEditDialogOpen(false);
-    setEditingQuestion(null);
-    toast({
-      title: "Question updated!",
-      description: "The question has been updated successfully.",
     });
     refetchQuestions();
   };
@@ -79,20 +59,6 @@ const Index = () => {
           loading={questionsLoading}
           error={questionsError}
         />
-
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Interview Question</DialogTitle>
-            </DialogHeader>
-            {editingQuestion && (
-              <EditQuestionForm
-                question={editingQuestion}
-                onSuccess={handleEditSuccess}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

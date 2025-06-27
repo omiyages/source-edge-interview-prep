@@ -1,10 +1,8 @@
 
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import QuestionCard from "@/components/QuestionCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, Building, User, Clock, Tag } from "lucide-react";
 import { InterviewQuestion } from "@/services/questionsService";
 
 interface QuestionsSectionProps {
@@ -13,116 +11,126 @@ interface QuestionsSectionProps {
   error: string | null;
 }
 
-const categories = ["All", "Technical", "Behavioral", "System Design", "Background", "Culture Fit", "Other"];
-const difficulties = ["All", "Easy", "Medium", "Hard"];
-const interviewStages = ["All", "Phone Screen", "Technical", "Onsite", "Final", "Other"];
-
 export const QuestionsSection = ({ questions, loading, error }: QuestionsSectionProps) => {
-  const [filteredQuestions, setFilteredQuestions] = useState<InterviewQuestion[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
-  const [difficultyFilter, setDifficultyFilter] = useState("All");
-  const [interviewStageFilter, setInterviewStageFilter] = useState("All");
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            Interview Questions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="flex gap-2">
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
+                  <div className="h-6 bg-gray-200 rounded w-20"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  useEffect(() => {
-    let filtered = questions;
-
-    if (searchTerm) {
-      filtered = filtered.filter(q =>
-        q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        q.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        q.role.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (categoryFilter !== "All") {
-      filtered = filtered.filter(q => q.category === categoryFilter);
-    }
-
-    if (difficultyFilter !== "All") {
-      filtered = filtered.filter(q => q.difficulty === difficultyFilter);
-    }
-
-    if (interviewStageFilter !== "All") {
-      filtered = filtered.filter(q => q.interview_stage === interviewStageFilter);
-    }
-
-    setFilteredQuestions(filtered);
-  }, [questions, searchTerm, categoryFilter, difficultyFilter, interviewStageFilter]);
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <MessageSquare className="w-5 h-5" />
+            Interview Questions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-semibold">Interview Questions</h2>
-        <Input
-          type="text"
-          placeholder="Search questions..."
-          className="max-w-md"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MessageSquare className="w-5 h-5" />
+          Interview Questions ({questions.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {questions.length === 0 ? (
+          <div className="text-center py-8">
+            <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No questions available yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {questions.map((question) => (
+              <div key={question.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">{question.question}</h3>
+                  {question.additional_context && (
+                    <p className="text-gray-600 text-sm mb-3">{question.additional_context}</p>
+                  )}
+                </div>
+                
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Building className="w-3 h-3" />
+                    {question.company}
+                  </Badge>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    {question.role}
+                  </Badge>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Tag className="w-3 h-3" />
+                    {question.category}
+                  </Badge>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {question.interview_stage}
+                  </Badge>
+                  {question.difficulty && (
+                    <Badge 
+                      variant={
+                        question.difficulty === 'Easy' ? 'default' : 
+                        question.difficulty === 'Medium' ? 'secondary' : 
+                        'destructive'
+                      }
+                    >
+                      {question.difficulty}
+                    </Badge>
+                  )}
+                </div>
 
-      <div className="flex flex-wrap gap-4 mb-4">
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map(category => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
+                <div className="text-xs text-gray-500 flex items-center justify-between">
+                  <span>
+                    Submitted by: {question.submitted_by || 'Anonymous'}
+                  </span>
+                  <span>
+                    {new Date(question.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
             ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by Difficulty" />
-          </SelectTrigger>
-          <SelectContent>
-            {difficulties.map(difficulty => (
-              <SelectItem key={difficulty} value={difficulty}>{difficulty}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={interviewStageFilter} onValueChange={setInterviewStageFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by Interview Stage" />
-          </SelectTrigger>
-          <SelectContent>
-            {interviewStages.map(stage => (
-              <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading questions...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredQuestions.map(question => (
-            <QuestionCard key={question.id} question={question} />
-          ))}
-        </div>
-      )}
-
-      {!loading && filteredQuestions.length === 0 && !error && (
-        <div className="text-center py-12">
-          <p className="text-gray-600">No questions found matching your criteria.</p>
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

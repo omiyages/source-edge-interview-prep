@@ -59,7 +59,7 @@ function App() {
                 } 
               />
               <Route 
-                path="/track/:trackId" 
+                path="/tracks" 
                 element={
                   <ProtectedRoute>
                     <Track />
