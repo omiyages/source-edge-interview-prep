@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { QuestionCard } from "@/components/QuestionCard";
+import QuestionCard from "@/components/QuestionCard";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
 import { EditQuestionForm } from "@/components/EditQuestionForm";
 import { Button } from "@/components/ui/button";
