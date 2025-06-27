@@ -15,8 +15,10 @@ export const ResourcesHeader = () => {
         </Link>
       </div>
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Useful Resources</h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 px-4 leading-tight">
+          Source Edge Interview Preparation
+        </h1>
+        <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
           Curated collection of helpful resources for interview preparation and career development.
         </p>
       </div>

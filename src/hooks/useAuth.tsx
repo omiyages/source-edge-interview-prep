@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,11 +81,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const handleAuthStateChange = useCallback(async (event: string, session: Session | null) => {
     console.log('🔐 Auth state changed:', event, session?.user?.email);
     
-    setSession(session);
-    setUser(session?.user ?? null);
-    
     if (session?.user) {
       console.log('👤 User found, loading profile for:', session.user.email);
+      setUser(session.user);
+      setSession(session);
       
       try {
         const userProfile = await loadOrCreateProfile(session.user);
@@ -105,6 +103,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } else {
       console.log('🚪 No user session found');
+      setUser(null);
+      setSession(null);
       setProfile(null);
       
       if (event === 'SIGNED_OUT') {
@@ -112,31 +112,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
     
+    // Always set loading to false after handling auth state
     setLoading(false);
   }, [startSession, endSession]);
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
+        // Set a timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          if (mounted) {
+            console.log('⏰ Auth initialization timeout, setting loading to false');
+            setLoading(false);
+          }
+        }, 5000);
+
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('❌ Error getting initial session:', error);
-          setLoading(false);
+          if (mounted) {
+            setLoading(false);
+          }
           return;
         }
 
         console.log('🚀 Initial session check:', session?.user?.email);
         
         if (mounted) {
+          clearTimeout(timeoutId);
           await handleAuthStateChange('INITIAL_SESSION', session);
         }
       } catch (error) {
         console.error('❌ Error in initial auth check:', error);
         if (mounted) {
+          clearTimeout(timeoutId);
           setLoading(false);
         }
       }
@@ -162,6 +176,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
       subscription.unsubscribe();
       window.removeEventListener('beforeunload', handleBeforeUnload);
       endSession();

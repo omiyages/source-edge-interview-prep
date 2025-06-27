@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +20,7 @@ interface Resource {
 }
 
 const Resources = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const [resources, setResources] = useState<Resource[]>([]);
   const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
@@ -33,19 +32,38 @@ const Resources = () => {
 
   const fetchResources = async () => {
     try {
+      console.log('🔄 Fetching resources...');
+      
+      // Check if user is authenticated before making requests
+      if (!user) {
+        console.log('❌ No authenticated user found');
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to access resources.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('resources')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching resources:', error);
+        throw error;
+      }
+
+      console.log('✅ Resources fetched successfully:', data?.length || 0);
       setResources(data || []);
       setFilteredResources(data || []);
     } catch (error) {
-      console.error('Error fetching resources:', error);
+      console.error('❌ Error fetching resources:', error);
       toast({
         title: "Error",
-        description: "Failed to load resources.",
+        description: "Failed to load resources. Please try refreshing the page.",
         variant: "destructive",
       });
     } finally {
@@ -54,8 +72,11 @@ const Resources = () => {
   };
 
   useEffect(() => {
-    fetchResources();
-  }, []);
+    // Only fetch resources if user is available
+    if (user) {
+      fetchResources();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (selectedCategory === "all") {

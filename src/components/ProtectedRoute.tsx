@@ -19,7 +19,7 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     requireAdmin 
   });
 
-  // Show loading only for a reasonable amount of time
+  // Show loading with a reasonable timeout
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
