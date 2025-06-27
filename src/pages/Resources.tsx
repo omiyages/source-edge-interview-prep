@@ -2,15 +2,14 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ResourceCard } from "@/components/ResourceCard";
-import { CreateResourceForm } from "@/components/CreateResourceForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EditResourceForm } from "@/components/EditResourceForm";
-import { Plus, Filter, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { ResourcesHeader } from "@/components/ResourcesHeader";
+import { ResourcesFilters } from "@/components/ResourcesFilters";
+import { ResourcesList } from "@/components/ResourcesList";
+import { ResourcesEmpty } from "@/components/ResourcesEmpty";
+import { ResourcesLoading } from "@/components/ResourcesLoading";
 
 interface Resource {
   id: string;
@@ -31,16 +30,6 @@ const Resources = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
-
-  const categories = [
-    "Interview Prep",
-    "Technical Skills", 
-    "Career Development",
-    "Coding Practice",
-    "System Design",
-    "Behavioral Interview",
-    "Other"
-  ];
 
   const fetchResources = async () => {
     try {
@@ -120,92 +109,32 @@ const Resources = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading resources...</p>
-        </div>
-      </div>
-    );
+    return <ResourcesLoading />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Link to="/">
-              <Button variant="outline" className="flex items-center gap-2 bg-white hover:bg-gray-50">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
-            </Link>
-          </div>
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Useful Resources</h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Curated collection of helpful resources for interview preparation and career development.
-            </p>
-          </div>
-        </div>
+        <ResourcesHeader />
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-48 bg-white">
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border shadow-lg">
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <ResourcesFilters
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          isAdmin={isAdmin}
+          createDialogOpen={createDialogOpen}
+          onCreateDialogOpenChange={setCreateDialogOpen}
+          onCreateSuccess={handleCreateSuccess}
+        />
 
-          {isAdmin && (
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4" />
-                  Add Resource
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md bg-white">
-                <DialogHeader>
-                  <DialogTitle>Create New Resource</DialogTitle>
-                </DialogHeader>
-                <CreateResourceForm onSuccess={handleCreateSuccess} />
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
-          {filteredResources.map((resource) => (
-            <ResourceCard
-              key={resource.id}
-              resource={resource}
-              onEdit={isAdmin ? handleEdit : undefined}
-              onDelete={isAdmin ? handleDelete : undefined}
-            />
-          ))}
-        </div>
-
-        {filteredResources.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-lg text-gray-600">
-              {selectedCategory === "all" 
-                ? "No resources available yet." 
-                : `No resources found in the "${selectedCategory}" category.`
-              }
-            </p>
-          </div>
+        {filteredResources.length > 0 ? (
+          <ResourcesList
+            resources={filteredResources}
+            isAdmin={isAdmin}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        ) : (
+          <ResourcesEmpty selectedCategory={selectedCategory} />
         )}
 
         {editingResource && (
