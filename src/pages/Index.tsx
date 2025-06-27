@@ -58,23 +58,26 @@ const Index = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<InterviewQuestion | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [hasFetchedQuestions, setHasFetchedQuestions] = useState(false);
+  const [hasFetchedResources, setHasFetchedResources] = useState(false);
 
   const categories = ["All", "Technical", "Behavioral", "System Design", "Background", "Culture Fit", "Other"];
   const difficulties = ["All", "Easy", "Medium", "Hard"];
   const interviewStages = ["All", "Phone Screen", "Technical", "Onsite", "Final", "Other"];
 
-  // Fetch questions - only when user and profile are loaded
+  // Fetch questions when user is authenticated and not loading
   useEffect(() => {
-    if (authLoading || !user) {
-      console.log('🔄 Skipping questions fetch - auth loading or no user');
+    if (authLoading || !user || hasFetchedQuestions) {
+      console.log('🔄 Skipping questions fetch:', { authLoading, hasUser: !!user, hasFetchedQuestions });
       return;
     }
 
     const fetchQuestions = async () => {
       console.log('📥 Fetching questions for user:', user.email);
-      setLoading(true);
+      setQuestionsLoading(true);
       setQuestionsError(null);
       
       try {
@@ -97,6 +100,7 @@ const Index = () => {
 
         console.log('✅ Questions loaded:', data?.length || 0);
         setQuestions(data || []);
+        setHasFetchedQuestions(true);
       } catch (error) {
         console.error('❌ Error fetching questions:', error);
         setQuestionsError('Failed to load questions. Please try again.');
@@ -106,23 +110,24 @@ const Index = () => {
           variant: "destructive",
         });
       } finally {
-        setLoading(false);
+        setQuestionsLoading(false);
       }
     };
 
     fetchQuestions();
-  }, [user, isAdmin, authLoading, toast]);
+  }, [user, isAdmin, authLoading, hasFetchedQuestions, toast]);
 
-  // Fetch resources - independent of profile role
+  // Fetch resources when user is authenticated and not loading
   useEffect(() => {
-    if (authLoading || !user) {
-      console.log('🔄 Skipping resources fetch - auth loading or no user');
+    if (authLoading || !user || hasFetchedResources) {
+      console.log('🔄 Skipping resources fetch:', { authLoading, hasUser: !!user, hasFetchedResources });
       return;
     }
 
     const fetchResources = async () => {
       try {
         console.log('📥 Fetching resources...');
+        setResourcesLoading(true);
         const { data, error } = await supabase
           .from('resources')
           .select('*')
@@ -136,13 +141,16 @@ const Index = () => {
         
         console.log('✅ Resources loaded:', data?.length || 0);
         setResources(data || []);
+        setHasFetchedResources(true);
       } catch (error) {
         console.error('❌ Error fetching resources:', error);
+      } finally {
+        setResourcesLoading(false);
       }
     };
 
     fetchResources();
-  }, [user, authLoading]);
+  }, [user, authLoading, hasFetchedResources]);
 
   // Filter questions
   useEffect(() => {
@@ -177,6 +185,8 @@ const Index = () => {
       title: "Question submitted!",
       description: "Your question has been submitted for review.",
     });
+    // Refresh questions
+    setHasFetchedQuestions(false);
   };
 
   const handleEdit = (question: InterviewQuestion) => {
@@ -191,6 +201,8 @@ const Index = () => {
       title: "Question updated!",
       description: "The question has been updated successfully.",
     });
+    // Refresh questions
+    setHasFetchedQuestions(false);
   };
 
   // Show loading while auth is loading
@@ -270,7 +282,12 @@ const Index = () => {
             Check out our curated collection of helpful resources for interview preparation and career development.
           </p>
           
-          {resources.length > 0 ? (
+          {resourcesLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <p className="text-gray-600">Loading resources...</p>
+            </div>
+          ) : resources.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
               {resources.slice(0, 10).map((resource) => (
                 <div key={resource.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -364,7 +381,7 @@ const Index = () => {
           )}
 
           {/* Loading State */}
-          {loading ? (
+          {questionsLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-gray-600">Loading questions...</p>
@@ -381,7 +398,7 @@ const Index = () => {
           )}
 
           {/* No Questions State */}
-          {!loading && filteredQuestions.length === 0 && !questionsError && (
+          {!questionsLoading && filteredQuestions.length === 0 && !questionsError && (
             <div className="text-center py-12">
               <p className="text-gray-600">No questions found matching your criteria.</p>
             </div>

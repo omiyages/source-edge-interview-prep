@@ -40,41 +40,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const endSession = useCallback(async () => {
-    if (sessionId && sessionStartTime) {
-      try {
-        console.log('🔄 Ending session:', sessionId);
-        const endTime = new Date();
-        const durationMinutes = Math.round((endTime.getTime() - sessionStartTime.getTime()) / (1000 * 60));
-        
+    if (!sessionId || !sessionStartTime) return;
+    
+    try {
+      console.log('🔄 Ending session:', sessionId);
+      const endTime = new Date();
+      const durationMinutes = Math.round((endTime.getTime() - sessionStartTime.getTime()) / (1000 * 60));
+      
+      await supabase
+        .from('user_sessions')
+        .update({
+          ended_at: endTime.toISOString(),
+          duration_minutes: durationMinutes
+        })
+        .eq('id', sessionId);
+
+      if (user) {
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('total_session_time_minutes')
+          .eq('id', user.id)
+          .single();
+
+        const currentTotal = currentProfile?.total_session_time_minutes || 0;
         await supabase
-          .from('user_sessions')
+          .from('profiles')
           .update({
-            ended_at: endTime.toISOString(),
-            duration_minutes: durationMinutes
+            total_session_time_minutes: currentTotal + durationMinutes
           })
-          .eq('id', sessionId);
-
-        if (user) {
-          const { data: currentProfile } = await supabase
-            .from('profiles')
-            .select('total_session_time_minutes')
-            .eq('id', user.id)
-            .single();
-
-          const currentTotal = currentProfile?.total_session_time_minutes || 0;
-          await supabase
-            .from('profiles')
-            .update({
-              total_session_time_minutes: currentTotal + durationMinutes
-            })
-            .eq('id', user.id);
-        }
-        
-        console.log('✅ Session ended successfully');
-      } catch (error) {
-        console.error('❌ Error ending session:', error);
+          .eq('id', user.id);
       }
+      
+      console.log('✅ Session ended successfully');
+    } catch (error) {
+      console.error('❌ Error ending session:', error);
     }
+    
     setSessionId(null);
     setSessionStartTime(null);
   }, [sessionId, sessionStartTime, user]);
@@ -87,16 +88,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log('🚀 Initializing auth...');
         
-        // Clear any existing timeout
-        if (timeoutId) clearTimeout(timeoutId);
-        
         // Set a timeout to prevent infinite loading
         timeoutId = setTimeout(() => {
           if (mounted) {
             console.log('⏰ Auth initialization timeout - setting loading to false');
             setLoading(false);
           }
-        }, 5000);
+        }, 10000); // 10 seconds timeout
 
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -200,7 +198,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       endSession();
     };
-  }, [startSession, endSession]);
+  }, []); // Remove dependencies to prevent infinite loop
 
   const signIn = async (email: string, password: string) => {
     try {
