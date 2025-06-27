@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from '@supabase/supabase-js';
 import type { Profile } from "@/types/auth";
@@ -17,18 +18,26 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
 
     if (existingProfile) {
       console.log('✅ Found existing profile:', existingProfile);
+      console.log('🔑 Profile role:', existingProfile.role);
       return existingProfile;
     }
 
     // If no profile exists and no other error, create one
     if (!error || error.code === 'PGRST116') {
       console.log('➕ Creating new profile for user:', user.id);
+      
+      // Check if this email should be admin
+      const isAdminEmail = user.email === 'namtae.quicksit@gmail.com';
+      const defaultRole = isAdminEmail ? 'admin' : 'user';
+      
+      console.log('🎭 Setting role for new profile:', defaultRole, 'for email:', user.email);
+      
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
         .insert([{ 
           id: user.id, 
           email: user.email || '',
-          role: 'user'
+          role: defaultRole
         }])
         .select()
         .single();
@@ -39,6 +48,7 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
       }
 
       console.log('✅ Created new profile:', newProfile);
+      console.log('🔑 New profile role:', newProfile?.role);
       return newProfile || null;
     }
 

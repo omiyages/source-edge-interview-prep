@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,23 +96,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session?.user) {
         console.log('👤 User found, loading profile for:', session.user.email);
         
-        try {
-          const userProfile = await loadOrCreateProfile(session.user);
-          console.log('📋 Profile loaded:', userProfile);
-          console.log('🔑 User role:', userProfile?.role);
-          console.log('👑 Is admin?', userProfile?.role === 'admin');
+        // Use setTimeout to avoid auth state change callback issues
+        setTimeout(async () => {
+          if (!mounted) return;
           
-          if (mounted) {
-            setProfile(userProfile);
+          try {
+            const userProfile = await loadOrCreateProfile(session.user);
+            console.log('📋 Profile loaded:', userProfile);
+            console.log('🔑 User role:', userProfile?.role);
+            console.log('👑 Is admin?', userProfile?.role === 'admin');
             
-            // Start session tracking for sign-in events
-            if (event === 'SIGNED_IN') {
-              await startSession(session.user.id);
+            if (mounted) {
+              setProfile(userProfile);
+              
+              // Start session tracking for sign-in events
+              if (event === 'SIGNED_IN') {
+                await startSession(session.user.id);
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error loading profile:', error);
+            if (mounted) {
+              setProfile(null);
             }
           }
-        } catch (error) {
-          console.error('❌ Error loading profile:', error);
-        }
+          
+          if (mounted) {
+            setLoading(false);
+          }
+        }, 100);
       } else {
         console.log('🚪 No user session found');
         setProfile(null);
@@ -120,9 +133,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (event === 'SIGNED_OUT') {
           setTimeout(() => endSession(), 0);
         }
+        
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     // Get initial session
@@ -151,11 +164,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
           } catch (error) {
             console.error('❌ Error in initial profile loading:', error);
+            if (mounted) {
+              setProfile(null);
+            }
           }
-        }, 0);
+          
+          if (mounted) {
+            setLoading(false);
+          }
+        }, 100);
+      } else {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     // End session when user closes the browser
