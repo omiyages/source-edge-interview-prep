@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,13 +87,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log('🚀 Initializing auth...');
         
-        // Set a reasonable timeout to prevent infinite loading
+        // Clear any existing timeout
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        // Set a timeout to prevent infinite loading
         timeoutId = setTimeout(() => {
           if (mounted) {
             console.log('⏰ Auth initialization timeout - setting loading to false');
             setLoading(false);
           }
-        }, 3000); // Reduced from 5000 to 3000ms
+        }, 5000);
 
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -148,7 +152,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state changed:', event);
+        console.log('🔐 Auth state changed:', event, session?.user?.email || 'no session');
         
         if (!mounted) return;
 

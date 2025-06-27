@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, BookOpen, ExternalLink, Settings, MapPin } from "lucide-react";
+import { Plus, Search, Filter, BookOpen, ExternalLink, Settings, MapPin, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface InterviewQuestion {
   id: string;
@@ -45,7 +46,7 @@ interface Resource {
 }
 
 const Index = () => {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<InterviewQuestion[]>([]);
@@ -57,32 +58,48 @@ const Index = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<InterviewQuestion | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
 
   const categories = ["All", "Technical", "Behavioral", "System Design", "Background", "Culture Fit", "Other"];
   const difficulties = ["All", "Easy", "Medium", "Hard"];
   const interviewStages = ["All", "Phone Screen", "Technical", "Onsite", "Final", "Other"];
 
+  // Fetch questions - only when user and profile are loaded
   useEffect(() => {
+    if (authLoading || !user) {
+      console.log('🔄 Skipping questions fetch - auth loading or no user');
+      return;
+    }
+
     const fetchQuestions = async () => {
+      console.log('📥 Fetching questions for user:', user.email);
       setLoading(true);
+      setQuestionsError(null);
+      
       try {
         let query = supabase
           .from('interview_questions')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (profile?.role !== 'admin') {
-          query = query.not('status', 'eq', 'pending');
+        // Only filter out pending questions for non-admin users
+        if (!isAdmin) {
+          query = query.neq('status', 'pending');
         }
 
         const { data, error } = await query;
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Error fetching questions:', error);
+          throw error;
+        }
 
+        console.log('✅ Questions loaded:', data?.length || 0);
         setQuestions(data || []);
       } catch (error) {
-        console.error('Error fetching questions:', error);
+        console.error('❌ Error fetching questions:', error);
+        setQuestionsError('Failed to load questions. Please try again.');
         toast({
           title: "Error",
           description: "Failed to load questions.",
@@ -94,27 +111,40 @@ const Index = () => {
     };
 
     fetchQuestions();
-  }, [profile]);
+  }, [user, isAdmin, authLoading, toast]);
 
+  // Fetch resources - independent of profile role
   useEffect(() => {
+    if (authLoading || !user) {
+      console.log('🔄 Skipping resources fetch - auth loading or no user');
+      return;
+    }
+
     const fetchResources = async () => {
       try {
+        console.log('📥 Fetching resources...');
         const { data, error } = await supabase
           .from('resources')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(10);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Error fetching resources:', error);
+          throw error;
+        }
+        
+        console.log('✅ Resources loaded:', data?.length || 0);
         setResources(data || []);
       } catch (error) {
-        console.error('Error fetching resources:', error);
+        console.error('❌ Error fetching resources:', error);
       }
     };
 
     fetchResources();
-  }, []);
+  }, [user, authLoading]);
 
+  // Filter questions
   useEffect(() => {
     let filtered = questions;
 
@@ -163,10 +193,14 @@ const Index = () => {
     });
   };
 
-  if (loading) {
+  // Show loading while auth is loading
+  if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading questions...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading application...</p>
+        </div>
       </div>
     );
   }
@@ -176,7 +210,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4 leading-tight">
             Source Edge Interview Prep
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-8">
@@ -321,14 +355,37 @@ const Index = () => {
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredQuestions.map(question => (
-              <QuestionCard
-                key={question.id}
-                question={question}
-              />
-            ))}
-          </div>
+          {/* Error Alert */}
+          {questionsError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{questionsError}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Loading State */}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading questions...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredQuestions.map(question => (
+                <QuestionCard
+                  key={question.id}
+                  question={question}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* No Questions State */}
+          {!loading && filteredQuestions.length === 0 && !questionsError && (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No questions found matching your criteria.</p>
+            </div>
+          )}
         </div>
 
         {/* Edit Dialog */}
