@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, BookOpen, ExternalLink } from "lucide-react";
+import { Plus, Search, Filter, BookOpen, ExternalLink, Settings, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
@@ -35,7 +36,7 @@ interface InterviewQuestion {
 }
 
 const Index = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const { toast } = useToast();
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<InterviewQuestion[]>([]);
@@ -144,7 +145,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        {/* Updated Hero Section */}
+        {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
             InterviewAce
@@ -161,6 +162,20 @@ const Index = () => {
                 Browse Resources
               </Button>
             </Link>
+            <Link to="/track/1">
+              <Button variant="outline" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                View Tracks
+              </Button>
+            </Link>
+            {isAdmin && (
+              <Link to="/admin">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Admin Dashboard
+                </Button>
+              </Link>
+            )}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2">
@@ -199,7 +214,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Existing Questions Section */}
+        {/* Questions Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold">Interview Questions</h2>
@@ -269,7 +284,7 @@ const Index = () => {
                 onSuccess={handleEditSuccess}
               />
             )}
-          </DialogContent>
+          </Dialog>
         </Dialog>
       </div>
     </div>

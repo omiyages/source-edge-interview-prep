@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ResourceCard } from "@/components/ResourceCard";
 import { CreateResourceForm } from "@/components/CreateResourceForm";
 import { EditResourceForm } from "@/components/EditResourceForm";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Filter, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 interface Resource {
   id: string;
@@ -131,6 +132,14 @@ const Resources = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          <Link to="/">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
         <h1 className="text-3xl font-bold mb-2">Useful Resources</h1>
         <p className="text-lg text-muted-foreground">
           Curated collection of helpful resources for interview preparation and career development.
