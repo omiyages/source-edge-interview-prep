@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,11 +35,21 @@ interface InterviewQuestion {
   scraped_at: string | null;
 }
 
+interface Resource {
+  id: string;
+  title: string;
+  description: string | null;
+  url: string;
+  category: string;
+  created_at: string;
+}
+
 const Index = () => {
   const { user, profile, isAdmin } = useAuth();
   const { toast } = useToast();
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<InterviewQuestion[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [difficultyFilter, setDifficultyFilter] = useState("All");
@@ -84,6 +95,25 @@ const Index = () => {
 
     fetchQuestions();
   }, [profile]);
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('resources')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+        setResources(data || []);
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+      }
+    };
+
+    fetchResources();
+  }, []);
 
   useEffect(() => {
     let filtered = questions;
@@ -147,7 +177,7 @@ const Index = () => {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            InterviewAce
+            Source Edge Interview Prep
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-8">
             Prepare for your upcoming interview by reviewing past interview questions and tips
@@ -205,12 +235,42 @@ const Index = () => {
           <p className="text-gray-600 mb-4">
             Check out our curated collection of helpful resources for interview preparation and career development.
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <Badge variant="secondary">Interview Prep</Badge>
-            <Badge variant="secondary">Technical Skills</Badge>
-            <Badge variant="secondary">System Design</Badge>
-            <Badge variant="secondary">Career Development</Badge>
-          </div>
+          
+          {resources.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              {resources.slice(0, 10).map((resource) => (
+                <div key={resource.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-medium text-sm line-clamp-2">{resource.title}</h3>
+                    <Badge variant="secondary" className="ml-2 shrink-0 text-xs">
+                      {resource.category}
+                    </Badge>
+                  </div>
+                  {resource.description && (
+                    <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                      {resource.description}
+                    </p>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(resource.url, '_blank')}
+                    className="flex items-center gap-2 text-xs"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Visit
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Badge variant="secondary">Interview Prep</Badge>
+              <Badge variant="secondary">Technical Skills</Badge>
+              <Badge variant="secondary">System Design</Badge>
+              <Badge variant="secondary">Career Development</Badge>
+            </div>
+          )}
         </div>
 
         {/* Questions Section */}
