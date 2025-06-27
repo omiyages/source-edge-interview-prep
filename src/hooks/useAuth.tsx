@@ -17,10 +17,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  // Track user session
   const startSession = useCallback(async (userId: string) => {
     try {
-      console.log('Starting session for user:', userId);
+      console.log('🔄 Starting session for user:', userId);
       const { data, error } = await supabase
         .from('user_sessions')
         .insert([{ user_id: userId }])
@@ -28,22 +27,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
       
       if (error) {
-        console.error('Error starting session:', error);
+        console.error('❌ Error starting session:', error);
         return;
       }
       
       setSessionId(data.id);
       setSessionStartTime(new Date());
-      console.log('Session started:', data.id);
+      console.log('✅ Session started:', data.id);
     } catch (error) {
-      console.error('Unexpected error starting session:', error);
+      console.error('❌ Unexpected error starting session:', error);
     }
   }, []);
 
   const endSession = useCallback(async () => {
     if (sessionId && sessionStartTime) {
       try {
-        console.log('Ending session:', sessionId);
+        console.log('🔄 Ending session:', sessionId);
         const endTime = new Date();
         const durationMinutes = Math.round((endTime.getTime() - sessionStartTime.getTime()) / (1000 * 60));
         
@@ -55,7 +54,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           })
           .eq('id', sessionId);
 
-        // Update total session time in profile
         if (user) {
           const { data: currentProfile } = await supabase
             .from('profiles')
@@ -72,113 +70,90 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .eq('id', user.id);
         }
         
-        console.log('Session ended successfully');
+        console.log('✅ Session ended successfully');
       } catch (error) {
-        console.error('Error ending session:', error);
+        console.error('❌ Error ending session:', error);
       }
     }
     setSessionId(null);
     setSessionStartTime(null);
   }, [sessionId, sessionStartTime, user]);
 
+  const handleAuthStateChange = useCallback(async (event: string, session: Session | null) => {
+    console.log('🔐 Auth state changed:', event, session?.user?.email);
+    
+    setSession(session);
+    setUser(session?.user ?? null);
+    
+    if (session?.user) {
+      console.log('👤 User found, loading profile for:', session.user.email);
+      
+      try {
+        const userProfile = await loadOrCreateProfile(session.user);
+        console.log('📋 Profile loaded:', userProfile);
+        console.log('🔑 User role:', userProfile?.role);
+        console.log('👑 Is admin?', userProfile?.role === 'admin');
+        
+        setProfile(userProfile);
+        
+        if (event === 'SIGNED_IN') {
+          await startSession(session.user.id);
+        }
+      } catch (error) {
+        console.error('❌ Error loading profile:', error);
+        setProfile(null);
+      }
+    } else {
+      console.log('🚪 No user session found');
+      setProfile(null);
+      
+      if (event === 'SIGNED_OUT') {
+        await endSession();
+      }
+    }
+    
+    setLoading(false);
+  }, [startSession, endSession]);
+
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state changed:', event, session?.user?.email);
-      
-      if (!mounted) return;
-
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        console.log('👤 User found, loading profile for:', session.user.email);
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // Use setTimeout to avoid auth state change callback issues
-        setTimeout(async () => {
-          if (!mounted) return;
-          
-          try {
-            const userProfile = await loadOrCreateProfile(session.user);
-            console.log('📋 Profile loaded:', userProfile);
-            console.log('🔑 User role:', userProfile?.role);
-            console.log('👑 Is admin?', userProfile?.role === 'admin');
-            
-            if (mounted) {
-              setProfile(userProfile);
-              
-              // Start session tracking for sign-in events
-              if (event === 'SIGNED_IN') {
-                await startSession(session.user.id);
-              }
-            }
-          } catch (error) {
-            console.error('❌ Error loading profile:', error);
-            if (mounted) {
-              setProfile(null);
-            }
-          }
-          
-          if (mounted) {
-            setLoading(false);
-          }
-        }, 100);
-      } else {
-        console.log('🚪 No user session found');
-        setProfile(null);
-        
-        // End session tracking for sign-out events
-        if (event === 'SIGNED_OUT') {
-          setTimeout(() => endSession(), 0);
+        if (error) {
+          console.error('❌ Error getting initial session:', error);
+          setLoading(false);
+          return;
         }
-        
-        setLoading(false);
-      }
-    });
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🚀 Initial session check:', session?.user?.email);
-      
-      if (!mounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        console.log('🔄 Loading initial profile for:', session.user.email);
+        console.log('🚀 Initial session check:', session?.user?.email);
         
-        setTimeout(async () => {
-          if (!mounted) return;
-          
-          try {
-            const userProfile = await loadOrCreateProfile(session.user);
-            console.log('📋 Initial profile loaded:', userProfile);
-            console.log('🔑 Initial user role:', userProfile?.role);
-            
-            if (mounted) {
-              setProfile(userProfile);
-              await startSession(session.user.id);
-            }
-          } catch (error) {
-            console.error('❌ Error in initial profile loading:', error);
-            if (mounted) {
-              setProfile(null);
-            }
-          }
-          
-          if (mounted) {
-            setLoading(false);
-          }
-        }, 100);
-      } else {
-        setLoading(false);
+        if (mounted) {
+          await handleAuthStateChange('INITIAL_SESSION', session);
+        }
+      } catch (error) {
+        console.error('❌ Error in initial auth check:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    });
+    };
 
-    // End session when user closes the browser
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (mounted && event !== 'INITIAL_SESSION') {
+          await handleAuthStateChange(event, session);
+        }
+      }
+    );
+
+    // Initialize auth
+    initializeAuth();
+
     const handleBeforeUnload = () => {
       endSession();
     };
@@ -191,11 +166,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       endSession();
     };
-  }, [startSession, endSession]);
+  }, [handleAuthStateChange, endSession]);
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Input validation
       if (!validateEmail(email)) {
         const errorMessage = "Please enter a valid email address";
         toast({
@@ -242,7 +216,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string) => {
     try {
-      // Input validation
       if (!validateEmail(email)) {
         const errorMessage = "Please enter a valid email address";
         toast({
@@ -301,7 +274,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // End session before signing out
       await endSession();
       
       const { error } = await supabase.auth.signOut();
@@ -310,7 +282,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
       
-      // Clear all state
       setUser(null);
       setSession(null);
       setProfile(null);
@@ -320,7 +291,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "You have been successfully signed out.",
       });
       
-      // Redirect to auth page
       window.location.href = '/auth';
     } catch (error) {
       console.error('Sign out error:', error);

@@ -22,7 +22,7 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
       return existingProfile;
     }
 
-    // If no profile exists and no other error, create one
+    // If no profile exists, create one
     if (!error || error.code === 'PGRST116') {
       console.log('➕ Creating new profile for user:', user.id);
       
@@ -60,7 +60,6 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
   }
 };
 
-// Validation functions for secure input handling
 export const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email) && email.length <= 254;
@@ -78,7 +77,7 @@ export const validatePassword = (password: string): { isValid: boolean; message?
 
 export const sanitizeInput = (input: string): string => {
   return input
-    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/[<>]/g, '')
     .trim()
-    .substring(0, 1000); // Limit length
+    .substring(0, 1000);
 };
