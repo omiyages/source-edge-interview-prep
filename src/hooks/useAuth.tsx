@@ -1,8 +1,8 @@
 
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { loadOrCreateProfile } from "@/services/authService";
+import { loadOrCreateProfile, validateEmail, validatePassword } from "@/services/secureAuthService";
 import type { User, Session } from '@supabase/supabase-js';
 import type { AuthContextType, Profile } from "@/types/auth";
 
@@ -18,26 +18,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
 
   // Track user session
-  const startSession = async (userId: string) => {
+  const startSession = useCallback(async (userId: string) => {
     try {
+      console.log('Starting session for user:', userId);
       const { data, error } = await supabase
         .from('user_sessions')
         .insert([{ user_id: userId }])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error starting session:', error);
+        return;
+      }
       
       setSessionId(data.id);
       setSessionStartTime(new Date());
+      console.log('Session started:', data.id);
     } catch (error) {
-      console.error('Error starting session:', error);
+      console.error('Unexpected error starting session:', error);
     }
-  };
+  }, []);
 
-  const endSession = async () => {
+  const endSession = useCallback(async () => {
     if (sessionId && sessionStartTime) {
       try {
+        console.log('Ending session:', sessionId);
         const endTime = new Date();
         const durationMinutes = Math.round((endTime.getTime() - sessionStartTime.getTime()) / (1000 * 60));
         
@@ -65,43 +71,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             })
             .eq('id', user.id);
         }
+        
+        console.log('Session ended successfully');
       } catch (error) {
         console.error('Error ending session:', error);
       }
     }
     setSessionId(null);
     setSessionStartTime(null);
-  };
+  }, [sessionId, sessionStartTime, user]);
 
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Set up auth state listener FIRST - using proper deadlock prevention
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
       if (!mounted) return;
 
+      // Only synchronous state updates here to prevent deadlocks
       setSession(session);
       setUser(session?.user ?? null);
       
+      // Defer any Supabase calls to prevent infinite recursion
       if (session?.user) {
-        // Load or create profile
         setTimeout(async () => {
           if (!mounted) return;
-          const userProfile = await loadOrCreateProfile(session.user);
-          setProfile(userProfile);
           
-          // Start session tracking
-          if (event === 'SIGNED_IN') {
-            await startSession(session.user.id);
+          try {
+            const userProfile = await loadOrCreateProfile(session.user);
+            if (mounted) {
+              setProfile(userProfile);
+              
+              // Start session tracking for sign-in events
+              if (event === 'SIGNED_IN') {
+                await startSession(session.user.id);
+              }
+            }
+          } catch (error) {
+            console.error('Error in deferred profile loading:', error);
           }
         }, 0);
       } else {
         setProfile(null);
-        // End session tracking
+        // End session tracking for sign-out events
         if (event === 'SIGNED_OUT') {
-          await endSession();
+          setTimeout(() => endSession(), 0);
         }
       }
       
@@ -116,13 +132,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        loadOrCreateProfile(session.user).then(userProfile => {
-          if (mounted) {
-            setProfile(userProfile);
-            // Start session for existing users
-            startSession(session.user.id);
+        // Defer profile loading to prevent potential issues
+        setTimeout(async () => {
+          if (!mounted) return;
+          
+          try {
+            const userProfile = await loadOrCreateProfile(session.user);
+            if (mounted) {
+              setProfile(userProfile);
+              await startSession(session.user.id);
+            }
+          } catch (error) {
+            console.error('Error in initial profile loading:', error);
           }
-        });
+        }, 0);
       }
       
       setLoading(false);
@@ -141,18 +164,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       endSession();
     };
-  }, []);
+  }, [startSession, endSession]);
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Input validation
+      if (!validateEmail(email)) {
+        const errorMessage = "Please enter a valid email address";
+        toast({
+          title: "Invalid Input",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { error: { message: errorMessage } };
+      }
+
       console.log('Sign in attempt with:', email);
 
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (error) {
+        console.error('Sign in error:', error);
         toast({
           title: "Sign In Failed",
           description: error.message,
@@ -167,7 +202,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       return { error: null };
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('Unexpected sign in error:', error);
       const errorMessage = { message: "An unexpected error occurred" };
       toast({
         title: "Sign In Failed",
@@ -180,8 +215,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string) => {
     try {
+      // Input validation
+      if (!validateEmail(email)) {
+        const errorMessage = "Please enter a valid email address";
+        toast({
+          title: "Invalid Input",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { error: { message: errorMessage } };
+      }
+
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        toast({
+          title: "Invalid Password",
+          description: passwordValidation.message,
+          variant: "destructive",
+        });
+        return { error: { message: passwordValidation.message } };
+      }
+
       const { error } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
@@ -189,6 +245,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       if (error) {
+        console.error('Sign up error:', error);
         toast({
           title: "Sign Up Failed",
           description: error.message,
@@ -204,7 +261,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       return { error: null };
     } catch (error) {
-      console.error('Sign up error:', error);
+      console.error('Unexpected sign up error:', error);
       const errorMessage = { message: "An unexpected error occurred" };
       toast({
         title: "Sign Up Failed",
@@ -216,24 +273,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    // End session before signing out
-    await endSession();
-    
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      // End session before signing out
+      await endSession();
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+        throw error;
+      }
+      
+      // Clear all state
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+      
+      // Redirect to auth page
+      window.location.href = '/auth';
+    } catch (error) {
       console.error('Sign out error:', error);
+      toast({
+        title: "Sign Out Error",
+        description: "There was an issue signing you out. Please try again.",
+        variant: "destructive",
+      });
     }
-    
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    
-    toast({
-      title: "Signed out",
-      description: "You have been successfully signed out.",
-    });
-    
-    window.location.href = '/auth';
   };
 
   const isAdmin = profile?.role === 'admin';
