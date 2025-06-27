@@ -121,102 +121,107 @@ const Resources = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-64">
-          <div className="text-lg">Loading resources...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading resources...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Link to="/">
-            <Button variant="outline" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-        <h1 className="text-3xl font-bold mb-2">Useful Resources</h1>
-        <p className="text-lg text-muted-foreground">
-          Curated collection of helpful resources for interview preparation and career development.
-        </p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {isAdmin && (
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Resource
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Link to="/">
+              <Button variant="outline" className="flex items-center gap-2 bg-white hover:bg-gray-50">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            </Link>
+          </div>
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Useful Resources</h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Curated collection of helpful resources for interview preparation and career development.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-48 bg-white">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border shadow-lg">
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isAdmin && (
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4" />
+                  Add Resource
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md bg-white">
+                <DialogHeader>
+                  <DialogTitle>Create New Resource</DialogTitle>
+                </DialogHeader>
+                <CreateResourceForm onSuccess={handleCreateSuccess} />
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+          {filteredResources.map((resource) => (
+            <ResourceCard
+              key={resource.id}
+              resource={resource}
+              onEdit={isAdmin ? handleEdit : undefined}
+              onDelete={isAdmin ? handleDelete : undefined}
+            />
+          ))}
+        </div>
+
+        {filteredResources.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-600">
+              {selectedCategory === "all" 
+                ? "No resources available yet." 
+                : `No resources found in the "${selectedCategory}" category.`
+              }
+            </p>
+          </div>
+        )}
+
+        {editingResource && (
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="sm:max-w-md bg-white">
               <DialogHeader>
-                <DialogTitle>Create New Resource</DialogTitle>
+                <DialogTitle>Edit Resource</DialogTitle>
               </DialogHeader>
-              <CreateResourceForm onSuccess={handleCreateSuccess} />
+              <EditResourceForm 
+                resource={editingResource} 
+                onSuccess={handleEditSuccess} 
+              />
             </DialogContent>
           </Dialog>
         )}
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredResources.map((resource) => (
-          <ResourceCard
-            key={resource.id}
-            resource={resource}
-            onEdit={isAdmin ? handleEdit : undefined}
-            onDelete={isAdmin ? handleDelete : undefined}
-          />
-        ))}
-      </div>
-
-      {filteredResources.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-lg text-muted-foreground">
-            {selectedCategory === "all" 
-              ? "No resources available yet." 
-              : `No resources found in the "${selectedCategory}" category.`
-            }
-          </p>
-        </div>
-      )}
-
-      {editingResource && (
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit Resource</DialogTitle>
-            </DialogHeader>
-            <EditResourceForm 
-              resource={editingResource} 
-              onSuccess={handleEditSuccess} 
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };
