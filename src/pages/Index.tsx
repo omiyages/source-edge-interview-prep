@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +26,12 @@ interface InterviewQuestion {
   additional_context: string | null;
   team: string | null;
   position_name: string | null;
+  submitted_by: string | null;
+  created_at: string;
+  question_type: string;
+  source_url: string | null;
+  source_website: string | null;
+  scraped_at: string | null;
 }
 
 const Index = () => {
@@ -247,7 +252,6 @@ const Index = () => {
               <QuestionCard
                 key={question.id}
                 question={question}
-                onEdit={() => handleEdit(question)}
               />
             ))}
           </div>
