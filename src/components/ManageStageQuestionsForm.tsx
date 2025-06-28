@@ -3,13 +3,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Save } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Save } from "lucide-react";
+import { QuestionFilters } from "./QuestionFilters";
+import { QuestionList } from "./QuestionList";
 
 interface ManageStageQuestionsFormProps {
   stageId: string;
@@ -77,14 +75,12 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
     },
   });
 
-  // Update selected questions when current questions data changes
   useEffect(() => {
     if (currentQuestions) {
       setSelectedQuestions(currentQuestions);
     }
   }, [currentQuestions]);
 
-  // Get unique filter options
   const getUniqueValues = (field: keyof InterviewQuestion) => {
     if (!allQuestions) return [];
     return [...new Set(allQuestions.map(q => q[field]))].filter(Boolean).sort();
@@ -111,6 +107,10 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
       newSelected.add(questionId);
     }
     setSelectedQuestions(newSelected);
+  };
+
+  const handleFilterChange = (field: string, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
   };
 
   const clearFilters = () => {
@@ -192,130 +192,31 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div className="flex-1 max-w-md">
-          <Label htmlFor="search">Search Questions</Label>
-          <div className="relative mt-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              id="search"
-              placeholder="Search by question, company, or role..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
+        <Label className="text-lg font-semibold">Manage Stage Questions</Label>
         <div className="text-sm text-gray-600">
           {selectedQuestions.size} questions selected
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-        <div className="space-y-2">
-          <Label>Company</Label>
-          <Select value={filters.company} onValueChange={(value) => setFilters({...filters, company: value})}>
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="All Companies" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border shadow-lg z-50">
-              <SelectItem value="">All Companies</SelectItem>
-              {getUniqueValues('company').map((company) => (
-                <SelectItem key={company} value={company}>{company}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <QuestionFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClearFilters={clearFilters}
+        getUniqueValues={getUniqueValues}
+      />
 
-        <div className="space-y-2">
-          <Label>Role</Label>
-          <Select value={filters.role} onValueChange={(value) => setFilters({...filters, role: value})}>
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="All Roles" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border shadow-lg z-50">
-              <SelectItem value="">All Roles</SelectItem>
-              {getUniqueValues('role').map((role) => (
-                <SelectItem key={role} value={role}>{role}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Category</Label>
-          <Select value={filters.category} onValueChange={(value) => setFilters({...filters, category: value})}>
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border shadow-lg z-50">
-              <SelectItem value="">All Categories</SelectItem>
-              {getUniqueValues('category').map((category) => (
-                <SelectItem key={category} value={category}>{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Interview Stage</Label>
-          <Select value={filters.interview_stage} onValueChange={(value) => setFilters({...filters, interview_stage: value})}>
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="All Stages" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border shadow-lg z-50">
-              <SelectItem value="">All Stages</SelectItem>
-              {getUniqueValues('interview_stage').map((stage) => (
-                <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="md:col-span-4 flex justify-end">
-          <Button variant="outline" onClick={clearFilters} size="sm">
-            Clear Filters
-          </Button>
-        </div>
+      <div className="max-h-96 overflow-y-auto">
+        <QuestionList
+          questions={filteredQuestions || []}
+          selectedQuestions={selectedQuestions}
+          onToggleQuestion={toggleQuestion}
+          loading={isLoadingQuestions}
+        />
       </div>
 
-      <div className="max-h-96 overflow-y-auto space-y-2">
-        {filteredQuestions?.map((question) => (
-          <Card key={question.id} className="p-4">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                checked={selectedQuestions.has(question.id)}
-                onCheckedChange={() => toggleQuestion(question.id)}
-                className="mt-1"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">
-                  {question.question}
-                </p>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    {question.company}
-                  </span>
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                    {question.role}
-                  </span>
-                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                    {question.category}
-                  </span>
-                  <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                    {question.difficulty}
-                  </span>
-                  <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                    {question.interview_stage}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {filteredQuestions?.length === 0 && (
+      {filteredQuestions?.length === 0 && !isLoadingQuestions && (
         <div className="text-center py-8">
           <p className="text-gray-500">No questions found matching your filters.</p>
         </div>

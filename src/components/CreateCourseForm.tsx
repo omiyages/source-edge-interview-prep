@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Minus, Search } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Minus } from "lucide-react";
+import { QuestionFilters } from "./QuestionFilters";
+import { QuestionList } from "./QuestionList";
+import { useNavigate } from "react-router-dom";
 
 interface CreateCourseFormProps {
   onSuccess: () => void;
@@ -43,6 +45,7 @@ interface InterviewQuestion {
 export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -86,7 +89,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
   const [searchTerms, setSearchTerms] = useState<{ [key: number]: string }>({});
 
   // Fetch all approved questions
-  const { data: allQuestions } = useQuery({
+  const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
     queryKey: ['all-questions'],
     queryFn: async () => {
       console.log('🔄 Fetching questions for course creation...');
@@ -119,7 +122,6 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     const currentStages = [...stages];
     
     if (newCount > stages.length) {
-      // Add new stages
       for (let i = stages.length; i < newCount; i++) {
         currentStages.push({
           title: `Stage ${i + 1}`,
@@ -131,7 +133,6 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
         });
       }
     } else if (newCount < stages.length) {
-      // Remove excess stages
       currentStages.splice(newCount);
     }
     
@@ -177,17 +178,15 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     const filters = stages[stageIndex].filters;
     
     if (!allQuestions) {
-      console.log('🔄 No questions available yet...');
       return [];
     }
     
-    const filtered = allQuestions.filter(question => {
+    return allQuestions.filter(question => {
       const matchesSearch = !searchTerm || 
         question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
         question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
         question.role.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Simple filter logic - empty string means no filter
       const matchesCompany = !filters.company || question.company === filters.company;
       const matchesRole = !filters.role || question.role === filters.role;
       const matchesCategory = !filters.category || question.category === filters.category;
@@ -195,11 +194,6 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
       
       return matchesSearch && matchesCompany && matchesRole && matchesCategory && matchesStage;
     });
-    
-    console.log(`📊 Stage ${stageIndex + 1} - Filtered ${filtered.length} questions from ${allQuestions.length} total`);
-    console.log('Filters applied:', filters);
-    console.log('Search term:', searchTerm);
-    return filtered;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,15 +213,13 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
 
     try {
       console.log('Creating course with profile ID:', profile.id);
-      console.log('Form data:', formData);
 
-      // Create the course using profile.id
       const { data: course, error: courseError } = await supabase
         .from('courses')
         .insert({
           title: formData.title,
           description: formData.description,
-          created_by: profile.id, // Use profile.id instead of user.id
+          created_by: profile.id,
         })
         .select()
         .single();
@@ -238,7 +230,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
       }
       console.log('Course created successfully:', course);
 
-      // Create the stages with information field
+      // Create the stages
       const stageInserts = stages.map(stage => ({
         course_id: course.id,
         title: stage.title,
@@ -246,8 +238,6 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
         information: stage.information,
         stage_order: stage.order,
       }));
-
-      console.log('Creating stages:', stageInserts);
 
       const { data: createdStages, error: stagesError } = await supabase
         .from('course_stages')
@@ -258,7 +248,6 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
         console.error('Error creating stages:', stagesError);
         throw stagesError;
       }
-      console.log('Stages created successfully:', createdStages);
 
       // Add questions to stages
       const questionInserts = [];
@@ -275,7 +264,6 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
       }
 
       if (questionInserts.length > 0) {
-        console.log('Adding questions to stages:', questionInserts);
         const { error: questionsError } = await supabase
           .from('stage_questions')
           .insert(questionInserts);
@@ -284,25 +272,15 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
           console.error('Error adding questions to stages:', questionsError);
           throw questionsError;
         }
-        console.log('Questions added to stages successfully');
       }
 
       toast({
         title: "Course created!",
-        description: "Your course has been created successfully with all stages and questions.",
+        description: "Your course has been created successfully.",
       });
 
-      // Reset form
-      setFormData({ title: "", description: "" });
-      setStageCount(4);
-      setStages([
-        { title: "HR Screen", description: "Initial screening with HR team", information: "", order: 1, selectedQuestions: new Set(), filters: { company: "", role: "", category: "", interview_stage: "" } },
-        { title: "Technical Assessment", description: "Coding challenges and technical questions", information: "", order: 2, selectedQuestions: new Set(), filters: { company: "", role: "", category: "", interview_stage: "" } },
-        { title: "Cross Interview", description: "Cross-functional team interviews", information: "", order: 3, selectedQuestions: new Set(), filters: { company: "", role: "", category: "", interview_stage: "" } },
-        { title: "Final Interview", description: "Final round with senior leadership", information: "", order: 4, selectedQuestions: new Set(), filters: { company: "", role: "", category: "", interview_stage: "" } },
-      ]);
-      setSearchTerms({});
-
+      // Navigate to the new course
+      navigate(`/course/${course.id}`);
       onSuccess();
     } catch (error) {
       console.error('Error creating course:', error);
@@ -405,7 +383,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                   </Label>
                   <Textarea
                     id={`stage-information-${index}`}
-                    placeholder="Detailed information about this stage, preparation tips, what to expect, etc. Use **bold text** for emphasis..."
+                    placeholder="Detailed information about this stage..."
                     value={stage.information}
                     onChange={(e) => updateStage(index, 'information', e.target.value)}
                     rows={4}
@@ -413,136 +391,24 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                   />
                 </div>
                 
-                {/* Practice Questions Section */}
                 <div className="space-y-3">
                   <Label className="text-sm font-semibold">Practice Questions ({stage.selectedQuestions.size} selected)</Label>
                   
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search questions for this stage..."
-                      value={searchTerms[index] || ""}
-                      onChange={(e) => setSearchTerms({...searchTerms, [index]: e.target.value})}
-                      className="pl-10"
-                    />
-                  </div>
+                  <QuestionFilters
+                    searchTerm={searchTerms[index] || ""}
+                    onSearchChange={(value) => setSearchTerms({...searchTerms, [index]: value})}
+                    filters={stage.filters}
+                    onFilterChange={(field, value) => updateStageFilter(index, field, value)}
+                    onClearFilters={() => clearStageFilters(index)}
+                    getUniqueValues={getUniqueValues}
+                  />
 
-                  {/* Filter Section */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-gray-50 rounded-md">
-                    <Select 
-                      value={stage.filters.company} 
-                      onValueChange={(value) => updateStageFilter(index, 'company', value === "all" ? "" : value)}
-                    >
-                      <SelectTrigger className="bg-white h-8 text-xs">
-                        <SelectValue placeholder="Company" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="all">All Companies</SelectItem>
-                        {getUniqueValues('company').map((company) => (
-                          <SelectItem key={company} value={company}>{company}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select 
-                      value={stage.filters.role} 
-                      onValueChange={(value) => updateStageFilter(index, 'role', value === "all" ? "" : value)}
-                    >
-                      <SelectTrigger className="bg-white h-8 text-xs">
-                        <SelectValue placeholder="Role" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="all">All Roles</SelectItem>
-                        {getUniqueValues('role').map((role) => (
-                          <SelectItem key={role} value={role}>{role}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select 
-                      value={stage.filters.category} 
-                      onValueChange={(value) => updateStageFilter(index, 'category', value === "all" ? "" : value)}
-                    >
-                      <SelectTrigger className="bg-white h-8 text-xs">
-                        <SelectValue placeholder="Category" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {getUniqueValues('category').map((category) => (
-                          <SelectItem key={category} value={category}>{category}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select 
-                      value={stage.filters.interview_stage} 
-                      onValueChange={(value) => updateStageFilter(index, 'interview_stage', value === "all" ? "" : value)}
-                    >
-                      <SelectTrigger className="bg-white h-8 text-xs">
-                        <SelectValue placeholder="Stage" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="all">All Stages</SelectItem>
-                        {getUniqueValues('interview_stage').map((stage) => (
-                          <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <div className="md:col-span-4 flex justify-end">
-                      <Button 
-                        type="button"
-                        variant="outline" 
-                        onClick={() => clearStageFilters(index)} 
-                        size="sm"
-                        className="text-xs h-6"
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
-                    {getFilteredQuestionsForStage(index).map((question) => (
-                      <div key={question.id} className="flex items-start gap-2 p-2 border rounded">
-                        <Checkbox
-                          checked={stage.selectedQuestions.has(question.id)}
-                          onCheckedChange={() => toggleQuestionForStage(index, question.id)}
-                          className="mt-1"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-900 line-clamp-1 mb-1">
-                            {question.question}
-                          </p>
-                          <div className="flex flex-wrap gap-1 text-xs">
-                            <span className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">
-                              {question.company}
-                            </span>
-                            <span className="bg-green-100 text-green-800 px-1 py-0.5 rounded text-xs">
-                              {question.role}
-                            </span>
-                            <span className="bg-purple-100 text-purple-800 px-1 py-0.5 rounded text-xs">
-                              {question.category}
-                            </span>
-                            <span className="bg-orange-100 text-orange-800 px-1 py-0.5 rounded text-xs">
-                              {question.difficulty}
-                            </span>
-                            <span className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs">
-                              {question.interview_stage}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {getFilteredQuestionsForStage(index).length === 0 && (
-                      <p className="text-xs text-gray-500 text-center py-4">
-                        {allQuestions && allQuestions.length > 0 
-                          ? "No questions found. Try adjusting your search or filters."
-                          : "Loading questions..."
-                        }
-                      </p>
-                    )}
-                  </div>
+                  <QuestionList
+                    questions={getFilteredQuestionsForStage(index)}
+                    selectedQuestions={stage.selectedQuestions}
+                    onToggleQuestion={(questionId) => toggleQuestionForStage(index, questionId)}
+                    loading={isLoadingQuestions}
+                  />
                 </div>
               </CardContent>
             </Card>
