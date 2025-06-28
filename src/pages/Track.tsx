@@ -5,7 +5,6 @@ import { Navigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, LogOut, Settings, BookOpen, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateCourseForm } from "@/components/CreateCourseForm";
@@ -76,13 +75,12 @@ const Track = () => {
             </h1>
             <div className="flex gap-2">
               {isAdmin && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.href = '/admin'}
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Admin
-                </Button>
+                <Link to="/admin">
+                  <Button variant="outline">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Admin
+                  </Button>
+                </Link>
               )}
               <Button variant="outline" onClick={signOut}>
                 <LogOut className="w-4 h-4 mr-2" />

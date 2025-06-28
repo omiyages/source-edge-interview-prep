@@ -419,7 +419,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                         <SelectValue placeholder="Company" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="">All Companies</SelectItem>
+                        <SelectItem value="all-companies">All Companies</SelectItem>
                         {getUniqueValues('company').map((company) => (
                           <SelectItem key={company} value={company}>{company}</SelectItem>
                         ))}
@@ -434,7 +434,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                         <SelectValue placeholder="Role" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="">All Roles</SelectItem>
+                        <SelectItem value="all-roles">All Roles</SelectItem>
                         {getUniqueValues('role').map((role) => (
                           <SelectItem key={role} value={role}>{role}</SelectItem>
                         ))}
@@ -449,7 +449,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                         <SelectValue placeholder="Category" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="">All Categories</SelectItem>
+                        <SelectItem value="all-categories">All Categories</SelectItem>
                         {getUniqueValues('category').map((category) => (
                           <SelectItem key={category} value={category}>{category}</SelectItem>
                         ))}
@@ -464,7 +464,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                         <SelectValue placeholder="Stage" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="">All Stages</SelectItem>
+                        <SelectItem value="all-stages">All Stages</SelectItem>
                         {getUniqueValues('interview_stage').map((stage) => (
                           <SelectItem key={stage} value={stage}>{stage}</SelectItem>
                         ))}
