@@ -36,15 +36,14 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
     interview_stage: ""
   });
 
-  // Fetch all approved questions
+  // Fetch all questions (not just approved ones for admin flexibility)
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
-    queryKey: ['all-questions'],
+    queryKey: ['all-questions-for-stage'],
     queryFn: async () => {
-      console.log('Fetching all approved questions...');
+      console.log('Fetching all questions for stage management...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, difficulty, category, interview_stage')
-        .eq('status', 'approved')
         .order('created_at', { ascending: false });
       
       if (error) {

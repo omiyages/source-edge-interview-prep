@@ -88,15 +88,14 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
   ]);
   const [searchTerms, setSearchTerms] = useState<{ [key: number]: string }>({});
 
-  // Fetch all approved questions
+  // Fetch all questions (including approved and pending for better flexibility)
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
-    queryKey: ['all-questions'],
+    queryKey: ['all-questions-for-course-creation'],
     queryFn: async () => {
       console.log('🔄 Fetching questions for course creation...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, difficulty, category, interview_stage')
-        .eq('status', 'approved')
         .order('created_at', { ascending: false });
       
       if (error) {
