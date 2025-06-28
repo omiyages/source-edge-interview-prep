@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Users, Calendar, Edit, Trash2 } from "lucide-react";
+import { BookOpen, Calendar, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
@@ -58,7 +58,8 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
   });
 
   const handleCardClick = () => {
-    navigate(`/track/${course.id}`);
+    // Fix: Navigate to the correct route that matches App.tsx
+    navigate(`/course/${course.id}`);
   };
 
   return (

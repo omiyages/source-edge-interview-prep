@@ -89,13 +89,19 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
   const { data: allQuestions } = useQuery({
     queryKey: ['all-questions'],
     queryFn: async () => {
+      console.log('🔄 Fetching questions for course creation...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, difficulty, category, interview_stage')
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching questions:', error);
+        throw error;
+      }
+      
+      console.log('✅ Questions fetched for course creation:', data?.length || 0);
       return data as InterviewQuestion[];
     },
   });
@@ -170,18 +176,27 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     const searchTerm = searchTerms[stageIndex] || "";
     const filters = stages[stageIndex].filters;
     
-    return allQuestions?.filter(question => {
+    if (!allQuestions) {
+      console.log('🔄 No questions available yet...');
+      return [];
+    }
+    
+    const filtered = allQuestions.filter(question => {
       const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
         question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
         question.role.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesCompany = !filters.company || question.company === filters.company;
-      const matchesRole = !filters.role || question.role === filters.role;
-      const matchesCategory = !filters.category || question.category === filters.category;
-      const matchesStage = !filters.interview_stage || question.interview_stage === filters.interview_stage;
+      // Handle "all-*" values properly - they should show all items
+      const matchesCompany = !filters.company || filters.company === "all-companies" || question.company === filters.company;
+      const matchesRole = !filters.role || filters.role === "all-roles" || question.role === filters.role;
+      const matchesCategory = !filters.category || filters.category === "all-categories" || question.category === filters.category;
+      const matchesStage = !filters.interview_stage || filters.interview_stage === "all-stages" || question.interview_stage === filters.interview_stage;
       
       return matchesSearch && matchesCompany && matchesRole && matchesCategory && matchesStage;
-    }) || [];
+    });
+    
+    console.log(`📊 Stage ${stageIndex + 1} - Filtered ${filtered.length} questions from ${allQuestions.length} total`);
+    return filtered;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -518,7 +533,10 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                     ))}
                     {getFilteredQuestionsForStage(index).length === 0 && (
                       <p className="text-xs text-gray-500 text-center py-4">
-                        No questions found. Try adjusting your search or filters.
+                        {allQuestions && allQuestions.length > 0 
+                          ? "No questions found. Try adjusting your search or filters."
+                          : "Loading questions..."
+                        }
                       </p>
                     )}
                   </div>
