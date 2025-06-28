@@ -182,20 +182,23 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
     }
     
     const filtered = allQuestions.filter(question => {
-      const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = !searchTerm || 
+        question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
         question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
         question.role.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Handle "all-*" values properly - they should show all items
-      const matchesCompany = !filters.company || filters.company === "all-companies" || question.company === filters.company;
-      const matchesRole = !filters.role || filters.role === "all-roles" || question.role === filters.role;
-      const matchesCategory = !filters.category || filters.category === "all-categories" || question.category === filters.category;
-      const matchesStage = !filters.interview_stage || filters.interview_stage === "all-stages" || question.interview_stage === filters.interview_stage;
+      // Simple filter logic - empty string means no filter
+      const matchesCompany = !filters.company || question.company === filters.company;
+      const matchesRole = !filters.role || question.role === filters.role;
+      const matchesCategory = !filters.category || question.category === filters.category;
+      const matchesStage = !filters.interview_stage || question.interview_stage === filters.interview_stage;
       
       return matchesSearch && matchesCompany && matchesRole && matchesCategory && matchesStage;
     });
     
     console.log(`📊 Stage ${stageIndex + 1} - Filtered ${filtered.length} questions from ${allQuestions.length} total`);
+    console.log('Filters applied:', filters);
+    console.log('Search term:', searchTerm);
     return filtered;
   };
 
@@ -428,13 +431,13 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-gray-50 rounded-md">
                     <Select 
                       value={stage.filters.company} 
-                      onValueChange={(value) => updateStageFilter(index, 'company', value)}
+                      onValueChange={(value) => updateStageFilter(index, 'company', value === "all" ? "" : value)}
                     >
                       <SelectTrigger className="bg-white h-8 text-xs">
                         <SelectValue placeholder="Company" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="all-companies">All Companies</SelectItem>
+                        <SelectItem value="all">All Companies</SelectItem>
                         {getUniqueValues('company').map((company) => (
                           <SelectItem key={company} value={company}>{company}</SelectItem>
                         ))}
@@ -443,13 +446,13 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
 
                     <Select 
                       value={stage.filters.role} 
-                      onValueChange={(value) => updateStageFilter(index, 'role', value)}
+                      onValueChange={(value) => updateStageFilter(index, 'role', value === "all" ? "" : value)}
                     >
                       <SelectTrigger className="bg-white h-8 text-xs">
                         <SelectValue placeholder="Role" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="all-roles">All Roles</SelectItem>
+                        <SelectItem value="all">All Roles</SelectItem>
                         {getUniqueValues('role').map((role) => (
                           <SelectItem key={role} value={role}>{role}</SelectItem>
                         ))}
@@ -458,13 +461,13 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
 
                     <Select 
                       value={stage.filters.category} 
-                      onValueChange={(value) => updateStageFilter(index, 'category', value)}
+                      onValueChange={(value) => updateStageFilter(index, 'category', value === "all" ? "" : value)}
                     >
                       <SelectTrigger className="bg-white h-8 text-xs">
                         <SelectValue placeholder="Category" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="all-categories">All Categories</SelectItem>
+                        <SelectItem value="all">All Categories</SelectItem>
                         {getUniqueValues('category').map((category) => (
                           <SelectItem key={category} value={category}>{category}</SelectItem>
                         ))}
@@ -473,13 +476,13 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
 
                     <Select 
                       value={stage.filters.interview_stage} 
-                      onValueChange={(value) => updateStageFilter(index, 'interview_stage', value)}
+                      onValueChange={(value) => updateStageFilter(index, 'interview_stage', value === "all" ? "" : value)}
                     >
                       <SelectTrigger className="bg-white h-8 text-xs">
                         <SelectValue placeholder="Stage" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="all-stages">All Stages</SelectItem>
+                        <SelectItem value="all">All Stages</SelectItem>
                         {getUniqueValues('interview_stage').map((stage) => (
                           <SelectItem key={stage} value={stage}>{stage}</SelectItem>
                         ))}

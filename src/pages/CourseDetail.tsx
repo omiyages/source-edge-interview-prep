@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ interface InterviewQuestion {
 }
 
 const CourseDetail = () => {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { id: courseId } = useParams<{ id: string }>();
   const { user, loading, isAdmin } = useAuth();
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
@@ -57,16 +57,21 @@ const CourseDetail = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  const { data: course, refetch: refetchCourse } = useQuery({
+  const { data: course, refetch: refetchCourse, isLoading: isLoadingCourse } = useQuery({
     queryKey: ['course', courseId],
     queryFn: async () => {
+      console.log('🔄 Fetching course with ID:', courseId);
       const { data, error } = await supabase
         .from('courses')
         .select('*')
         .eq('id', courseId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching course:', error);
+        throw error;
+      }
+      console.log('✅ Course fetched:', data);
       return data as Course;
     },
     enabled: !!user && !!courseId,
@@ -75,13 +80,18 @@ const CourseDetail = () => {
   const { data: stages, refetch: refetchStages } = useQuery({
     queryKey: ['course-stages', courseId],
     queryFn: async () => {
+      console.log('🔄 Fetching stages for course:', courseId);
       const { data, error } = await supabase
         .from('course_stages')
         .select('*')
         .eq('course_id', courseId)
         .order('stage_order');
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching stages:', error);
+        throw error;
+      }
+      console.log('✅ Stages fetched:', data?.length || 0);
       return data as CourseStage[];
     },
     enabled: !!user && !!courseId,
@@ -92,6 +102,7 @@ const CourseDetail = () => {
     queryFn: async () => {
       if (!selectedStage) return [];
       
+      console.log('🔄 Fetching questions for stage:', selectedStage.id);
       const { data, error } = await supabase
         .from('stage_questions')
         .select(`
@@ -100,7 +111,11 @@ const CourseDetail = () => {
         `)
         .eq('stage_id', selectedStage.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching stage questions:', error);
+        throw error;
+      }
+      console.log('✅ Stage questions fetched:', data?.length || 0);
       return data.map(item => item.interview_questions) as InterviewQuestion[];
     },
     enabled: !!selectedStage,
@@ -133,12 +148,12 @@ const CourseDetail = () => {
     });
   };
 
-  if (loading) {
+  if (loading || isLoadingCourse) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Loading course...</p>
         </div>
       </div>
     );
@@ -149,9 +164,13 @@ const CourseDetail = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Course not found</h1>
-          <Button onClick={() => window.location.href = '/track'}>
-            Back to Tracks
-          </Button>
+          <p className="text-gray-600 mb-4">The course you're looking for doesn't exist or may have been removed.</p>
+          <Link to="/tracks">
+            <Button>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Tracks
+            </Button>
+          </Link>
         </div>
       </div>
     );
@@ -162,13 +181,12 @@ const CourseDetail = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/track'}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Tracks
-          </Button>
+          <Link to="/tracks">
+            <Button variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Tracks
+            </Button>
+          </Link>
           
           <div className="flex gap-2">
             {isAdmin && (
