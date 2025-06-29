@@ -1,9 +1,16 @@
 
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Building, User, Clock, Tag } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MessageSquare, Building, User, Clock, Tag, Search, Trash2 } from "lucide-react";
 import { InterviewQuestion } from "@/services/questionsService";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface QuestionsSectionProps {
   questions: InterviewQuestion[];
@@ -12,6 +19,69 @@ interface QuestionsSectionProps {
 }
 
 export const QuestionsSection = ({ questions, loading, error }: QuestionsSectionProps) => {
+  const { isAdmin } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("all");
+  const [selectedRole, setSelectedRole] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  // Delete question mutation
+  const deleteQuestionMutation = useMutation({
+    mutationFn: async (questionId: string) => {
+      const { error } = await supabase
+        .from('interview_questions')
+        .delete()
+        .eq('id', questionId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['interview-questions'] });
+      toast({
+        title: "Question Deleted",
+        description: "The question has been successfully deleted.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete question: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Get unique values for filters
+  const uniqueCompanies = useMemo(() => 
+    [...new Set(questions.map(q => q.company))].sort(), [questions]);
+  const uniqueRoles = useMemo(() => 
+    [...new Set(questions.map(q => q.role))].sort(), [questions]);
+  const uniqueCategories = useMemo(() => 
+    [...new Set(questions.map(q => q.category))].sort(), [questions]);
+
+  // Filter questions
+  const filteredQuestions = useMemo(() => {
+    return questions.filter(question => {
+      const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          question.role.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCompany = selectedCompany === "all" || question.company === selectedCompany;
+      const matchesRole = selectedRole === "all" || question.role === selectedRole;
+      const matchesCategory = selectedCategory === "all" || question.category === selectedCategory;
+      
+      return matchesSearch && matchesCompany && matchesRole && matchesCategory;
+    });
+  }, [questions, searchTerm, selectedCompany, selectedRole, selectedCategory]);
+
+  const handleDelete = (questionId: string) => {
+    if (confirm("Are you sure you want to delete this question?")) {
+      deleteQuestionMutation.mutate(questionId);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -68,21 +138,84 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
-          Interview Questions ({questions.length})
+          Interview Questions ({filteredQuestions.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {questions.length === 0 ? (
+        {/* Search and Filters */}
+        <div className="space-y-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search questions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Companies" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Companies</SelectItem>
+                {uniqueCompanies.map((company) => (
+                  <SelectItem key={company} value={company}>{company}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                {uniqueRoles.map((role) => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {uniqueCategories.map((category) => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {filteredQuestions.length === 0 ? (
           <div className="text-center py-8">
             <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No questions available yet.</p>
+            <p className="text-gray-600">No questions found matching your filters.</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {questions.map((question) => (
-              <div key={question.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredQuestions.map((question) => (
+              <div key={question.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow relative">
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(question.id)}
+                    disabled={deleteQuestionMutation.isPending}
+                    className="absolute top-2 right-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+                
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold mb-2">{question.question}</h3>
+                  <h3 className="text-lg font-semibold mb-2 pr-8">{question.question}</h3>
                   {question.additional_context && (
                     <p className="text-gray-600 text-sm mb-3">{question.additional_context}</p>
                   )}

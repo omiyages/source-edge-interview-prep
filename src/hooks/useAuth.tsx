@@ -6,7 +6,7 @@ export const useAuth = () => {
   const authContext = useAuthContext();
   const { profile, loading: profileLoading } = useUserProfile(authContext.user);
 
-  // Enhanced admin check with better validation
+  // Simple admin check - user must exist, profile must exist, and role must be admin
   const isAdmin = Boolean(
     authContext.user && 
     profile && 
@@ -17,7 +17,7 @@ export const useAuth = () => {
   
   const loading = authContext.loading || profileLoading;
 
-  console.log('🎯 Auth State:', {
+  console.log('🎯 Auth State Debug:', {
     hasUser: !!authContext.user,
     userEmail: authContext.user?.email,
     hasProfile: !!profile,
@@ -27,16 +27,6 @@ export const useAuth = () => {
     profileLoading,
     totalLoading: loading
   });
-
-  // Enhanced admin logging for debugging
-  if (authContext.user && profile) {
-    console.log('🔐 Admin Check Details:', {
-      email: authContext.user.email,
-      profileRole: profile.role,
-      isRoleAdmin: profile.role === 'admin',
-      finalIsAdmin: isAdmin
-    });
-  }
 
   return {
     ...authContext,
