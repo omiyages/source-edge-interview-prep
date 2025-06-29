@@ -288,6 +288,42 @@ export type Database = {
           },
         ]
       }
+      stage_resources: {
+        Row: {
+          created_at: string
+          id: string
+          resource_id: string
+          stage_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          resource_id: string
+          stage_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          resource_id?: string
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_resources_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "course_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_sessions: {
         Row: {
           created_at: string

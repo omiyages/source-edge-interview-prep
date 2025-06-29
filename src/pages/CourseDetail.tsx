@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useParams, Link } from "react-router-dom";
@@ -6,10 +7,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Settings2, Plus, Edit } from "lucide-react";
+import { ArrowLeft, Settings2, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
+import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm";
 import { EditCourseForm } from "@/components/EditCourseForm";
+import { StageResourcesSection } from "@/components/StageResourcesSection";
 import QuestionCard from "@/components/QuestionCard";
 
 interface Course {
@@ -47,7 +50,8 @@ const CourseDetail = () => {
   const { id: courseId } = useParams<{ id: string }>();
   const { user, loading, isAdmin } = useAuth();
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
-  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
+  const [isManageQuestionsDialogOpen, setIsManageQuestionsDialogOpen] = useState(false);
+  const [isManageResourcesDialogOpen, setIsManageResourcesDialogOpen] = useState(false);
   const [isEditCourseDialogOpen, setIsEditCourseDialogOpen] = useState(false);
 
   // Redirect to auth if not authenticated
@@ -212,26 +216,48 @@ const CourseDetail = () => {
                 </Dialog>
                 
                 {selectedStage && (
-                  <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Settings2 className="w-4 h-4 mr-2" />
-                        Manage Questions
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Manage Questions for {selectedStage.title}</DialogTitle>
-                      </DialogHeader>
-                      <ManageStageQuestionsForm 
-                        stageId={selectedStage.id}
-                        onSuccess={() => {
-                          setIsManageDialogOpen(false);
-                          refetchQuestions();
-                        }} 
-                      />
-                    </DialogContent>
-                  </Dialog>
+                  <>
+                    <Dialog open={isManageQuestionsDialogOpen} onOpenChange={setIsManageQuestionsDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline">
+                          <Settings2 className="w-4 h-4 mr-2" />
+                          Manage Questions
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Manage Questions for {selectedStage.title}</DialogTitle>
+                        </DialogHeader>
+                        <ManageStageQuestionsForm 
+                          stageId={selectedStage.id}
+                          onSuccess={() => {
+                            setIsManageQuestionsDialogOpen(false);
+                            refetchQuestions();
+                          }} 
+                        />
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={isManageResourcesDialogOpen} onOpenChange={setIsManageResourcesDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline">
+                          <Settings2 className="w-4 h-4 mr-2" />
+                          Manage Resources
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Manage Resources for {selectedStage.title}</DialogTitle>
+                        </DialogHeader>
+                        <ManageStageResourcesForm 
+                          stageId={selectedStage.id}
+                          onSuccess={() => {
+                            setIsManageResourcesDialogOpen(false);
+                          }} 
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </>
                 )}
               </>
             )}
@@ -292,6 +318,13 @@ const CourseDetail = () => {
               )}
             </Card>
 
+            {/* Stage Resources */}
+            <StageResourcesSection
+              stageId={selectedStage.id}
+              isAdmin={isAdmin}
+              onManageClick={() => setIsManageResourcesDialogOpen(true)}
+            />
+
             {/* Stage Questions */}
             <Card>
               <CardHeader>
@@ -301,7 +334,7 @@ const CourseDetail = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsManageDialogOpen(true)}
+                      onClick={() => setIsManageQuestionsDialogOpen(true)}
                     >
                       <Settings2 className="w-4 h-4 mr-2" />
                       Manage Questions
@@ -322,9 +355,9 @@ const CourseDetail = () => {
                     {isAdmin && (
                       <Button
                         variant="outline"
-                        onClick={() => setIsManageDialogOpen(true)}
+                        onClick={() => setIsManageQuestionsDialogOpen(true)}
                       >
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Settings2 className="w-4 h-4 mr-2" />
                         Add Questions
                       </Button>
                     )}
