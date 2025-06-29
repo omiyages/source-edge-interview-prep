@@ -19,31 +19,31 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
   return (
     <div className="text-center mb-8">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-4xl font-bold text-gray-900">
-          Interview Questions Database
+        <h1 className="text-4xl font-bold text-purple-gradient">
+          Source Edge Database
         </h1>
         <div className="flex gap-2">
           <Link to="/tracks">
-            <Button variant="outline">
+            <Button variant="outline" className="hover-purple-lift border-purple-200 hover:border-purple-300">
               <BookOpen className="w-4 h-4 mr-2" />
               Tracks
             </Button>
           </Link>
           <Link to="/resources">
-            <Button variant="outline">
+            <Button variant="outline" className="hover-purple-lift border-purple-200 hover:border-purple-300">
               <Users className="w-4 h-4 mr-2" />
               Resources
             </Button>
           </Link>
           {isAdmin && (
             <Link to="/admin">
-              <Button variant="outline">
+              <Button variant="outline" className="hover-purple-lift border-purple-200 hover:border-purple-300">
                 <Settings className="w-4 h-4 mr-2" />
                 Admin
               </Button>
             </Link>
           )}
-          <Button variant="outline" onClick={signOut}>
+          <Button variant="outline" onClick={signOut} className="hover-purple-lift border-purple-200 hover:border-purple-300">
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
           </Button>
@@ -58,7 +58,7 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
       
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium px-6 py-3">
             <Plus className="w-4 h-4 mr-2" />
             Submit Question
           </Button>
