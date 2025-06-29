@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +36,6 @@ interface InterviewQuestion {
   question: string;
   company: string;
   role: string;
-  difficulty: string;
   category: string;
   interview_stage: string;
 }
@@ -95,7 +93,7 @@ export const CreateCourseForm = ({ onSuccess }: CreateCourseFormProps) => {
       console.log('🔄 Fetching questions for course creation...');
       const { data, error } = await supabase
         .from('interview_questions')
-        .select('id, question, company, role, difficulty, category, interview_stage')
+        .select('id, question, company, role, category, interview_stage')
         .order('created_at', { ascending: false });
       
       if (error) {

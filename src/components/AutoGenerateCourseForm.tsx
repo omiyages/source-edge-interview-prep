@@ -413,7 +413,7 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
                                   <div key={qIndex} className="text-sm p-2 bg-gray-50 rounded">
                                     <span className="font-medium">{question.question}</span>
                                     <div className="text-xs text-gray-500 mt-1">
-                                      {question.company} • {question.role} • {question.difficulty}
+                                      {question.company} • {question.role}
                                     </div>
                                   </div>
                                 ))}
@@ -488,7 +488,6 @@ export const AutoGenerateCourseForm = ({ onSuccess }: AutoGenerateCourseFormProp
                                                 <h5 className="font-medium">{question.question}</h5>
                                                 <div className="flex gap-1">
                                                   <Badge variant="secondary" className="text-xs">{question.category}</Badge>
-                                                  <Badge variant="outline" className="text-xs">{question.difficulty}</Badge>
                                                 </div>
                                               </div>
                                               <div className="text-xs text-gray-500 flex gap-4">
@@ -626,9 +625,6 @@ const StageQuestionSelector = ({
                   </span>
                   <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
                     {question.category}
-                  </span>
-                  <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                    {question.difficulty}
                   </span>
                 </div>
               </div>
