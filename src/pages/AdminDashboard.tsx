@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
@@ -48,54 +49,10 @@ const AdminDashboard = () => {
     timestamp: new Date().toISOString()
   });
 
-  // Early return with debug info if still loading
-  if (authLoading) {
-    console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
-          <p className="text-sm text-gray-500 mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
-        </div>
-      </div>
-    );
-  }
+  // Move ALL hooks to the top - this is critical for React's Rules of Hooks
+  const shouldFetchData = !!user && isAdmin && !authLoading;
 
-  // Check authentication
-  if (!user) {
-    console.log('🚫 AdminDashboard: No user found, redirecting to auth');
-    return <Navigate to="/auth" replace />;
-  }
-
-  // Check if profile is loaded
-  if (!profile) {
-    console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading user profile...</p>
-          <p className="text-sm text-gray-500 mt-2">User: {user.email}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Check admin access
-  if (!isAdmin) {
-    console.log('🚫 AdminDashboard: User is not admin, redirecting home:', { 
-      hasUser: !!user, 
-      email: user.email, 
-      role: profile?.role,
-      isAdmin
-    });
-    return <Navigate to="/" replace />;
-  }
-
-  console.log('✅ AdminDashboard: All checks passed, rendering dashboard');
-
-  // Fetch pending questions
+  // Fetch pending questions - always call this hook
   const { data: pendingQuestions, isLoading: loadingPending, error: pendingError } = useQuery({
     queryKey: ['admin-pending-questions'],
     queryFn: async () => {
@@ -114,10 +71,10 @@ const AdminDashboard = () => {
       console.log('✅ Pending questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
-    enabled: !!user && isAdmin,
+    enabled: shouldFetchData,
   });
 
-  // Fetch all questions
+  // Fetch all questions - always call this hook
   const { data: allQuestions, isLoading: loadingAll, error: allError } = useQuery({
     queryKey: ['admin-all-questions'],
     queryFn: async () => {
@@ -135,10 +92,10 @@ const AdminDashboard = () => {
       console.log('✅ All questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
-    enabled: !!user && isAdmin,
+    enabled: shouldFetchData,
   });
 
-  // Question approval mutation
+  // Question approval mutation - always call this hook
   const approveQuestionMutation = useMutation({
     mutationFn: async ({ questionId, status }: { questionId: string; status: 'approved' | 'rejected' }) => {
       console.log('🔄 Updating question status:', { questionId, status });
@@ -146,7 +103,7 @@ const AdminDashboard = () => {
         .from('interview_questions')
         .update({
           status,
-          approved_by: user.id,
+          approved_by: user?.id,
           approved_at: new Date().toISOString(),
         })
         .eq('id', questionId);
@@ -172,6 +129,50 @@ const AdminDashboard = () => {
       });
     },
   });
+
+  // NOW do conditional rendering after all hooks are called
+  if (authLoading) {
+    console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+          <p className="text-sm text-gray-500 mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    console.log('🚫 AdminDashboard: No user found, redirecting to auth');
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (!profile) {
+    console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading user profile...</p>
+          <p className="text-sm text-gray-500 mt-2">User: {user.email}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    console.log('🚫 AdminDashboard: User is not admin, redirecting home:', { 
+      hasUser: !!user, 
+      email: user.email, 
+      role: profile?.role,
+      isAdmin
+    });
+    return <Navigate to="/" replace />;
+  }
+
+  console.log('✅ AdminDashboard: All checks passed, rendering dashboard');
 
   const getStatusColor = (status: string) => {
     switch (status) {
