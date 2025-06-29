@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, User, Clock, Calendar } from "lucide-react";
+import { CreateUserForm } from "./CreateUserForm";
 import {
   Table,
   TableBody,
@@ -42,7 +42,7 @@ export const UsersList = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -110,10 +110,13 @@ export const UsersList = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="w-5 h-5" />
-          All Users ({users?.length || 0})
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            All Users ({users?.length || 0})
+          </CardTitle>
+          <CreateUserForm onSuccess={refetch} />
+        </div>
       </CardHeader>
       <CardContent>
         {users && users.length > 0 ? (
@@ -206,4 +209,25 @@ export const UsersList = () => {
       </CardContent>
     </Card>
   );
+
+  function formatDuration(minutes: number | null) {
+    if (!minutes) return "0 minutes";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  }
+
+  function formatDate(dateString: string | null) {
+    if (!dateString) return "Never";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
 };
