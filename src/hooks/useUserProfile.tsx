@@ -21,7 +21,7 @@ export const useUserProfile = (user: User | null) => {
 
       try {
         setLoading(true);
-        console.log('📋 Loading profile for user:', user.id);
+        console.log('📋 Loading profile for user:', user.id, 'email:', user.email);
         
         const { data, error } = await supabase
           .from('profiles')
@@ -45,6 +45,8 @@ export const useUserProfile = (user: User | null) => {
           console.log('➕ Creating new profile for user');
           const isAdminEmail = user.email === 'namtae.quicksit@gmail.com';
           const defaultRole = isAdminEmail ? 'admin' : 'user';
+          
+          console.log('🔧 Creating profile with role:', defaultRole, 'for email:', user.email);
           
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
@@ -77,7 +79,7 @@ export const useUserProfile = (user: User | null) => {
     return () => {
       mounted = false;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   return { profile, loading };
 };

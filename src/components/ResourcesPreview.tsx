@@ -34,7 +34,7 @@ export const ResourcesPreview = ({ resources, loading }: ResourcesPreviewProps) 
 
   if (loading) {
     return (
-      <Card>
+      <Card className="mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
@@ -42,7 +42,7 @@ export const ResourcesPreview = ({ resources, loading }: ResourcesPreviewProps) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -57,7 +57,7 @@ export const ResourcesPreview = ({ resources, loading }: ResourcesPreviewProps) 
   }
 
   return (
-    <Card>
+    <Card className="mb-8">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BookOpen className="w-5 h-5" />
@@ -96,7 +96,7 @@ export const ResourcesPreview = ({ resources, loading }: ResourcesPreviewProps) 
             <p className="text-gray-600">No resources found matching your filters.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResources.slice(0, 6).map((resource) => (
               <div key={resource.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-4">
@@ -120,7 +120,7 @@ export const ResourcesPreview = ({ resources, loading }: ResourcesPreviewProps) 
             ))}
             
             {resources.length > 6 && (
-              <div className="text-center pt-4">
+              <div className="col-span-full text-center pt-4">
                 <Button 
                   variant="outline"
                   onClick={() => window.location.href = '/resources'}

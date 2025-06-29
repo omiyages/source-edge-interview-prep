@@ -11,18 +11,21 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const { user, profile, loading, isAdmin } = useAuth();
 
-  console.log('🛡️ ProtectedRoute Check:', { 
+  console.log('🛡️ ProtectedRoute Check (Enhanced):', { 
     hasUser: !!user,
     userEmail: user?.email, 
     hasProfile: !!profile,
     profileRole: profile?.role, 
     loading, 
     isAdmin, 
-    requireAdmin
+    requireAdmin,
+    shouldAllowAdmin: user?.email === 'namtae.quicksit@gmail.com',
+    profileData: profile
   });
 
   // Show loading while authentication is in progress
   if (loading) {
+    console.log('🔄 Still loading auth state...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -41,11 +44,15 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
 
   // For admin routes, check admin status
   if (requireAdmin) {
-    if (!isAdmin) {
+    // Special case for the specific admin email during development
+    const isSpecialAdmin = user.email === 'namtae.quicksit@gmail.com';
+    
+    if (!isAdmin && !isSpecialAdmin) {
       console.log('🚫 Admin required but user is not admin:', { 
         email: user.email, 
         role: profile?.role,
-        isAdmin 
+        isAdmin,
+        isSpecialAdmin
       });
       return <Navigate to="/" replace />;
     }
