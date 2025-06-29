@@ -13,7 +13,8 @@ export const useAuth = () => {
     userEmail: authContext.user?.email,
     profileRole: profile?.role,
     isAdmin,
-    loading
+    loading,
+    profileExists: !!profile
   });
 
   return {

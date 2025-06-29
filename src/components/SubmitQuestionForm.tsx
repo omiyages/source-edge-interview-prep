@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,12 +140,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               <SelectItem value="Woven by Toyota">Woven by Toyota</SelectItem>
               <SelectItem value="LexxPluss">LexxPluss</SelectItem>
               <SelectItem value="Wismettac">Wismettac</SelectItem>
-              <SelectItem value="Google">Google</SelectItem>
-              <SelectItem value="Microsoft">Microsoft</SelectItem>
-              <SelectItem value="Amazon">Amazon</SelectItem>
-              <SelectItem value="Meta">Meta</SelectItem>
-              <SelectItem value="Apple">Apple</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>

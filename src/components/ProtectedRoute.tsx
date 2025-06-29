@@ -16,7 +16,8 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     profile: profile?.role, 
     loading, 
     isAdmin, 
-    requireAdmin 
+    requireAdmin,
+    profileExists: !!profile
   });
 
   // Show loading with a reasonable timeout
@@ -40,6 +41,7 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
   // If admin is required but user is not admin, redirect to home
   if (requireAdmin && !isAdmin) {
     console.log('🚫 Admin required but user is not admin, redirecting to home');
+    console.log('Profile details:', { profile: profile?.role, isAdmin });
     return <Navigate to="/" replace />;
   }
 
