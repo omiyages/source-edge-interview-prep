@@ -85,7 +85,6 @@ export type Database = {
           category: string | null
           company: string
           created_at: string
-          difficulty: string | null
           id: string
           interview_stage: string | null
           position_name: string | null
@@ -107,7 +106,6 @@ export type Database = {
           category?: string | null
           company: string
           created_at?: string
-          difficulty?: string | null
           id?: string
           interview_stage?: string | null
           position_name?: string | null
@@ -129,7 +127,6 @@ export type Database = {
           category?: string | null
           company?: string
           created_at?: string
-          difficulty?: string | null
           id?: string
           interview_stage?: string | null
           position_name?: string | null

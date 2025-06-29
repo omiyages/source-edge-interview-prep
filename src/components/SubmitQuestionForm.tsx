@@ -68,7 +68,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         submitted_by: profile?.email || user.email,
         question_type: 'user_submitted',
         status: profile?.role === 'admin' ? 'approved' : 'pending',
-        difficulty: 'Medium', // Default difficulty
       };
 
       console.log('Question data:', questionData);

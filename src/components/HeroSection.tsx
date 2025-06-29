@@ -24,26 +24,26 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
         </h1>
         <div className="flex gap-2">
           <Link to="/tracks">
-            <Button variant="outline" className="hover-purple-lift border-purple-200 hover:border-purple-300">
+            <Button variant="outline" className="hover-purple-lift">
               <BookOpen className="w-4 h-4 mr-2" />
               Tracks
             </Button>
           </Link>
           <Link to="/resources">
-            <Button variant="outline" className="hover-purple-lift border-purple-200 hover:border-purple-300">
+            <Button variant="outline" className="hover-purple-lift">
               <Users className="w-4 h-4 mr-2" />
               Resources
             </Button>
           </Link>
           {isAdmin && (
             <Link to="/admin">
-              <Button variant="outline" className="hover-purple-lift border-purple-200 hover:border-purple-300">
+              <Button variant="outline" className="hover-purple-lift">
                 <Settings className="w-4 h-4 mr-2" />
                 Admin
               </Button>
             </Link>
           )}
-          <Button variant="outline" onClick={signOut} className="hover-purple-lift border-purple-200 hover:border-purple-300">
+          <Button variant="outline" onClick={signOut} className="hover-purple-lift">
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
           </Button>

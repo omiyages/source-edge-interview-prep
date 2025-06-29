@@ -14,7 +14,6 @@ interface InterviewQuestion {
   question: string;
   company: string;
   role: string;
-  difficulty: string;
   interview_stage: string;
   category: string;
   additional_context: string | null;
@@ -36,7 +35,6 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
     company: question.company,
     role: question.role,
     category: question.category,
-    difficulty: question.difficulty,
     interview_stage: question.interview_stage,
     additional_context: question.additional_context || "",
     team: question.team || "",
@@ -55,7 +53,6 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
           company: formData.company,
           role: formData.role,
           category: formData.category,
-          difficulty: formData.difficulty,
           interview_stage: formData.interview_stage,
           additional_context: formData.additional_context || null,
           team: formData.team || null,
@@ -151,7 +148,7 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
@@ -165,20 +162,6 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
               <SelectItem value="Background">Background</SelectItem>
               <SelectItem value="Culture Fit">Culture Fit</SelectItem>
               <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="difficulty">Difficulty</Label>
-          <Select value={formData.difficulty} onValueChange={(value) => setFormData({ ...formData, difficulty: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select difficulty" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Easy">Easy</SelectItem>
-              <SelectItem value="Medium">Medium</SelectItem>
-              <SelectItem value="Hard">Hard</SelectItem>
             </SelectContent>
           </Select>
         </div>

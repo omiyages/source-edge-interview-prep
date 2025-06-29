@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -19,7 +18,6 @@ interface InterviewQuestion {
   question: string;
   company: string;
   role: string;
-  difficulty: string;
   category: string;
   interview_stage: string;
 }
@@ -43,7 +41,7 @@ export const ManageStageQuestionsForm = ({ stageId, onSuccess }: ManageStageQues
       console.log('Fetching all questions for stage management...');
       const { data, error } = await supabase
         .from('interview_questions')
-        .select('id, question, company, role, difficulty, category, interview_stage')
+        .select('id, question, company, role, category, interview_stage')
         .order('created_at', { ascending: false });
       
       if (error) {

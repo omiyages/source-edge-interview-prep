@@ -6,7 +6,6 @@ interface InterviewQuestion {
   question: string;
   company: string;
   role: string;
-  difficulty: string;
   category: string;
   interview_stage: string;
 }
@@ -63,9 +62,6 @@ export const QuestionList = ({
               </span>
               <span className="bg-purple-100 text-purple-800 px-1 py-0.5 rounded text-xs">
                 {question.category}
-              </span>
-              <span className="bg-orange-100 text-orange-800 px-1 py-0.5 rounded text-xs">
-                {question.difficulty}
               </span>
               <span className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs">
                 {question.interview_stage}
