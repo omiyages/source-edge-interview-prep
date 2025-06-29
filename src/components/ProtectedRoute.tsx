@@ -11,18 +11,17 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const { user, profile, loading, isAdmin } = useAuth();
 
-  console.log('🛡️ ProtectedRoute check:', { 
-    user: user?.email, 
-    profile: profile?.role, 
+  console.log('🛡️ ProtectedRoute:', { 
+    userEmail: user?.email || 'No user', 
+    profileRole: profile?.role || 'No profile', 
     loading, 
     isAdmin, 
     requireAdmin,
-    profileExists: !!profile,
-    shouldWaitForProfile: !!user && !profile && loading
+    shouldAllowAccess: !requireAdmin || isAdmin
   });
 
-  // Show loading while auth is loading or while we're waiting for profile data
-  if (loading || (user && !profile)) {
+  // Show loading while authentication is in progress
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -33,23 +32,37 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     );
   }
 
-  // If no user after loading is complete, redirect to auth
+  // Redirect to auth if no user
   if (!user) {
-    console.log('🚫 No user found, redirecting to auth');
+    console.log('🚫 No authenticated user - redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
-  // If admin is required but user is not admin, redirect to home
-  if (requireAdmin && !isAdmin) {
-    console.log('🚫 Admin required but user is not admin, redirecting to home');
-    console.log('Profile details:', { 
-      profileRole: profile?.role, 
-      isAdmin,
-      roleCheck: profile?.role === 'admin'
-    });
-    return <Navigate to="/" replace />;
+  // For admin routes, check if user has admin role
+  if (requireAdmin) {
+    if (!profile) {
+      console.log('🚫 No profile loaded for admin check');
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Loading profile...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    if (!isAdmin) {
+      console.log('🚫 User is not admin:', { 
+        email: user.email, 
+        role: profile.role,
+        isAdmin 
+      });
+      return <Navigate to="/" replace />;
+    }
+    
+    console.log('✅ Admin access granted');
   }
 
-  // All checks passed, render the protected content
   return <>{children}</>;
 };

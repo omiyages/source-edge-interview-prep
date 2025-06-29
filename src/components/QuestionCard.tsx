@@ -23,6 +23,7 @@ interface InterviewQuestion {
   source_url: string | null;
   source_website: string | null;
   scraped_at: string | null;
+  status?: string;
 }
 
 interface QuestionCardProps {
@@ -30,30 +31,47 @@ interface QuestionCardProps {
 }
 
 const QuestionCard = ({ question }: QuestionCardProps) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  console.log('🗑️ QuestionCard delete check:', {
+    questionId: question.id,
+    userEmail: user?.email,
+    isAdmin,
+    canDelete: isAdmin
+  });
+
   const deleteQuestionMutation = useMutation({
     mutationFn: async (questionId: string) => {
+      console.log('🗑️ Attempting to delete question:', questionId);
+      
       const { error } = await supabase
         .from('interview_questions')
         .delete()
         .eq('id', questionId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Delete error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Question deleted successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interview-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-all-questions'] });
       toast({
         title: "Question Deleted",
         description: "The question has been successfully deleted.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('❌ Delete mutation error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete question. Please try again.",
+        description: `Failed to delete question: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     },
@@ -77,12 +95,20 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
             <Badge className={getRoleTypeColor(question.role)}>
               {question.role}
             </Badge>
+            {question.status && (
+              <Badge variant="outline">
+                {question.status}
+              </Badge>
+            )}
           </div>
           {isAdmin && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => deleteQuestionMutation.mutate(question.id)}
+              onClick={() => {
+                console.log('🗑️ Delete button clicked for question:', question.id);
+                deleteQuestionMutation.mutate(question.id);
+              }}
               disabled={deleteQuestionMutation.isPending}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >

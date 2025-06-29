@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, User, LogOut, Users, AlertCircle } from "lucide-react";
+import { Check, X, Clock, User, LogOut, Users, AlertCircle, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CSVImportForm } from "@/components/CSVImportForm";
 import { AutoGenerateCourseForm } from "@/components/AutoGenerateCourseForm";
@@ -39,7 +40,7 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  console.log('🔧 AdminDashboard access check:', {
+  console.log('🔧 AdminDashboard render:', {
     user: user?.email,
     profile: profile?.role,
     isAdmin,
@@ -60,10 +61,11 @@ const AdminDashboard = () => {
 
   // Redirect if not authenticated or not admin
   if (!user || !isAdmin) {
-    console.log('🚫 Access denied - redirecting to auth');
+    console.log('🚫 Access denied - redirecting:', { user: !!user, isAdmin });
     return <Navigate to="/auth" replace />;
   }
 
+  // Fetch pending questions
   const { data: pendingQuestions, isLoading: loadingPending, error: pendingError } = useQuery({
     queryKey: ['admin-pending-questions'],
     queryFn: async () => {
@@ -82,11 +84,10 @@ const AdminDashboard = () => {
       console.log('✅ Pending questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
-    enabled: !!user && isAdmin, // Only run query if user is authenticated and admin
-    retry: 3,
-    retryDelay: 1000,
+    enabled: !!user && isAdmin,
   });
 
+  // Fetch all questions
   const { data: allQuestions, isLoading: loadingAll, error: allError } = useQuery({
     queryKey: ['admin-all-questions'],
     queryFn: async () => {
@@ -104,13 +105,13 @@ const AdminDashboard = () => {
       console.log('✅ All questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
-    enabled: !!user && isAdmin, // Only run query if user is authenticated and admin
-    retry: 3,
-    retryDelay: 1000,
+    enabled: !!user && isAdmin,
   });
 
+  // Question approval mutation
   const approveQuestionMutation = useMutation({
     mutationFn: async ({ questionId, status }: { questionId: string; status: 'approved' | 'rejected' }) => {
+      console.log('🔄 Updating question status:', { questionId, status });
       const { error } = await supabase
         .from('interview_questions')
         .update({
@@ -161,10 +162,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const refreshUsersList = () => {
-    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -183,8 +180,8 @@ const AdminDashboard = () => {
               variant="outline" 
               onClick={() => window.location.href = '/'}
             >
-              <User className="w-4 h-4 mr-2" />
-              View User Site
+              <Home className="w-4 h-4 mr-2" />
+              Back to Home
             </Button>
             <Button variant="outline" onClick={signOut}>
               <LogOut className="w-4 h-4 mr-2" />
@@ -198,14 +195,13 @@ const AdminDashboard = () => {
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {pendingError ? `Error loading pending questions: ${pendingError.message}` : ''}
-              {allError ? `Error loading all questions: ${allError.message}` : ''}
+              Error loading data. Please try refreshing the page.
             </AlertDescription>
           </Alert>
         )}
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
             </TabsTrigger>
@@ -214,13 +210,7 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
-              User Management
-            </TabsTrigger>
-            <TabsTrigger value="import">
-              Bulk Import
-            </TabsTrigger>
-            <TabsTrigger value="ai-generate">
-              AI Course Generator
+              Users
             </TabsTrigger>
           </TabsList>
 
@@ -229,15 +219,6 @@ const AdminDashboard = () => {
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-4 text-gray-600">Loading pending questions...</p>
-              </div>
-            ) : pendingError ? (
-              <div className="text-center py-12">
-                <AlertCircle className="w-16 h-16 mx-auto text-red-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">Failed to load pending questions</h3>
-                <p className="text-gray-500 mb-4">There was an error loading the data.</p>
-                <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-pending-questions'] })}>
-                  Try Again
-                </Button>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -273,9 +254,6 @@ const AdminDashboard = () => {
                             {question.additional_context}
                           </div>
                         )}
-                        <div className="text-xs text-gray-400">
-                          Submitted by: {question.submitted_by || 'Anonymous'}
-                        </div>
                         <div className="flex gap-2 pt-2">
                           <Button
                             size="sm"
@@ -309,7 +287,7 @@ const AdminDashboard = () => {
               </div>
             )}
             
-            {pendingQuestions?.length === 0 && !loadingPending && !pendingError && (
+            {pendingQuestions?.length === 0 && !loadingPending && (
               <div className="text-center py-12">
                 <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">No pending questions</h3>
@@ -323,15 +301,6 @@ const AdminDashboard = () => {
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-4 text-gray-600">Loading all questions...</p>
-              </div>
-            ) : allError ? (
-              <div className="text-center py-12">
-                <AlertCircle className="w-16 h-16 mx-auto text-red-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">Failed to load questions</h3>
-                <p className="text-gray-500 mb-4">There was an error loading the data.</p>
-                <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-all-questions'] })}>
-                  Try Again
-                </Button>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -369,33 +338,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="users">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
-                <CreateUserForm onSuccess={refreshUsersList} />
-              </div>
-              <UsersList />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="import">
-            <div className="max-w-2xl mx-auto">
-              <CSVImportForm />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="ai-generate">
-            <div className="max-w-4xl mx-auto">
-              <AutoGenerateCourseForm 
-                onSuccess={() => {
-                  queryClient.invalidateQueries({ queryKey: ['courses'] });
-                  toast({
-                    title: "Success",
-                    description: "AI-generated course created successfully!",
-                  });
-                }} 
-              />
-            </div>
+            <UsersList />
           </TabsContent>
         </Tabs>
       </div>
