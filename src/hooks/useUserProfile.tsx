@@ -13,7 +13,7 @@ export const useUserProfile = (user: User | null) => {
 
     const loadProfile = async () => {
       if (!user?.id) {
-        console.log('📋 No user ID, clearing profile');
+        console.log('📋 useUserProfile: No user ID, clearing profile');
         setProfile(null);
         setLoading(false);
         return;
@@ -21,7 +21,7 @@ export const useUserProfile = (user: User | null) => {
 
       try {
         setLoading(true);
-        console.log('📋 Loading profile for user:', user.id, 'email:', user.email);
+        console.log('📋 useUserProfile: Loading profile for user:', user.id, 'email:', user.email);
         
         const { data, error } = await supabase
           .from('profiles')
@@ -32,21 +32,26 @@ export const useUserProfile = (user: User | null) => {
         if (!mounted) return;
 
         if (error) {
-          console.error('❌ Error loading profile:', error);
+          console.error('❌ useUserProfile: Error loading profile:', error);
           setProfile(null);
           return;
         }
 
         if (data) {
-          console.log('✅ Profile loaded successfully:', { role: data.role, email: data.email });
+          console.log('✅ useUserProfile: Profile loaded successfully:', { 
+            role: data.role, 
+            email: data.email,
+            userId: data.id,
+            isAdmin: data.role === 'admin'
+          });
           setProfile(data);
         } else {
           // Create profile if it doesn't exist
-          console.log('➕ Creating new profile for user');
+          console.log('➕ useUserProfile: Creating new profile for user:', user.email);
           const isAdminEmail = user.email === 'namtae.quicksit@gmail.com';
           const defaultRole = isAdminEmail ? 'admin' : 'user';
           
-          console.log('🔧 Creating profile with role:', defaultRole, 'for email:', user.email);
+          console.log('🔧 useUserProfile: Creating profile with role:', defaultRole, 'for email:', user.email);
           
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
@@ -59,18 +64,26 @@ export const useUserProfile = (user: User | null) => {
             .single();
 
           if (createError) {
-            console.error('❌ Error creating profile:', createError);
+            console.error('❌ useUserProfile: Error creating profile:', createError);
             setProfile(null);
           } else {
-            console.log('✅ Created new profile:', { role: newProfile?.role, email: newProfile?.email });
+            console.log('✅ useUserProfile: Created new profile:', { 
+              role: newProfile?.role, 
+              email: newProfile?.email,
+              userId: newProfile?.id,
+              isAdmin: newProfile?.role === 'admin'
+            });
             setProfile(newProfile);
           }
         }
       } catch (error) {
-        console.error('❌ Unexpected error loading profile:', error);
+        console.error('❌ useUserProfile: Unexpected error loading profile:', error);
         if (mounted) setProfile(null);
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          console.log('📋 useUserProfile: Loading complete for user:', user.email);
+        }
       }
     };
 
@@ -80,6 +93,15 @@ export const useUserProfile = (user: User | null) => {
       mounted = false;
     };
   }, [user?.id, user?.email]);
+
+  console.log('📋 useUserProfile: Current state:', {
+    hasUser: !!user,
+    userEmail: user?.email,
+    hasProfile: !!profile,
+    profileRole: profile?.role,
+    loading,
+    isProfileAdmin: profile?.role === 'admin'
+  });
 
   return { profile, loading };
 };

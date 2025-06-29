@@ -37,32 +37,63 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  console.log('🔧 AdminDashboard render:', {
+  console.log('🔧 AdminDashboard render - DETAILED:', {
     hasUser: !!user,
     userEmail: user?.email,
     hasProfile: !!profile,
     profileRole: profile?.role,
     isAdmin,
-    authLoading
+    authLoading,
+    currentUrl: window.location.href,
+    timestamp: new Date().toISOString()
   });
 
-  // Show loading while auth is still loading
+  // Early return with debug info if still loading
   if (authLoading) {
+    console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading admin dashboard...</p>
+          <p className="text-sm text-gray-500 mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
         </div>
       </div>
     );
   }
 
-  // Redirect if not authenticated or not admin
-  if (!user || !isAdmin) {
-    console.log('🚫 Access denied - redirecting:', { hasUser: !!user, isAdmin });
+  // Check authentication
+  if (!user) {
+    console.log('🚫 AdminDashboard: No user found, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
+
+  // Check if profile is loaded
+  if (!profile) {
+    console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading user profile...</p>
+          <p className="text-sm text-gray-500 mt-2">User: {user.email}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check admin access
+  if (!isAdmin) {
+    console.log('🚫 AdminDashboard: User is not admin, redirecting home:', { 
+      hasUser: !!user, 
+      email: user.email, 
+      role: profile?.role,
+      isAdmin
+    });
+    return <Navigate to="/" replace />;
+  }
+
+  console.log('✅ AdminDashboard: All checks passed, rendering dashboard');
 
   // Fetch pending questions
   const { data: pendingQuestions, isLoading: loadingPending, error: pendingError } = useQuery({
@@ -171,7 +202,11 @@ const AdminDashboard = () => {
               Admin Dashboard
             </h1>
             <p className="text-lg text-gray-600">
-              Welcome back, {profile?.email}
+              Welcome back, {profile?.email} 
+              <span className="text-purple-600 font-semibold ml-2">👑 Admin</span>
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Debug: User ID {user.id} | Role: {profile.role} | Admin: {isAdmin ? 'Yes' : 'No'}
             </p>
           </div>
           <div className="flex gap-4">
@@ -195,6 +230,8 @@ const AdminDashboard = () => {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               Error loading data. Please try refreshing the page.
+              {pendingError && <div>Pending error: {pendingError.message}</div>}
+              {allError && <div>All questions error: {allError.message}</div>}
             </AlertDescription>
           </Alert>
         )}
