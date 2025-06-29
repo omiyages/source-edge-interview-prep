@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, LogOut, Settings, Users, BookOpen } from "lucide-react";
+import { Plus, LogOut, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
@@ -37,18 +37,9 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
           </Link>
           <Link to="/resources">
             <Button variant="outline" className="hover-purple-lift">
-              <Users className="w-4 h-4 mr-2" />
               Resources
             </Button>
           </Link>
-          {isAdmin && (
-            <Link to="/admin">
-              <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
-                <Settings className="w-4 h-4 mr-2" />
-                Admin
-              </Button>
-            </Link>
-          )}
           <Button variant="outline" onClick={signOut} className="hover-purple-lift">
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
