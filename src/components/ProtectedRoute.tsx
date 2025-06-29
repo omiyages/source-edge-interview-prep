@@ -18,7 +18,8 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     profileRole: profile?.role, 
     loading, 
     isAdmin, 
-    requireAdmin
+    requireAdmin,
+    currentPath: window.location.pathname
   });
 
   // Show loading while authentication is in progress
@@ -42,6 +43,18 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
 
   // For admin routes, check admin status
   if (requireAdmin) {
+    if (!profile) {
+      console.log('🔄 Profile not loaded yet for admin route, showing loading...');
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Loading profile...</p>
+          </div>
+        </div>
+      );
+    }
+    
     if (!isAdmin) {
       console.log('🚫 Admin required but user is not admin:', { 
         email: user.email, 

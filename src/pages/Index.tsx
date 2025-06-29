@@ -7,9 +7,6 @@ import { HeroSection } from "@/components/HeroSection";
 import { ResourcesPreview } from "@/components/ResourcesPreview";
 import { QuestionsSection } from "@/components/QuestionsSection";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const Index = () => {
   const { user, isAdmin, loading: authLoading, profile } = useAuth();
@@ -53,21 +50,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        {/* Admin Access Button - Only show if user is admin */}
-        {isAdmin && (
-          <div className="mb-4 flex justify-end">
-            <Link to="/admin">
-              <Button 
-                variant="outline"
-                className="bg-white hover:bg-purple-50 border-purple-200 text-purple-700 hover:text-purple-800"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Admin Dashboard
-              </Button>
-            </Link>
-          </div>
-        )}
-
         <HeroSection 
           isAdmin={isAdmin}
           dialogOpen={dialogOpen}
