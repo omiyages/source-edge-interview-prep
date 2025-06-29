@@ -16,75 +16,75 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Updated primary colors to trendy purple */
-    --primary: 270 91% 65%;
+    /* Updated primary colors to darker purple */
+    --primary: 260 95% 45%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 270 20% 96%;
-    --secondary-foreground: 270 91% 25%;
+    --secondary: 260 25% 94%;
+    --secondary-foreground: 260 95% 25%;
 
-    --muted: 270 20% 96%;
+    --muted: 260 25% 94%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 270 20% 92%;
-    --accent-foreground: 270 91% 25%;
+    --accent: 260 25% 90%;
+    --accent-foreground: 260 95% 25%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 270 20% 90%;
-    --input: 270 20% 90%;
-    --ring: 270 91% 65%;
+    --border: 260 25% 88%;
+    --input: 260 25% 88%;
+    --ring: 260 95% 45%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 270 20% 98%;
-    --sidebar-foreground: 270 5.3% 26.1%;
-    --sidebar-primary: 270 91% 65%;
+    --sidebar-background: 260 25% 96%;
+    --sidebar-foreground: 260 5.3% 26.1%;
+    --sidebar-primary: 260 95% 45%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 270 20% 95%;
-    --sidebar-accent-foreground: 270 91% 25%;
-    --sidebar-border: 270 20% 90%;
-    --sidebar-ring: 270 91% 65%;
+    --sidebar-accent: 260 25% 93%;
+    --sidebar-accent-foreground: 260 95% 25%;
+    --sidebar-border: 260 25% 88%;
+    --sidebar-ring: 260 95% 45%;
   }
 
   .dark {
-    --background: 270 20% 8%;
-    --foreground: 270 20% 98%;
+    --background: 260 25% 8%;
+    --foreground: 260 25% 98%;
 
-    --card: 270 20% 8%;
-    --card-foreground: 270 20% 98%;
+    --card: 260 25% 8%;
+    --card-foreground: 260 25% 98%;
 
-    --popover: 270 20% 8%;
-    --popover-foreground: 270 20% 98%;
+    --popover: 260 25% 8%;
+    --popover-foreground: 260 25% 98%;
 
-    --primary: 270 91% 75%;
-    --primary-foreground: 270 20% 8%;
+    --primary: 260 95% 60%;
+    --primary-foreground: 260 25% 8%;
 
-    --secondary: 270 20% 15%;
-    --secondary-foreground: 270 20% 98%;
+    --secondary: 260 25% 15%;
+    --secondary-foreground: 260 25% 98%;
 
-    --muted: 270 20% 15%;
-    --muted-foreground: 270 10% 65%;
+    --muted: 260 25% 15%;
+    --muted-foreground: 260 15% 65%;
 
-    --accent: 270 20% 15%;
-    --accent-foreground: 270 20% 98%;
+    --accent: 260 25% 15%;
+    --accent-foreground: 260 25% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 270 20% 98%;
+    --destructive-foreground: 260 25% 98%;
 
-    --border: 270 20% 17%;
-    --input: 270 20% 17%;
-    --ring: 270 91% 75%;
+    --border: 260 25% 17%;
+    --input: 260 25% 17%;
+    --ring: 260 95% 60%;
     
-    --sidebar-background: 270 20% 10%;
-    --sidebar-foreground: 270 20% 95%;
-    --sidebar-primary: 270 91% 75%;
-    --sidebar-primary-foreground: 270 20% 8%;
-    --sidebar-accent: 270 20% 15%;
-    --sidebar-accent-foreground: 270 20% 95%;
-    --sidebar-border: 270 20% 15%;
-    --sidebar-ring: 270 91% 75%;
+    --sidebar-background: 260 25% 10%;
+    --sidebar-foreground: 260 25% 95%;
+    --sidebar-primary: 260 95% 60%;
+    --sidebar-primary-foreground: 260 25% 8%;
+    --sidebar-accent: 260 25% 15%;
+    --sidebar-accent-foreground: 260 25% 95%;
+    --sidebar-border: 260 25% 15%;
+    --sidebar-ring: 260 95% 60%;
   }
 }
 
@@ -98,18 +98,18 @@
   }
 }
 
-/* Custom purple gradient utilities */
+/* Custom darker purple gradient utilities */
 @layer utilities {
   .bg-purple-gradient {
-    background: linear-gradient(135deg, #a855f7 0%, #c084fc 50%, #e879f9 100%);
+    background: linear-gradient(135deg, #6b21a8 0%, #7c3aed 50%, #8b5cf6 100%);
   }
   
   .bg-purple-gradient-subtle {
-    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 50%, #ede9fe 100%);
+    background: linear-gradient(135deg, #fefbff 0%, #f8fafc 50%, #f1f5f9 100%);
   }
   
   .text-purple-gradient {
-    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+    background: linear-gradient(135deg, #581c87 0%, #6b21a8 50%, #7c3aed 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -120,12 +120,12 @@
   }
   
   .hover-purple-lift:hover {
-    @apply transform -translate-y-1 shadow-lg shadow-purple-500/25;
+    @apply transform -translate-y-1 shadow-lg shadow-purple-600/25;
   }
   
   .border-purple-gradient {
     border: 1px solid transparent;
     background: linear-gradient(white, white) padding-box,
-                linear-gradient(135deg, #a855f7, #c084fc) border-box;
+                linear-gradient(135deg, #6b21a8, #7c3aed) border-box;
   }
 }
