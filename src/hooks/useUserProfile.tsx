@@ -12,8 +12,10 @@ export const useUserProfile = (user: User | null) => {
     let mounted = true;
 
     const loadProfile = async () => {
-      if (!user) {
+      if (!user?.id) {
+        console.log('📋 No user ID, clearing profile');
         setProfile(null);
+        setLoading(false);
         return;
       }
 
@@ -36,11 +38,11 @@ export const useUserProfile = (user: User | null) => {
         }
 
         if (data) {
-          console.log('✅ Profile loaded:', data.role);
+          console.log('✅ Profile loaded successfully:', { role: data.role, email: data.email });
           setProfile(data);
         } else {
           // Create profile if it doesn't exist
-          console.log('➕ Creating new profile');
+          console.log('➕ Creating new profile for user');
           const isAdminEmail = user.email === 'namtae.quicksit@gmail.com';
           const defaultRole = isAdminEmail ? 'admin' : 'user';
           
@@ -58,7 +60,7 @@ export const useUserProfile = (user: User | null) => {
             console.error('❌ Error creating profile:', createError);
             setProfile(null);
           } else {
-            console.log('✅ Created new profile:', newProfile?.role);
+            console.log('✅ Created new profile:', { role: newProfile?.role, email: newProfile?.email });
             setProfile(newProfile);
           }
         }

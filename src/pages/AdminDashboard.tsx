@@ -8,11 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, User, LogOut, Users, AlertCircle, Home } from "lucide-react";
+import { Check, X, Clock, LogOut, Users, AlertCircle, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { CSVImportForm } from "@/components/CSVImportForm";
-import { AutoGenerateCourseForm } from "@/components/AutoGenerateCourseForm";
-import { CreateUserForm } from "@/components/CreateUserForm";
 import { UsersList } from "@/components/UsersList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -41,8 +38,10 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
 
   console.log('🔧 AdminDashboard render:', {
-    user: user?.email,
-    profile: profile?.role,
+    hasUser: !!user,
+    userEmail: user?.email,
+    hasProfile: !!profile,
+    profileRole: profile?.role,
     isAdmin,
     authLoading
   });
@@ -61,7 +60,7 @@ const AdminDashboard = () => {
 
   // Redirect if not authenticated or not admin
   if (!user || !isAdmin) {
-    console.log('🚫 Access denied - redirecting:', { user: !!user, isAdmin });
+    console.log('🚫 Access denied - redirecting:', { hasUser: !!user, isAdmin });
     return <Navigate to="/auth" replace />;
   }
 

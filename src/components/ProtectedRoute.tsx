@@ -11,13 +11,15 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const { user, profile, loading, isAdmin } = useAuth();
 
-  console.log('🛡️ ProtectedRoute:', { 
-    userEmail: user?.email || 'No user', 
-    profileRole: profile?.role || 'No profile', 
+  console.log('🛡️ ProtectedRoute Check:', { 
+    hasUser: !!user,
+    userEmail: user?.email, 
+    hasProfile: !!profile,
+    profileRole: profile?.role, 
     loading, 
     isAdmin, 
     requireAdmin,
-    shouldAllowAccess: !requireAdmin || isAdmin
+    shouldAllow: !requireAdmin || (requireAdmin && isAdmin)
   });
 
   // Show loading while authentication is in progress
@@ -34,14 +36,15 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
 
   // Redirect to auth if no user
   if (!user) {
-    console.log('🚫 No authenticated user - redirecting to auth');
+    console.log('🚫 No user - redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
-  // For admin routes, check if user has admin role
+  // For admin routes, check admin status
   if (requireAdmin) {
+    // Wait for profile to load before making admin decision
     if (!profile) {
-      console.log('🚫 No profile loaded for admin check');
+      console.log('⏳ Waiting for profile to load for admin check');
       return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
           <div className="text-center">
@@ -53,15 +56,14 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     }
     
     if (!isAdmin) {
-      console.log('🚫 User is not admin:', { 
+      console.log('🚫 Admin required but user is not admin:', { 
         email: user.email, 
-        role: profile.role,
-        isAdmin 
+        role: profile.role 
       });
       return <Navigate to="/" replace />;
     }
     
-    console.log('✅ Admin access granted');
+    console.log('✅ Admin access granted to:', user.email);
   }
 
   return <>{children}</>;
