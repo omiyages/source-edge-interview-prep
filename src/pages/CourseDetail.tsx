@@ -5,15 +5,12 @@ import { Navigate, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Settings2, Edit } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
-import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm";
-import { EditCourseForm } from "@/components/EditCourseForm";
+import { ArrowLeft } from "lucide-react";
+import { CourseHeader } from "@/components/CourseHeader";
+import { StageNavigation } from "@/components/StageNavigation";
+import { StageInformation } from "@/components/StageInformation";
 import { StageResourcesSection } from "@/components/StageResourcesSection";
-import QuestionCard from "@/components/QuestionCard";
+import { StageQuestions } from "@/components/StageQuestions";
 
 interface Course {
   id: string;
@@ -50,9 +47,6 @@ const CourseDetail = () => {
   const { id: courseId } = useParams<{ id: string }>();
   const { user, loading, isAdmin } = useAuth();
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
-  const [isManageQuestionsDialogOpen, setIsManageQuestionsDialogOpen] = useState(false);
-  const [isManageResourcesDialogOpen, setIsManageResourcesDialogOpen] = useState(false);
-  const [isEditCourseDialogOpen, setIsEditCourseDialogOpen] = useState(false);
 
   // Redirect to auth if not authenticated
   if (!loading && !user) {
@@ -129,27 +123,6 @@ const CourseDetail = () => {
     }
   }, [stages, selectedStage]);
 
-  // Function to format text with markdown-like bold syntax
-  const formatText = (text: string) => {
-    if (!text) return text;
-    
-    // Split by ** to find bold sections
-    const parts = text.split('**');
-    return parts.map((part, index) => {
-      // Every odd index should be bold
-      if (index % 2 === 1) {
-        return <strong key={index}>{part}</strong>;
-      }
-      // Convert line breaks to <br> tags for regular text
-      return part.split('\n').map((line, lineIndex, lines) => (
-        <span key={`${index}-${lineIndex}`}>
-          {line}
-          {lineIndex < lines.length - 1 && <br />}
-        </span>
-      ));
-    });
-  };
-
   if (loading || isLoadingCourse) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -181,190 +154,39 @@ const CourseDetail = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Link to="/tracks">
-            <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Tracks
-            </Button>
-          </Link>
-          
-          <div className="flex gap-2">
-            {isAdmin && (
-              <>
-                <Dialog open={isEditCourseDialogOpen} onOpenChange={setIsEditCourseDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Course
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Edit Course</DialogTitle>
-                    </DialogHeader>
-                    <EditCourseForm 
-                      course={course}
-                      onSuccess={() => {
-                        setIsEditCourseDialogOpen(false);
-                        refetchCourse();
-                        refetchStages();
-                      }} 
-                    />
-                  </DialogContent>
-                </Dialog>
-                
-                {selectedStage && (
-                  <>
-                    <Dialog open={isManageQuestionsDialogOpen} onOpenChange={setIsManageQuestionsDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline">
-                          <Settings2 className="w-4 h-4 mr-2" />
-                          Manage Questions
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Manage Questions for {selectedStage.title}</DialogTitle>
-                        </DialogHeader>
-                        <ManageStageQuestionsForm 
-                          stageId={selectedStage.id}
-                          onSuccess={() => {
-                            setIsManageQuestionsDialogOpen(false);
-                            refetchQuestions();
-                          }} 
-                        />
-                      </DialogContent>
-                    </Dialog>
+        <CourseHeader
+          course={course}
+          selectedStage={selectedStage}
+          isAdmin={isAdmin}
+          onCourseUpdate={() => {
+            refetchCourse();
+            refetchStages();
+          }}
+          onQuestionsUpdate={refetchQuestions}
+        />
 
-                    <Dialog open={isManageResourcesDialogOpen} onOpenChange={setIsManageResourcesDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline">
-                          <Settings2 className="w-4 h-4 mr-2" />
-                          Manage Resources
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Manage Resources for {selectedStage.title}</DialogTitle>
-                        </DialogHeader>
-                        <ManageStageResourcesForm 
-                          stageId={selectedStage.id}
-                          onSuccess={() => {
-                            setIsManageResourcesDialogOpen(false);
-                          }} 
-                        />
-                      </DialogContent>
-                    </Dialog>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Course Info */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{course.title}</h1>
-          {course.description && (
-            <p className="text-lg text-gray-600 max-w-3xl">{course.description}</p>
-          )}
-        </div>
-
-        {/* Stage Navigation */}
-        {stages && stages.length > 0 && (
-          <div className="mb-8">
-            <div className="flex flex-wrap gap-2">
-              {stages.map((stage, index) => (
-                <Button
-                  key={stage.id}
-                  variant={selectedStage?.id === stage.id ? "default" : "outline"}
-                  onClick={() => setSelectedStage(stage)}
-                  className="flex items-center gap-2"
-                >
-                  <Badge variant="secondary" className="text-xs">
-                    {index + 1}
-                  </Badge>
-                  {stage.title}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
+        <StageNavigation
+          stages={stages || []}
+          selectedStage={selectedStage}
+          onStageSelect={setSelectedStage}
+        />
 
         {/* Selected Stage Content */}
         {selectedStage && (
           <div className="space-y-8">
-            {/* Stage Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Badge>{selectedStage.stage_order}</Badge>
-                  {selectedStage.title}
-                </CardTitle>
-                {selectedStage.description && (
-                  <p className="text-gray-600 mt-2">{selectedStage.description}</p>
-                )}
-              </CardHeader>
-              {selectedStage.information && (
-                <CardContent>
-                  <div className="prose prose-blue max-w-none">
-                    <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {formatText(selectedStage.information)}
-                    </div>
-                  </div>
-                </CardContent>
-              )}
-            </Card>
+            <StageInformation selectedStage={selectedStage} />
 
-            {/* Stage Resources */}
             <StageResourcesSection
               stageId={selectedStage.id}
               isAdmin={isAdmin}
-              onManageClick={() => setIsManageResourcesDialogOpen(true)}
+              onManageClick={() => {}}
             />
 
-            {/* Stage Questions */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Practice Questions</CardTitle>
-                  {isAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsManageQuestionsDialogOpen(true)}
-                    >
-                      <Settings2 className="w-4 h-4 mr-2" />
-                      Manage Questions
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {stageQuestions && stageQuestions.length > 0 ? (
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {stageQuestions.map((question) => (
-                      <QuestionCard key={question.id} question={question} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">No questions assigned to this stage yet.</p>
-                    {isAdmin && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsManageQuestionsDialogOpen(true)}
-                      >
-                        <Settings2 className="w-4 h-4 mr-2" />
-                        Add Questions
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <StageQuestions
+              questions={stageQuestions}
+              isAdmin={isAdmin}
+              onManageClick={() => {}}
+            />
           </div>
         )}
       </div>
