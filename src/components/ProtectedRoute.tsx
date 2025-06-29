@@ -17,11 +17,12 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     loading, 
     isAdmin, 
     requireAdmin,
-    profileExists: !!profile
+    profileExists: !!profile,
+    shouldWaitForProfile: !!user && !profile && loading
   });
 
-  // Show loading with a reasonable timeout
-  if (loading) {
+  // Show loading while auth is loading or while we're waiting for profile data
+  if (loading || (user && !profile)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -41,7 +42,11 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
   // If admin is required but user is not admin, redirect to home
   if (requireAdmin && !isAdmin) {
     console.log('🚫 Admin required but user is not admin, redirecting to home');
-    console.log('Profile details:', { profile: profile?.role, isAdmin });
+    console.log('Profile details:', { 
+      profileRole: profile?.role, 
+      isAdmin,
+      roleCheck: profile?.role === 'admin'
+    });
     return <Navigate to="/" replace />;
   }
 

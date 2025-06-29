@@ -1,9 +1,10 @@
 
-import { Filter, Plus } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateResourceForm } from "@/components/CreateResourceForm";
+import { Plus } from "lucide-react";
 
 interface ResourcesFiltersProps {
   selectedCategory: string;
@@ -14,37 +15,39 @@ interface ResourcesFiltersProps {
   onCreateSuccess: () => void;
 }
 
-const categories = [
-  "Interview Prep",
-  "Technical Skills", 
-  "Career Development",
-  "Coding Practice",
-  "System Design",
-  "Behavioral Interview",
-  "Other"
-];
-
-export const ResourcesFilters = ({
-  selectedCategory,
-  onCategoryChange,
-  isAdmin,
-  createDialogOpen,
-  onCreateDialogOpenChange,
-  onCreateSuccess
+export const ResourcesFilters = ({ 
+  selectedCategory, 
+  onCategoryChange, 
+  isAdmin, 
+  createDialogOpen, 
+  onCreateDialogOpenChange, 
+  onCreateSuccess 
 }: ResourcesFiltersProps) => {
+  const categories = [
+    "all",
+    "Interview Prep",
+    "Technical Skills", 
+    "Career Development",
+    "Coding Practice",
+    "System Design",
+    "Behavioral Interview",
+    "Other"
+  ];
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
-      <div className="flex items-center gap-2">
-        <Filter className="h-4 w-4" />
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+      <div className="flex items-center gap-4">
+        <label htmlFor="category-filter" className="text-sm font-medium text-gray-700">
+          Filter by category:
+        </label>
         <Select value={selectedCategory} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-48 bg-white">
-            <SelectValue placeholder="Filter by category" />
+          <SelectTrigger className="w-48">
+            <SelectValue />
           </SelectTrigger>
-          <SelectContent className="bg-white border shadow-lg">
-            <SelectItem value="all">All Categories</SelectItem>
+          <SelectContent>
             {categories.map((category) => (
               <SelectItem key={category} value={category}>
-                {category}
+                {category === "all" ? "All Categories" : category}
               </SelectItem>
             ))}
           </SelectContent>
@@ -54,8 +57,8 @@ export const ResourcesFilters = ({
       {isAdmin && (
         <Dialog open={createDialogOpen} onOpenChange={onCreateDialogOpenChange}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4" />
+            <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
+              <Plus className="w-4 h-4 mr-2" />
               Add Resource
             </Button>
           </DialogTrigger>

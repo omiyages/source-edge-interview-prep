@@ -6,6 +6,7 @@ export const useAuth = () => {
   const authContext = useAuthContext();
   const { profile, loading: profileLoading } = useUserProfile(authContext.user);
 
+  // Ensure we properly check for admin role
   const isAdmin = profile?.role === 'admin';
   const loading = authContext.loading || profileLoading;
 
@@ -14,8 +15,19 @@ export const useAuth = () => {
     profileRole: profile?.role,
     isAdmin,
     loading,
-    profileExists: !!profile
+    profileExists: !!profile,
+    authUserExists: !!authContext.user
   });
+
+  // Debug admin access specifically
+  if (authContext.user && profile) {
+    console.log('🔐 Admin check details:', {
+      profileRole: profile.role,
+      isExactlyAdmin: profile.role === 'admin',
+      profileRoleType: typeof profile.role,
+      stringComparison: String(profile.role) === 'admin'
+    });
+  }
 
   return {
     ...authContext,

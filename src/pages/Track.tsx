@@ -22,6 +22,13 @@ const Track = () => {
   const { user, profile, loading, signOut, isAdmin } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
+  console.log('📚 Track page state:', { 
+    user: user?.email, 
+    profile: profile?.role, 
+    isAdmin, 
+    loading 
+  });
+
   // Redirect to auth if not authenticated
   if (!loading && !user) {
     return <Navigate to="/auth" replace />;
@@ -76,7 +83,7 @@ const Track = () => {
             <div className="flex gap-2">
               {isAdmin && (
                 <Link to="/admin">
-                  <Button variant="outline">
+                  <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
                     <Settings className="w-4 h-4 mr-2" />
                     Admin
                   </Button>
@@ -93,6 +100,7 @@ const Track = () => {
           </p>
           <p className="text-sm text-gray-500 mt-2">
             Welcome back, {profile?.email} ({profile?.role})
+            {isAdmin && <span className="text-purple-600 font-semibold ml-2">👑 Admin</span>}
           </p>
         </div>
 
@@ -101,7 +109,7 @@ const Track = () => {
           <div className="flex justify-center mb-8">
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Course
                 </Button>
