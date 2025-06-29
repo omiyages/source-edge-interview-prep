@@ -14,7 +14,6 @@ interface InterviewQuestion {
   question: string;
   company: string;
   role: string;
-  difficulty: string;
   interview_stage: string;
   category: string;
   submitted_by: string | null;
