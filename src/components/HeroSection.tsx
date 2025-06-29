@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, LogOut, BookOpen, Settings } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
 
@@ -15,16 +15,6 @@ interface HeroSectionProps {
 
 export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess }: HeroSectionProps) => {
   const { signOut, profile } = useAuth();
-  const navigate = useNavigate();
-
-  const handleAdminClick = () => {
-    console.log('🔧 Admin button clicked:', { isAdmin, profileRole: profile?.role });
-    if (isAdmin) {
-      navigate('/admin');
-    } else {
-      console.warn('⚠️ User tried to access admin but is not admin');
-    }
-  };
 
   console.log('🏠 HeroSection render:', { 
     isAdmin, 
@@ -51,14 +41,16 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
             </Button>
           </Link>
           {isAdmin && (
-            <Button 
-              variant="outline" 
-              onClick={handleAdminClick}
-              className="bg-white hover:bg-purple-50 border-purple-200 text-purple-700 hover:text-purple-800"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Admin Dashboard
-            </Button>
+            <Link to="/admin">
+              <Button 
+                variant="outline" 
+                className="bg-white hover:bg-purple-50 border-purple-200 text-purple-700 hover:text-purple-800"
+                onClick={() => console.log('🔧 Admin button clicked - navigating to /admin')}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Admin Dashboard
+              </Button>
+            </Link>
           )}
           <Button variant="outline" onClick={signOut} className="hover-purple-lift">
             <LogOut className="w-4 h-4 mr-2" />

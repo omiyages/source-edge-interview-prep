@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
@@ -37,6 +36,7 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  console.log('🚀 AdminDashboard: Component mounted/rendered');
   console.log('🔧 AdminDashboard render - DETAILED:', {
     hasUser: !!user,
     userEmail: user?.email,
