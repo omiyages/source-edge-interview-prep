@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +113,11 @@ export const CreateResourceForm = ({ onSuccess }: CreateResourceFormProps) => {
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button 
+        type="submit" 
+        className="w-full bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium" 
+        disabled={isSubmitting}
+      >
         {isSubmitting ? "Creating..." : "Create Resource"}
       </Button>
     </form>

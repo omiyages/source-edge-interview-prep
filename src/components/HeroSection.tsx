@@ -16,6 +16,12 @@ interface HeroSectionProps {
 export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess }: HeroSectionProps) => {
   const { signOut, profile } = useAuth();
 
+  console.log('🏠 HeroSection render:', { 
+    isAdmin, 
+    profileRole: profile?.role, 
+    profileExists: !!profile 
+  });
+
   return (
     <div className="text-center mb-8">
       <div className="flex justify-between items-center mb-4">
@@ -37,7 +43,7 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
           </Link>
           {isAdmin && (
             <Link to="/admin">
-              <Button variant="outline" className="hover-purple-lift">
+              <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
                 <Settings className="w-4 h-4 mr-2" />
                 Admin
               </Button>
@@ -54,6 +60,7 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
       </p>
       <p className="text-sm text-gray-500 mb-6">
         Welcome back, {profile?.email} ({profile?.role})
+        {isAdmin && <span className="text-purple-600 font-semibold ml-2">👑 Admin</span>}
       </p>
       
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

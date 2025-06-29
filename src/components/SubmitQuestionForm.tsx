@@ -230,7 +230,11 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button 
+        type="submit" 
+        className="w-full bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium" 
+        disabled={isSubmitting}
+      >
         {isSubmitting ? "Submitting..." : "Submit Question"}
       </Button>
       

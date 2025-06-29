@@ -39,6 +39,13 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  console.log('🔧 AdminDashboard access check:', {
+    user: user?.email,
+    profile: profile?.role,
+    isAdmin,
+    authLoading
+  });
+
   // Show loading while auth is still loading
   if (authLoading) {
     return (
@@ -53,6 +60,7 @@ const AdminDashboard = () => {
 
   // Redirect if not authenticated or not admin
   if (!user || !isAdmin) {
+    console.log('🚫 Access denied - redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
@@ -271,6 +279,7 @@ const AdminDashboard = () => {
                         <div className="flex gap-2 pt-2">
                           <Button
                             size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
                             onClick={() => approveQuestionMutation.mutate({ 
                               questionId: question.id, 
                               status: 'approved' 

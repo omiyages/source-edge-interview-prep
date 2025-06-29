@@ -9,8 +9,15 @@ import { QuestionsSection } from "@/components/QuestionsSection";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading, profile } = useAuth();
   const { toast } = useToast();
+  
+  console.log('🏡 Index page state:', { 
+    user: user?.email, 
+    isAdmin, 
+    authLoading, 
+    profileRole: profile?.role 
+  });
   
   // Only fetch data when user is authenticated and not loading
   const shouldFetchData = !authLoading && !!user;
