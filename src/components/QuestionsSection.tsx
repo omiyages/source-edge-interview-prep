@@ -105,17 +105,6 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
                     <Clock className="w-3 h-3" />
                     {question.interview_stage}
                   </Badge>
-                  {question.difficulty && (
-                    <Badge 
-                      variant={
-                        question.difficulty === 'Easy' ? 'default' : 
-                        question.difficulty === 'Medium' ? 'secondary' : 
-                        'destructive'
-                      }
-                    >
-                      {question.difficulty}
-                    </Badge>
-                  )}
                 </div>
 
                 <div className="text-xs text-gray-500 flex items-center justify-between">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useParams, Link } from "react-router-dom";
@@ -33,7 +32,6 @@ interface InterviewQuestion {
   question: string;
   company: string;
   role: string;
-  difficulty: string;
   interview_stage: string;
   category: string;
   submitted_by: string | null;
