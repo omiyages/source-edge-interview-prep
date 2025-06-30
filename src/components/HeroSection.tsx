@@ -16,12 +16,6 @@ interface HeroSectionProps {
 export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess }: HeroSectionProps) => {
   const { signOut, profile } = useAuth();
 
-  console.log('🏠 HeroSection render:', { 
-    isAdmin, 
-    profileRole: profile?.role, 
-    profileExists: !!profile 
-  });
-
   return (
     <div className="text-center mb-8">
       <div className="flex justify-between items-center mb-4">
@@ -45,7 +39,6 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
               <Button 
                 variant="outline" 
                 className="bg-white hover:bg-purple-50 border-purple-200 text-purple-700 hover:text-purple-800"
-                onClick={() => console.log('🔧 Admin button clicked - navigating to /admin')}
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Admin Dashboard

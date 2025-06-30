@@ -12,14 +12,6 @@ const Index = () => {
   const { user, isAdmin, loading: authLoading, profile } = useAuth();
   const { toast } = useToast();
   
-  console.log('🏡 Index page render:', { 
-    hasUser: !!user,
-    userEmail: user?.email, 
-    isAdmin, 
-    authLoading, 
-    profileRole: profile?.role 
-  });
-  
   // Only fetch data when user is authenticated and not loading
   const shouldFetchData = !authLoading && !!user;
   const { questions, loading: questionsLoading, error: questionsError, refetch: refetchQuestions } = useQuestions(isAdmin, shouldFetchData);
