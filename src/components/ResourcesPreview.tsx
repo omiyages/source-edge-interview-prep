@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,15 +13,15 @@ interface ResourcesPreviewProps {
   loading: boolean;
 }
 
-export const ResourcesPreview = ({ resources, loading }: ResourcesPreviewProps) => {
+const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Get unique categories
+  // Get unique categories - memoized
   const uniqueCategories = useMemo(() => 
     [...new Set(resources.map(r => r.category))].sort(), [resources]);
 
-  // Filter resources
+  // Filter resources - memoized
   const filteredResources = useMemo(() => {
     return resources.filter(resource => {
       const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -134,4 +134,8 @@ export const ResourcesPreview = ({ resources, loading }: ResourcesPreviewProps) 
       </CardContent>
     </Card>
   );
-};
+});
+
+ResourcesPreview.displayName = 'ResourcesPreview';
+
+export { ResourcesPreview };

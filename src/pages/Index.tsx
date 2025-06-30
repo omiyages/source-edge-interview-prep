@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuestions } from "@/hooks/useQuestions";
 import { useResources } from "@/hooks/useResources";
@@ -19,14 +19,14 @@ const Index = () => {
   
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const handleSubmitSuccess = () => {
+  const handleSubmitSuccess = useCallback(() => {
     setDialogOpen(false);
     toast({
       title: "Question submitted!",
       description: "Your question has been submitted for review.",
     });
     refetchQuestions();
-  };
+  }, [toast, refetchQuestions]);
 
   if (authLoading) {
     return (

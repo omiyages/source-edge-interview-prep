@@ -1,29 +1,19 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fetchResources, Resource } from '@/services/resourcesService';
 
-export const useResources = (shouldFetch: boolean = true) => {
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!shouldFetch) return;
-
-    const loadResources = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchResources(10);
-        setResources(data);
-      } catch (error) {
-        console.error('❌ Error loading resources:', error);
-        setResources([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadResources();
-  }, [shouldFetch]);
+export const useResources = (shouldFetch: boolean = true, limit: number = 10) => {
+  const {
+    data: resources = [],
+    isLoading: loading
+  } = useQuery({
+    queryKey: ['resources', limit],
+    queryFn: () => fetchResources(limit),
+    enabled: shouldFetch,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 1
+  });
 
   return { resources, loading };
 };

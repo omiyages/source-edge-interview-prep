@@ -1,44 +1,37 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fetchQuestions, InterviewQuestion } from '@/services/questionsService';
 import { useToast } from '@/hooks/use-toast';
 
 export const useQuestions = (isAdmin: boolean, shouldFetch: boolean = true) => {
-  const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const loadQuestions = async () => {
-    if (!shouldFetch) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchQuestions(isAdmin);
-      setQuestions(data);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load questions';
-      console.error('❌ Hook error loading questions:', error);
-      setError(errorMessage);
+  const {
+    data: questions = [],
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['questions', isAdmin],
+    queryFn: () => fetchQuestions(isAdmin),
+    enabled: shouldFetch,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+    onError: (error: Error) => {
+      const errorMessage = error.message || 'Failed to load questions';
       toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadQuestions();
-  }, [isAdmin, shouldFetch]);
+  });
 
   return {
     questions,
     loading,
-    error,
-    refetch: loadQuestions
+    error: error?.message || null,
+    refetch
   };
 };

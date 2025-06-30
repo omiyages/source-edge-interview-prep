@@ -1,4 +1,5 @@
 
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, LogOut, BookOpen, Settings } from "lucide-react";
@@ -13,7 +14,7 @@ interface HeroSectionProps {
   onSubmitSuccess: () => void;
 }
 
-export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess }: HeroSectionProps) => {
+const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess }: HeroSectionProps) => {
   const { signOut, profile } = useAuth();
 
   return (
@@ -75,4 +76,8 @@ export const HeroSection = ({ isAdmin, dialogOpen, setDialogOpen, onSubmitSucces
       </Dialog>
     </div>
   );
-};
+});
+
+HeroSection.displayName = 'HeroSection';
+
+export { HeroSection };

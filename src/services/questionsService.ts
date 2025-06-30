@@ -23,8 +23,6 @@ export interface InterviewQuestion {
 
 export const fetchQuestions = async (isAdmin: boolean = false): Promise<InterviewQuestion[]> => {
   try {
-    console.log('📥 Fetching questions, isAdmin:', isAdmin);
-    
     let query = supabase
       .from('interview_questions')
       .select('*')
@@ -38,11 +36,9 @@ export const fetchQuestions = async (isAdmin: boolean = false): Promise<Intervie
     const { data, error } = await query;
 
     if (error) {
-      console.error('❌ Error fetching questions:', error);
       throw new Error(`Failed to fetch questions: ${error.message}`);
     }
 
-    console.log('✅ Questions fetched successfully:', data?.length || 0);
     return data || [];
   } catch (error) {
     console.error('❌ Service error fetching questions:', error);
