@@ -5,7 +5,7 @@ import { Navigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, Settings, BookOpen, ArrowLeft } from "lucide-react";
+import { Plus, BookOpen, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateCourseForm } from "@/components/CreateCourseForm";
 import { CourseCard } from "@/components/CourseCard";
@@ -19,15 +19,8 @@ interface Course {
 }
 
 const Track = () => {
-  const { user, profile, loading, signOut, isAdmin } = useAuth();
+  const { user, profile, loading, isAdmin } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-
-  console.log('📚 Track page state:', { 
-    user: user?.email, 
-    profile: profile?.role, 
-    isAdmin, 
-    loading 
-  });
 
   // Redirect to auth if not authenticated
   if (!loading && !user) {
@@ -37,7 +30,6 @@ const Track = () => {
   const { data: courses, isLoading, refetch } = useQuery({
     queryKey: ['courses'],
     queryFn: async () => {
-      console.log('🔄 Fetching courses...');
       const { data, error } = await supabase
         .from('courses')
         .select('*')
@@ -48,7 +40,6 @@ const Track = () => {
         throw error;
       }
       
-      console.log('✅ Courses fetched:', data?.length || 0);
       return data as Course[];
     },
     enabled: !!user,
@@ -80,20 +71,7 @@ const Track = () => {
             <h1 className="text-4xl font-bold text-gray-900">
               Interview Tracks
             </h1>
-            <div className="flex gap-2">
-              {isAdmin && (
-                <Link to="/admin">
-                  <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Admin
-                  </Button>
-                </Link>
-              )}
-              <Button variant="outline" onClick={signOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+            <div className="w-32"></div> {/* Spacer to center the title */}
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Structured interview preparation courses with organized stages and curated questions.
