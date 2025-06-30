@@ -2,10 +2,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Settings2, Edit } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react";
 import { EditCourseForm } from "./EditCourseForm";
-import { ManageStageQuestionsForm } from "./ManageStageQuestionsForm";
-import { ManageStageResourcesForm } from "./ManageStageResourcesForm";
 
 interface Course {
   id: string;
@@ -50,65 +48,23 @@ export const CourseHeader = ({
         
         <div className="flex gap-2">
           {isAdmin && (
-            <>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Course
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Edit Course</DialogTitle>
-                  </DialogHeader>
-                  <EditCourseForm 
-                    course={course}
-                    onSuccess={onCourseUpdate}
-                  />
-                </DialogContent>
-              </Dialog>
-              
-              {selectedStage && (
-                <>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Settings2 className="w-4 h-4 mr-2" />
-                        Manage Questions
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Manage Questions for {selectedStage.title}</DialogTitle>
-                      </DialogHeader>
-                      <ManageStageQuestionsForm 
-                        stageId={selectedStage.id}
-                        onSuccess={onQuestionsUpdate}
-                      />
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Settings2 className="w-4 h-4 mr-2" />
-                        Manage Resources
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Manage Resources for {selectedStage.title}</DialogTitle>
-                      </DialogHeader>
-                      <ManageStageResourcesForm 
-                        stageId={selectedStage.id}
-                        onSuccess={() => {}}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                </>
-              )}
-            </>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Course
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Course</DialogTitle>
+                </DialogHeader>
+                <EditCourseForm 
+                  course={course}
+                  onSuccess={onCourseUpdate}
+                />
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </div>
