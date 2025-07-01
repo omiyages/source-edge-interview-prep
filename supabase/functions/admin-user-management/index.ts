@@ -59,16 +59,18 @@ Deno.serve(async (req) => {
           email_confirm: true,
         })
 
-        if (createError) throw createError
+        if (createError) {
+          console.error('User creation error:', createError)
+          throw createError
+        }
 
-        // Update profile with full name - use string literal instead of enum
+        // Update profile with full name only - let role default to 'user'
         if (userData.user) {
           const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .update({
               full_name: fullName,
-              created_by: user.id,
-              role: 'user' // Use string literal instead of enum
+              created_by: user.id
             })
             .eq('id', userData.user.id)
 
