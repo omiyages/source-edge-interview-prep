@@ -50,37 +50,80 @@ Deno.serve(async (req) => {
 
     switch (method) {
       case 'CREATE_USER':
-        const { email, password, fullName } = body
-        
-        // Create user with admin API
-        const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-        })
+        try {
+          const { email, password, fullName } = body
+          
+          console.log('Creating user with email:', email)
+          
+          // Create user with admin API
+          const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              full_name: fullName
+            }
+          })
 
-        if (createError) {
-          console.error('User creation error:', createError)
-          throw createError
-        }
-
-        // Update profile with full name only - let role default to 'user'
-        if (userData.user) {
-          const { error: profileError } = await supabaseAdmin
-            .from('profiles')
-            .update({
-              full_name: fullName,
-              created_by: user.id
-            })
-            .eq('id', userData.user.id)
-
-          if (profileError) {
-            console.error('Profile update error:', profileError)
-            throw profileError
+          if (createError) {
+            console.error('Auth user creation error:', createError)
+            throw new Error(`Failed to create user: ${createError.message}`)
           }
-        }
 
-        result = { success: true, user: userData.user }
+          console.log('User created successfully:', userData.user?.id)
+
+          // The handle_new_user trigger should create the profile automatically
+          // Let's wait a moment and then check if we need to update it
+          await new Promise(resolve => setTimeout(resolve, 100))
+
+          if (userData.user) {
+            // Check if profile was created by trigger
+            const { data: existingProfile, error: checkError } = await supabaseAdmin
+              .from('profiles')
+              .select('id, full_name')
+              .eq('id', userData.user.id)
+              .single()
+
+            if (checkError) {
+              console.log('Profile not found, creating manually:', checkError.message)
+              
+              // Create profile manually if trigger failed
+              const { error: insertError } = await supabaseAdmin
+                .from('profiles')
+                .insert({
+                  id: userData.user.id,
+                  email: userData.user.email,
+                  full_name: fullName,
+                  created_by: user.id,
+                  role: 'user'
+                })
+
+              if (insertError) {
+                console.error('Manual profile creation error:', insertError)
+                throw new Error(`Failed to create user profile: ${insertError.message}`)
+              }
+            } else if (!existingProfile.full_name && fullName) {
+              // Update profile with full name if it wasn't set
+              const { error: updateError } = await supabaseAdmin
+                .from('profiles')
+                .update({
+                  full_name: fullName,
+                  created_by: user.id
+                })
+                .eq('id', userData.user.id)
+
+              if (updateError) {
+                console.error('Profile update error:', updateError)
+                // Don't throw here, user was created successfully
+              }
+            }
+          }
+
+          result = { success: true, user: userData.user }
+        } catch (error) {
+          console.error('CREATE_USER error:', error)
+          throw error
+        }
         break
 
       case 'DELETE_USER':
