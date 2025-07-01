@@ -87,15 +87,15 @@ Deno.serve(async (req) => {
             if (checkError) {
               console.log('Profile not found, creating manually:', checkError.message)
               
-              // Create profile manually if trigger failed
+              // Create profile manually if trigger failed - let role default automatically
               const { error: insertError } = await supabaseAdmin
                 .from('profiles')
                 .insert({
                   id: userData.user.id,
                   email: userData.user.email,
                   full_name: fullName,
-                  created_by: user.id,
-                  role: 'user'
+                  created_by: user.id
+                  // Removed explicit role assignment - let database handle default
                 })
 
               if (insertError) {
