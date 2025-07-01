@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
@@ -36,27 +35,27 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   const handleCreateUser = async (data: CreateUserFormData) => {
     setLoading(true);
     try {
-      // Create user via Supabase Admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: data.email,
-        password: data.password,
-        email_confirm: true,
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session');
+      }
+
+      const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
+        body: {
+          method: 'CREATE_USER',
+          body: {
+            email: data.email,
+            password: data.password,
+            fullName: data.fullName
+          }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
       });
 
-      if (authError) throw authError;
-
-      // Update the profile with full name and mark as created by admin
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: data.fullName,
-            created_by: (await supabase.auth.getUser()).data.user?.id,
-          })
-          .eq('id', authData.user.id);
-
-        if (profileError) throw profileError;
-      }
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
 
       toast({
         title: "User Created",
