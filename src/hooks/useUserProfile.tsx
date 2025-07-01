@@ -37,6 +37,16 @@ export const useUserProfile = (user: User | null) => {
 
         if (data) {
           setProfile(data);
+          
+          // Update last login time when profile is loaded
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ last_login_at: new Date().toISOString() })
+            .eq('id', user.id);
+
+          if (updateError) {
+            console.error('Error updating last login:', updateError);
+          }
         } else {
           // Create profile if it doesn't exist
           const isAdminEmail = user.email === 'namtae.quicksit@gmail.com';
@@ -47,7 +57,8 @@ export const useUserProfile = (user: User | null) => {
             .insert([{ 
               id: user.id, 
               email: user.email || '',
-              role: defaultRole // This will be properly cast to app_role enum
+              role: defaultRole,
+              last_login_at: new Date().toISOString()
             }])
             .select()
             .single();
@@ -75,6 +86,46 @@ export const useUserProfile = (user: User | null) => {
       mounted = false;
     };
   }, [user?.id, user?.email]);
+
+  // Track session time
+  useEffect(() => {
+    if (!user?.id || !profile) return;
+
+    const sessionStart = Date.now();
+    
+    const updateSessionTime = async () => {
+      const sessionDuration = Math.floor((Date.now() - sessionStart) / 1000 / 60); // minutes
+      
+      if (sessionDuration > 0) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            total_session_time_minutes: (profile.total_session_time_minutes || 0) + sessionDuration 
+          })
+          .eq('id', user.id);
+
+        if (error) {
+          console.error('Error updating session time:', error);
+        }
+      }
+    };
+
+    // Update session time every 5 minutes
+    const interval = setInterval(updateSessionTime, 5 * 60 * 1000);
+    
+    // Update on page unload
+    const handleBeforeUnload = () => {
+      updateSessionTime();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      updateSessionTime(); // Final update when component unmounts
+    };
+  }, [user?.id, profile?.total_session_time_minutes]);
 
   return { profile, loading };
 };

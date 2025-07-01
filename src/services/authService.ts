@@ -16,14 +16,15 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
       return existingProfile;
     }
 
-    // If no profile exists, create one with default user role
+    // If no profile exists, create one - let database handle the default role
     if (error?.code === 'PGRST116') {
       const { data: newProfile } = await supabase
         .from('profiles')
         .insert([{ 
           id: user.id, 
           email: user.email || '',
-          role: 'user' as const // Explicit type casting for enum
+          last_login_at: new Date().toISOString()
+          // Don't specify role - let database default handle it
         }])
         .select()
         .single();

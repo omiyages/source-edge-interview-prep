@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
           console.log('Auth user created successfully:', userData.user?.id)
 
           // Wait a moment for the trigger to potentially create the profile
-          await new Promise(resolve => setTimeout(resolve, 200))
+          await new Promise(resolve => setTimeout(resolve, 500))
 
           if (userData.user) {
             try {
@@ -103,15 +103,15 @@ Deno.serve(async (req) => {
               if (!existingProfile) {
                 console.log('Profile not found, creating manually')
                 
-                // Create profile manually with proper enum casting
+                // Create profile manually - let database handle the enum casting
                 const { data: insertData, error: insertError } = await supabaseAdmin
                   .from('profiles')
                   .insert({
                     id: userData.user.id,
                     email: userData.user.email,
                     full_name: fullName,
-                    role: 'user', // This will be cast to app_role enum by default
                     created_by: user.id
+                    // Don't specify role - let database default handle it
                   })
                   .select()
 
@@ -119,6 +119,8 @@ Deno.serve(async (req) => {
                   console.error('Manual profile creation error:', insertError)
                   // Don't throw here, user was created successfully in auth
                   console.log('User created in auth but profile creation failed - user can still sign in')
+                } else {
+                  console.log('Profile created successfully:', insertData)
                 }
               } else if (!existingProfile.full_name && fullName) {
                 // Update profile with full name if it wasn't set
