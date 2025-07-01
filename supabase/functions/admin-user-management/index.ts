@@ -35,15 +35,25 @@ Deno.serve(async (req) => {
       throw new Error('Invalid authentication')
     }
 
-    // Check if user is admin
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    // Check if user is admin - handle potential database issues
+    try {
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
 
-    if (profileError || profile?.role !== 'admin') {
-      throw new Error('Insufficient permissions')
+      if (profileError) {
+        console.error('Profile check error:', profileError)
+        throw new Error('Failed to verify admin permissions')
+      }
+
+      if (profile?.role !== 'admin') {
+        throw new Error('Insufficient permissions')
+      }
+    } catch (error) {
+      console.error('Admin verification failed:', error)
+      throw new Error('Failed to verify admin permissions')
     }
 
     let result
@@ -70,52 +80,63 @@ Deno.serve(async (req) => {
             throw new Error(`Failed to create user: ${createError.message}`)
           }
 
-          console.log('User created successfully:', userData.user?.id)
+          console.log('Auth user created successfully:', userData.user?.id)
 
-          // The handle_new_user trigger should create the profile automatically
-          // Let's wait a moment and then check if we need to update it
-          await new Promise(resolve => setTimeout(resolve, 100))
+          // Wait a moment for the trigger to potentially create the profile
+          await new Promise(resolve => setTimeout(resolve, 200))
 
           if (userData.user) {
-            // Check if profile was created by trigger
-            const { data: existingProfile, error: checkError } = await supabaseAdmin
-              .from('profiles')
-              .select('id, full_name')
-              .eq('id', userData.user.id)
-              .single()
-
-            if (checkError) {
-              console.log('Profile not found, creating manually:', checkError.message)
-              
-              // Create profile manually if trigger failed - let role default automatically
-              const { error: insertError } = await supabaseAdmin
+            try {
+              // Check if profile was created by trigger
+              const { data: existingProfile, error: checkError } = await supabaseAdmin
                 .from('profiles')
-                .insert({
-                  id: userData.user.id,
-                  email: userData.user.email,
-                  full_name: fullName,
-                  created_by: user.id
-                  // Removed explicit role assignment - let database handle default
-                })
-
-              if (insertError) {
-                console.error('Manual profile creation error:', insertError)
-                throw new Error(`Failed to create user profile: ${insertError.message}`)
-              }
-            } else if (!existingProfile.full_name && fullName) {
-              // Update profile with full name if it wasn't set
-              const { error: updateError } = await supabaseAdmin
-                .from('profiles')
-                .update({
-                  full_name: fullName,
-                  created_by: user.id
-                })
+                .select('id, full_name, role')
                 .eq('id', userData.user.id)
+                .maybeSingle()
 
-              if (updateError) {
-                console.error('Profile update error:', updateError)
-                // Don't throw here, user was created successfully
+              if (checkError) {
+                console.error('Profile check error:', checkError)
+                // Continue to manual creation
               }
+
+              if (!existingProfile) {
+                console.log('Profile not found, creating manually')
+                
+                // Create profile manually without specifying role (let database default handle it)
+                const { data: insertData, error: insertError } = await supabaseAdmin
+                  .from('profiles')
+                  .insert({
+                    id: userData.user.id,
+                    email: userData.user.email,
+                    full_name: fullName,
+                    created_by: user.id
+                  })
+                  .select()
+
+                if (insertError) {
+                  console.error('Manual profile creation error:', insertError)
+                  // Don't throw here, user was created successfully in auth
+                  console.log('User created in auth but profile creation failed - user can still sign in')
+                }
+              } else if (!existingProfile.full_name && fullName) {
+                // Update profile with full name if it wasn't set
+                const { error: updateError } = await supabaseAdmin
+                  .from('profiles')
+                  .update({
+                    full_name: fullName,
+                    created_by: user.id
+                  })
+                  .eq('id', userData.user.id)
+
+                if (updateError) {
+                  console.error('Profile update error:', updateError)
+                  // Don't throw here, user was created successfully
+                }
+              }
+            } catch (profileError) {
+              console.error('Profile handling error:', profileError)
+              // Don't throw here, user was created successfully in auth
+              console.log('User created in auth but profile handling failed')
             }
           }
 
