@@ -35,66 +35,79 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   const handleCreateUser = async (data: CreateUserFormData) => {
     setLoading(true);
     try {
-      console.log('Starting user creation process...');
+      console.log('🔄 Starting user creation process...');
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
+      // Get current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.access_token) {
         throw new Error('No active session found. Please sign in again.');
       }
 
-      console.log('Calling admin-user-management function...');
+      console.log('📞 Calling admin-user-management function...');
       
-      const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
+      // Call the edge function
+      const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
         body: {
           method: 'CREATE_USER',
           body: {
-            email: data.email,
+            email: data.email.trim().toLowerCase(),
             password: data.password,
-            fullName: data.fullName
+            fullName: data.fullName.trim()
           }
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      console.log('Function result:', result);
-      console.log('Function error:', error);
+      console.log('📊 Function result:', result);
+      console.log('❌ Function error:', functionError);
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(`Function call failed: ${error.message}`);
+      // Handle function call errors
+      if (functionError) {
+        console.error('❌ Supabase function error:', functionError);
+        throw new Error(`Function call failed: ${functionError.message}`);
       }
       
+      // Handle errors returned by the function
       if (result?.error) {
-        console.error('Function returned error:', result.error);
+        console.error('❌ Function returned error:', result.error);
         throw new Error(result.error);
       }
 
+      // Check for success
       if (!result?.success) {
-        throw new Error('User creation failed - no success confirmation');
+        console.error('❌ Function did not return success');
+        throw new Error('User creation failed - no success confirmation received');
       }
 
-      console.log('User created successfully:', result);
+      console.log('✅ User created successfully:', result);
 
+      // Show success message
       toast({
         title: "Success!",
         description: `User ${data.email} has been created successfully.`,
       });
 
+      // Reset form and close dialog
       form.reset();
       setOpen(false);
       onSuccess();
       
     } catch (error: any) {
-      console.error('Error creating user:', error);
+      console.error('❌ Error creating user:', error);
       
+      // Determine error message
       let errorMessage = 'Failed to create user. Please try again.';
       
-      if (error.message) {
+      if (error?.message) {
         errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
       }
       
+      // Show error toast
       toast({
         title: "Error Creating User",
         description: errorMessage,
