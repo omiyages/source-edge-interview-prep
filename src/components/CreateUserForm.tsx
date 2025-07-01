@@ -35,11 +35,15 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   const handleCreateUser = async (data: CreateUserFormData) => {
     setLoading(true);
     try {
+      console.log('Starting user creation process...');
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        throw new Error('No active session');
+        throw new Error('No active session found. Please sign in again.');
       }
 
+      console.log('Calling admin-user-management function...');
+      
       const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
         body: {
           method: 'CREATE_USER',
@@ -54,22 +58,46 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         }
       });
 
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
+      console.log('Function result:', result);
+      console.log('Function error:', error);
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Function call failed: ${error.message}`);
+      }
+      
+      if (result?.error) {
+        console.error('Function returned error:', result.error);
+        throw new Error(result.error);
+      }
+
+      if (!result?.success) {
+        throw new Error('User creation failed - no success confirmation');
+      }
+
+      console.log('User created successfully:', result);
 
       toast({
-        title: "User Created",
+        title: "Success!",
         description: `User ${data.email} has been created successfully.`,
       });
 
       form.reset();
       setOpen(false);
       onSuccess();
+      
     } catch (error: any) {
       console.error('Error creating user:', error);
+      
+      let errorMessage = 'Failed to create user. Please try again.';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to create user",
+        title: "Error Creating User",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
