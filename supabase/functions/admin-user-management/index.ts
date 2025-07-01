@@ -65,13 +65,14 @@ Deno.serve(async (req) => {
           
           console.log('Creating user with email:', email)
           
-          // Create user with admin API
+          // Create user with admin API - set display name properly
           const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
             email_confirm: true,
             user_metadata: {
-              full_name: fullName
+              full_name: fullName,
+              display_name: fullName // This sets the display name in Supabase Auth
             }
           })
 
@@ -102,13 +103,14 @@ Deno.serve(async (req) => {
               if (!existingProfile) {
                 console.log('Profile not found, creating manually')
                 
-                // Create profile manually without specifying role (let database default handle it)
+                // Create profile manually with proper enum casting
                 const { data: insertData, error: insertError } = await supabaseAdmin
                   .from('profiles')
                   .insert({
                     id: userData.user.id,
                     email: userData.user.email,
                     full_name: fullName,
+                    role: 'user', // This will be cast to app_role enum by default
                     created_by: user.id
                   })
                   .select()

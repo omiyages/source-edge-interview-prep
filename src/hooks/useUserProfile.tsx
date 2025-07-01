@@ -40,14 +40,14 @@ export const useUserProfile = (user: User | null) => {
         } else {
           // Create profile if it doesn't exist
           const isAdminEmail = user.email === 'namtae.quicksit@gmail.com';
-          const defaultRole = isAdminEmail ? 'admin' : 'user';
+          const defaultRole: 'user' | 'admin' = isAdminEmail ? 'admin' : 'user';
           
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert([{ 
               id: user.id, 
               email: user.email || '',
-              role: defaultRole
+              role: defaultRole // This will be properly cast to app_role enum
             }])
             .select()
             .single();

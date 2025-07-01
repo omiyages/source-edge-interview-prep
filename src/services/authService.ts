@@ -23,7 +23,7 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
         .insert([{ 
           id: user.id, 
           email: user.email || '',
-          role: 'user'
+          role: 'user' as const // Explicit type casting for enum
         }])
         .select()
         .single();
