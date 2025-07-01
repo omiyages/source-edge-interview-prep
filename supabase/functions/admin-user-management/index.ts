@@ -61,17 +61,21 @@ Deno.serve(async (req) => {
 
         if (createError) throw createError
 
-        // Update profile with full name
+        // Update profile with full name - use string literal instead of enum
         if (userData.user) {
           const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .update({
               full_name: fullName,
               created_by: user.id,
+              role: 'user' // Use string literal instead of enum
             })
             .eq('id', userData.user.id)
 
-          if (profileError) throw profileError
+          if (profileError) {
+            console.error('Profile update error:', profileError)
+            throw profileError
+          }
         }
 
         result = { success: true, user: userData.user }
