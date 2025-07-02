@@ -14,21 +14,20 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 })
 
 Deno.serve(async (req) => {
-  console.log('🚀 Admin user management function called', {
-    method: req.method,
-    url: req.url,
-    headers: Object.fromEntries(req.headers.entries())
-  });
+  console.log('🚀 Admin user management function called');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
+    console.log('✅ Handling CORS preflight');
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Step 1: Verify authorization header
+    // Get authorization header
     const authHeader = req.headers.get('Authorization');
-    console.log('🔐 Auth header check:', { hasAuth: !!authHeader });
+    console.log('🔐 Auth header present:', !!authHeader);
     
     if (!authHeader) {
       console.error('❌ Missing authorization header');
@@ -41,16 +40,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 2: Verify user token
+    // Verify user token
     const token = authHeader.replace('Bearer ', '');
-    console.log('🔍 Verifying token...');
-    
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
       console.error('❌ Token verification failed:', authError);
       return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
+        JSON.stringify({ error: 'Invalid or expired token' }),
         { 
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -58,31 +55,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('✅ User verified:', { userId: user.id, email: user.email });
+    console.log('✅ User authenticated:', user.email);
 
-    // Step 3: Check admin role
-    console.log('🔍 Checking admin role...');
+    // Check admin role
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    if (profileError) {
-      console.error('❌ Profile lookup failed:', profileError);
+    if (profileError || profile?.role !== 'admin') {
+      console.error('❌ Not an admin user');
       return new Response(
-        JSON.stringify({ error: 'Failed to verify permissions' }),
-        { 
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    if (profile?.role !== 'admin') {
-      console.error('❌ User is not admin:', { role: profile?.role, userId: user.id });
-      return new Response(
-        JSON.stringify({ error: 'Admin role required' }),
+        JSON.stringify({ error: 'Admin access required' }),
         { 
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -92,22 +77,14 @@ Deno.serve(async (req) => {
 
     console.log('✅ Admin role verified');
 
-    // Step 4: Parse request body
-    let requestData;
-    try {
-      const bodyText = await req.text();
-      console.log('📝 Raw body:', bodyText);
-      
-      if (!bodyText) {
-        throw new Error('Empty request body');
-      }
-      
-      requestData = JSON.parse(bodyText);
-      console.log('📦 Parsed data:', requestData);
-    } catch (parseError) {
-      console.error('❌ Body parsing failed:', parseError);
+    // Parse request body
+    const body = await req.text();
+    console.log('📝 Raw request body:', body);
+    
+    if (!body) {
+      console.error('❌ Empty request body');
       return new Response(
-        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        JSON.stringify({ error: 'Request body is required' }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -115,10 +92,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 5: Extract and validate user data
-    const { email, password, fullName } = requestData;
-    console.log('📋 User data:', { email, hasPassword: !!password, fullName });
+    let requestData;
+    try {
+      requestData = JSON.parse(body);
+      console.log('📦 Parsed request data:', requestData);
+    } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON format' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
+    // Validate required fields
+    const { email, password, fullName } = requestData;
+    
     if (!email || !password) {
       console.error('❌ Missing required fields');
       return new Response(
@@ -130,10 +121,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 6: Validate email format
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.error('❌ Invalid email format:', email);
+      console.error('❌ Invalid email format');
       return new Response(
         JSON.stringify({ error: 'Invalid email format' }),
         { 
@@ -143,11 +134,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 7: Validate password length
+    // Validate password length
     if (password.length < 6) {
       console.error('❌ Password too short');
       return new Response(
-        JSON.stringify({ error: 'Password must be at least 6 characters' }),
+        JSON.stringify({ error: 'Password must be at least 6 characters long' }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -155,8 +146,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 8: Create user
-    console.log('🔄 Creating user...');
+    console.log('🔄 Creating user with email:', email);
+
+    // Create user using admin client
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase().trim(),
       password,
@@ -171,8 +163,7 @@ Deno.serve(async (req) => {
       console.error('❌ User creation failed:', createError);
       return new Response(
         JSON.stringify({ 
-          error: `User creation failed: ${createError.message}`,
-          details: createError
+          error: `Failed to create user: ${createError.message}` 
         }),
         { 
           status: 400,
@@ -184,7 +175,7 @@ Deno.serve(async (req) => {
     if (!userData?.user) {
       console.error('❌ No user data returned');
       return new Response(
-        JSON.stringify({ error: 'User creation failed - no user returned' }),
+        JSON.stringify({ error: 'User creation failed - no user data returned' }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -192,27 +183,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('✅ User created successfully:', {
-      id: userData.user.id,
-      email: userData.user.email
-    });
+    console.log('✅ User created successfully:', userData.user.email);
 
-    // Step 9: Return success response
-    const response = {
-      success: true,
-      user: {
-        id: userData.user.id,
-        email: userData.user.email,
-        created_at: userData.user.created_at
+    // Return success response
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'User created successfully',
+        user: {
+          id: userData.user.id,
+          email: userData.user.email,
+          created_at: userData.user.created_at
+        }
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
-    };
-
-    console.log('📤 Sending response:', response);
-
-    return new Response(JSON.stringify(response), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    );
 
   } catch (error) {
     console.error('❌ Unexpected error:', error);
@@ -220,8 +208,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
         status: 500,
