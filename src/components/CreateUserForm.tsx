@@ -36,70 +36,41 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
     setLoading(true);
     
     try {
-      console.log('🔄 Starting user creation process...');
+      console.log('🔄 Starting user creation...');
       
       // Get current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) {
-        console.error('❌ Session error:', sessionError);
-        throw new Error(`Session error: ${sessionError.message}`);
-      }
-      
-      if (!session?.access_token) {
-        console.error('❌ No active session found');
-        throw new Error('No active session found. Please sign in again.');
+      if (sessionError || !session?.access_token) {
+        throw new Error('Please sign in again');
       }
 
-      console.log('✅ Session verified, calling edge function...');
+      console.log('✅ Session verified, calling function...');
 
-      // Prepare request data - simple object
-      const requestPayload = {
-        email: data.email.trim().toLowerCase(),
-        password: data.password,
-        fullName: data.fullName.trim()
-      };
-
-      console.log('📦 Request payload:', { 
-        email: requestPayload.email, 
-        fullName: requestPayload.fullName,
-        hasPassword: !!requestPayload.password 
-      });
-      
-      // Call the edge function with detailed logging
+      // Call edge function
       const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
-        body: requestPayload,
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
+        body: {
+          email: data.email.trim().toLowerCase(),
+          password: data.password,
+          fullName: data.fullName.trim()
         }
       });
 
-      console.log('📊 Edge function response:', { result, functionError });
+      console.log('📊 Function response:', { result, functionError });
 
-      // Handle function call errors (network, etc.)
       if (functionError) {
-        console.error('❌ Function call error:', functionError);
-        
-        // Try to get more details from the error
-        let errorMessage = 'Failed to create user. Please try again.';
-        if (functionError.message) {
-          errorMessage = `Function error: ${functionError.message}`;
-        }
-        
-        throw new Error(errorMessage);
+        console.error('❌ Function error:', functionError);
+        throw new Error(`Function call failed: ${functionError.message}`);
       }
 
-      // Handle application errors returned in the response
       if (result?.error) {
-        console.error('❌ Application error from edge function:', result.error);
+        console.error('❌ Server error:', result.error);
         throw new Error(result.error);
       }
 
-      // Check for success
       if (!result?.success) {
-        console.error('❌ Unexpected response format:', result);
-        throw new Error('Unexpected response from server. Please try again.');
+        console.error('❌ Unexpected response:', result);
+        throw new Error('Unexpected server response');
       }
 
       console.log('✅ User created successfully!');
@@ -114,24 +85,11 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       onSuccess();
       
     } catch (error: any) {
-      console.error('❌ Error in handleCreateUser:', error);
-      
-      let displayMessage = 'Failed to create user. Please try again.';
-      
-      if (error?.message) {
-        displayMessage = error.message;
-      }
-      
-      // Handle specific common errors
-      if (displayMessage.includes('already_registered') || displayMessage.includes('already exists')) {
-        displayMessage = 'A user with this email already exists.';
-      } else if (displayMessage.includes('email')) {
-        displayMessage = 'Email configuration issue. Please check your email settings.';
-      }
+      console.error('❌ Create user error:', error);
       
       toast({
         title: "Error Creating User",
-        description: displayMessage,
+        description: error?.message || 'Failed to create user. Please try again.',
         variant: "destructive",
       });
     } finally {
