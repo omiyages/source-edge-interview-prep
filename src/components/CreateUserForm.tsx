@@ -45,16 +45,14 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
 
       console.log('📞 Calling admin-user-management function...');
       
+      // Simplified request payload - send data directly
       const requestPayload = {
-        method: 'CREATE_USER',
-        body: {
-          email: data.email.trim().toLowerCase(),
-          password: data.password,
-          fullName: data.fullName.trim()
-        }
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
+        fullName: data.fullName.trim()
       };
 
-      console.log('Request payload:', requestPayload);
+      console.log('📦 Request payload:', requestPayload);
       
       // Call the edge function
       const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
@@ -66,12 +64,12 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       });
 
       console.log('📊 Function result:', result);
-      console.log('❌ Function error:', functionError);
+      console.log('⚠️ Function error:', functionError);
 
       // Handle function call errors
       if (functionError) {
         console.error('❌ Supabase function error:', functionError);
-        throw new Error(`Function call failed: ${functionError.message}`);
+        throw new Error(`Function call failed: ${functionError.message || 'Unknown error'}`);
       }
       
       // Handle errors returned by the function
@@ -82,8 +80,8 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
 
       // Check for success
       if (!result?.success) {
-        console.error('❌ Function did not return success');
-        throw new Error('User creation failed - no success confirmation received');
+        console.error('❌ Function did not return success:', result);
+        throw new Error('User creation failed - unexpected response format');
       }
 
       console.log('✅ User created successfully:', result);
