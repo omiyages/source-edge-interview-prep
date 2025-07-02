@@ -14,20 +14,26 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 })
 
 Deno.serve(async (req) => {
-  // Handle CORS
+  console.log('🚀 Admin user management function called', {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers.entries())
+  });
+
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('🔄 Admin user management request received');
-    
-    // Get authorization header
+    // Step 1: Verify authorization header
     const authHeader = req.headers.get('Authorization');
+    console.log('🔐 Auth header check:', { hasAuth: !!authHeader });
+    
     if (!authHeader) {
-      console.error('❌ No authorization header');
+      console.error('❌ Missing authorization header');
       return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
+        JSON.stringify({ error: 'Missing authorization header' }),
         { 
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -35,14 +41,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify the user making the request is an admin
+    // Step 2: Verify user token
     const token = authHeader.replace('Bearer ', '');
+    console.log('🔍 Verifying token...');
+    
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
-      console.error('❌ Auth error:', authError);
+      console.error('❌ Token verification failed:', authError);
       return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
+        JSON.stringify({ error: 'Invalid token' }),
         { 
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -50,7 +58,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is admin
+    console.log('✅ User verified:', { userId: user.id, email: user.email });
+
+    // Step 3: Check admin role
+    console.log('🔍 Checking admin role...');
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -58,9 +69,9 @@ Deno.serve(async (req) => {
       .single();
 
     if (profileError) {
-      console.error('❌ Profile check error:', profileError);
+      console.error('❌ Profile lookup failed:', profileError);
       return new Response(
-        JSON.stringify({ error: 'Failed to verify admin permissions' }),
+        JSON.stringify({ error: 'Failed to verify permissions' }),
         { 
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -69,9 +80,9 @@ Deno.serve(async (req) => {
     }
 
     if (profile?.role !== 'admin') {
-      console.error('❌ User is not admin:', profile?.role);
+      console.error('❌ User is not admin:', { role: profile?.role, userId: user.id });
       return new Response(
-        JSON.stringify({ error: 'Insufficient permissions - admin role required' }),
+        JSON.stringify({ error: 'Admin role required' }),
         { 
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -79,23 +90,89 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse request body - simplified approach
+    console.log('✅ Admin role verified');
+
+    // Step 4: Parse request body
     let requestData;
     try {
       const bodyText = await req.text();
-      console.log('📝 Raw request body:', bodyText);
+      console.log('📝 Raw body:', bodyText);
       
-      if (!bodyText.trim()) {
-        throw new Error('Request body is empty');
+      if (!bodyText) {
+        throw new Error('Empty request body');
       }
       
       requestData = JSON.parse(bodyText);
+      console.log('📦 Parsed data:', requestData);
     } catch (parseError) {
-      console.error('❌ JSON parse error:', parseError);
+      console.error('❌ Body parsing failed:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Step 5: Extract and validate user data
+    const { email, password, fullName } = requestData;
+    console.log('📋 User data:', { email, hasPassword: !!password, fullName });
+
+    if (!email || !password) {
+      console.error('❌ Missing required fields');
+      return new Response(
+        JSON.stringify({ error: 'Email and password are required' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Step 6: Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.error('❌ Invalid email format:', email);
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Step 7: Validate password length
+    if (password.length < 6) {
+      console.error('❌ Password too short');
+      return new Response(
+        JSON.stringify({ error: 'Password must be at least 6 characters' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Step 8: Create user
+    console.log('🔄 Creating user...');
+    const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: email.toLowerCase().trim(),
+      password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: fullName || '',
+        display_name: fullName || ''
+      }
+    });
+
+    if (createError) {
+      console.error('❌ User creation failed:', createError);
       return new Response(
         JSON.stringify({ 
-          error: 'Invalid JSON in request body',
-          details: parseError.message
+          error: `User creation failed: ${createError.message}`,
+          details: createError
         }),
         { 
           status: 400,
@@ -104,152 +181,47 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('✅ Parsed request data:', requestData);
-
-    // Handle different request formats - check for nested structure or direct properties
-    const method = requestData.method || 'CREATE_USER';
-    const body = requestData.body || requestData;
-
-    console.log('🎯 Method:', method, 'Body:', body);
-
-    let result;
-
-    if (method === 'CREATE_USER') {
-      const { email, password, fullName } = body;
-      
-      // Validate input
-      if (!email || !password) {
-        return new Response(
-          JSON.stringify({ error: 'Email and password are required' }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      if (password.length < 6) {
-        return new Response(
-          JSON.stringify({ error: 'Password must be at least 6 characters long' }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return new Response(
-          JSON.stringify({ error: 'Invalid email format' }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      console.log('🔄 Creating user with email:', email);
-      
-      // Create user with admin API
-      const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: email.toLowerCase().trim(),
-        password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: fullName || '',
-          display_name: fullName || ''
-        }
-      });
-
-      if (createError) {
-        console.error('❌ User creation error:', createError);
-        return new Response(
-          JSON.stringify({ error: `Failed to create user: ${createError.message}` }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      if (!userData.user) {
-        return new Response(
-          JSON.stringify({ error: 'User creation failed - no user data returned' }),
-          { 
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      console.log('✅ User created successfully:', userData.user.id);
-
-      result = { 
-        success: true, 
-        user: {
-          id: userData.user.id,
-          email: userData.user.email,
-          created_at: userData.user.created_at
-        }
-      };
-
-    } else if (method === 'DELETE_USER') {
-      const { userId } = body;
-      
-      if (!userId) {
-        return new Response(
-          JSON.stringify({ error: 'User ID is required' }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      // Delete user with admin API
-      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      
-      if (deleteError) {
-        console.error('❌ User deletion error:', deleteError);
-        return new Response(
-          JSON.stringify({ error: `Failed to delete user: ${deleteError.message}` }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      console.log('✅ User deleted successfully:', userId);
-      result = { success: true };
-
-    } else {
+    if (!userData?.user) {
+      console.error('❌ No user data returned');
       return new Response(
-        JSON.stringify({ error: `Invalid method: ${method}` }),
+        JSON.stringify({ error: 'User creation failed - no user returned' }),
         { 
-          status: 400,
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    console.log('✅ Operation completed successfully:', result);
+    console.log('✅ User created successfully:', {
+      id: userData.user.id,
+      email: userData.user.email
+    });
 
-    return new Response(JSON.stringify(result), {
+    // Step 9: Return success response
+    const response = {
+      success: true,
+      user: {
+        id: userData.user.id,
+        email: userData.user.email,
+        created_at: userData.user.created_at
+      }
+    };
+
+    console.log('📤 Sending response:', response);
+
+    return new Response(JSON.stringify(response), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('❌ Unexpected error in admin user management:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('❌ Unexpected error:', error);
     
     return new Response(
       JSON.stringify({ 
-        error: errorMessage,
-        details: error instanceof Error ? error.stack : undefined
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
       }),
       { 
         status: 500,
