@@ -38,7 +38,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   });
 
   const handleCreateUser = async (data: CreateUserFormData) => {
-    console.log('🚀 Starting user creation process...');
+    console.log('🚀 Starting user creation...');
     
     // Validate password confirmation
     if (data.password !== data.confirmPassword) {
@@ -53,30 +53,18 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
     setLoading(true);
     
     try {
-      // Step 1: Get current session with detailed logging
-      console.log('🔐 Getting current session...');
+      // Get current session
+      console.log('🔐 Getting session...');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      console.log('🔐 Session check result:', {
-        hasSession: !!session,
-        hasAccessToken: !!session?.access_token,
-        sessionError: sessionError?.message,
-        userEmail: session?.user?.email
-      });
-      
-      if (sessionError) {
+      if (sessionError || !session?.access_token) {
         console.error('❌ Session error:', sessionError);
-        throw new Error('Session error: ' + sessionError.message);
+        throw new Error('Please sign in again');
       }
 
-      if (!session?.access_token) {
-        console.error('❌ No valid session or access token');
-        throw new Error('Please sign in again - no valid session');
-      }
+      console.log('✅ Session valid for:', session.user.email);
 
-      console.log('✅ Valid session found for:', session.user.email);
-
-      // Step 2: Prepare the request payload
+      // Prepare payload
       const payload = {
         email: data.email.trim().toLowerCase(),
         password: data.password,
@@ -84,16 +72,13 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         role: data.role
       };
 
-      console.log('📤 Sending payload to edge function:', {
+      console.log('📤 Calling function with:', {
         email: payload.email,
         fullName: payload.fullName,
-        role: payload.role,
-        passwordLength: payload.password.length
+        role: payload.role
       });
 
-      // Step 3: Call the edge function with detailed error handling
-      console.log('🔄 Calling admin-user-management function...');
-      
+      // Call edge function
       const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
         body: payload,
         headers: {
@@ -102,35 +87,24 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         }
       });
 
-      console.log('📥 Function response received:', {
-        result,
-        functionError,
-        hasResult: !!result,
-        hasError: !!functionError
-      });
+      console.log('📥 Function response:', { result, functionError });
 
-      // Step 4: Handle function errors
       if (functionError) {
-        console.error('❌ Function invocation error:', functionError);
-        console.error('❌ Function error details:', JSON.stringify(functionError, null, 2));
-        
-        throw new Error(`Function call failed: ${functionError.message || 'Unknown function error'}`);
+        console.error('❌ Function error:', functionError);
+        throw new Error(`Function call failed: ${functionError.message}`);
       }
 
-      // Step 5: Handle response errors
       if (result?.error) {
-        console.error('❌ Server returned error:', result.error);
+        console.error('❌ Server error:', result.error);
         throw new Error(result.error);
       }
 
-      // Step 6: Validate success response
       if (!result?.success) {
-        console.error('❌ Unexpected response format:', result);
-        throw new Error('Unexpected server response - no success confirmation');
+        console.error('❌ Unexpected response:', result);
+        throw new Error('Unexpected server response');
       }
 
-      // Step 7: Success handling
-      console.log('🎉 User created successfully!', result.user);
+      console.log('🎉 User created successfully!');
 
       toast({
         title: "Success!",
@@ -142,29 +116,25 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       onSuccess();
       
     } catch (error: any) {
-      console.error('💥 Complete error details:');
-      console.error('💥 Error type:', typeof error);
-      console.error('💥 Error name:', error?.name);
-      console.error('💥 Error message:', error?.message);
-      console.error('💥 Full error object:', error);
+      console.error('💥 Error creating user:', error);
       
-      let userFriendlyMessage = 'An unexpected error occurred';
+      let userMessage = 'An unexpected error occurred';
       
       if (error?.message) {
         if (error.message.includes('already exists') || error.message.includes('already_registered')) {
-          userFriendlyMessage = 'A user with this email already exists';
-        } else if (error.message.includes('Authentication failed') || error.message.includes('sign in again')) {
-          userFriendlyMessage = 'Please sign out and sign in again';
+          userMessage = 'A user with this email already exists';
+        } else if (error.message.includes('sign in again')) {
+          userMessage = 'Please sign out and sign in again';
         } else if (error.message.includes('Admin access required')) {
-          userFriendlyMessage = 'You do not have admin privileges';
+          userMessage = 'You do not have admin privileges';
         } else {
-          userFriendlyMessage = error.message;
+          userMessage = error.message;
         }
       }
       
       toast({
         title: "Error Creating User",
-        description: userFriendlyMessage,
+        description: userMessage,
         variant: "destructive",
       });
     } finally {

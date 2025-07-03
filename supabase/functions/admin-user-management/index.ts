@@ -14,112 +14,62 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 
 Deno.serve(async (req) => {
   console.log('🚀 Admin user management function called');
-  console.log('📋 Request method:', req.method);
-  console.log('📋 Request URL:', req.url);
   
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    console.log('✅ Handling CORS preflight');
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Step 1: Get and log authorization header
+    // Get authorization header
     const authHeader = req.headers.get('Authorization');
-    console.log('🔑 Auth header present:', !!authHeader);
-    console.log('🔑 Auth header preview:', authHeader ? authHeader.substring(0, 20) + '...' : 'none');
-    
     if (!authHeader) {
-      console.error('❌ No authorization header provided');
+      console.error('❌ No authorization header');
       return new Response(
         JSON.stringify({ error: 'Authorization header missing' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Step 2: Extract and verify token
+    // Extract token and verify user
     const token = authHeader.replace('Bearer ', '');
-    console.log('🔑 Token extracted, length:', token.length);
-    
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError) {
-      console.error('❌ Auth verification failed:', authError.message);
+    if (authError || !user) {
+      console.error('❌ Auth error:', authError?.message);
       return new Response(
-        JSON.stringify({ error: 'Authentication failed: ' + authError.message }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!user) {
-      console.error('❌ No user found from token');
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication token' }),
+        JSON.stringify({ error: 'Authentication failed' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('✅ User authenticated:', user.email);
 
-    // Step 3: Check admin role
-    console.log('🔍 Checking admin role for user:', user.id);
-    
+    // Check admin role
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, email')
+      .select('role')
       .eq('id', user.id)
       .single();
 
-    console.log('👤 Profile query result:', { profile, profileError });
-
-    if (profileError) {
-      console.error('❌ Profile fetch error:', profileError.message);
+    if (profileError || !profile || profile.role !== 'admin') {
+      console.error('❌ Not admin or profile error:', profileError?.message, profile?.role);
       return new Response(
-        JSON.stringify({ error: 'Failed to verify user role: ' + profileError.message }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!profile || profile.role !== 'admin') {
-      console.error('❌ User is not admin. Role:', profile?.role);
-      return new Response(
-        JSON.stringify({ error: 'Admin access required. Current role: ' + (profile?.role || 'none') }),
+        JSON.stringify({ error: 'Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('✅ Admin role verified');
 
-    // Step 4: Parse request body
-    console.log('📥 Parsing request body...');
-    
-    let requestData;
-    try {
-      const bodyText = await req.text();
-      console.log('📥 Raw body received, length:', bodyText.length);
-      console.log('📥 Raw body preview:', bodyText.substring(0, 100));
-      
-      requestData = JSON.parse(bodyText);
-      console.log('📥 Parsed request data keys:', Object.keys(requestData));
-    } catch (parseError) {
-      console.error('❌ JSON parse error:', parseError.message);
-      return new Response(
-        JSON.stringify({ error: 'Invalid JSON in request body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Step 5: Validate required fields
+    // Parse request body
+    const requestData = await req.json();
     const { email, password, fullName, role = 'user' } = requestData;
     
-    console.log('🔍 Validating fields...');
-    console.log('📝 Email:', email);
-    console.log('📝 Full name:', fullName);
-    console.log('📝 Role:', role);
-    console.log('📝 Password length:', password?.length || 0);
+    console.log('📝 Request data:', { email, fullName, role, passwordLength: password?.length });
 
+    // Validate required fields
     if (!email || !password) {
-      console.error('❌ Missing required fields');
       return new Response(
         JSON.stringify({ error: 'Email and password are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -127,43 +77,33 @@ Deno.serve(async (req) => {
     }
 
     if (password.length < 6) {
-      console.error('❌ Password too short');
       return new Response(
         JSON.stringify({ error: 'Password must be at least 6 characters long' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Step 6: Create the user
-    console.log('👤 Creating user with admin privileges...');
+    // Create the user
+    console.log('👤 Creating user...');
     
-    const userData = {
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase().trim(),
       password,
-      email_confirm: true, // Skip email verification
+      email_confirm: true,
       user_metadata: {
         full_name: fullName?.trim() || '',
         role: role
       }
-    };
-
-    console.log('👤 User creation payload:', {
-      email: userData.email,
-      email_confirm: userData.email_confirm,
-      user_metadata: userData.user_metadata
     });
 
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser(userData);
-
     if (createError) {
-      console.error('❌ User creation failed:', createError);
-      console.error('❌ Error details:', JSON.stringify(createError, null, 2));
+      console.error('❌ User creation error:', createError);
       
       let errorMessage = 'Failed to create user';
-      if (createError.message.includes('already_registered') || createError.message.includes('already been registered')) {
+      if (createError.message.includes('already_registered')) {
         errorMessage = 'A user with this email already exists';
       } else {
-        errorMessage = `User creation failed: ${createError.message}`;
+        errorMessage = createError.message;
       }
       
       return new Response(
@@ -173,19 +113,16 @@ Deno.serve(async (req) => {
     }
 
     if (!newUser?.user) {
-      console.error('❌ No user data returned from creation');
+      console.error('❌ No user data returned');
       return new Response(
-        JSON.stringify({ error: 'User creation succeeded but no user data returned' }),
+        JSON.stringify({ error: 'User creation failed - no user data' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('✅ User created successfully:', newUser.user.email);
-    console.log('👤 New user ID:', newUser.user.id);
+    console.log('✅ User created:', newUser.user.email);
 
-    // Step 7: Create/update profile record
-    console.log('📝 Creating profile record...');
-    
+    // Create profile record
     const { error: profileCreateError } = await supabaseAdmin
       .from('profiles')
       .upsert({
@@ -198,13 +135,12 @@ Deno.serve(async (req) => {
       });
 
     if (profileCreateError) {
-      console.warn('⚠️ Profile creation warning:', profileCreateError.message);
-      // Don't fail the entire operation if profile creation fails
+      console.warn('⚠️ Profile creation warning:', profileCreateError);
     } else {
-      console.log('✅ Profile created successfully');
+      console.log('✅ Profile created');
     }
 
-    // Step 8: Return success response
+    // Return success
     const response = {
       success: true,
       message: 'User created successfully',
@@ -218,7 +154,7 @@ Deno.serve(async (req) => {
       }
     };
 
-    console.log('🎉 Returning success response:', response);
+    console.log('🎉 Success response:', response);
 
     return new Response(
       JSON.stringify(response),
@@ -226,16 +162,12 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('💥 Unexpected error in function:');
-    console.error('💥 Error name:', error.name);
-    console.error('💥 Error message:', error.message);
-    console.error('💥 Error stack:', error.stack);
+    console.error('💥 Unexpected error:', error);
     
     return new Response(
       JSON.stringify({ 
         error: 'Server error occurred',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        type: error.name || 'UnknownError'
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
