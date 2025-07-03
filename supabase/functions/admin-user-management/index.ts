@@ -1,6 +1,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -13,78 +17,155 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 })
 
 Deno.serve(async (req) => {
-  console.log('🚀 Admin user management function called');
+  console.log('🚀 Admin user management function called - Method:', req.method);
   
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
+    console.log('🔧 CORS preflight request');
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Get authorization header
+    // 1. Verify request method
+    if (req.method !== 'POST') {
+      console.error('❌ Invalid method:', req.method);
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }),
+        { 
+          status: 405, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // 2. Get and verify authorization header
     const authHeader = req.headers.get('Authorization');
+    console.log('🔐 Auth header present:', !!authHeader);
+    
     if (!authHeader) {
       console.error('❌ No authorization header');
       return new Response(
         JSON.stringify({ error: 'Authorization header missing' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
-    // Extract token and verify user
+    // 3. Extract and verify user token
     const token = authHeader.replace('Bearer ', '');
+    console.log('🔍 Token extracted, length:', token.length);
+    
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError || !user) {
-      console.error('❌ Auth error:', authError?.message);
+    if (authError) {
+      console.error('❌ Auth verification failed:', authError.message);
       return new Response(
-        JSON.stringify({ error: 'Authentication failed' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Authentication failed: ' + authError.message }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!user) {
+      console.error('❌ No user found');
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
     console.log('✅ User authenticated:', user.email);
 
-    // Check admin role
+    // 4. Check admin role
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile || profile.role !== 'admin') {
-      console.error('❌ Not admin or profile error:', profileError?.message, profile?.role);
+    if (profileError) {
+      console.error('❌ Profile fetch error:', profileError.message);
+      return new Response(
+        JSON.stringify({ error: 'Profile verification failed' }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!profile || profile.role !== 'admin') {
+      console.error('❌ Not admin. Role:', profile?.role);
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
     console.log('✅ Admin role verified');
 
-    // Parse request body
-    const requestData = await req.json();
+    // 5. Parse request body
+    let requestData;
+    try {
+      const bodyText = await req.text();
+      console.log('📄 Request body received, length:', bodyText.length);
+      requestData = JSON.parse(bodyText);
+      console.log('📋 Parsed data keys:', Object.keys(requestData));
+    } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     const { email, password, fullName, role = 'user' } = requestData;
     
-    console.log('📝 Request data:', { email, fullName, role, passwordLength: password?.length });
+    console.log('📝 Creating user with:', { 
+      email: email?.toLowerCase().trim(), 
+      fullName: fullName?.trim(), 
+      role,
+      passwordProvided: !!password
+    });
 
-    // Validate required fields
+    // 6. Validate required fields
     if (!email || !password) {
+      console.error('❌ Missing required fields');
       return new Response(
         JSON.stringify({ error: 'Email and password are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
     if (password.length < 6) {
+      console.error('❌ Password too short');
       return new Response(
         JSON.stringify({ error: 'Password must be at least 6 characters long' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
-    // Create the user
-    console.log('👤 Creating user...');
+    // 7. Create the user
+    console.log('👤 Attempting to create user...');
     
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase().trim(),
@@ -97,32 +178,42 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
-      console.error('❌ User creation error:', createError);
+      console.error('❌ User creation failed:', createError);
       
       let errorMessage = 'Failed to create user';
       if (createError.message.includes('already_registered')) {
         errorMessage = 'A user with this email already exists';
+      } else if (createError.message.includes('signup_disabled')) {
+        errorMessage = 'User registration is currently disabled';
       } else {
         errorMessage = createError.message;
       }
       
       return new Response(
         JSON.stringify({ error: errorMessage }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
     if (!newUser?.user) {
-      console.error('❌ No user data returned');
+      console.error('❌ No user data returned from creation');
       return new Response(
-        JSON.stringify({ error: 'User creation failed - no user data' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'User creation failed - no user data returned' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
-    console.log('✅ User created:', newUser.user.email);
+    console.log('✅ User created successfully:', newUser.user.email);
 
-    // Create profile record
+    // 8. Create profile record
+    console.log('👤 Creating profile record...');
+    
     const { error: profileCreateError } = await supabaseAdmin
       .from('profiles')
       .upsert({
@@ -135,13 +226,13 @@ Deno.serve(async (req) => {
       });
 
     if (profileCreateError) {
-      console.warn('⚠️ Profile creation warning:', profileCreateError);
+      console.warn('⚠️ Profile creation error (user still created):', profileCreateError);
     } else {
-      console.log('✅ Profile created');
+      console.log('✅ Profile created successfully');
     }
 
-    // Return success
-    const response = {
+    // 9. Return success response
+    const successResponse = {
       success: true,
       message: 'User created successfully',
       user: {
@@ -154,22 +245,29 @@ Deno.serve(async (req) => {
       }
     };
 
-    console.log('🎉 Success response:', response);
+    console.log('🎉 Returning success response');
 
     return new Response(
-      JSON.stringify(response),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify(successResponse),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
 
   } catch (error) {
-    console.error('💥 Unexpected error:', error);
+    console.error('💥 Unexpected error in function:', error);
+    console.error('💥 Error stack:', error.stack);
     
     return new Response(
       JSON.stringify({ 
-        error: 'Server error occurred',
+        error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });

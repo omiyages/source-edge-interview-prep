@@ -38,10 +38,11 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   });
 
   const handleCreateUser = async (data: CreateUserFormData) => {
-    console.log('🚀 Starting user creation...');
+    console.log('🚀 Starting user creation process...');
     
     // Validate password confirmation
     if (data.password !== data.confirmPassword) {
+      console.error('❌ Password mismatch');
       toast({
         title: "Password Mismatch",
         description: "Passwords do not match.",
@@ -53,18 +54,24 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
     setLoading(true);
     
     try {
-      // Get current session
-      console.log('🔐 Getting session...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Get current session with detailed logging
+      console.log('🔐 Getting current session...');
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session?.access_token) {
+      if (sessionError) {
         console.error('❌ Session error:', sessionError);
-        throw new Error('Please sign in again');
+        throw new Error('Failed to get session: ' + sessionError.message);
       }
 
-      console.log('✅ Session valid for:', session.user.email);
+      if (!sessionData?.session?.access_token) {
+        console.error('❌ No valid session found');
+        throw new Error('Please sign in again - no valid session');
+      }
 
-      // Prepare payload
+      console.log('✅ Session valid for user:', sessionData.session.user.email);
+      console.log('🔑 Token length:', sessionData.session.access_token.length);
+
+      // Prepare payload with validation
       const payload = {
         email: data.email.trim().toLowerCase(),
         password: data.password,
@@ -72,65 +79,85 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         role: data.role
       };
 
-      console.log('📤 Calling function with:', {
+      console.log('📤 Sending payload:', {
         email: payload.email,
         fullName: payload.fullName,
-        role: payload.role
+        role: payload.role,
+        passwordLength: payload.password.length
       });
 
-      // Call edge function
+      // Call edge function with detailed error handling
+      console.log('📞 Calling admin-user-management function...');
+      
       const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
         body: payload,
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      console.log('📥 Function response:', { result, functionError });
+      console.log('📥 Function response received');
+      console.log('📊 Function result:', result);
+      console.log('📊 Function error:', functionError);
 
+      // Handle function call errors
       if (functionError) {
-        console.error('❌ Function error:', functionError);
-        throw new Error(`Function call failed: ${functionError.message}`);
+        console.error('❌ Function invocation error:', functionError);
+        
+        let errorMessage = 'Failed to create user';
+        if (functionError.message) {
+          errorMessage = functionError.message;
+        }
+        
+        throw new Error(errorMessage);
       }
 
+      // Handle server-side errors in the response
       if (result?.error) {
-        console.error('❌ Server error:', result.error);
+        console.error('❌ Server returned error:', result.error);
         throw new Error(result.error);
       }
 
+      // Validate success response
       if (!result?.success) {
-        console.error('❌ Unexpected response:', result);
-        throw new Error('Unexpected server response');
+        console.error('❌ Unexpected response format:', result);
+        throw new Error('Server returned unexpected response format');
       }
 
-      console.log('🎉 User created successfully!');
+      console.log('🎉 User created successfully!', result.user);
 
+      // Show success message
       toast({
         title: "Success!",
         description: `User ${data.email} has been created successfully with role: ${data.role}`,
       });
 
+      // Reset form and close dialog
       form.reset();
       setOpen(false);
       onSuccess();
       
     } catch (error: any) {
-      console.error('💥 Error creating user:', error);
+      console.error('💥 Error in user creation process:', error);
       
-      let userMessage = 'An unexpected error occurred';
+      let userMessage = 'An unexpected error occurred while creating the user';
       
       if (error?.message) {
         if (error.message.includes('already exists') || error.message.includes('already_registered')) {
           userMessage = 'A user with this email already exists';
-        } else if (error.message.includes('sign in again')) {
+        } else if (error.message.includes('sign in again') || error.message.includes('session')) {
           userMessage = 'Please sign out and sign in again';
         } else if (error.message.includes('Admin access required')) {
           userMessage = 'You do not have admin privileges';
+        } else if (error.message.includes('signup_disabled')) {
+          userMessage = 'User registration is currently disabled in Supabase settings';
         } else {
           userMessage = error.message;
         }
       }
+      
+      console.error('📢 Showing error to user:', userMessage);
       
       toast({
         title: "Error Creating User",
