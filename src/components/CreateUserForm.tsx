@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus } from "lucide-react";
 
@@ -13,6 +14,8 @@ interface CreateUserFormData {
   fullName: string;
   email: string;
   password: string;
+  confirmPassword: string;
+  role: 'user' | 'admin';
 }
 
 interface CreateUserFormProps {
@@ -29,55 +32,109 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       fullName: "",
       email: "",
       password: "",
+      confirmPassword: "",
+      role: "user",
     },
   });
 
   const handleCreateUser = async (data: CreateUserFormData) => {
+    console.log('🚀 Starting user creation process...');
+    
+    // Validate password confirmation
+    if (data.password !== data.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      console.log('🔄 Starting user creation...');
-      
-      // Get current session
+      // Step 1: Get current session with detailed logging
+      console.log('🔐 Getting current session...');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session?.access_token) {
-        throw new Error('Please sign in again');
+      console.log('🔐 Session check result:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        sessionError: sessionError?.message,
+        userEmail: session?.user?.email
+      });
+      
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        throw new Error('Session error: ' + sessionError.message);
       }
 
-      console.log('✅ Session verified, calling function...');
+      if (!session?.access_token) {
+        console.error('❌ No valid session or access token');
+        throw new Error('Please sign in again - no valid session');
+      }
 
-      // Call edge function
+      console.log('✅ Valid session found for:', session.user.email);
+
+      // Step 2: Prepare the request payload
+      const payload = {
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
+        fullName: data.fullName.trim(),
+        role: data.role
+      };
+
+      console.log('📤 Sending payload to edge function:', {
+        email: payload.email,
+        fullName: payload.fullName,
+        role: payload.role,
+        passwordLength: payload.password.length
+      });
+
+      // Step 3: Call the edge function with detailed error handling
+      console.log('🔄 Calling admin-user-management function...');
+      
       const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          email: data.email.trim().toLowerCase(),
-          password: data.password,
-          fullName: data.fullName.trim()
+        body: payload,
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      console.log('📊 Function response:', { result, functionError });
+      console.log('📥 Function response received:', {
+        result,
+        functionError,
+        hasResult: !!result,
+        hasError: !!functionError
+      });
 
+      // Step 4: Handle function errors
       if (functionError) {
-        console.error('❌ Function error:', functionError);
-        throw new Error(`Function call failed: ${functionError.message}`);
+        console.error('❌ Function invocation error:', functionError);
+        console.error('❌ Function error details:', JSON.stringify(functionError, null, 2));
+        
+        throw new Error(`Function call failed: ${functionError.message || 'Unknown function error'}`);
       }
 
+      // Step 5: Handle response errors
       if (result?.error) {
-        console.error('❌ Server error:', result.error);
+        console.error('❌ Server returned error:', result.error);
         throw new Error(result.error);
       }
 
+      // Step 6: Validate success response
       if (!result?.success) {
-        console.error('❌ Unexpected response:', result);
-        throw new Error('Unexpected server response');
+        console.error('❌ Unexpected response format:', result);
+        throw new Error('Unexpected server response - no success confirmation');
       }
 
-      console.log('✅ User created successfully!');
+      // Step 7: Success handling
+      console.log('🎉 User created successfully!', result.user);
 
       toast({
         title: "Success!",
-        description: `User ${data.email} has been created successfully.`,
+        description: `User ${data.email} has been created successfully with role: ${data.role}`,
       });
 
       form.reset();
@@ -85,11 +142,29 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       onSuccess();
       
     } catch (error: any) {
-      console.error('❌ Create user error:', error);
+      console.error('💥 Complete error details:');
+      console.error('💥 Error type:', typeof error);
+      console.error('💥 Error name:', error?.name);
+      console.error('💥 Error message:', error?.message);
+      console.error('💥 Full error object:', error);
+      
+      let userFriendlyMessage = 'An unexpected error occurred';
+      
+      if (error?.message) {
+        if (error.message.includes('already exists') || error.message.includes('already_registered')) {
+          userFriendlyMessage = 'A user with this email already exists';
+        } else if (error.message.includes('Authentication failed') || error.message.includes('sign in again')) {
+          userFriendlyMessage = 'Please sign out and sign in again';
+        } else if (error.message.includes('Admin access required')) {
+          userFriendlyMessage = 'You do not have admin privileges';
+        } else {
+          userFriendlyMessage = error.message;
+        }
+      }
       
       toast({
         title: "Error Creating User",
-        description: error?.message || 'Failed to create user. Please try again.',
+        description: userFriendlyMessage,
         variant: "destructive",
       });
     } finally {
@@ -105,7 +180,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
           Create User
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
         </DialogHeader>
@@ -146,6 +221,29 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="role"
+              rules={{ required: "Role is required" }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
@@ -167,8 +265,27 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              rules={{ 
+                required: "Please confirm your password",
+                validate: (value) => 
+                  value === form.getValues('password') || "Passwords do not match"
+              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Confirm password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
