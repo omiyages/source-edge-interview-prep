@@ -86,11 +86,11 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         passwordLength: payload.password.length
       });
 
-      // Call edge function with explicit headers
+      // Call edge function - DON'T stringify the body, let Supabase client handle it
       console.log('📞 Calling admin-user-management function...');
       
       const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
-        body: JSON.stringify(payload),
+        body: payload, // Pass as object, not stringified
         headers: {
           'Authorization': `Bearer ${sessionData.session.access_token}`,
           'Content-Type': 'application/json'
