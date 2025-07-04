@@ -176,17 +176,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 7. Create the user
+    // 7. Create the user with simpler approach
     console.log('👤 Attempting to create user...');
     
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase().trim(),
       password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: fullName?.trim() || '',
-        role: role
-      }
+      email_confirm: true
     });
 
     if (createError) {
@@ -223,7 +219,7 @@ Deno.serve(async (req) => {
 
     console.log('✅ User created successfully:', newUser.user.email);
 
-    // 8. Create profile record
+    // 8. Create/update profile record
     console.log('👤 Creating profile record...');
     
     const { error: profileCreateError } = await supabaseAdmin
@@ -232,13 +228,14 @@ Deno.serve(async (req) => {
         id: newUser.user.id,
         email: newUser.user.email,
         full_name: fullName?.trim() || '',
-        role: role,
+        role: role as 'user' | 'admin',
         created_by: user.id,
         is_active: true
       });
 
     if (profileCreateError) {
       console.warn('⚠️ Profile creation error (user still created):', profileCreateError);
+      // Don't fail the entire operation if profile creation fails
     } else {
       console.log('✅ Profile created successfully');
     }
