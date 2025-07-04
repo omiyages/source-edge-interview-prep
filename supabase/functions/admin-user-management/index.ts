@@ -176,25 +176,100 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 7. Create the user with simpler approach
-    console.log('👤 Attempting to create user...');
+    // 7. Try alternative approach - Create user with minimal data first
+    console.log('👤 Attempting alternative user creation approach...');
     
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: email.toLowerCase().trim(),
-      password,
-      email_confirm: true
-    });
+    try {
+      // First, check if user already exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const userExists = existingUsers?.users?.some(u => u.email === email.toLowerCase().trim());
+      
+      if (userExists) {
+        console.error('❌ User already exists');
+        return new Response(
+          JSON.stringify({ error: 'A user with this email already exists' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
 
-    if (createError) {
-      console.error('❌ User creation failed:', createError);
+      // Create user with absolute minimum required data
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: email.toLowerCase().trim(),
+        password: password,
+        email_confirm: true
+      });
+
+      if (createError) {
+        console.error('❌ User creation failed:', createError);
+        throw createError;
+      }
+
+      if (!newUser?.user) {
+        throw new Error('No user data returned from creation');
+      }
+
+      console.log('✅ User created successfully with ID:', newUser.user.id);
+
+      // 8. Create profile record separately
+      console.log('👤 Creating profile record...');
+      
+      const { error: profileCreateError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: newUser.user.id,
+          email: newUser.user.email,
+          full_name: fullName?.trim() || '',
+          role: role as 'user' | 'admin',
+          created_by: user.id,
+          is_active: true
+        });
+
+      if (profileCreateError) {
+        console.warn('⚠️ Profile creation error:', profileCreateError);
+        // Try to clean up the auth user if profile creation fails
+        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+        throw new Error('Failed to create user profile: ' + profileCreateError.message);
+      }
+
+      console.log('✅ Profile created successfully');
+
+      // 9. Return success response
+      const successResponse = {
+        success: true,
+        message: 'User created successfully',
+        user: {
+          id: newUser.user.id,
+          email: newUser.user.email,
+          full_name: fullName || '',
+          role: role,
+          created_at: newUser.user.created_at,
+          email_confirmed: true
+        }
+      };
+
+      console.log('🎉 Returning success response');
+
+      return new Response(
+        JSON.stringify(successResponse),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+
+    } catch (userCreationError) {
+      console.error('❌ Alternative user creation failed:', userCreationError);
       
       let errorMessage = 'Failed to create user';
-      if (createError.message.includes('already_registered')) {
+      if (userCreationError.message?.includes('already_registered')) {
         errorMessage = 'A user with this email already exists';
-      } else if (createError.message.includes('signup_disabled')) {
-        errorMessage = 'User registration is currently disabled';
-      } else {
-        errorMessage = createError.message;
+      } else if (userCreationError.message?.includes('signup_disabled')) {
+        errorMessage = 'User registration is currently disabled in Supabase settings';
+      } else if (userCreationError.message) {
+        errorMessage = userCreationError.message;
       }
       
       return new Response(
@@ -205,64 +280,6 @@ Deno.serve(async (req) => {
         }
       );
     }
-
-    if (!newUser?.user) {
-      console.error('❌ No user data returned from creation');
-      return new Response(
-        JSON.stringify({ error: 'User creation failed - no user data returned' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('✅ User created successfully:', newUser.user.email);
-
-    // 8. Create/update profile record
-    console.log('👤 Creating profile record...');
-    
-    const { error: profileCreateError } = await supabaseAdmin
-      .from('profiles')
-      .upsert({
-        id: newUser.user.id,
-        email: newUser.user.email,
-        full_name: fullName?.trim() || '',
-        role: role as 'user' | 'admin',
-        created_by: user.id,
-        is_active: true
-      });
-
-    if (profileCreateError) {
-      console.warn('⚠️ Profile creation error (user still created):', profileCreateError);
-      // Don't fail the entire operation if profile creation fails
-    } else {
-      console.log('✅ Profile created successfully');
-    }
-
-    // 9. Return success response
-    const successResponse = {
-      success: true,
-      message: 'User created successfully',
-      user: {
-        id: newUser.user.id,
-        email: newUser.user.email,
-        full_name: fullName || '',
-        role: role,
-        created_at: newUser.user.created_at,
-        email_confirmed: true
-      }
-    };
-
-    console.log('🎉 Returning success response');
-
-    return new Response(
-      JSON.stringify(successResponse),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
 
   } catch (error) {
     console.error('💥 Unexpected error in function:', error);
