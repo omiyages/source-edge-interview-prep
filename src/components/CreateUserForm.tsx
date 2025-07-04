@@ -69,7 +69,6 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       }
 
       console.log('✅ Session valid for user:', sessionData.session.user.email);
-      console.log('🔑 Token length:', sessionData.session.access_token.length);
 
       // Prepare payload with validation
       const payload = {
@@ -86,29 +85,36 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         passwordLength: payload.password.length
       });
 
-      // Call edge function - DON'T stringify the body, let Supabase client handle it
+      // Call edge function
       console.log('📞 Calling admin-user-management function...');
       
       const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
-        body: payload, // Pass as object, not stringified
-        headers: {
-          'Authorization': `Bearer ${sessionData.session.access_token}`,
-          'Content-Type': 'application/json'
-        }
+        body: payload,
       });
 
       console.log('📥 Function response received');
       console.log('📊 Function result:', result);
       console.log('📊 Function error:', functionError);
 
-      // Handle function call errors
+      // Handle function call errors with more detailed error extraction
       if (functionError) {
         console.error('❌ Function invocation error:', functionError);
         
         let errorMessage = 'Failed to create user';
+        
+        // Try to extract more specific error information
         if (functionError.message) {
           errorMessage = functionError.message;
         }
+        
+        // If there's a context with more details, use that
+        if (functionError.context) {
+          console.error('❌ Function error context:', functionError.context);
+          errorMessage = functionError.context.message || errorMessage;
+        }
+        
+        // Log the full error object to see what's available
+        console.error('❌ Full function error object:', JSON.stringify(functionError, null, 2));
         
         throw new Error(errorMessage);
       }

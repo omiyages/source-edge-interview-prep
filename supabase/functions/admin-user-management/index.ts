@@ -18,7 +18,6 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 
 Deno.serve(async (req) => {
   console.log('🚀 Admin user management function called - Method:', req.method);
-  console.log('📋 Request headers:', Object.fromEntries(req.headers.entries()));
   
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -115,26 +114,11 @@ Deno.serve(async (req) => {
 
     console.log('✅ Admin role verified');
 
-    // 5. Parse request body with better error handling
+    // 5. Parse request body
     let requestData;
     try {
-      const contentType = req.headers.get('Content-Type');
-      console.log('📋 Content-Type:', contentType);
-      
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('❌ Invalid content type:', contentType);
-        return new Response(
-          JSON.stringify({ error: 'Content-Type must be application/json' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-
       const bodyText = await req.text();
       console.log('📄 Request body received, length:', bodyText.length);
-      console.log('📄 Raw body:', bodyText);
       
       if (!bodyText || bodyText.trim() === '') {
         console.error('❌ Empty request body');
