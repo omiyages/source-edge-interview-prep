@@ -54,7 +54,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
     setLoading(true);
     
     try {
-      // Get current session with detailed logging
+      // Get current session
       console.log('🔐 Getting current session...');
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
@@ -70,7 +70,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
 
       console.log('✅ Session valid for user:', sessionData.session.user.email);
 
-      // Prepare payload with validation
+      // Prepare payload
       const payload = {
         email: data.email.trim().toLowerCase(),
         password: data.password,
@@ -78,68 +78,42 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         role: data.role
       };
 
-      console.log('📤 Sending payload:', {
-        email: payload.email,
-        fullName: payload.fullName,
-        role: payload.role,
-        passwordLength: payload.password.length
-      });
-
-      // Call edge function
-      console.log('📞 Calling admin-user-management function...');
+      console.log('📤 Calling admin-user-management function...');
       
-      const { data: result, error: functionError } = await supabase.functions.invoke('admin-user-management', {
-        body: payload,
+      // Call edge function with explicit headers
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/admin-user-management`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json',
+          'apikey': supabase.supabaseKey,
+        },
+        body: JSON.stringify(payload),
       });
 
-      console.log('📥 Function response received');
-      console.log('📊 Function result:', result);
-      console.log('📊 Function error:', functionError);
+      const result = await response.json();
+      
+      console.log('📥 Function response:', { status: response.status, result });
 
-      // Handle function call errors with more detailed error extraction
-      if (functionError) {
-        console.error('❌ Function invocation error:', functionError);
-        
-        let errorMessage = 'Failed to create user';
-        
-        // Try to extract more specific error information
-        if (functionError.message) {
-          errorMessage = functionError.message;
-        }
-        
-        // If there's a context with more details, use that
-        if (functionError.context) {
-          console.error('❌ Function error context:', functionError.context);
-          errorMessage = functionError.context.message || errorMessage;
-        }
-        
-        // Log the full error object to see what's available
-        console.error('❌ Full function error object:', JSON.stringify(functionError, null, 2));
-        
-        throw new Error(errorMessage);
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // Handle server-side errors in the response
-      if (result?.error) {
-        console.error('❌ Server returned error:', result.error);
+      if (result.error) {
         throw new Error(result.error);
       }
 
-      // Validate success response
-      if (!result?.success) {
-        console.error('❌ Unexpected response format:', result);
+      if (!result.success) {
         throw new Error('Server returned unexpected response format');
       }
 
       console.log('🎉 User created successfully!', result.user);
 
-      // Show success message
       toast({
         title: "Success!",
         description: `User ${data.email} has been created successfully with role: ${data.role}`,
       });
 
-      // Reset form and close dialog
       form.reset();
       setOpen(false);
       onSuccess();
@@ -156,8 +130,6 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
           userMessage = 'Please sign out and sign in again';
         } else if (error.message.includes('Admin access required')) {
           userMessage = 'You do not have admin privileges';
-        } else if (error.message.includes('signup_disabled')) {
-          userMessage = 'User registration is currently disabled in Supabase settings';
         } else {
           userMessage = error.message;
         }

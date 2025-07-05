@@ -39,6 +39,7 @@ function App() {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/signup" element={<PublicSignup />} />
                 <Route 
                   path="/" 
                   element={
