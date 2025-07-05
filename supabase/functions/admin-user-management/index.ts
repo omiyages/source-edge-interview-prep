@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 8. Create user with minimal data
+    // 8. Create user
     console.log('👤 Creating new user...');
     
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -220,8 +220,7 @@ Deno.serve(async (req) => {
       console.error('❌ User creation failed:', createError);
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to create user: ' + createError.message,
-          details: createError
+          error: 'Failed to create user: ' + createError.message
         }),
         { 
           status: 400, 
@@ -243,26 +242,47 @@ Deno.serve(async (req) => {
 
     console.log('✅ User created successfully with ID:', newUser.user.id);
 
-    // 9. Create profile record
+    // 9. Create profile record with proper enum casting
     console.log('👤 Creating profile record...');
     
-    const { error: profileCreateError } = await supabaseAdmin
-      .from('profiles')
-      .upsert({
-        id: newUser.user.id,
-        email: newUser.user.email,
-        full_name: fullName?.trim() || '',
-        role: role,
-        created_by: user.id,
-        is_active: true
-      });
+    try {
+      const { error: profileCreateError } = await supabaseAdmin
+        .from('profiles')
+        .upsert({
+          id: newUser.user.id,
+          email: newUser.user.email,
+          full_name: fullName?.trim() || '',
+          role: role as 'user' | 'admin', // Ensure proper typing
+          created_by: user.id,
+          is_active: true
+        });
 
-    if (profileCreateError) {
-      console.error('⚠️ Profile creation error:', profileCreateError);
-      // Don't fail the entire operation, just log the error
-      console.log('🔄 User created but profile creation failed, continuing...');
-    } else {
+      if (profileCreateError) {
+        console.error('❌ Profile creation error:', profileCreateError);
+        throw new Error('Profile creation failed: ' + profileCreateError.message);
+      }
+
       console.log('✅ Profile created successfully');
+    } catch (profileError) {
+      console.error('❌ Critical profile creation error:', profileError);
+      
+      // If profile creation fails, we should clean up the user
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+        console.log('🧹 Cleaned up user after profile creation failure');
+      } catch (cleanupError) {
+        console.error('⚠️ Failed to cleanup user:', cleanupError);
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Database error creating user profile. Please try again.'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     // 10. Return success response
