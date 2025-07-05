@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
@@ -10,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, X, Clock, LogOut, Users, AlertCircle, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UsersList } from "@/components/UsersList";
+import { UserApprovalSection } from "@/components/UserApprovalSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface InterviewQuestion {

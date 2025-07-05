@@ -80,13 +80,15 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
 
       console.log('📤 Calling admin-user-management function...');
       
-      // Call edge function with explicit headers
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/admin-user-management`, {
+      // Call edge function with correct URL construction
+      const functionUrl = `https://satshobhbkjptsbmfsia.supabase.co/functions/v1/admin-user-management`;
+      
+      const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${sessionData.session.access_token}`,
           'Content-Type': 'application/json',
-          'apikey': supabase.supabaseKey,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhdHNob2JoYmtqcHRzYm1mc2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDI5NjUsImV4cCI6MjA2NjMxODk2NX0.T_q1HFL4SQEdzjWjJtfX9WRiHjQLK5WaoH8bCKsLP2c',
         },
         body: JSON.stringify(payload),
       });

@@ -11,6 +11,7 @@ import { queryClient } from "@/lib/queryClient";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import PublicSignup from "./pages/PublicSignup";
 
 // Lazy load heavy components
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
