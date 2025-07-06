@@ -21,16 +21,23 @@ export interface InterviewQuestion {
   scraped_at: string | null;
 }
 
-export const fetchQuestions = async (isAdmin: boolean = false): Promise<InterviewQuestion[]> => {
+export const fetchQuestions = async (isAdmin: boolean = false, page?: number, limit?: number): Promise<InterviewQuestion[]> => {
   try {
     let query = supabase
       .from('interview_questions')
-      .select('*')
+      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at')
       .order('created_at', { ascending: false });
 
     // Only filter out pending questions for non-admin users
     if (!isAdmin) {
       query = query.neq('status', 'pending');
+    }
+
+    // Add pagination if specified
+    if (page !== undefined && limit !== undefined) {
+      const start = (page - 1) * limit;
+      const end = start + limit - 1;
+      query = query.range(start, end);
     }
 
     const { data, error } = await query;

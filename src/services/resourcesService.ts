@@ -10,13 +10,22 @@ export interface Resource {
   created_at: string;
 }
 
-export const fetchResources = async (limit: number = 10): Promise<Resource[]> => {
+export const fetchResources = async (limit: number = 10, page?: number): Promise<Resource[]> => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('resources')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .select('id, title, description, url, category, created_at')
+      .order('created_at', { ascending: false });
+
+    if (page !== undefined) {
+      const start = (page - 1) * limit;
+      const end = start + limit - 1;
+      query = query.range(start, end);
+    } else {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Failed to fetch resources: ${error.message}`);

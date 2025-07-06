@@ -1,19 +1,22 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchResources, Resource } from '@/services/resourcesService';
+import { fetchResources } from '@/services/resourcesService';
 
 export const useResources = (shouldFetch: boolean = true, limit: number = 10) => {
-  const {
-    data: resources = [],
-    isLoading: loading
-  } = useQuery({
+  const { data: resources = [], isLoading: loading, error, refetch } = useQuery({
     queryKey: ['resources', limit],
     queryFn: () => fetchResources(limit),
     enabled: shouldFetch,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: 1
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 
-  return { resources, loading };
+  return {
+    resources,
+    loading,
+    error: error?.message || null,
+    refetch,
+  };
 };
