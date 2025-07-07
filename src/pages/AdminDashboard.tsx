@@ -239,13 +239,10 @@ const AdminDashboard = () => {
         )}
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
-            </TabsTrigger>
-            <TabsTrigger value="approvals">
-              User Approvals
             </TabsTrigger>
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
@@ -257,10 +254,6 @@ const AdminDashboard = () => {
 
           <TabsContent value="users">
             <UsersList />
-          </TabsContent>
-
-          <TabsContent value="approvals">
-            <UserApprovalSection />
           </TabsContent>
 
           <TabsContent value="pending">
