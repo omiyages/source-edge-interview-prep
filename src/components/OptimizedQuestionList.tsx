@@ -1,3 +1,4 @@
+
 import { memo, useMemo } from "react";
 import QuestionCard from "./QuestionCard";
 import { SkeletonCard } from "./SkeletonCard";
@@ -54,8 +55,6 @@ export const OptimizedQuestionList = memo(({
         <QuestionCard
           key={question.id}
           question={question}
-          onEdit={isAdmin ? onEdit : undefined}
-          onDelete={isAdmin ? onDelete : undefined}
         />
       ))}
     </div>
