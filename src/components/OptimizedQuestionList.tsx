@@ -1,6 +1,5 @@
-
 import { memo, useMemo } from "react";
-import { QuestionCard } from "./QuestionCard";
+import QuestionCard from "./QuestionCard";
 import { SkeletonCard } from "./SkeletonCard";
 import type { InterviewQuestion } from "@/services/questionsService";
 
