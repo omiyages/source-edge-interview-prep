@@ -3,12 +3,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { rateLimitService } from '@/services/rateLimitService';
+import { logAuthFailure, logRateLimitExceeded } from '@/utils/securityLogger';
+import { validateEmail, sanitizeInput } from '@/services/secureAuthService';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; isRateLimited?: boolean; lockedUntil?: number }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,29 +76,97 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      console.log('🔄 Signing in:', email);
+      
+      // Sanitize and validate input
+      const cleanEmail = sanitizeInput(email);
+      const cleanPassword = sanitizeInput(password);
+      
+      if (!validateEmail(cleanEmail)) {
+        logAuthFailure('Invalid email format', cleanEmail);
+        return { success: false, error: 'Please enter a valid email address' };
+      }
+      
+      // Check rate limiting
+      const rateLimitCheck = rateLimitService.canAttemptLogin(cleanEmail);
+      if (!rateLimitCheck.allowed) {
+        const remainingTime = Math.ceil((rateLimitCheck.lockedUntil! - Date.now()) / 1000);
+        logRateLimitExceeded(`Login blocked for ${cleanEmail}`, cleanEmail);
+        
+        return { 
+          success: false, 
+          error: `Too many failed attempts. Account locked for ${remainingTime} seconds.`,
+          isRateLimited: true,
+          lockedUntil: rateLimitCheck.lockedUntil
+        };
+      }
+      
+      console.log('🔄 Signing in:', cleanEmail);
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: cleanEmail,
+        password: cleanPassword,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Record failed attempt
+        const rateLimitResult = rateLimitService.recordFailedAttempt(cleanEmail);
+        logAuthFailure(`Failed login attempt: ${error.message}`, cleanEmail);
+        
+        let errorMessage = error.message;
+        if (rateLimitResult.isLocked) {
+          const lockoutTime = Math.ceil((rateLimitResult.lockedUntil! - Date.now()) / 1000);
+          errorMessage = `Invalid credentials. Account locked for ${lockoutTime} seconds due to multiple failed attempts.`;
+          logRateLimitExceeded(`Account locked after ${rateLimitService['maxAttempts']} failed attempts`, cleanEmail);
+        } else if (rateLimitResult.remainingAttempts <= 2) {
+          errorMessage = `${error.message}. ${rateLimitResult.remainingAttempts} attempts remaining before account lockout.`;
+        }
+        
+        return { success: false, error: errorMessage };
+      }
 
+      // Record successful login
+      rateLimitService.recordSuccessfulLogin(cleanEmail);
       console.log('✅ Sign in successful');
+      
       toast({
         title: "Welcome back!",
         description: "You have been signed in successfully.",
       });
+      
+      return { success: true };
+      
     } catch (error: any) {
-      console.error('❌ Sign in error:', error);
-      toast({
-        title: "Sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('❌ Unexpected sign in error:', error);
+      logAuthFailure(`Unexpected error: ${error.message}`, email);
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     } finally {
       setLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const cleanEmail = sanitizeInput(email);
+      
+      if (!validateEmail(cleanEmail)) {
+        return { success: false, error: 'Please enter a valid email address' };
+      }
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+      
+      if (error) {
+        console.error('❌ Password reset error:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('✅ Password reset email sent');
+      return { success: true };
+      
+    } catch (error: any) {
+      console.error('❌ Unexpected password reset error:', error);
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   };
 
@@ -124,6 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signIn,
     signOut,
+    resetPassword,
   };
 
   return (
