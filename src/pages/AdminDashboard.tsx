@@ -207,9 +207,6 @@ const AdminDashboard = () => {
               Welcome back, {profile?.email} 
               <span className="text-purple-600 font-semibold ml-2">👑 Admin</span>
             </p>
-            <p className="text-sm text-gray-500 mt-1">
-              Debug: User ID {user.id} | Role: {profile.role} | Admin: {isAdmin ? 'Yes' : 'No'}
-            </p>
           </div>
           <div className="flex gap-4">
             <Button 
