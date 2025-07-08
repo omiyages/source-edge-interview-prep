@@ -19,11 +19,11 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
 
   return (
     <div className="text-center mb-8">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-4xl font-bold text-purple-gradient">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+        <h1 className="text-2xl sm:text-4xl font-bold text-purple-gradient whitespace-nowrap">
           Source Edge Database
         </h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
           <Link to="/tracks">
             <Button variant="outline" className="hover-purple-lift">
               <BookOpen className="w-4 h-4 mr-2" />
