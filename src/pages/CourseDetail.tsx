@@ -11,6 +11,9 @@ import { StageNavigation } from "@/components/StageNavigation";
 import { StageInformation } from "@/components/StageInformation";
 import { StageResourcesSection } from "@/components/StageResourcesSection";
 import { StageQuestions } from "@/components/StageQuestions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm";
+import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
 
 interface Course {
   id: string;
@@ -47,6 +50,8 @@ const CourseDetail = () => {
   const { id: courseId } = useParams<{ id: string }>();
   const { user, loading, isAdmin } = useAuth();
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
+  const [showResourcesDialog, setShowResourcesDialog] = useState(false);
+  const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
 
   // Redirect to auth if not authenticated
   if (!loading && !user) {
@@ -179,16 +184,46 @@ const CourseDetail = () => {
             <StageResourcesSection
               stageId={selectedStage.id}
               isAdmin={isAdmin}
-              onManageClick={() => {}}
+              onManageClick={() => setShowResourcesDialog(true)}
             />
 
             <StageQuestions
               questions={stageQuestions}
               isAdmin={isAdmin}
-              onManageClick={() => {}}
+              onManageClick={() => setShowQuestionsDialog(true)}
             />
           </div>
         )}
+
+        {/* Manage Resources Dialog */}
+        <Dialog open={showResourcesDialog} onOpenChange={setShowResourcesDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Manage Resources for {selectedStage?.title}</DialogTitle>
+            </DialogHeader>
+            {selectedStage && (
+              <ManageStageResourcesForm
+                stageId={selectedStage.id}
+                onSuccess={() => setShowResourcesDialog(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Manage Questions Dialog */}
+        <Dialog open={showQuestionsDialog} onOpenChange={setShowQuestionsDialog}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Manage Questions for {selectedStage?.title}</DialogTitle>
+            </DialogHeader>
+            {selectedStage && (
+              <ManageStageQuestionsForm
+                stageId={selectedStage.id}
+                onSuccess={() => setShowQuestionsDialog(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

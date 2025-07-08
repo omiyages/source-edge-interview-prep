@@ -27,9 +27,20 @@ export const StageNavigation = ({ stages, selectedStage, onStageSelect }: StageN
             key={stage.id}
             variant={selectedStage?.id === stage.id ? "default" : "outline"}
             onClick={() => onStageSelect(stage)}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 ${
+              selectedStage?.id === stage.id 
+                ? "bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 text-white border-none" 
+                : ""
+            }`}
           >
-            <Badge variant="secondary" className="text-xs">
+            <Badge 
+              variant="secondary" 
+              className={`text-xs ${
+                selectedStage?.id === stage.id 
+                  ? "bg-white/20 text-white border-white/30" 
+                  : "bg-purple-gradient text-white"
+              }`}
+            >
               {index + 1}
             </Badge>
             {stage.title}
