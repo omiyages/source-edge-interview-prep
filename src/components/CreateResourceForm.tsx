@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface CreateResourceFormProps {
   onSuccess: () => void;
@@ -15,7 +16,7 @@ interface CreateResourceFormProps {
 export const CreateResourceForm = ({ onSuccess }: CreateResourceFormProps) => {
   const { profile } = useAuth();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -23,40 +24,42 @@ export const CreateResourceForm = ({ onSuccess }: CreateResourceFormProps) => {
     category: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
+  const createResourceMutation = useMutation({
+    mutationFn: async (resourceData: typeof formData) => {
       const { error } = await supabase
         .from('resources')
         .insert({
-          title: formData.title,
-          description: formData.description,
-          url: formData.url,
-          category: formData.category,
+          title: resourceData.title,
+          description: resourceData.description,
+          url: resourceData.url,
+          category: resourceData.category,
           created_by: profile?.id,
         });
 
       if (error) throw error;
-
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
       toast({
         title: "Resource created!",
         description: "The resource has been added successfully.",
       });
-
       setFormData({ title: "", description: "", url: "", category: "" });
       onSuccess();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error creating resource:', error);
       toast({
         title: "Error",
         description: "Failed to create resource. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    createResourceMutation.mutate(formData);
   };
 
   return (
@@ -116,9 +119,9 @@ export const CreateResourceForm = ({ onSuccess }: CreateResourceFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium" 
-        disabled={isSubmitting}
+        disabled={createResourceMutation.isPending}
       >
-        {isSubmitting ? "Creating..." : "Create Resource"}
+        {createResourceMutation.isPending ? "Creating..." : "Create Resource"}
       </Button>
     </form>
   );

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreateCourseStep1 } from "./CreateCourseStep1";
 import { CreateCourseStep2 } from "./CreateCourseStep2";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface CourseStage {
   title: string;
@@ -25,8 +26,8 @@ interface CreateCourseWorkflowProps {
 export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStages }: CreateCourseWorkflowProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
   const [createdStageIds, setCreatedStageIds] = useState<string[]>([]);
   const [stageAssignments, setStageAssignments] = useState<Record<string, { questionsAssigned: boolean; resourcesAssigned: boolean }>>({});
@@ -49,9 +50,8 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
         ]
   );
 
-  const handleCreateCourse = async () => {
-    setIsSubmitting(true);
-    try {
+  const createCourseMutation = useMutation({
+    mutationFn: async () => {
       // Create the course
       const { data: courseData_, error: courseError } = await supabase
         .from('courses')
@@ -64,7 +64,6 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
         .single();
 
       if (courseError) throw courseError;
-      setCreatedCourseId(courseData_.id);
 
       // Create the stages
       const stageInserts = stages.map((stage, index) => ({
@@ -82,6 +81,12 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
 
       if (stagesError) throw stagesError;
       
+      return { course: courseData_, stages: stagesData };
+    },
+    onSuccess: ({ course, stages: stagesData }) => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      setCreatedCourseId(course.id);
+      
       const stageIds = stagesData.map(stage => stage.id);
       setCreatedStageIds(stageIds);
 
@@ -96,16 +101,19 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
         title: "Course Created!",
         description: "Course and stages created successfully. You can now assign questions and resources to each stage.",
       });
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error creating course:', error);
       toast({
         title: "Error",
         description: "Failed to create course. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleCreateCourse = () => {
+    createCourseMutation.mutate();
   };
 
   const handleAssignmentSuccess = (stageId: string, type: 'questions' | 'resources') => {
@@ -145,7 +153,7 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
         createdCourseId={createdCourseId}
         createdStageIds={createdStageIds}
         stageAssignments={stageAssignments}
-        isSubmitting={isSubmitting}
+        isSubmitting={createCourseMutation.isPending}
         onBack={() => setCurrentStep(1)}
         onCreateCourse={handleCreateCourse}
         onFinish={handleFinish}

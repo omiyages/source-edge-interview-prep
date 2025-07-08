@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface CreateUserFormData {
   fullName: string;
@@ -24,8 +25,8 @@ interface CreateUserFormProps {
 
 export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const form = useForm<CreateUserFormData>({
     defaultValues: {
@@ -37,23 +38,16 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
     },
   });
 
-  const handleCreateUser = async (data: CreateUserFormData) => {
-    console.log('🚀 Starting user creation process...');
-    
-    // Validate password confirmation
-    if (data.password !== data.confirmPassword) {
-      console.error('❌ Password mismatch');
-      toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
+  const createUserMutation = useMutation({
+    mutationFn: async (data: CreateUserFormData) => {
+      console.log('🚀 Starting user creation process...');
+      
+      // Validate password confirmation
+      if (data.password !== data.confirmPassword) {
+        console.error('❌ Password mismatch');
+        throw new Error('Passwords do not match.');
+      }
+      
       // Get current session
       console.log('🔐 Getting current session...');
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -110,17 +104,20 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       }
 
       console.log('🎉 User created successfully!', result.user);
-
+      return result;
+    },
+    onSuccess: (result, data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-users'] });
       toast({
         title: "Success!",
         description: `User ${data.email} has been created successfully with role: ${data.role}`,
       });
-
       form.reset();
       setOpen(false);
       onSuccess();
-      
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       console.error('💥 Error in user creation process:', error);
       
       let userMessage = 'An unexpected error occurred while creating the user';
@@ -132,6 +129,8 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
           userMessage = 'Please sign out and sign in again';
         } else if (error.message.includes('Admin access required')) {
           userMessage = 'You do not have admin privileges';
+        } else if (error.message === 'Passwords do not match.') {
+          userMessage = error.message;
         } else {
           userMessage = error.message;
         }
@@ -144,9 +143,11 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         description: userMessage,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+
+  const handleCreateUser = async (data: CreateUserFormData) => {
+    createUserMutation.mutate(data);
   };
 
   return (
@@ -267,12 +268,12 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                disabled={loading}
+                disabled={createUserMutation.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading} className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
-                {loading ? "Creating..." : "Create User"}
+              <Button type="submit" disabled={createUserMutation.isPending} className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
+                {createUserMutation.isPending ? "Creating..." : "Create User"}
               </Button>
             </div>
           </form>

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,8 +24,8 @@ interface ManageStageResourcesFormProps {
 
 export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageResourcesFormProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedResources, setSelectedResources] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch all available resources
   const { data: allResources, isLoading: loadingAllResources } = useQuery({
@@ -73,9 +73,8 @@ export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageReso
     );
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
+  const updateResourcesMutation = useMutation({
+    mutationFn: async (resources: string[]) => {
       // Remove all current associations
       const { error: deleteError } = await supabase
         .from('stage_resources')
@@ -85,8 +84,8 @@ export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageReso
       if (deleteError) throw deleteError;
 
       // Add new associations
-      if (selectedResources.length > 0) {
-        const resourceAssociations = selectedResources.map(resourceId => ({
+      if (resources.length > 0) {
+        const resourceAssociations = resources.map(resourceId => ({
           stage_id: stageId,
           resource_id: resourceId,
         }));
@@ -97,23 +96,28 @@ export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageReso
 
         if (insertError) throw insertError;
       }
-
+    },
+    onSuccess: (_, resources) => {
+      queryClient.invalidateQueries({ queryKey: ['stage-resources', stageId] });
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
       toast({
         title: "Resources updated!",
-        description: `${selectedResources.length} resources assigned to this stage.`,
+        description: `${resources.length} resources assigned to this stage.`,
       });
-
       onSuccess();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error updating stage resources:', error);
       toast({
         title: "Error",
         description: "Failed to update stage resources. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleSubmit = () => {
+    updateResourcesMutation.mutate(selectedResources);
   };
 
   if (loadingAllResources || loadingCurrentResources) {
@@ -138,8 +142,8 @@ export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageReso
             Select resources to assign to this stage ({selectedResources.length} selected)
           </p>
         </div>
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? "Updating..." : "Update Resources"}
+        <Button onClick={handleSubmit} disabled={updateResourcesMutation.isPending}>
+          {updateResourcesMutation.isPending ? "Updating..." : "Update Resources"}
         </Button>
       </div>
 

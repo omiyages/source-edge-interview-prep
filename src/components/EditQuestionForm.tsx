@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface InterviewQuestion {
   id: string;
@@ -29,7 +30,7 @@ interface EditQuestionFormProps {
 export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps) => {
   const { profile } = useAuth();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     question: question.question,
     company: question.company,
@@ -41,43 +42,46 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
     position_name: question.position_name || "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
+  const updateQuestionMutation = useMutation({
+    mutationFn: async (questionData: typeof formData) => {
       const { error } = await supabase
         .from('interview_questions')
         .update({
-          question: formData.question,
-          company: formData.company,
-          role: formData.role,
-          category: formData.category,
-          interview_stage: formData.interview_stage,
-          additional_context: formData.additional_context || null,
-          team: formData.team || null,
-          position_name: formData.position_name || null,
+          question: questionData.question,
+          company: questionData.company,
+          role: questionData.role,
+          category: questionData.category,
+          interview_stage: questionData.interview_stage,
+          additional_context: questionData.additional_context || null,
+          team: questionData.team || null,
+          position_name: questionData.position_name || null,
         })
         .eq('id', question.id);
 
       if (error) throw error;
-
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      queryClient.invalidateQueries({ queryKey: ['all-questions-for-stage'] });
       toast({
         title: "Question updated!",
         description: "The question has been updated successfully.",
       });
-
       onSuccess();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error updating question:', error);
       toast({
         title: "Error",
         description: "Failed to update question. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    updateQuestionMutation.mutate(formData);
   };
 
   return (
@@ -194,8 +198,8 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Updating..." : "Update Question"}
+      <Button type="submit" className="w-full" disabled={updateQuestionMutation.isPending}>
+        {updateQuestionMutation.isPending ? "Updating..." : "Update Question"}
       </Button>
     </form>
   );

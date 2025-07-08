@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface SubmitQuestionFormProps {
   onSuccess: () => void;
@@ -15,7 +16,7 @@ interface SubmitQuestionFormProps {
 export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     question: "",
     company: "",
@@ -25,6 +26,60 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     additional_context: "",
     team: "",
     position_name: "",
+  });
+
+  const submitQuestionMutation = useMutation({
+    mutationFn: async (questionData: any) => {
+      console.log('📝 Submitting question...');
+      console.log('User:', user?.email);
+      console.log('Profile:', profile);
+      console.log('Question data:', questionData);
+      
+      const { data, error } = await supabase
+        .from('interview_questions')
+        .insert(questionData)
+        .select();
+
+      if (error) {
+        console.error('❌ Error submitting question:', error);
+        throw error;
+      }
+
+      console.log('✅ Question submitted successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      queryClient.invalidateQueries({ queryKey: ['all-questions-for-stage'] });
+      toast({
+        title: "Question submitted!",
+        description: profile?.role === 'admin' 
+          ? "Your question has been published immediately."
+          : "Your question has been submitted for review and will appear once approved.",
+      });
+
+      // Reset form
+      setFormData({
+        question: "",
+        company: "",
+        role: "",
+        category: "Technical",
+        interview_stage: "Technical Interview",
+        additional_context: "",
+        team: "",
+        position_name: "",
+      });
+
+      onSuccess();
+    },
+    onError: (error: any) => {
+      console.error('❌ Error submitting question:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit question. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,71 +103,21 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    setIsSubmitting(true);
+    const questionData = {
+      question: formData.question.trim(),
+      company: formData.company,
+      role: formData.role,
+      category: formData.category,
+      interview_stage: formData.interview_stage,
+      additional_context: formData.additional_context.trim() || null,
+      team: formData.team || null,
+      position_name: formData.position_name.trim() || null,
+      submitted_by: profile?.email || user.email,
+      question_type: 'user_submitted',
+      status: profile?.role === 'admin' ? 'approved' : 'pending',
+    };
 
-    try {
-      console.log('📝 Submitting question...');
-      console.log('User:', user.email);
-      console.log('Profile:', profile);
-      
-      const questionData = {
-        question: formData.question.trim(),
-        company: formData.company,
-        role: formData.role,
-        category: formData.category,
-        interview_stage: formData.interview_stage,
-        additional_context: formData.additional_context.trim() || null,
-        team: formData.team || null,
-        position_name: formData.position_name.trim() || null,
-        submitted_by: profile?.email || user.email,
-        question_type: 'user_submitted',
-        status: profile?.role === 'admin' ? 'approved' : 'pending',
-      };
-
-      console.log('Question data:', questionData);
-      
-      const { data, error } = await supabase
-        .from('interview_questions')
-        .insert(questionData)
-        .select();
-
-      if (error) {
-        console.error('❌ Error submitting question:', error);
-        throw error;
-      }
-
-      console.log('✅ Question submitted successfully:', data);
-
-      toast({
-        title: "Question submitted!",
-        description: profile?.role === 'admin' 
-          ? "Your question has been published immediately."
-          : "Your question has been submitted for review and will appear once approved.",
-      });
-
-      // Reset form
-      setFormData({
-        question: "",
-        company: "",
-        role: "",
-        category: "Technical",
-        interview_stage: "Technical Interview",
-        additional_context: "",
-        team: "",
-        position_name: "",
-      });
-
-      onSuccess();
-    } catch (error: any) {
-      console.error('❌ Error submitting question:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to submit question. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    submitQuestionMutation.mutate(questionData);
   };
 
   return (
@@ -233,9 +238,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium" 
-        disabled={isSubmitting}
+        disabled={submitQuestionMutation.isPending}
       >
-        {isSubmitting ? "Submitting..." : "Submit Question"}
+        {submitQuestionMutation.isPending ? "Submitting..." : "Submit Question"}
       </Button>
       
       <p className="text-xs text-gray-500 text-center">
