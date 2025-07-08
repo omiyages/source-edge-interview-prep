@@ -26,8 +26,9 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
     if (!error || error.code === 'PGRST116') {
       console.log('➕ Creating new profile for user:', user.id);
       
-      // Default role is user - admin role should be assigned manually for security
-      const defaultRole = 'user';
+      // Check if this email should be admin
+      const isAdminEmail = user.email === 'namtae.quicksit@gmail.com';
+      const defaultRole = isAdminEmail ? 'admin' : 'user';
       
       console.log('🎭 Setting role for new profile:', defaultRole, 'for email:', user.email);
       
