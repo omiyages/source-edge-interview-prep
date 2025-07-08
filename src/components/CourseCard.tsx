@@ -1,11 +1,12 @@
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Calendar, Edit, Trash2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { BookOpen, Calendar, Edit, Trash2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
@@ -17,10 +18,46 @@ interface CourseCardProps {
 }
 
 export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Fetch course progress for the current user
+  const { data: courseProgress } = useQuery({
+    queryKey: ['course-progress', course.id, user?.id],
+    queryFn: async () => {
+      if (!user || isAdmin) return null;
+
+      // Get total stages for this course
+      const { data: stages, error: stagesError } = await supabase
+        .from('course_stages')
+        .select('id')
+        .eq('course_id', course.id);
+
+      if (stagesError) throw stagesError;
+
+      // Get completed stages for user
+      const { data: completedStages, error: progressError } = await supabase
+        .from('user_progress')
+        .select('stage_id')
+        .eq('user_id', user.id)
+        .eq('course_id', course.id);
+
+      if (progressError) throw progressError;
+
+      const totalStages = stages?.length || 0;
+      const completed = completedStages?.length || 0;
+      const percentage = totalStages > 0 ? Math.round((completed / totalStages) * 100) : 0;
+
+      return {
+        total_stages: totalStages,
+        completed_stages: completed,
+        progress_percentage: percentage
+      };
+    },
+    enabled: !!user && !isAdmin,
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -119,6 +156,24 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Progress section for non-admin users */}
+        {!isAdmin && courseProgress && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+              <span>Progress</span>
+              <span>{courseProgress.progress_percentage}%</span>
+            </div>
+            <Progress value={courseProgress.progress_percentage} className="h-2 mb-2" />
+            <div className="flex items-center gap-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                {courseProgress.completed_stages} completed
+              </span>
+              <span>{courseProgress.total_stages} total stages</span>
+            </div>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
@@ -130,8 +185,12 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
               <span>{new Date(course.created_at).toLocaleDateString()}</span>
             </div>
           </div>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            Active
+          <Badge variant="secondary" className={`${
+            !isAdmin && courseProgress?.progress_percentage === 100 
+              ? "bg-green-100 text-green-800" 
+              : "bg-blue-100 text-blue-800"
+          }`}>
+            {!isAdmin && courseProgress?.progress_percentage === 100 ? "Completed" : "Active"}
           </Badge>
         </div>
       </CardContent>

@@ -28,13 +28,23 @@ interface CourseProgress {
 const UserDashboard = () => {
   const { user, loading, isAdmin } = useAuth();
 
+  console.log('🎯 UserDashboard Debug:', {
+    hasUser: !!user,
+    userEmail: user?.email,
+    loading,
+    isAdmin,
+    currentUrl: window.location.pathname
+  });
+
   // Redirect to auth if not authenticated
   if (!loading && !user) {
+    console.log('🚫 UserDashboard: No user, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
-  // Redirect admins to admin dashboard
-  if (!loading && isAdmin) {
+  // Redirect admins to admin dashboard  
+  if (!loading && user && isAdmin) {
+    console.log('🚫 UserDashboard: User is admin, redirecting to admin dashboard');
     return <Navigate to="/admin" replace />;
   }
 
@@ -124,9 +134,16 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Learning Dashboard</h1>
-          <p className="text-gray-600">Track your progress and continue your learning journey</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Learning Dashboard</h1>
+            <p className="text-gray-600">Track your progress and continue your learning journey</p>
+          </div>
+          <Link to="/">
+            <Button variant="outline">
+              Back to Home
+            </Button>
+          </Link>
         </div>
 
         {!assignedCourses?.length ? (
