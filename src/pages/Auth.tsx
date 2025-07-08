@@ -310,16 +310,6 @@ const Auth = () => {
                 Sign In
               </Button>
               
-              <div className="text-center">
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={() => setShowResetForm(true)}
-                  className="text-sm"
-                >
-                  Forgot your password?
-                </Button>
-              </div>
             </form>
           ) : (
             /* Password Reset Form */
