@@ -128,4 +128,9 @@
     background: linear-gradient(white, white) padding-box,
                 linear-gradient(135deg, #6b21a8, #7c3aed) border-box;
   }
+  
+  .text-4xl {
+    font-size: 2.25rem;
+    line-height: normal;
+  }
 }
