@@ -2,29 +2,17 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { CourseHeader } from "@/components/CourseHeader";
 import { StageNavigation } from "@/components/StageNavigation";
-import { StageInformation } from "@/components/StageInformation";
-import { StageResourcesSection } from "@/components/StageResourcesSection";
-import { StageQuestions } from "@/components/StageQuestions";
+import { CourseProgress } from "@/components/CourseProgress";
+import { StageCompleteButton } from "@/components/StageCompleteButton";
+import { CourseContentSection } from "@/components/CourseContentSection";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm";
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
-import { Progress } from "@/components/ui/progress";
-import { CheckCircle } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-
-interface Course {
-  id: string;
-  title: string;
-  description: string | null;
-  created_at: string;
-}
+import { useCourseData, useStageQuestions, useUserProgress } from "@/hooks/useCourseData";
 
 interface CourseStage {
   id: string;
@@ -32,22 +20,6 @@ interface CourseStage {
   description: string | null;
   information: string | null;
   stage_order: number;
-}
-
-interface InterviewQuestion {
-  id: string;
-  question: string;
-  company: string;
-  role: string;
-  interview_stage: string;
-  category: string;
-  submitted_by: string | null;
-  additional_context: string | null;
-  created_at: string;
-  question_type: string;
-  source_url: string | null;
-  source_website: string | null;
-  scraped_at: string | null;
 }
 
 const CourseDetail = () => {
@@ -62,134 +34,10 @@ const CourseDetail = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  const { data: course, refetch: refetchCourse, isLoading: isLoadingCourse } = useQuery({
-    queryKey: ['course', courseId],
-    queryFn: async () => {
-      console.log('🔄 Fetching course with ID:', courseId);
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('id', courseId)
-        .single();
-      
-      if (error) {
-        console.error('❌ Error fetching course:', error);
-        throw error;
-      }
-      console.log('✅ Course fetched:', data);
-      return data as Course;
-    },
-    enabled: !!user && !!courseId,
-  });
-
-  const { data: stages, refetch: refetchStages } = useQuery({
-    queryKey: ['course-stages', courseId],
-    queryFn: async () => {
-      console.log('🔄 Fetching stages for course:', courseId);
-      const { data, error } = await supabase
-        .from('course_stages')
-        .select('*')
-        .eq('course_id', courseId)
-        .order('stage_order');
-      
-      if (error) {
-        console.error('❌ Error fetching stages:', error);
-        throw error;
-      }
-      console.log('✅ Stages fetched:', data?.length || 0);
-      return data as CourseStage[];
-    },
-    enabled: !!user && !!courseId,
-  });
-
-  const { data: stageQuestions, refetch: refetchQuestions } = useQuery({
-    queryKey: ['stage-questions', selectedStage?.id],
-    queryFn: async () => {
-      if (!selectedStage) return [];
-      
-      console.log('🔄 Fetching questions for stage:', selectedStage.id);
-      const { data, error } = await supabase
-        .from('stage_questions')
-        .select(`
-          question_id,
-          interview_questions (*)
-        `)
-        .eq('stage_id', selectedStage.id);
-      
-      if (error) {
-        console.error('❌ Error fetching stage questions:', error);
-        throw error;
-      }
-      console.log('✅ Stage questions fetched:', data?.length || 0);
-      return data.map(item => item.interview_questions) as InterviewQuestion[];
-    },
-    enabled: !!selectedStage,
-  });
-
-  const { data: userProgress } = useQuery({
-    queryKey: ['user-progress', courseId, user?.id],
-    queryFn: async () => {
-      if (!user || !courseId) return [];
-      
-      const { data, error } = await supabase
-        .from('user_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('course_id', courseId);
-      
-      if (error) {
-        console.error('❌ Error fetching user progress:', error);
-        throw error;
-      }
-      return data;
-    },
-    enabled: !!user && !!courseId,
-  });
-
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const completeStageMutation = useMutation({
-    mutationFn: async (stageId: string) => {
-      if (!user || !courseId) throw new Error("Missing user or course ID");
-
-      const { data, error } = await supabase
-        .from('user_progress')
-        .upsert({
-          user_id: user.id,
-          course_id: courseId,
-          stage_id: stageId
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Stage completed!",
-        description: "Great job! You've completed this stage.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['user-progress'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error completing stage",
-        description: error.message || "Failed to mark stage as complete.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const isStageCompleted = (stageId: string) => {
-    return userProgress?.some(p => p.stage_id === stageId) || false;
-  };
-
-  const getProgressPercentage = () => {
-    if (!stages?.length || !userProgress?.length) return 0;
-    return Math.round((userProgress.length / stages.length) * 100);
-  };
+  // Custom hooks for data fetching
+  const { course, stages, refetchCourse, refetchStages, isLoadingCourse } = useCourseData(courseId, user);
+  const { stageQuestions, refetchQuestions } = useStageQuestions(selectedStage);
+  const { userProgress } = useUserProgress(user, courseId);
 
   useEffect(() => {
     if (stages && stages.length > 0 && !selectedStage) {
@@ -240,18 +88,11 @@ const CourseDetail = () => {
         />
 
         {/* Progress Bar */}
-        {!isAdmin && stages && stages.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold">Course Progress</h3>
-              <span className="text-sm text-gray-600">{getProgressPercentage()}% Complete</span>
-            </div>
-            <Progress value={getProgressPercentage()} className="h-3" />
-            <p className="text-sm text-gray-600 mt-1">
-              {userProgress?.length || 0} of {stages.length} stages completed
-            </p>
-          </div>
-        )}
+        <CourseProgress 
+          userProgress={userProgress}
+          stages={stages}
+          isAdmin={isAdmin}
+        />
 
         <div className="flex items-center justify-between mb-8">
           <StageNavigation
@@ -261,46 +102,22 @@ const CourseDetail = () => {
           />
           
           {/* Complete Stage Button */}
-          {!isAdmin && selectedStage && (
-            <Button
-              onClick={() => completeStageMutation.mutate(selectedStage.id)}
-              disabled={completeStageMutation.isPending || isStageCompleted(selectedStage.id)}
-              variant={isStageCompleted(selectedStage.id) ? "outline" : "default"}
-              className="ml-4 flex items-center gap-2"
-            >
-              {isStageCompleted(selectedStage.id) ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  Completed
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4" />
-                  {completeStageMutation.isPending ? "Completing..." : "Complete Stage"}
-                </>
-              )}
-            </Button>
-          )}
+          <StageCompleteButton
+            selectedStage={selectedStage}
+            courseId={courseId!}
+            userProgress={userProgress}
+            isAdmin={isAdmin}
+          />
         </div>
 
         {/* Selected Stage Content */}
-        {selectedStage && (
-          <div className="space-y-8">
-            <StageInformation selectedStage={selectedStage} />
-
-            <StageResourcesSection
-              stageId={selectedStage.id}
-              isAdmin={isAdmin}
-              onManageClick={() => setShowResourcesDialog(true)}
-            />
-
-            <StageQuestions
-              questions={stageQuestions}
-              isAdmin={isAdmin}
-              onManageClick={() => setShowQuestionsDialog(true)}
-            />
-          </div>
-        )}
+        <CourseContentSection
+          selectedStage={selectedStage}
+          stageQuestions={stageQuestions}
+          isAdmin={isAdmin}
+          onManageResourcesClick={() => setShowResourcesDialog(true)}
+          onManageQuestionsClick={() => setShowQuestionsDialog(true)}
+        />
 
         {/* Manage Resources Dialog */}
         <Dialog open={showResourcesDialog} onOpenChange={setShowResourcesDialog}>
