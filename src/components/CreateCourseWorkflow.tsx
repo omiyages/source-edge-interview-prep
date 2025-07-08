@@ -15,9 +15,14 @@ interface CourseStage {
 
 interface CreateCourseWorkflowProps {
   onSuccess: () => void;
+  initialCourseData?: {
+    title: string;
+    description: string;
+  };
+  initialStages?: CourseStage[];
 }
 
-export const CreateCourseWorkflow = ({ onSuccess }: CreateCourseWorkflowProps) => {
+export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStages }: CreateCourseWorkflowProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -27,18 +32,22 @@ export const CreateCourseWorkflow = ({ onSuccess }: CreateCourseWorkflowProps) =
   const [stageAssignments, setStageAssignments] = useState<Record<string, { questionsAssigned: boolean; resourcesAssigned: boolean }>>({});
   
   const [courseData, setCourseData] = useState({
-    title: "",
-    description: "",
+    title: initialCourseData?.title || "",
+    description: initialCourseData?.description || "",
   });
   
-  const [stages, setStages] = useState<CourseStage[]>([
-    {
-      title: "Stage 1",
-      description: "",
-      information: "",
-      stage_order: 1
-    }
-  ]);
+  const [stages, setStages] = useState<CourseStage[]>(
+    initialStages && initialStages.length > 0 
+      ? initialStages 
+      : [
+          {
+            title: "Stage 1",
+            description: "",
+            information: "",
+            stage_order: 1
+          }
+        ]
+  );
 
   const handleCreateCourse = async () => {
     setIsSubmitting(true);
