@@ -14,6 +14,10 @@ import { StageQuestions } from "@/components/StageQuestions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm";
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
+import { Progress } from "@/components/ui/progress";
+import { CheckCircle } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface Course {
   id: string;
@@ -122,6 +126,71 @@ const CourseDetail = () => {
     enabled: !!selectedStage,
   });
 
+  const { data: userProgress } = useQuery({
+    queryKey: ['user-progress', courseId, user?.id],
+    queryFn: async () => {
+      if (!user || !courseId) return [];
+      
+      const { data, error } = await supabase
+        .from('user_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('course_id', courseId);
+      
+      if (error) {
+        console.error('❌ Error fetching user progress:', error);
+        throw error;
+      }
+      return data;
+    },
+    enabled: !!user && !!courseId,
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const completeStageMutation = useMutation({
+    mutationFn: async (stageId: string) => {
+      if (!user || !courseId) throw new Error("Missing user or course ID");
+
+      const { data, error } = await supabase
+        .from('user_progress')
+        .upsert({
+          user_id: user.id,
+          course_id: courseId,
+          stage_id: stageId
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Stage completed!",
+        description: "Great job! You've completed this stage.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['user-progress'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error completing stage",
+        description: error.message || "Failed to mark stage as complete.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const isStageCompleted = (stageId: string) => {
+    return userProgress?.some(p => p.stage_id === stageId) || false;
+  };
+
+  const getProgressPercentage = () => {
+    if (!stages?.length || !userProgress?.length) return 0;
+    return Math.round((userProgress.length / stages.length) * 100);
+  };
+
   useEffect(() => {
     if (stages && stages.length > 0 && !selectedStage) {
       setSelectedStage(stages[0]);
@@ -170,11 +239,49 @@ const CourseDetail = () => {
           onQuestionsUpdate={refetchQuestions}
         />
 
-        <StageNavigation
-          stages={stages || []}
-          selectedStage={selectedStage}
-          onStageSelect={setSelectedStage}
-        />
+        {/* Progress Bar */}
+        {!isAdmin && stages && stages.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Course Progress</h3>
+              <span className="text-sm text-gray-600">{getProgressPercentage()}% Complete</span>
+            </div>
+            <Progress value={getProgressPercentage()} className="h-3" />
+            <p className="text-sm text-gray-600 mt-1">
+              {userProgress?.length || 0} of {stages.length} stages completed
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mb-8">
+          <StageNavigation
+            stages={stages || []}
+            selectedStage={selectedStage}
+            onStageSelect={setSelectedStage}
+          />
+          
+          {/* Complete Stage Button */}
+          {!isAdmin && selectedStage && (
+            <Button
+              onClick={() => completeStageMutation.mutate(selectedStage.id)}
+              disabled={completeStageMutation.isPending || isStageCompleted(selectedStage.id)}
+              variant={isStageCompleted(selectedStage.id) ? "outline" : "default"}
+              className="ml-4 flex items-center gap-2"
+            >
+              {isStageCompleted(selectedStage.id) ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Completed
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  {completeStageMutation.isPending ? "Completing..." : "Complete Stage"}
+                </>
+              )}
+            </Button>
+          )}
+        </div>
 
         {/* Selected Stage Content */}
         {selectedStage && (

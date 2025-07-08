@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UsersList } from "@/components/UsersList";
 import { UserApprovalSection } from "@/components/UserApprovalSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AssignCourseForm } from "@/components/AssignCourseForm";
 
 interface InterviewQuestion {
   id: string;
@@ -236,10 +237,13 @@ const AdminDashboard = () => {
         )}
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="assignments">
+              Course Assignments
             </TabsTrigger>
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
@@ -251,6 +255,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="users">
             <UsersList />
+          </TabsContent>
+
+          <TabsContent value="assignments">
+            <AssignCourseForm />
           </TabsContent>
 
           <TabsContent value="pending">

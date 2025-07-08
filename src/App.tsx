@@ -18,6 +18,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Resources = lazy(() => import("./pages/Resources"));
 const CourseDetail = lazy(() => import("./pages/CourseDetail"));
 const Track = lazy(() => import("./pages/Track"));
+const UserDashboard = lazy(() => import("./pages/UserDashboard"));
 
 // Loading component for suspense
 const PageLoader = () => (
@@ -46,6 +47,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Index />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <UserDashboard />
                     </ProtectedRoute>
                   } 
                 />

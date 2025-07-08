@@ -24,6 +24,14 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
           Source Edge Database
         </h1>
         <div className="flex gap-2">
+          {!isAdmin && (
+            <Link to="/dashboard">
+              <Button variant="outline" className="hover-purple-lift">
+                <BookOpen className="w-4 h-4 mr-2" />
+                My Dashboard
+              </Button>
+            </Link>
+          )}
           <Link to="/tracks">
             <Button variant="outline" className="hover-purple-lift">
               <BookOpen className="w-4 h-4 mr-2" />
