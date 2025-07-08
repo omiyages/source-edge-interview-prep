@@ -75,7 +75,7 @@ export const UserTableRow = ({ user, onDelete, isDeleting }: UserTableRowProps) 
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => onDelete(user.id)}
-                  className="bg-red-600 hover:bg-red-700"
+                  className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
                 >
                   Delete
                 </AlertDialogAction>

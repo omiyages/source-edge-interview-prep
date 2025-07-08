@@ -299,7 +299,7 @@ const AdminDashboard = () => {
                         <div className="flex gap-2 pt-2">
                           <Button
                             size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
                             onClick={() => approveQuestionMutation.mutate({ 
                               questionId: question.id, 
                               status: 'approved' 

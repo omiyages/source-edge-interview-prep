@@ -99,7 +99,7 @@ export const UserApprovalSection = () => {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
                     onClick={() => approvalMutation.mutate({ userId: user.id, approve: true })}
                     disabled={approvalMutation.isPending}
                   >

@@ -152,7 +152,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
           <UserPlus className="w-4 h-4 mr-2" />
           Create User
         </Button>
@@ -271,7 +271,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
                 {loading ? "Creating..." : "Create User"}
               </Button>
             </div>
