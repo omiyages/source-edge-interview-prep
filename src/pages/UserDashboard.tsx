@@ -161,40 +161,42 @@ const UserDashboard = () => {
             {assignedCourses.map((assignment) => {
               const progress = getProgressForCourse(assignment.course_id);
               return (
-                <Card key={assignment.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-blue-600" />
-                      {assignment.courses.title}
+                <Card key={assignment.id} className="hover:shadow-lg transition-shadow min-h-[320px] flex flex-col">
+                  <CardHeader className="flex-shrink-0">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <span className="line-clamp-2">{assignment.courses.title}</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="line-clamp-3 min-h-[3rem]">
                       {assignment.courses.description || "No description available"}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                        <span>Progress</span>
-                        <span>{progress.progress_percentage}%</span>
+                  <CardContent className="flex flex-col justify-between flex-1 space-y-4">
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                          <span>Progress</span>
+                          <span>{progress.progress_percentage}%</span>
+                        </div>
+                        <Progress value={progress.progress_percentage} className="h-2" />
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                          <span className="flex items-center gap-1">
+                            <CheckCircle className="h-4 w-4" />
+                            {progress.completed_stages} completed
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {progress.total_stages} total stages
+                          </span>
+                        </div>
                       </div>
-                      <Progress value={progress.progress_percentage} className="h-2" />
-                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <CheckCircle className="h-4 w-4" />
-                          {progress.completed_stages} completed
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {progress.total_stages} total stages
-                        </span>
+                      
+                      <div className="text-xs text-gray-500">
+                        Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}
                       </div>
-                    </div>
-                    
-                    <div className="text-xs text-gray-500">
-                      Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}
                     </div>
 
-                    <Link to={`/course/${assignment.course_id}`} className="block">
+                    <Link to={`/course/${assignment.course_id}`} className="block mt-auto">
                       <Button className="w-full">
                         {progress.progress_percentage === 100 ? "Review Course" : "Continue Learning"}
                       </Button>
