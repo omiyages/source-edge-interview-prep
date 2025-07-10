@@ -47,7 +47,6 @@ export const QuestionManager = ({ stageId, onSuccess }: QuestionManagerProps) =>
         onFilterChange={handleFilterChange}
         onClearFilters={clearFilters}
         getUniqueValues={getUniqueValues}
-        resultCount={filteredQuestions.length}
       />
 
       <QuestionManagerContent
