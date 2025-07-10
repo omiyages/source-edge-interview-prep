@@ -177,11 +177,10 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
               <SelectValue placeholder="Select stage" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Phone Screen">Phone Screen</SelectItem>
-              <SelectItem value="Technical">Technical</SelectItem>
-              <SelectItem value="Onsite">Onsite</SelectItem>
-              <SelectItem value="Final">Final</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
+              <SelectItem value="HR Screen">HR Screen</SelectItem>
+              <SelectItem value="Technical Interview">Technical Interview</SelectItem>
+              <SelectItem value="Cross-Functional">Cross-Functional</SelectItem>
+              <SelectItem value="Final Interview">Final Interview</SelectItem>
             </SelectContent>
           </Select>
         </div>
