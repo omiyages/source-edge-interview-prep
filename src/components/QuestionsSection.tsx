@@ -113,6 +113,7 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
           onFilterChange={handleFilterChange}
           onClearFilters={handleClearFilters}
           getUniqueValues={getUniqueValues}
+          resultCount={filteredQuestions.length}
         />
       </div>
       

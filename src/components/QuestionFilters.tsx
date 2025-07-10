@@ -17,6 +17,7 @@ interface QuestionFiltersProps {
   onFilterChange: (field: string, value: string) => void;
   onClearFilters: () => void;
   getUniqueValues: (field: string) => string[];
+  resultCount: number;
 }
 
 export const QuestionFilters = ({
@@ -25,7 +26,8 @@ export const QuestionFilters = ({
   filters,
   onFilterChange,
   onClearFilters,
-  getUniqueValues
+  getUniqueValues,
+  resultCount
 }: QuestionFiltersProps) => {
   return (
     <div className="space-y-4">
@@ -100,7 +102,10 @@ export const QuestionFilters = ({
           </SelectContent>
         </Select>
 
-        <div className="md:col-span-4 flex justify-end">
+        <div className="md:col-span-4 flex justify-between items-center">
+          <span className="text-xs text-gray-600">
+            {resultCount} {resultCount === 1 ? 'result' : 'results'}
+          </span>
           <Button 
             type="button"
             variant="outline" 
