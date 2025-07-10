@@ -1,6 +1,7 @@
 
 import { useState, useMemo } from "react";
 import { OptimizedQuestionList } from "./OptimizedQuestionList";
+import { QuestionFilters } from "./QuestionFilters";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import type { InterviewQuestion } from "@/services/questionsService";
 
@@ -14,10 +15,75 @@ const ITEMS_PER_PAGE = 12;
 
 export const QuestionsSection = ({ questions, loading, error }: QuestionsSectionProps) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    company: "",
+    role: "",
+    category: "",
+    interview_stage: ""
+  });
+
+  // Filter questions based on search term and filters
+  const filteredQuestions = useMemo(() => {
+    return questions.filter((question) => {
+      const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           question.role.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCompany = !filters.company || question.company === filters.company;
+      const matchesRole = !filters.role || question.role === filters.role;
+      const matchesCategory = !filters.category || question.category === filters.category;
+      const matchesStage = !filters.interview_stage || question.interview_stage === filters.interview_stage;
+      
+      return matchesSearch && matchesCompany && matchesRole && matchesCategory && matchesStage;
+    });
+  }, [questions, searchTerm, filters]);
 
   const totalPages = useMemo(() => {
-    return Math.ceil(questions.length / ITEMS_PER_PAGE);
-  }, [questions.length]);
+    return Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
+  }, [filteredQuestions.length]);
+
+  // Get unique values for filter dropdowns
+  const getUniqueValues = (field: string) => {
+    const values = questions.map((q: any) => q[field]).filter(Boolean);
+    let uniqueValues = [...new Set(values)].sort();
+    
+    // Update role options according to user requirements
+    if (field === 'role') {
+      uniqueValues = uniqueValues.map(role => {
+        if (role === 'Product Manager') return 'Product/Project Manager';
+        if (role === 'Frontend Engineer') return 'Frontend/Fullstack Engineer';
+        return role;
+      });
+      
+      // Remove fullstack engineer if it exists
+      uniqueValues = uniqueValues.filter(role => role !== 'fullstack engineer' && role !== 'Fullstack Engineer');
+      
+      // Add ML/AI Engineer if not present
+      if (!uniqueValues.includes('ML/AI Engineer')) {
+        uniqueValues.push('ML/AI Engineer');
+        uniqueValues.sort();
+      }
+    }
+    
+    return uniqueValues;
+  };
+
+  const handleFilterChange = (field: string, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setFilters({
+      company: "",
+      role: "",
+      category: "",
+      interview_stage: ""
+    });
+    setCurrentPage(1);
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -39,15 +105,26 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
     <section className="mb-12">
       <h2 className="text-3xl font-bold text-gray-900 mb-8">Interview Questions</h2>
       
+      <div className="mb-6">
+        <QuestionFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+          getUniqueValues={getUniqueValues}
+        />
+      </div>
+      
       <OptimizedQuestionList
-        questions={questions}
+        questions={filteredQuestions}
         loading={loading}
         isAdmin={false}
         currentPage={currentPage}
         itemsPerPage={ITEMS_PER_PAGE}
       />
 
-      {!loading && questions.length > ITEMS_PER_PAGE && (
+      {!loading && filteredQuestions.length > ITEMS_PER_PAGE && (
         <div className="mt-8 flex justify-center">
           <Pagination>
             <PaginationContent>
