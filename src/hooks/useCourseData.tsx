@@ -30,6 +30,8 @@ interface InterviewQuestion {
   source_url: string | null;
   source_website: string | null;
   scraped_at: string | null;
+  team: string | null;
+  position_name: string | null;
 }
 
 export const useCourseData = (courseId: string | undefined, user: any) => {

@@ -3,11 +3,13 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Trash2, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { EditQuestionForm } from "./EditQuestionForm";
 
 interface InterviewQuestion {
   id: string;
@@ -24,6 +26,8 @@ interface InterviewQuestion {
   source_website: string | null;
   scraped_at: string | null;
   status?: string;
+  team: string | null;
+  position_name: string | null;
 }
 
 interface QuestionCardProps {
@@ -34,6 +38,7 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
   const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   console.log('🗑️ QuestionCard delete check:', {
     questionId: question.id,
@@ -102,18 +107,40 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
             )}
           </div>
           {isAdmin && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                console.log('🗑️ Delete button clicked for question:', question.id);
-                deleteQuestionMutation.mutate(question.id);
-              }}
-              disabled={deleteQuestionMutation.isPending}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            <div className="flex gap-1">
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Edit Interview Question</DialogTitle>
+                  </DialogHeader>
+                  <EditQuestionForm 
+                    question={question} 
+                    onSuccess={() => setIsEditDialogOpen(false)} 
+                  />
+                </DialogContent>
+              </Dialog>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  console.log('🗑️ Delete button clicked for question:', question.id);
+                  deleteQuestionMutation.mutate(question.id);
+                }}
+                disabled={deleteQuestionMutation.isPending}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
           )}
         </div>
         <CardTitle className="text-lg leading-tight">
