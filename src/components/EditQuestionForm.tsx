@@ -128,32 +128,6 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="team">Team</Label>
-          <Select value={formData.team} onValueChange={(value) => setFormData({ ...formData, team: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select team (optional)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Cloud & AI">Cloud & AI</SelectItem>
-              <SelectItem value="Enterprise Technology">Enterprise Technology</SelectItem>
-              <SelectItem value="Dojo">Dojo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="position_name">Position Name</Label>
-          <Input
-            id="position_name"
-            placeholder="e.g., Senior Software Engineer (optional)"
-            value={formData.position_name}
-            onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
             <SelectTrigger>
@@ -183,6 +157,28 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
               <SelectItem value="Final Interview">Final Interview</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="team">Team</Label>
+          <Input
+            id="team"
+            placeholder="e.g., Cloud & AI (optional)"
+            value={formData.team}
+            onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="position_name">Position Name</Label>
+          <Input
+            id="position_name"
+            placeholder="e.g., Senior Software Engineer (optional)"
+            value={formData.position_name}
+            onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
+          />
         </div>
       </div>
 
