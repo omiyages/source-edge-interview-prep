@@ -101,13 +101,16 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="company">Company *</Label>
-          <Input
-            id="company"
-            placeholder="e.g., Google, Microsoft"
-            value={formData.company}
-            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            required
-          />
+          <Select value={formData.company} onValueChange={(value) => setFormData({ ...formData, company: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select company" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Woven by Toyota">Woven by Toyota</SelectItem>
+              <SelectItem value="LexxPluss">LexxPluss</SelectItem>
+              <SelectItem value="Wismettac">Wismettac</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
@@ -119,8 +122,11 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
             <SelectContent>
               <SelectItem value="Backend Engineer">Backend Engineer</SelectItem>
               <SelectItem value="Frontend Engineer">Frontend Engineer</SelectItem>
+              <SelectItem value="Full Stack Engineer">Full Stack Engineer</SelectItem>
               <SelectItem value="SRE/DevOps">SRE/DevOps</SelectItem>
               <SelectItem value="Engineering Manager">Engineering Manager</SelectItem>
+              <SelectItem value="Product Manager">Product Manager</SelectItem>
+              <SelectItem value="Data Engineer">Data Engineer</SelectItem>
             </SelectContent>
           </Select>
         </div>
