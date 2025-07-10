@@ -164,7 +164,7 @@ const UserDashboard = () => {
                 <Card key={assignment.id} className="hover:shadow-lg transition-shadow min-h-[320px] flex flex-col">
                   <CardHeader className="flex-shrink-0">
                     <CardTitle className="flex items-center gap-2 text-lg">
-                      <BookOpen className="h-5 w-5 text-primary flex-shrink-0" />
+                      <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
                       <span className="line-clamp-2">{assignment.courses.title}</span>
                     </CardTitle>
                     <CardDescription className="line-clamp-3 min-h-[3rem]">
@@ -178,14 +178,14 @@ const UserDashboard = () => {
                           <span>Progress</span>
                           <span>{progress.progress_percentage}%</span>
                         </div>
-                        <Progress value={progress.progress_percentage} className="h-2 bg-secondary [&>div]:bg-purple-gradient" />
+                        <Progress value={progress.progress_percentage} className="h-2" />
                         <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                           <span className="flex items-center gap-1">
-                            <CheckCircle className="h-4 w-4 text-primary" />
+                            <CheckCircle className="h-4 w-4" />
                             {progress.completed_stages} completed
                           </span>
                           <span className="flex items-center gap-1">
-                            <Clock className="h-4 w-4 text-primary" />
+                            <Clock className="h-4 w-4" />
                             {progress.total_stages} total stages
                           </span>
                         </div>
@@ -197,7 +197,7 @@ const UserDashboard = () => {
                     </div>
 
                     <Link to={`/course/${assignment.course_id}`} className="block mt-auto">
-                      <Button className="w-full bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
+                      <Button className="w-full">
                         {progress.progress_percentage === 100 ? "Review Course" : "Continue Learning"}
                       </Button>
                     </Link>
