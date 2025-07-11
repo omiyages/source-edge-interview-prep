@@ -1,7 +1,10 @@
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useEffect } from "react";
 import { ResourceCard } from "./ResourceCard";
 import { ResourceSkeletonCard } from "./ResourceSkeletonCard";
+import { LoadingSpinner } from "./ui/loading-spinner";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import ErrorBoundary from "./ui/error-boundary";
 
 interface Resource {
   id: string;
@@ -20,6 +23,9 @@ interface OptimizedResourcesListProps {
   onDelete?: (resourceId: string) => void;
   currentPage?: number;
   itemsPerPage?: number;
+  hasNextPage?: boolean;
+  onLoadMore?: () => void;
+  useInfiniteScroll?: boolean;
 }
 
 const SKELETON_COUNT = 6;
@@ -31,17 +37,35 @@ export const OptimizedResourcesList = memo(({
   onEdit, 
   onDelete,
   currentPage = 1,
-  itemsPerPage = 9
+  itemsPerPage = 9,
+  hasNextPage = false,
+  onLoadMore,
+  useInfiniteScroll: enableInfiniteScroll = false
 }: OptimizedResourcesListProps) => {
-  const paginatedResources = useMemo(() => {
+  const { isFetching, setTarget, resetFetching } = useInfiniteScroll({
+    hasNextPage,
+    isLoading: loading,
+  });
+
+  useEffect(() => {
+    if (isFetching && onLoadMore) {
+      onLoadMore();
+      resetFetching();
+    }
+  }, [isFetching, onLoadMore, resetFetching]);
+
+  const displayResources = useMemo(() => {
+    if (enableInfiniteScroll) {
+      return resources;
+    }
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return resources.slice(startIndex, endIndex);
-  }, [resources, currentPage, itemsPerPage]);
+  }, [resources, currentPage, itemsPerPage, enableInfiniteScroll]);
 
-  if (loading) {
+  if (loading && displayResources.length === 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-token-lg pb-token-3xl">
         {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
           <ResourceSkeletonCard key={index} />
         ))}
@@ -49,25 +73,44 @@ export const OptimizedResourcesList = memo(({
     );
   }
 
-  if (paginatedResources.length === 0) {
+  if (displayResources.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 text-lg">No resources found.</p>
+      <div className="text-center py-token-4xl animate-fade-in">
+        <p className="text-muted-foreground text-token-lg">No resources found.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
-      {paginatedResources.map((resource) => (
-        <ResourceCard
-          key={resource.id}
-          resource={resource}
-          onEdit={isAdmin ? onEdit : undefined}
-          onDelete={isAdmin ? onDelete : undefined}
-        />
-      ))}
-    </div>
+    <ErrorBoundary>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-token-lg pb-token-3xl">
+        {displayResources.map((resource, index) => (
+          <div 
+            key={resource.id}
+            style={{ animationDelay: `${index * 50}ms` }}
+            className="animate-slide-up"
+          >
+            <ResourceCard
+              resource={resource}
+              onEdit={isAdmin ? onEdit : undefined}
+              onDelete={isAdmin ? onDelete : undefined}
+            />
+          </div>
+        ))}
+      </div>
+      
+      {enableInfiniteScroll && hasNextPage && (
+        <div ref={setTarget} className="flex justify-center py-token-xl">
+          {loading && <LoadingSpinner text="Loading more resources..." />}
+        </div>
+      )}
+      
+      {loading && displayResources.length > 0 && !enableInfiniteScroll && (
+        <div className="flex justify-center py-token-lg">
+          <LoadingSpinner text="Loading..." />
+        </div>
+      )}
+    </ErrorBoundary>
   );
 });
 

@@ -93,27 +93,30 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex flex-wrap gap-1">
-            <Badge className={getRoleTypeColor(question.role)}>
+    <Card className="card-interactive h-full flex flex-col animate-fade-in shadow-token-sm hover:shadow-token-lg">
+      <CardHeader className="pb-token-md">
+        <div className="flex items-start justify-between gap-token-sm mb-token-sm">
+          <div className="flex flex-wrap gap-token-xs">
+            <Badge 
+              variant="secondary" 
+              className="bg-primary/10 text-primary border-primary/20 hover-scale"
+            >
               {question.role}
             </Badge>
             {question.status && (
-              <Badge variant="outline">
+              <Badge variant="outline" className="hover-scale">
                 {question.status}
               </Badge>
             )}
           </div>
           {isAdmin && (
-            <div className="flex gap-1">
+            <div className="flex gap-token-xs">
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    className="btn-touch hover-scale text-primary hover:bg-primary/10"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -136,36 +139,41 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                   deleteQuestionMutation.mutate(question.id);
                 }}
                 disabled={deleteQuestionMutation.isPending}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="btn-touch hover-scale text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           )}
         </div>
-        <CardTitle className="text-lg leading-tight">
+        <CardTitle className="text-token-lg leading-tight font-semibold text-card-foreground">
           {question.question}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 flex-1 flex flex-col">
-        <div className="space-y-3 flex-1">
-          <div className="text-sm text-gray-600">
-            <strong>Company:</strong> {question.company}
+      <CardContent className="pt-0 flex-1 flex flex-col space-y-token-md">
+        <div className="space-y-token-sm flex-1">
+          <div className="text-token-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Company:</span> {question.company}
           </div>
-          <div className="text-sm text-gray-600">
-            <strong>Category:</strong> {question.category}
+          <div className="text-token-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Category:</span> {question.category}
           </div>
-          <div className="text-sm text-gray-600">
-            <strong>Interview Stage:</strong> {question.interview_stage}
+          <div className="text-token-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Interview Stage:</span> {question.interview_stage}
           </div>
           {question.additional_context && (
-            <div className="p-3 bg-gray-50 rounded-md text-sm">
-              <strong>Additional Context:</strong>
-              <p className="mt-1">{question.additional_context}</p>
+            <div className="p-token-md bg-muted/50 rounded-md text-token-sm border border-border/50">
+              <span className="font-medium text-foreground block mb-token-xs">Additional Context:</span>
+              <div 
+                className="text-muted-foreground leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: question.additional_context.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                }}
+              />
             </div>
           )}
         </div>
-        <div className="text-xs text-gray-400 mt-4 pt-3 border-t">
+        <div className="text-token-xs text-muted-foreground mt-token-lg pt-token-md border-t border-border/50">
           Added {new Date(question.created_at).toLocaleDateString()}
         </div>
       </CardContent>

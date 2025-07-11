@@ -100,25 +100,27 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer" onClick={handleCardClick}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
+    <Card className="card-interactive animate-scale-in shadow-token-md hover:shadow-token-xl" onClick={handleCardClick}>
+      <CardHeader className="pb-token-md">
+        <div className="flex items-start justify-between gap-token-lg">
           <div className="flex-1">
-            <CardTitle className="text-xl mb-2">{course.title}</CardTitle>
+            <CardTitle className="text-token-2xl mb-token-sm font-bold text-card-foreground">
+              {course.title}
+            </CardTitle>
             {course.description && (
-              <p className="text-gray-600 text-sm line-clamp-3">
+              <p className="text-muted-foreground text-token-sm line-clamp-3 leading-relaxed">
                 {course.description}
               </p>
             )}
           </div>
           {isAdmin && (
-            <div className="flex gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex gap-token-xs ml-token-lg" onClick={(e) => e.stopPropagation()}>
               {onEdit && (
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => onEdit(course)}
-                  className="h-8 w-8 p-0"
+                  className="btn-touch hover-scale h-10 w-10 p-0 border-primary/20 hover:bg-primary/5"
                 >
                   <Edit className="w-4 h-4" />
                 </Button>
@@ -128,7 +130,7 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                    className="btn-touch hover-scale h-10 w-10 p-0 text-destructive border-destructive/20 hover:bg-destructive/5"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -144,7 +146,7 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => deleteMutation.mutate()}
-                      className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
+                      className="bg-purple-gradient hover:shadow-token-lg hover:-translate-y-0.5 transition-all duration-normal text-primary-foreground font-medium btn-touch"
                     >
                       Delete
                     </AlertDialogAction>
@@ -155,18 +157,18 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-token-lg">
         {/* Progress section for non-admin users */}
         {!isAdmin && courseProgress && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-              <span>Progress</span>
-              <span>{courseProgress.progress_percentage}%</span>
+          <div className="p-token-md bg-muted/30 rounded-lg border border-border/50">
+            <div className="flex items-center justify-between text-token-sm text-muted-foreground mb-token-sm">
+              <span className="font-medium">Progress</span>
+              <span className="font-semibold text-foreground">{courseProgress.progress_percentage}%</span>
             </div>
-            <Progress value={courseProgress.progress_percentage} className="h-2 mb-2" />
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" />
+            <Progress value={courseProgress.progress_percentage} className="h-2 mb-token-sm" />
+            <div className="flex items-center gap-token-lg text-token-xs text-muted-foreground">
+              <span className="flex items-center gap-token-xs">
+                <CheckCircle className="h-3 w-3 text-green-600" />
                 {courseProgress.completed_stages} completed
               </span>
               <span>{courseProgress.total_stages} total stages</span>
@@ -174,22 +176,25 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
           </div>
         )}
         
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between text-token-sm">
+          <div className="flex items-center gap-token-lg text-muted-foreground">
+            <div className="flex items-center gap-token-xs">
               <BookOpen className="w-4 h-4" />
               <span>Course</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-token-xs">
               <Calendar className="w-4 h-4" />
               <span>{new Date(course.created_at).toLocaleDateString()}</span>
             </div>
           </div>
-          <Badge variant="secondary" className={`${
-            !isAdmin && courseProgress?.progress_percentage === 100 
-              ? "bg-green-100 text-green-800" 
-              : "bg-blue-100 text-blue-800"
-          }`}>
+          <Badge 
+            variant="secondary" 
+            className={`hover-scale ${
+              !isAdmin && courseProgress?.progress_percentage === 100 
+                ? "bg-green-100 text-green-800 border-green-200" 
+                : "bg-primary/10 text-primary border-primary/20"
+            }`}
+          >
             {!isAdmin && courseProgress?.progress_percentage === 100 ? "Completed" : "Active"}
           </Badge>
         </div>
