@@ -113,10 +113,10 @@ const UserDashboard = () => {
 
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-foreground font-semibold">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -132,12 +132,12 @@ const UserDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Learning Dashboard</h1>
-            <p className="text-gray-600">Track your progress and continue your learning journey</p>
+            <h1 className="text-3xl font-black text-foreground mb-2">My Learning Dashboard</h1>
+            <p className="text-foreground font-semibold">Track your progress and continue your learning journey</p>
           </div>
           <Link to="/">
             <Button variant="outline">

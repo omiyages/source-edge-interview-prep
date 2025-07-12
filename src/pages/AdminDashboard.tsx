@@ -136,11 +136,11 @@ const AdminDashboard = () => {
   if (authLoading) {
     console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
-          <p className="text-sm text-gray-500 mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground font-semibold">Loading admin dashboard...</p>
+          <p className="text-sm text-muted-foreground mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
         </div>
       </div>
     );
@@ -154,11 +154,11 @@ const AdminDashboard = () => {
   if (!profile) {
     console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading user profile...</p>
-          <p className="text-sm text-gray-500 mt-2">User: {user.email}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground font-semibold">Loading user profile...</p>
+          <p className="text-sm text-muted-foreground mt-2">User: {user.email}</p>
         </div>
       </div>
     );
@@ -196,17 +196,17 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="text-4xl font-black text-foreground mb-2">
               Admin Dashboard
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-foreground font-semibold">
               Welcome back, {profile?.email} 
-              <span className="text-purple-600 font-semibold ml-2">👑 Admin</span>
+              <span className="text-primary font-bold ml-2">👑 Admin</span>
             </p>
           </div>
           <div className="flex gap-4">
@@ -264,8 +264,8 @@ const AdminDashboard = () => {
           <TabsContent value="pending">
             {loadingPending ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading pending questions...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-4 text-foreground font-semibold">Loading pending questions...</p>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -346,8 +346,8 @@ const AdminDashboard = () => {
           <TabsContent value="all">
             {loadingAll ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading all questions...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-4 text-foreground font-semibold">Loading all questions...</p>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
