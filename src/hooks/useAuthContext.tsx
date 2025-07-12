@@ -111,11 +111,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch (error: any) {
       console.error('❌ Sign out error:', error);
-      toast({
-        title: "Sign out failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      
+      // Handle the case where there's no session to sign out from
+      if (error.name === 'AuthSessionMissingError') {
+        console.log('✅ No active session - treating as successful sign out');
+        setUser(null);
+        toast({
+          title: "Signed out",
+          description: "You have been signed out successfully.",
+        });
+      } else {
+        toast({
+          title: "Sign out failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   };
 
