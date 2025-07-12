@@ -115,7 +115,7 @@ const Auth = () => {
 
             <Button 
               type="submit" 
-              className="w-full py-3 bg-foreground text-background hover:bg-foreground/90 rounded-lg font-medium" 
+              className="w-full py-3 btn-purple-gradient rounded-lg font-semibold" 
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
