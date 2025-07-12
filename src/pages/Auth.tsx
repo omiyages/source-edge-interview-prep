@@ -58,7 +58,7 @@ const Auth = () => {
               </svg>
             </div>
             <h1 className="text-4xl font-bold mb-4">
-              Hello<br />
+              Welcome to<br />
               Source Edge Database! 👋
             </h1>
           </div>
@@ -69,7 +69,7 @@ const Auth = () => {
           </p>
           
           <div className="absolute bottom-8 left-12 text-white/60 text-sm">
-            © 2024 InterviewPro. All rights reserved.
+            © 2025 Source Edge. All rights reserved.
           </div>
         </div>
       </div>
@@ -78,7 +78,7 @@ const Auth = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md">
           <div className="text-right mb-8">
-            <h2 className="text-2xl font-bold text-foreground">InterviewPro</h2>
+            <h2 className="text-2xl font-bold text-foreground">Source Edge</h2>
           </div>
           
           <div className="mb-8">
