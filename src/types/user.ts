@@ -8,4 +8,12 @@ export interface UserProfile {
   total_session_time_minutes: number | null;
   is_active: boolean | null;
   created_at: string;
+  linkedin_profile?: string | null;
+  current_company?: string | null;
+  years_of_experience?: number | null;
+  past_companies?: string[] | null;
+  skillsets?: string[] | null;
+  notes?: string[] | null;
+  phone_number?: string | null;
+  salary?: number | null;
 }

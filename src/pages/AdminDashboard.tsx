@@ -14,6 +14,7 @@ import { UsersList } from "@/components/UsersList";
 import { UserApprovalSection } from "@/components/UserApprovalSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AssignCourseForm } from "@/components/AssignCourseForm";
+import { KanbanBoard } from "@/components/KanbanBoard";
 
 interface InterviewQuestion {
   id: string;
@@ -236,8 +237,11 @@ const AdminDashboard = () => {
           </Alert>
         )}
 
-        <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+        <Tabs defaultValue="ats" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="ats">
+              ATS Pipeline
+            </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -252,6 +256,14 @@ const AdminDashboard = () => {
               All Questions ({allQuestions?.length || 0})
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="ats" className="h-[600px]">
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Candidate Pipeline</h2>
+              <p className="text-muted-foreground">Drag and drop candidates through hiring stages</p>
+            </div>
+            <KanbanBoard />
+          </TabsContent>
 
           <TabsContent value="users">
             <UsersList />

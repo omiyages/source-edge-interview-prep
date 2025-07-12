@@ -1,9 +1,12 @@
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User } from "lucide-react";
-import { CreateUserForm } from "./CreateUserForm";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { User, Plus } from "lucide-react";
+import { EnhancedUserForm } from "./EnhancedUserForm";
 import {
   Table,
   TableBody,
@@ -17,6 +20,8 @@ import { useDeleteUser } from "@/hooks/useDeleteUser";
 
 export const UsersList = () => {
   const deleteUserMutation = useDeleteUser();
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
 
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['admin-users'],
@@ -46,9 +51,12 @@ export const UsersList = () => {
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
-            All Users ({users?.length || 0})
+            All Candidates ({users?.length || 0})
           </CardTitle>
-          <CreateUserForm onSuccess={refetch} />
+          <Button onClick={() => setShowUserForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Candidate
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -59,10 +67,11 @@ export const UsersList = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Experience</TableHead>
+                  <TableHead>Skills</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Total Time</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -73,6 +82,7 @@ export const UsersList = () => {
                     user={user}
                     onDelete={deleteUserMutation.mutate}
                     isDeleting={deleteUserMutation.isPending}
+                    onEdit={setEditingUser}
                   />
                 ))}
               </TableBody>
@@ -86,6 +96,34 @@ export const UsersList = () => {
           </div>
         )}
       </CardContent>
+
+      {/* Enhanced User Form Dialog */}
+      <Dialog open={showUserForm || !!editingUser} onOpenChange={(open) => {
+        if (!open) {
+          setShowUserForm(false);
+          setEditingUser(null);
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingUser ? 'Edit Candidate' : 'Add New Candidate'}
+            </DialogTitle>
+          </DialogHeader>
+          <EnhancedUserForm
+            user={editingUser}
+            onSuccess={() => {
+              refetch();
+              setShowUserForm(false);
+              setEditingUser(null);
+            }}
+            onCancel={() => {
+              setShowUserForm(false);
+              setEditingUser(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

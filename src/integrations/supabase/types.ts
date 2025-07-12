@@ -14,6 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      candidate_pipeline: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          moved_at: string
+          moved_by: string | null
+          notes: string | null
+          stage_id: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          moved_at?: string
+          moved_by?: string | null
+          notes?: string | null
+          stage_id: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          moved_at?: string
+          moved_by?: string | null
+          notes?: string | null
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_pipeline_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_pipeline_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_pipeline_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_assignments: {
         Row: {
           assigned_at: string
@@ -117,6 +169,33 @@ export type Database = {
         }
         Relationships: []
       }
+      hiring_stages: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          stage_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          stage_order: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          stage_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interview_questions: {
         Row: {
           additional_context: string | null
@@ -187,38 +266,62 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          current_company: string | null
           email: string
           full_name: string | null
           id: string
           is_active: boolean | null
           last_login_at: string | null
+          linkedin_profile: string | null
+          notes: string[] | null
+          past_companies: string[] | null
+          phone_number: string | null
           role: Database["public"]["Enums"]["app_role"]
+          salary: number | null
+          skillsets: string[] | null
           total_session_time_minutes: number | null
           updated_at: string
+          years_of_experience: number | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          current_company?: string | null
           email: string
           full_name?: string | null
           id: string
           is_active?: boolean | null
           last_login_at?: string | null
+          linkedin_profile?: string | null
+          notes?: string[] | null
+          past_companies?: string[] | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          salary?: number | null
+          skillsets?: string[] | null
           total_session_time_minutes?: number | null
           updated_at?: string
+          years_of_experience?: number | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          current_company?: string | null
           email?: string
           full_name?: string | null
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null
+          linkedin_profile?: string | null
+          notes?: string[] | null
+          past_companies?: string[] | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          salary?: number | null
+          skillsets?: string[] | null
           total_session_time_minutes?: number | null
           updated_at?: string
+          years_of_experience?: number | null
         }
         Relationships: []
       }
