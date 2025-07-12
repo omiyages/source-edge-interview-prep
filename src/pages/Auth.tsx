@@ -59,13 +59,13 @@ const Auth = () => {
             </div>
             <h1 className="text-4xl font-bold mb-4">
               Hello<br />
-              InterviewPro! 👋
+              Source Edge Database! 👋
             </h1>
           </div>
           
           <p className="text-lg text-white/90 leading-relaxed max-w-md">
-            Skip repetitive interview preparation tasks. Get highly productive through 
-            smart question practice and save tons of time!
+            Get prepared for your upcoming interviews through our Database 
+            of past questions and certified tips. 
           </p>
           
           <div className="absolute bottom-8 left-12 text-white/60 text-sm">
