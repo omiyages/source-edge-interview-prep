@@ -49,17 +49,17 @@ const Track = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-foreground font-semibold">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -70,17 +70,17 @@ const Track = () => {
                 Back to Questions
               </Button>
             </Link>
-            <h1 className="text-4xl font-bold text-gray-900">
+            <h1 className="text-4xl font-black text-foreground">
               Interview Tracks
             </h1>
             <div className="w-32"></div> {/* Spacer to center the title */}
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-foreground font-semibold max-w-2xl mx-auto">
             Structured interview preparation courses with organized stages and curated questions.
           </p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             Welcome back, {profile?.email} ({profile?.role})
-            {isAdmin && <span className="text-purple-600 font-semibold ml-2">👑 Admin</span>}
+            {isAdmin && <span className="text-primary font-semibold ml-2">👑 Admin</span>}
           </p>
         </div>
 
@@ -112,8 +112,8 @@ const Track = () => {
         {/* Courses Grid */}
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading courses...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-foreground font-semibold">Loading courses...</p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -125,11 +125,11 @@ const Track = () => {
 
         {courses?.length === 0 && !isLoading && (
           <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
+            <div className="text-muted-foreground mb-4">
               <BookOpen className="w-16 h-16 mx-auto" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">No courses available yet</h3>
-            <p className="text-gray-500">
+            <h3 className="text-lg font-black text-foreground mb-2">No courses available yet</h3>
+            <p className="text-muted-foreground font-semibold">
               {isAdmin ? "Create your first course to get started." : "Check back later for new courses."}
             </p>
           </div>
