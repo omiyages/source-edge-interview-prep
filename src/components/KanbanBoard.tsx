@@ -13,7 +13,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { KanbanColumn } from './KanbanColumn';
 import { CandidateCard } from './CandidateCard';
+import { CandidateSearchDialog } from './CandidateSearchDialog';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 
 interface HiringStage {
   id: string;
@@ -35,6 +38,7 @@ interface Candidate {
 
 export const KanbanBoard = () => {
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
   const queryClient = useQueryClient();
   
   const sensors = useSensors(
@@ -132,8 +136,53 @@ export const KanbanBoard = () => {
     return candidates.filter(candidate => !candidate.stage_id);
   };
 
+  const addCandidateToPipelineMutation = useMutation({
+    mutationFn: async ({ candidateId, stageId }: { candidateId: string; stageId: string }) => {
+      const { error } = await supabase
+        .from('candidate_pipeline')
+        .insert({
+          candidate_id: candidateId,
+          stage_id: stageId,
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+      toast.success('Candidate added to pipeline');
+    },
+    onError: (error) => {
+      toast.error('Failed to add candidate to pipeline');
+      console.error('Error adding candidate to pipeline:', error);
+    },
+  });
+
+  const handleSelectCandidate = (candidate: Candidate) => {
+    // Add to the first stage (or unassigned if no stages)
+    const firstStage = stages[0];
+    if (firstStage) {
+      addCandidateToPipelineMutation.mutate({
+        candidateId: candidate.id,
+        stageId: firstStage.id,
+      });
+    }
+  };
+
   return (
     <div className="h-full">
+      <div className="mb-4 flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-medium">Candidate Pipeline</h3>
+          <p className="text-sm text-muted-foreground">
+            Drag candidates between stages or add new candidates to the pipeline
+          </p>
+        </div>
+        <Button onClick={() => setShowSearchDialog(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Candidate
+        </Button>
+      </div>
+
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
@@ -169,6 +218,12 @@ export const KanbanBoard = () => {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <CandidateSearchDialog
+        open={showSearchDialog}
+        onOpenChange={setShowSearchDialog}
+        onSelectCandidate={handleSelectCandidate}
+      />
     </div>
   );
 };
