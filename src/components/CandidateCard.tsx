@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -5,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Mail, Building2 } from 'lucide-react';
+import { ExternalLink, Mail, Building2, X } from 'lucide-react';
+import { useRemoveCandidateFromPipelineMutation } from '@/hooks/useKanbanMutations';
 
 interface Candidate {
   id: string;
@@ -31,6 +33,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   isDragging = false,
   dragId,
 }) => {
+  const removeCandidateMutation = useRemoveCandidateFromPipelineMutation();
+
   const {
     attributes,
     listeners,
@@ -56,6 +60,13 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     .toUpperCase()
     .slice(0, 2);
 
+  const handleRemoveCandidate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (candidate.applicationId) {
+      removeCandidateMutation.mutate({ applicationId: candidate.applicationId });
+    }
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -77,19 +88,32 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               <h4 className="font-medium text-sm truncate text-foreground">
                 {displayName}
               </h4>
-              {candidate.linkedin_profile && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(candidate.linkedin_profile!, '_blank');
-                  }}
-                >
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {candidate.linkedin_profile && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(candidate.linkedin_profile!, '_blank');
+                    }}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                )}
+                {candidate.applicationId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                    onClick={handleRemoveCandidate}
+                    title="Remove from pipeline"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">

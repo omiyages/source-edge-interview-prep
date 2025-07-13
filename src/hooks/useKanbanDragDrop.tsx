@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { Candidate } from './useKanbanData';
@@ -16,14 +17,24 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    // The active.id is now the applicationId, find the candidate by application
+    console.log('🎯 Drag started with ID:', event.active.id);
     const applicationId = event.active.id as string;
+    
+    // Find the candidate by searching through all applications
     for (const candidate of candidates) {
       const application = candidate.applications?.find(app => app.id === applicationId);
       if (application) {
+        console.log('🎯 Found candidate for drag:', candidate.email);
         setActiveCandidate(candidate);
-        break;
+        return;
       }
+    }
+    
+    // If not found in applications, check if it's an unassigned candidate
+    const unassignedCandidate = candidates.find(c => c.id === applicationId);
+    if (unassignedCandidate) {
+      console.log('🎯 Found unassigned candidate for drag:', unassignedCandidate.email);
+      setActiveCandidate(unassignedCandidate);
     }
   };
 
@@ -31,23 +42,55 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
     const { active, over } = event;
     setActiveCandidate(null);
 
-    if (!over) return;
+    if (!over) {
+      console.log('❌ No drop target');
+      return;
+    }
 
-    const applicationId = active.id as string;
+    const draggedId = active.id as string;
     const newStageId = over.id as string;
 
-    // Find the application and current stage
+    console.log('🎯 Drop event:', { draggedId, newStageId });
+
+    // Handle moving from unassigned to a stage
+    if (newStageId !== 'unassigned') {
+      // Check if this is an unassigned candidate (no application)
+      const unassignedCandidate = candidates.find(c => c.id === draggedId && (!c.applications || c.applications.length === 0));
+      
+      if (unassignedCandidate) {
+        console.log('🔄 Moving unassigned candidate to stage:', newStageId);
+        // For unassigned candidates, we need to create a new application entry
+        // This should be handled by a separate mutation for moving unassigned candidates
+        console.log('⚠️ Moving unassigned candidates to stages not yet implemented');
+        toast.error('Moving unassigned candidates to stages not yet implemented');
+        return;
+      }
+    }
+
+    // Find the application being moved
+    let applicationId = null;
     let currentStageId = null;
+
     for (const candidate of candidates) {
-      const application = candidate.applications?.find(app => app.id === applicationId);
+      const application = candidate.applications?.find(app => app.id === draggedId);
       if (application) {
+        applicationId = application.id;
         currentStageId = application.stage_id;
         break;
       }
     }
 
-    if (!currentStageId || currentStageId === newStageId) return;
+    if (!applicationId || !currentStageId) {
+      console.error('❌ Could not find application for drag ID:', draggedId);
+      return;
+    }
 
+    if (currentStageId === newStageId) {
+      console.log('🔄 Same stage, no move needed');
+      return;
+    }
+
+    console.log('🔄 Moving application:', { applicationId, from: currentStageId, to: newStageId });
     moveCandidateMutation.mutate({ applicationId, stageId: newStageId });
   };
 

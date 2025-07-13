@@ -32,23 +32,52 @@ export const useMoveCandidateMutation = () => {
   });
 };
 
+export const useRemoveCandidateFromPipelineMutation = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ applicationId }: { applicationId: string }) => {
+      console.log('🗑️ Removing candidate from pipeline:', { applicationId });
+      const { error } = await supabase
+        .from('candidate_pipeline')
+        .delete()
+        .eq('id', applicationId);
+
+      if (error) {
+        console.error('❌ Error removing candidate from pipeline:', error);
+        throw error;
+      }
+      console.log('✅ Candidate removed from pipeline successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
+      toast.success('Candidate removed from pipeline');
+    },
+    onError: (error) => {
+      console.error('❌ Failed to remove candidate:', error);
+      toast.error('Failed to remove candidate from pipeline');
+    },
+  });
+};
+
 export const useAddCandidateToPipelineMutation = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ candidateId, stageId, appliedCompany, appliedJobTitle }: { 
+    mutationFn: async ({ candidateId, appliedCompany, appliedJobTitle }: { 
       candidateId: string; 
-      stageId: string; 
       appliedCompany?: string; 
       appliedJobTitle?: string; 
     }) => {
-      console.log('🔄 Adding candidate to pipeline:', { candidateId, stageId, appliedCompany, appliedJobTitle });
+      console.log('🔄 Adding candidate to pipeline (Unassigned):', { candidateId, appliedCompany, appliedJobTitle });
       
+      // Always add to "unassigned" - we'll use a special stage ID for this
       const { data, error } = await supabase
         .from('candidate_pipeline')
         .insert({
           candidate_id: candidateId,
-          stage_id: stageId,
+          stage_id: 'unassigned', // Special ID for unassigned candidates
           applied_company: appliedCompany,
           applied_job_title: appliedJobTitle,
         })
@@ -60,7 +89,7 @@ export const useAddCandidateToPipelineMutation = () => {
         throw error;
       }
       
-      console.log('✅ Candidate added to pipeline:', data);
+      console.log('✅ Candidate added to pipeline (Unassigned):', data);
       return data;
     },
     onSuccess: (data) => {
@@ -84,24 +113,15 @@ export const useKanbanActions = (stages: HiringStage[]) => {
       candidateId: candidate.id, 
       candidateEmail: candidate.email,
       appliedCompany, 
-      appliedJobTitle,
-      availableStages: stages.length 
+      appliedJobTitle 
     });
     
-    // Add to the first stage (or unassigned if no stages)
-    const firstStage = stages[0];
-    if (firstStage) {
-      console.log('📍 Adding to first stage:', firstStage.name);
-      addCandidateToPipelineMutation.mutate({
-        candidateId: candidate.id,
-        stageId: firstStage.id,
-        appliedCompany,
-        appliedJobTitle,
-      });
-    } else {
-      console.error('❌ No hiring stages available');
-      toast.error('No hiring stages configured');
-    }
+    // Always add to unassigned by default
+    addCandidateToPipelineMutation.mutate({
+      candidateId: candidate.id,
+      appliedCompany,
+      appliedJobTitle,
+    });
   };
 
   return {
