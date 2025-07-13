@@ -100,19 +100,39 @@ export const useAddCandidateToPipelineMutation = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ candidateId, appliedCompany, appliedJobTitle }: { 
+    mutationFn: async ({ candidateId, appliedCompany, appliedJobTitle, stageId }: { 
       candidateId: string; 
       appliedCompany?: string; 
-      appliedJobTitle?: string; 
+      appliedJobTitle?: string;
+      stageId?: string;
     }) => {
-      console.log('🔄 Adding candidate to pipeline (Unassigned):', { candidateId, appliedCompany, appliedJobTitle });
+      console.log('🔄 Adding candidate to pipeline:', { candidateId, appliedCompany, appliedJobTitle, stageId });
       
-      // Always add to "unassigned" stage
+      // If no stageId is provided, we need to get the first hiring stage (not unassigned)
+      let targetStageId = stageId;
+      
+      if (!targetStageId) {
+        console.log('📋 No stage specified, fetching first hiring stage...');
+        const { data: stages, error: stagesError } = await supabase
+          .from('hiring_stages')
+          .select('id')
+          .order('stage_order')
+          .limit(1);
+        
+        if (stagesError || !stages || stages.length === 0) {
+          console.error('❌ Error fetching hiring stages:', stagesError);
+          throw new Error('No hiring stages found');
+        }
+        
+        targetStageId = stages[0].id;
+        console.log('✅ Using first hiring stage:', targetStageId);
+      }
+      
       const { data, error } = await supabase
         .from('candidate_pipeline')
         .insert({
           candidate_id: candidateId,
-          stage_id: 'unassigned',
+          stage_id: targetStageId,
           applied_company: appliedCompany,
           applied_job_title: appliedJobTitle,
         })
@@ -124,7 +144,7 @@ export const useAddCandidateToPipelineMutation = () => {
         throw error;
       }
       
-      console.log('✅ Candidate added to pipeline (Unassigned):', data);
+      console.log('✅ Candidate added to pipeline:', data);
       return data;
     },
     onSuccess: (data) => {
@@ -151,11 +171,12 @@ export const useKanbanActions = (stages: HiringStage[]) => {
       appliedJobTitle 
     });
     
-    // Always add to unassigned by default
+    // Add to first hiring stage instead of "unassigned"
     addCandidateToPipelineMutation.mutate({
       candidateId: candidate.id,
       appliedCompany,
       appliedJobTitle,
+      // Don't specify stageId so it uses the first hiring stage
     });
   };
 
