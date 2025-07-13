@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,7 +58,7 @@ export const EnhancedUserForm = ({ user, onSuccess, onCancel }: EnhancedUserForm
       past_companies: user?.past_companies || [],
       notes: user?.notes || [],
       is_active: user?.is_active ?? true,
-      role: user?.role || 'user',
+      role: (user?.role === 'admin' ? 'admin' : 'user') as 'user' | 'admin',
     },
   });
 
