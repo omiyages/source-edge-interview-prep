@@ -27,8 +27,8 @@ serve(async (req) => {
 
     console.log('Calling People Data Labs API with LinkedIn URL:', url);
 
-    // Construct the API URL with query parameters
-    const apiUrl = `https://api.peopledatalabs.com/v5/person/enrich?linkedin_url=${encodeURIComponent(url)}`;
+    // Construct the API URL with query parameters - use 'profile' parameter for LinkedIn URLs
+    const apiUrl = `https://api.peopledatalabs.com/v5/person/enrich?profile=${encodeURIComponent(url)}`;
     
     // Call People Data Labs Person Enrichment API
     const response = await fetch(apiUrl, {
