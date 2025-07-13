@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Calendar, Edit, Trash2, CheckCircle } from "lucide-react";
+import { BookOpen, Calendar, Edit, Trash2, CheckCircle, Building2, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
@@ -108,10 +108,48 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
               {course.title}
             </CardTitle>
             {course.description && (
-              <p className="text-muted-foreground text-token-sm line-clamp-3 leading-relaxed">
+              <p className="text-muted-foreground text-token-sm line-clamp-3 leading-relaxed mb-token-md">
                 {course.description}
               </p>
             )}
+            
+            {/* Company and Jobs Section */}
+            <div className="space-y-token-sm">
+              {course.company && (
+                <div className="flex items-center gap-token-xs text-token-sm text-muted-foreground">
+                  <Building2 className="w-4 h-4 text-primary" />
+                  <span className="font-medium text-foreground">{course.company}</span>
+                </div>
+              )}
+              
+              {course.attached_jobs && course.attached_jobs.length > 0 && (
+                <div className="space-y-token-xs">
+                  <div className="flex items-center gap-token-xs text-token-sm text-muted-foreground">
+                    <Briefcase className="w-4 h-4 text-primary" />
+                    <span className="font-medium">Relevant Positions:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-token-xs">
+                    {course.attached_jobs.slice(0, 3).map((job, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="outline" 
+                        className="text-token-xs bg-muted/30 text-muted-foreground border-muted-foreground/20"
+                      >
+                        {job}
+                      </Badge>
+                    ))}
+                    {course.attached_jobs.length > 3 && (
+                      <Badge 
+                        variant="outline" 
+                        className="text-token-xs bg-muted/30 text-muted-foreground border-muted-foreground/20"
+                      >
+                        +{course.attached_jobs.length - 3} more
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           {isAdmin && (
             <div className="flex gap-token-xs ml-token-lg" onClick={(e) => e.stopPropagation()}>
