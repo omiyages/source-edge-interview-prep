@@ -25,6 +25,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
   const { data: stageResources, isLoading, refetch } = useQuery({
     queryKey: ['stage-resources-display', stageId],
     queryFn: async () => {
+      console.log('Fetching stage resources for stage:', stageId);
       const { data, error } = await supabase
         .from('stage_resources')
         .select(`
@@ -34,14 +35,17 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
         .eq('stage_id', stageId);
       
       if (error) throw error;
+      console.log('Stage resources fetched:', data?.length || 0);
       return data.map(item => item.resources) as Resource[];
     },
   });
 
   // Set up real-time subscription for stage resources
   useEffect(() => {
+    console.log('Setting up real-time subscription for stage resources:', stageId);
+    
     const channel = supabase
-      .channel('stage-resources-changes')
+      .channel(`stage-resources-${stageId}`)
       .on(
         'postgres_changes',
         {
@@ -50,14 +54,15 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
           table: 'stage_resources',
           filter: `stage_id=eq.${stageId}`
         },
-        () => {
-          console.log('Stage resources changed, refetching...');
+        (payload) => {
+          console.log('Stage resources changed:', payload);
           refetch();
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up real-time subscription for stage resources');
       supabase.removeChannel(channel);
     };
   }, [stageId, refetch]);

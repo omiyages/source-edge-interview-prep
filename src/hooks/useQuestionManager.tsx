@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +15,7 @@ interface InterviewQuestion {
 
 export const useQuestionManager = (stageId: string) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
@@ -180,6 +181,10 @@ export const useQuestionManager = (stageId: string) => {
         }
         console.log('Successfully inserted new stage questions');
       }
+
+      // Invalidate queries to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['stage-questions', stageId] });
+      queryClient.invalidateQueries({ queryKey: ['current-stage-questions', stageId] });
 
       toast({
         title: "Questions updated!",

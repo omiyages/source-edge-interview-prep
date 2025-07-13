@@ -43,8 +43,10 @@ export const StageQuestions = ({
   useEffect(() => {
     if (!stageId || !onQuestionsUpdate) return;
 
+    console.log('Setting up real-time subscription for stage questions:', stageId);
+
     const channel = supabase
-      .channel('stage-questions-changes')
+      .channel(`stage-questions-${stageId}`)
       .on(
         'postgres_changes',
         {
@@ -53,14 +55,15 @@ export const StageQuestions = ({
           table: 'stage_questions',
           filter: `stage_id=eq.${stageId}`
         },
-        () => {
-          console.log('Stage questions changed, refetching...');
+        (payload) => {
+          console.log('Stage questions changed:', payload);
           onQuestionsUpdate();
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up real-time subscription for stage questions');
       supabase.removeChannel(channel);
     };
   }, [stageId, onQuestionsUpdate]);

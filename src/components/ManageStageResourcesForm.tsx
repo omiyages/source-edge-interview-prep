@@ -1,13 +1,10 @@
 
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, X, ExternalLink } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { OptimizedResourcesList } from "./OptimizedResourcesList";
 
 interface Resource {
   id: string;
@@ -25,57 +22,48 @@ interface ManageStageResourcesFormProps {
 export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageResourcesFormProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedResources, setSelectedResources] = useState<string[]>([]);
+  const [selectedResources, setSelectedResources] = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving] = useState(false);
 
   // Fetch all available resources
-  const { data: allResources, isLoading: loadingAllResources } = useQuery({
+  const { data: allResources, isLoading: isLoadingResources } = useQuery({
     queryKey: ['all-resources'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('resources')
         .select('*')
-        .order('title');
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Resource[];
     },
   });
 
-  // Fetch currently assigned resources for this stage
-  const { data: currentResources, isLoading: loadingCurrentResources } = useQuery({
-    queryKey: ['stage-resources', stageId],
+  // Fetch currently assigned resources
+  const { data: currentResources, isLoading: isLoadingCurrent } = useQuery({
+    queryKey: ['current-stage-resources', stageId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('stage_resources')
-        .select(`
-          resource_id,
-          resources (*)
-        `)
+        .select('resource_id')
         .eq('stage_id', stageId);
       
       if (error) throw error;
-      return data.map(item => item.resources) as Resource[];
+      return new Set(data.map(item => item.resource_id));
     },
   });
 
   // Initialize selected resources when current resources are loaded
-  useEffect(() => {
+  useState(() => {
     if (currentResources) {
-      setSelectedResources(currentResources.map(resource => resource.id));
+      setSelectedResources(currentResources);
     }
   }, [currentResources]);
 
-  const handleResourceToggle = (resourceId: string) => {
-    setSelectedResources(prev => 
-      prev.includes(resourceId)
-        ? prev.filter(id => id !== resourceId)
-        : [...prev, resourceId]
-    );
-  };
-
-  const updateResourcesMutation = useMutation({
-    mutationFn: async (resources: string[]) => {
-      // Remove all current associations
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // First, remove all existing resources for this stage
       const { error: deleteError } = await supabase
         .from('stage_resources')
         .delete()
@@ -83,120 +71,80 @@ export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageReso
 
       if (deleteError) throw deleteError;
 
-      // Add new associations
-      if (resources.length > 0) {
-        const resourceAssociations = resources.map(resourceId => ({
+      // Then, add the selected resources
+      if (selectedResources.size > 0) {
+        const resourcesToInsert = Array.from(selectedResources).map(resourceId => ({
           stage_id: stageId,
           resource_id: resourceId,
         }));
 
         const { error: insertError } = await supabase
           .from('stage_resources')
-          .insert(resourceAssociations);
+          .insert(resourcesToInsert);
 
         if (insertError) throw insertError;
       }
-    },
-    onSuccess: (_, resources) => {
-      queryClient.invalidateQueries({ queryKey: ['stage-resources', stageId] });
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
+
+      // Invalidate queries to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['stage-resources-display', stageId] });
+      queryClient.invalidateQueries({ queryKey: ['current-stage-resources', stageId] });
+
       toast({
         title: "Resources updated!",
-        description: `${resources.length} resources assigned to this stage.`,
+        description: `Successfully assigned ${selectedResources.size} resources to this stage.`,
       });
+
       onSuccess();
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error('Error updating stage resources:', error);
       toast({
         title: "Error",
-        description: "Failed to update stage resources. Please try again.",
+        description: "Failed to update resources. Please try again.",
         variant: "destructive",
       });
-    },
-  });
-
-  const handleSubmit = () => {
-    updateResourcesMutation.mutate(selectedResources);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  if (loadingAllResources || loadingCurrentResources) {
-    return <div className="text-center py-4">Loading resources...</div>;
-  }
-
-  const availableResources = allResources || [];
-  const resourcesByCategory = availableResources.reduce((acc, resource) => {
-    if (!acc[resource.category]) {
-      acc[resource.category] = [];
+  const toggleResource = (resourceId: string) => {
+    const newSelected = new Set(selectedResources);
+    if (newSelected.has(resourceId)) {
+      newSelected.delete(resourceId);
+    } else {
+      newSelected.add(resourceId);
     }
-    acc[resource.category].push(resource);
-    return acc;
-  }, {} as Record<string, Resource[]>);
+    setSelectedResources(newSelected);
+  };
+
+  if (isLoadingResources || isLoadingCurrent) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading resources...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">Manage Stage Resources</h3>
-          <p className="text-sm text-gray-600">
-            Select resources to assign to this stage ({selectedResources.length} selected)
-          </p>
-        </div>
-        <Button onClick={handleSubmit} disabled={updateResourcesMutation.isPending}>
-          {updateResourcesMutation.isPending ? "Updating..." : "Update Resources"}
-        </Button>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Select Resources ({selectedResources.size} selected)</h3>
       </div>
 
-      {Object.keys(resourcesByCategory).length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No resources available. Create some resources first.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {Object.entries(resourcesByCategory).map(([category, resources]) => (
-            <Card key={category}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Badge variant="secondary">{category}</Badge>
-                  <span className="text-xs text-gray-500">
-                    ({resources.filter(r => selectedResources.includes(r.id)).length}/{resources.length} selected)
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {resources.map((resource) => (
-                  <div
-                    key={resource.id}
-                    className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50"
-                  >
-                    <Checkbox
-                      checked={selectedResources.includes(resource.id)}
-                      onCheckedChange={() => handleResourceToggle(resource.id)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-sm">{resource.title}</h4>
-                        <a
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                      {resource.description && (
-                        <p className="text-xs text-gray-600 mt-1">{resource.description}</p>
-                      )}
-                      <p className="text-xs text-blue-600 mt-1 truncate">{resource.url}</p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <div className="max-h-96 overflow-y-auto">
+        <OptimizedResourcesList
+          resources={allResources || []}
+          selectedResources={selectedResources}
+          onToggleResource={toggleResource}
+        />
+      </div>
+
+      <div className="flex justify-end pt-4 border-t">
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? "Saving..." : "Save Changes"}
+        </Button>
+      </div>
     </div>
   );
 };
