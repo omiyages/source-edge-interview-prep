@@ -80,7 +80,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       email: candidate.email
     });
     
-    // Only allow removal if candidate has an applicationId (is in pipeline)
+    // Only remove if candidate has an applicationId (is in pipeline)
     if (candidate.applicationId) {
       console.log('🔄 Removing candidate from pipeline');
       removeCandidateMutation.mutate({ applicationId: candidate.applicationId });
@@ -89,8 +89,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     }
   };
 
-  // Only show remove button for candidates that are actually in the pipeline (have applicationId)
-  const showRemoveButton = !isUnassigned && candidate.applicationId;
+  // Show remove button for candidates that are in the pipeline (have applicationId)
+  // Unassigned candidates without applicationId cannot be removed as they're not in pipeline
+  const showRemoveButton = candidate.applicationId;
 
   return (
     <Card

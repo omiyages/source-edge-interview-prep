@@ -69,21 +69,19 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
 
     // Handle moving TO unassigned (remove from pipeline)
     if (newStageId === 'unassigned') {
-      let applicationId = null;
-      
+      // Find the application ID for the dragged candidate
       for (const candidate of candidates) {
         const application = candidate.applications?.find(app => app.id === draggedId);
         if (application) {
-          applicationId = application.id;
-          break;
+          console.log('🔄 Moving candidate to unassigned (removing from pipeline):', application.id);
+          removeCandidateFromPipelineMutation.mutate({ applicationId: application.id });
+          return;
         }
       }
-
-      if (applicationId) {
-        console.log('🔄 Moving candidate to unassigned (removing from pipeline):', applicationId);
-        removeCandidateFromPipelineMutation.mutate({ applicationId });
-        return;
-      }
+      
+      // If we reach here, it might already be unassigned
+      console.log('🔄 Candidate is already unassigned or not found in pipeline');
+      return;
     }
 
     // Handle moving from one stage to another (existing application)
