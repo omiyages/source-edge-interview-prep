@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Building2, Briefcase } from "lucide-react";
+import { ArrowLeft, Edit, Briefcase } from "lucide-react";
 import { EditCourseForm } from "./EditCourseForm";
 
 interface Course {
@@ -74,15 +74,12 @@ export const CourseHeader = ({
 
       {/* Course Info */}
       <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-4xl font-bold text-gray-900">{course.title}</h1>
-          {/* Company Badge Circle */}
+          {/* Company Badge on the far right */}
           {course.company && (
-            <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full border border-primary/20">
-              <div className="flex flex-col items-center">
-                <Building2 className="w-4 h-4 text-primary mb-0.5" />
-                <span className="text-xs font-medium text-primary leading-none">{course.company.slice(0, 3).toUpperCase()}</span>
-              </div>
+            <div className="bg-primary/10 rounded-full border border-primary/20 px-4 py-2">
+              <span className="text-sm font-medium text-primary">{course.company}</span>
             </div>
           )}
         </div>

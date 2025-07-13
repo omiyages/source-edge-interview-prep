@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Calendar, Edit, Trash2, CheckCircle, Building2 } from "lucide-react";
+import { BookOpen, Calendar, Edit, Trash2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
@@ -110,14 +110,6 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
               <p className="text-muted-foreground text-token-sm line-clamp-3 leading-relaxed mb-token-md">
                 {course.description}
               </p>
-            )}
-            
-            {/* Company Section - Only show company, removed jobs */}
-            {course.company && (
-              <div className="flex items-center gap-token-xs text-token-sm text-muted-foreground mb-token-md">
-                <Building2 className="w-4 h-4 text-primary" />
-                <span className="font-medium text-foreground">{course.company}</span>
-              </div>
             )}
           </div>
           {isAdmin && (
