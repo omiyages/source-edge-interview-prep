@@ -81,15 +81,12 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       isUnassigned
     });
     
-    if (isUnassigned) {
-      // For truly unassigned candidates (no pipeline entries), we can't remove them from pipeline
-      // So this button shouldn't do anything or should be hidden
-      console.log('🚫 Cannot remove unassigned candidate from pipeline - no pipeline entries exist');
-      return;
-    } else if (candidate.applicationId) {
-      // For candidates in stages, remove the specific application
+    if (candidate.applicationId) {
       console.log('🔄 Removing candidate from pipeline with applicationId:', candidate.applicationId);
       removeCandidateFromPipelineMutation.mutate({ applicationId: candidate.applicationId });
+    } else {
+      console.log('🚫 No applicationId found, cannot remove from pipeline');
+      toast.error('Cannot remove candidate - no pipeline entry found');
     }
   };
 
@@ -102,21 +99,22 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     });
     
     if (window.confirm(`Are you sure you want to permanently delete ${displayName}? This action cannot be undone and will remove the user entirely from the system.`)) {
+      console.log('🔄 Proceeding with complete deletion of candidate:', candidate.id);
       deleteCandidateCompletelyMutation.mutate({ candidateId: candidate.id });
     }
   };
 
-  // For candidates in pipeline stages, show remove button
-  // For unassigned candidates, show delete completely button
-  const showRemoveButton = !isUnassigned && candidate.applicationId;
-  const showDeleteCompletelyButton = isUnassigned;
+  // Determine which buttons to show based on the candidate's state
+  const hasApplicationId = Boolean(candidate.applicationId);
+  const showRemoveButton = hasApplicationId && !isUnassigned; // Show X for candidates in stages
+  const showDeleteButton = isUnassigned || !hasApplicationId; // Show trash for unassigned or candidates not in pipeline
 
-  console.log('🎴 CandidateCard render:', {
+  console.log('🎴 CandidateCard render decision:', {
     email: candidate.email,
-    applicationId: candidate.applicationId,
+    hasApplicationId,
     isUnassigned,
     showRemoveButton,
-    showDeleteCompletelyButton,
+    showDeleteButton,
     dragId
   });
 
@@ -168,7 +166,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     <X className="h-3 w-3" />
                   </Button>
                 )}
-                {showDeleteCompletelyButton && (
+                {showDeleteButton && (
                   <Button
                     variant="ghost"
                     size="sm"

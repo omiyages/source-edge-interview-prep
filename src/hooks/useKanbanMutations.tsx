@@ -22,7 +22,6 @@ export const useMoveCandidateMutation = () => {
       console.log('✅ Candidate moved successfully');
     },
     onSuccess: () => {
-      // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate moved successfully');
@@ -39,7 +38,7 @@ export const useAddUnassignedCandidateToStageMutation = () => {
   
   return useMutation({
     mutationFn: async ({ candidateId, stageId }: { candidateId: string; stageId: string }) => {
-      console.log('🔄 Adding unassigned candidate to stage:', { candidateId, stageId });
+      console.log('🔄 Adding candidate to stage:', { candidateId, stageId });
       
       const { data, error } = await supabase
         .from('candidate_pipeline')
@@ -59,7 +58,6 @@ export const useAddUnassignedCandidateToStageMutation = () => {
       return data;
     },
     onSuccess: () => {
-      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate moved to stage successfully');
@@ -89,7 +87,6 @@ export const useRemoveCandidateFromPipelineMutation = () => {
       console.log('✅ Candidate application removed from pipeline successfully');
     },
     onSuccess: () => {
-      // Invalidate all related queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate removed from pipeline');
@@ -133,7 +130,6 @@ export const useDeleteCandidateCompletely = () => {
       console.log('✅ Candidate deleted completely');
     },
     onSuccess: () => {
-      // Invalidate all related queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate deleted completely');
@@ -159,7 +155,7 @@ export const useAddCandidateToPipelineMutation = () => {
     }) => {
       console.log('🔄 Adding candidate to pipeline:', { candidateId, appliedCompany, appliedJobTitle, stageId });
       
-      // If no stageId is provided, we need to get the first hiring stage (not unassigned)
+      // If no stageId is provided, we need to get the first hiring stage
       let targetStageId = stageId;
       
       if (!targetStageId) {
