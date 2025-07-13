@@ -5,20 +5,12 @@ import { ResourceSkeletonCard } from "./ResourceSkeletonCard";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import ErrorBoundary from "./ui/error-boundary";
-
-interface Resource {
-  id: string;
-  title: string;
-  description: string | null;
-  url: string;
-  category: string;
-  created_at: string;
-}
+import { Resource } from "@/services/resourcesService";
 
 interface OptimizedResourcesListProps {
   resources: Resource[];
-  loading: boolean;
-  isAdmin: boolean;
+  loading?: boolean;
+  isAdmin?: boolean;
   onEdit?: (resource: Resource) => void;
   onDelete?: (resourceId: string) => void;
   currentPage?: number;
@@ -26,21 +18,26 @@ interface OptimizedResourcesListProps {
   hasNextPage?: boolean;
   onLoadMore?: () => void;
   useInfiniteScroll?: boolean;
+  // New props for selection functionality
+  selectedResources?: Set<string>;
+  onToggleResource?: (resourceId: string) => void;
 }
 
 const SKELETON_COUNT = 6;
 
 export const OptimizedResourcesList = memo(({ 
   resources, 
-  loading, 
-  isAdmin, 
+  loading = false, 
+  isAdmin = false, 
   onEdit, 
   onDelete,
   currentPage = 1,
   itemsPerPage = 9,
   hasNextPage = false,
   onLoadMore,
-  useInfiniteScroll: enableInfiniteScroll = false
+  useInfiniteScroll: enableInfiniteScroll = false,
+  selectedResources,
+  onToggleResource
 }: OptimizedResourcesListProps) => {
   const { isFetching, setTarget, resetFetching } = useInfiniteScroll({
     hasNextPage,
@@ -90,11 +87,38 @@ export const OptimizedResourcesList = memo(({
             style={{ animationDelay: `${index * 50}ms` }}
             className="animate-slide-up"
           >
-            <ResourceCard
-              resource={resource}
-              onEdit={isAdmin ? onEdit : undefined}
-              onDelete={isAdmin ? onDelete : undefined}
-            />
+            {selectedResources && onToggleResource ? (
+              <div 
+                className={`cursor-pointer border-2 rounded-lg transition-all ${
+                  selectedResources.has(resource.id) 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-transparent hover:border-gray-200'
+                }`}
+                onClick={() => onToggleResource(resource.id)}
+              >
+                <div className="p-2">
+                  <ResourceCard
+                    resource={resource}
+                    onEdit={isAdmin ? onEdit : undefined}
+                    onDelete={isAdmin ? onDelete : undefined}
+                  />
+                  <div className="mt-2 flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedResources.has(resource.id)}
+                      onChange={() => onToggleResource(resource.id)}
+                      className="h-4 w-4 text-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <ResourceCard
+                resource={resource}
+                onEdit={isAdmin ? onEdit : undefined}
+                onDelete={isAdmin ? onDelete : undefined}
+              />
+            )}
           </div>
         ))}
       </div>

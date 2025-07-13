@@ -1,18 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedResourcesList } from "./OptimizedResourcesList";
-
-interface Resource {
-  id: string;
-  title: string;
-  description: string | null;
-  url: string;
-  category: string;
-}
+import { Resource } from "@/services/resourcesService";
 
 interface ManageStageResourcesFormProps {
   stageId: string;
@@ -54,7 +47,7 @@ export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageReso
   });
 
   // Initialize selected resources when current resources are loaded
-  useState(() => {
+  useEffect(() => {
     if (currentResources) {
       setSelectedResources(currentResources);
     }
