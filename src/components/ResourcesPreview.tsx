@@ -73,12 +73,12 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
               placeholder="Search resources..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 border-gray-300 focus:border-gray-400 focus:ring-gray-400"
             />
           </div>
           
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-48 border-gray-300 focus:border-gray-400 focus:ring-gray-400">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -98,7 +98,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResources.slice(0, 6).map((resource) => (
-              <div key={resource.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div key={resource.id} className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <h3 className="font-semibold mb-2">{resource.title}</h3>
