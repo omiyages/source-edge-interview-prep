@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -19,39 +20,57 @@ serve(async (req) => {
       throw new Error('Invalid LinkedIn URL');
     }
 
-    // LinkedIn scraping requires special handling due to their anti-bot measures
-    // For a production implementation, you would need:
-    // 1. A headless browser service (like Puppeteer, Playwright)
-    // 2. Proxy rotation and rate limiting
-    // 3. LinkedIn API integration (preferred method)
-    // 4. Or a third-party service like PhantomBuster, ScrapingBee, etc.
-    
-    // For now, we'll implement basic URL parsing to extract username
-    // and provide a more realistic mock based on the profile URL
-    const urlParts = url.split('/');
-    const profileUsername = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
-    
-    // Create more realistic mock data based on the actual LinkedIn URL
-    const mockData = {
-      name: profileUsername.charAt(0).toUpperCase() + profileUsername.slice(1).replace(/[^a-zA-Z]/g, ' '),
-      company: "Company extracted from LinkedIn",
-      experience: Math.floor(Math.random() * 15) + 1,
-      skills: [
-        "JavaScript", "Python", "React", "Node.js", "TypeScript", 
-        "AWS", "Docker", "Kubernetes", "GraphQL", "MongoDB"
-      ].sort(() => 0.5 - Math.random()).slice(0, 5),
-      pastCompanies: ["Previous Company A", "Previous Company B", "Startup Inc"],
-      note: `Profile imported from LinkedIn: ${url}`
+    const pdlApiKey = Deno.env.get('PEOPLE_DATA_LABS_API_KEY');
+    if (!pdlApiKey) {
+      throw new Error('People Data Labs API key not configured');
+    }
+
+    console.log('Calling People Data Labs API with LinkedIn URL:', url);
+
+    // Call People Data Labs Person Enrichment API
+    const response = await fetch('https://api.peopledatalabs.com/v5/person/enrich', {
+      method: 'GET',
+      headers: {
+        'X-Api-Key': pdlApiKey,
+        'Content-Type': 'application/json',
+      },
+      // Use LinkedIn URL as input parameter
+      url: `https://api.peopledatalabs.com/v5/person/enrich?linkedin_url=${encodeURIComponent(url)}`
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('People Data Labs API error:', response.status, errorText);
+      throw new Error(`People Data Labs API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('People Data Labs response:', data);
+
+    if (!data || data.status !== 200) {
+      throw new Error('No data found for this LinkedIn profile');
+    }
+
+    const person = data.data;
+
+    // Transform People Data Labs response to our expected format
+    const profileData = {
+      name: person.full_name || '',
+      company: person.job_company_name || person.experience?.[0]?.company?.name || '',
+      experience: person.job_start_date ? 
+        Math.floor((new Date().getTime() - new Date(person.job_start_date).getTime()) / (1000 * 60 * 60 * 24 * 365)) : 
+        person.experience?.length || 0,
+      skills: person.skills || [],
+      pastCompanies: person.experience ? 
+        person.experience.slice(1).map((exp: any) => exp.company?.name).filter(Boolean) : 
+        [],
+      note: `Profile imported from LinkedIn via People Data Labs: ${url}. Last updated: ${new Date().toISOString()}`
     };
 
-    // In a real implementation, you would:
-    // 1. Use a headless browser service (Puppeteer, Playwright)
-    // 2. Handle LinkedIn's authentication and rate limiting
-    // 3. Parse the actual HTML content
-    // 4. Extract structured data from the profile
+    console.log('Transformed profile data:', profileData);
 
     return new Response(
-      JSON.stringify(mockData),
+      JSON.stringify(profileData),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
