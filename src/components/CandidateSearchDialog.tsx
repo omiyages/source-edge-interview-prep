@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, User, Mail, Building, Calendar } from 'lucide-react';
+import { AddCandidateToPipelineDialog } from './AddCandidateToPipelineDialog';
 
 interface Candidate {
   id: string;
@@ -22,7 +23,7 @@ interface Candidate {
 interface CandidateSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectCandidate: (candidate: Candidate) => void;
+  onSelectCandidate: (candidate: Candidate, appliedCompany?: string, appliedJobTitle?: string) => void;
 }
 
 export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
@@ -31,6 +32,8 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
   onSelectCandidate,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   const { data: candidates = [], isLoading } = useQuery({
     queryKey: ['search-candidates', searchTerm],
@@ -142,8 +145,8 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
                       
                       <Button
                         onClick={() => {
-                          onSelectCandidate(candidate);
-                          onOpenChange(false);
+                          setSelectedCandidate(candidate);
+                          setShowAddDialog(true);
                         }}
                         size="sm"
                       >
@@ -156,6 +159,19 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
             </div>
           )}
         </div>
+
+        <AddCandidateToPipelineDialog
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          candidate={selectedCandidate}
+          onConfirm={(appliedCompany, appliedJobTitle) => {
+            if (selectedCandidate) {
+              onSelectCandidate(selectedCandidate, appliedCompany, appliedJobTitle);
+              onOpenChange(false);
+              setSelectedCandidate(null);
+            }
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

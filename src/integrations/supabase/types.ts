@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       candidate_pipeline: {
         Row: {
+          applied_company: string | null
+          applied_job_title: string | null
           candidate_id: string
           created_at: string
           id: string
@@ -25,6 +27,8 @@ export type Database = {
           stage_id: string
         }
         Insert: {
+          applied_company?: string | null
+          applied_job_title?: string | null
           candidate_id: string
           created_at?: string
           id?: string
@@ -34,6 +38,8 @@ export type Database = {
           stage_id: string
         }
         Update: {
+          applied_company?: string | null
+          applied_job_title?: string | null
           candidate_id?: string
           created_at?: string
           id?: string
@@ -46,7 +52,7 @@ export type Database = {
           {
             foreignKeyName: "candidate_pipeline_candidate_id_fkey"
             columns: ["candidate_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },

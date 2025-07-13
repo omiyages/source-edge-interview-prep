@@ -15,16 +15,21 @@ interface Candidate {
   current_company: string | null;
   years_of_experience: number | null;
   skillsets: string[] | null;
+  applicationId?: string;
+  applied_company?: string | null;
+  applied_job_title?: string | null;
 }
 
 interface CandidateCardProps {
   candidate: Candidate;
   isDragging?: boolean;
+  dragId?: string;
 }
 
 export const CandidateCard: React.FC<CandidateCardProps> = ({
   candidate,
   isDragging = false,
+  dragId,
 }) => {
   const {
     attributes,
@@ -34,7 +39,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     transition,
     isDragging: isSortableDragging,
   } = useSortable({
-    id: candidate.id,
+    id: dragId || candidate.id,
   });
 
   const style = {
@@ -92,10 +97,21 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               <span className="truncate">{candidate.email}</span>
             </div>
 
-            {candidate.current_company && (
+            {(candidate.applied_company || candidate.current_company) && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                 <Building2 className="h-3 w-3" />
-                <span className="truncate">{candidate.current_company}</span>
+                <span className="truncate">
+                  {candidate.applied_company ? (
+                    <>
+                      <span className="font-medium">{candidate.applied_company}</span>
+                      {candidate.applied_job_title && (
+                        <span className="text-muted-foreground"> • {candidate.applied_job_title}</span>
+                      )}
+                    </>
+                  ) : (
+                    candidate.current_company
+                  )}
+                </span>
               </div>
             )}
 

@@ -12,6 +12,9 @@ interface Candidate {
   current_company: string | null;
   years_of_experience: number | null;
   skillsets: string[] | null;
+  applicationId?: string;
+  applied_company?: string | null;
+  applied_job_title?: string | null;
 }
 
 interface KanbanColumnProps {
@@ -53,14 +56,15 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         }`}
       >
         <SortableContext
-          items={candidates.map(c => c.id)}
+          items={candidates.map(c => c.applicationId || c.id)}
           strategy={verticalListSortingStrategy}
         >
           <div className="space-y-3">
             {candidates.map(candidate => (
               <CandidateCard
-                key={candidate.id}
+                key={candidate.applicationId || candidate.id}
                 candidate={candidate}
+                dragId={candidate.applicationId || candidate.id}
               />
             ))}
           </div>
