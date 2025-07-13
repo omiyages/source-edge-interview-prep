@@ -1,10 +1,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Minus } from "lucide-react";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 interface CourseStage {
   title: string;
@@ -78,41 +78,32 @@ export const StageDefinitionForm = ({ stages, setStages }: StageDefinitionFormPr
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`stage-title-${index}`}>Stage Title *</Label>
-                  <Input
-                    id={`stage-title-${index}`}
-                    placeholder="e.g., Technical Assessment"
-                    value={stage.title}
-                    onChange={(e) => updateStage(index, 'title', e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`stage-description-${index}`}>Short Description</Label>
-                  <Input
-                    id={`stage-description-${index}`}
-                    placeholder="Brief description..."
-                    value={stage.description}
-                    onChange={(e) => updateStage(index, 'description', e.target.value)}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor={`stage-title-${index}`}>Stage Title *</Label>
+                <Input
+                  id={`stage-title-${index}`}
+                  placeholder="e.g., Technical Assessment"
+                  value={stage.title}
+                  onChange={(e) => updateStage(index, 'title', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`stage-description-${index}`}>Short Description</Label>
+                <RichTextEditor
+                  value={stage.description}
+                  onChange={(value) => updateStage(index, 'description', value)}
+                  placeholder="Brief description..."
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`stage-information-${index}`}>
                   Detailed Information
-                  <span className="text-xs text-gray-500 ml-2">
-                    (Use **text** for bold, line breaks for formatting)
-                  </span>
                 </Label>
-                <Textarea
-                  id={`stage-information-${index}`}
-                  placeholder="Detailed information about this stage, preparation tips, what to expect, etc. Use **bold text** for emphasis..."
+                <RichTextEditor
                   value={stage.information}
-                  onChange={(e) => updateStage(index, 'information', e.target.value)}
-                  rows={4}
-                  className="font-mono text-sm"
+                  onChange={(value) => updateStage(index, 'information', value)}
+                  placeholder="Detailed information about this stage, preparation tips, what to expect, etc..."
                 />
               </div>
             </CardContent>

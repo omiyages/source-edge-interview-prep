@@ -1,15 +1,15 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowRight } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { CourseCompanyJobFields } from "@/components/CourseCompanyJobFields";
 
 interface CourseData {
   title: string;
   description: string;
+  company: string;
+  attachedJobs: string[];
 }
 
 interface CreateCourseStep1Props {
@@ -19,56 +19,52 @@ interface CreateCourseStep1Props {
 }
 
 export const CreateCourseStep1 = ({ courseData, setCourseData, onNext }: CreateCourseStep1Props) => {
-  const { toast } = useToast();
-
-  const handleNext = () => {
-    if (!courseData.title.trim()) {
-      toast({
-        title: "Error",
-        description: "Course title is required.",
-        variant: "destructive",
-      });
-      return;
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (courseData.title.trim()) {
+      onNext();
     }
-
-    onNext();
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Step 1: Course Information</h3>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Course Title *</Label>
-            <Input
-              id="title"
-              placeholder="e.g., Google Software Engineer Prep"
-              value={courseData.title}
-              onChange={(e) => setCourseData({ ...courseData, title: e.target.value })}
-              required
-            />
-          </div>
+    <form onSubmit={handleNext} className="space-y-6">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Create New Course</h2>
+        <p className="text-gray-600">Step 1: Basic Information</p>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Course Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Brief description of what this course covers..."
-              value={courseData.description}
-              onChange={(e) => setCourseData({ ...courseData, description: e.target.value })}
-              rows={3}
-            />
-          </div>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="title">Course Title *</Label>
+          <Input
+            id="title"
+            placeholder="e.g., Google Software Engineer Prep"
+            value={courseData.title}
+            onChange={(e) => setCourseData({ ...courseData, title: e.target.value })}
+            required
+          />
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Course Description</Label>
+          <RichTextEditor
+            value={courseData.description}
+            onChange={(description) => setCourseData({ ...courseData, description })}
+            placeholder="Brief description of what this course covers..."
+          />
+        </div>
+
+        <CourseCompanyJobFields
+          company={courseData.company}
+          attachedJobs={courseData.attachedJobs}
+          onCompanyChange={(company) => setCourseData({ ...courseData, company })}
+          onAttachedJobsChange={(attachedJobs) => setCourseData({ ...courseData, attachedJobs })}
+        />
       </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleNext}>
-          Next: Configure Stages
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
-    </div>
+      <Button type="submit" className="w-full">
+        Next: Define Stages
+      </Button>
+    </form>
   );
 };

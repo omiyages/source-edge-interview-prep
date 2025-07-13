@@ -19,6 +19,8 @@ interface CreateCourseWorkflowProps {
   initialCourseData?: {
     title: string;
     description: string;
+    company: string;
+    attachedJobs: string[];
   };
   initialStages?: CourseStage[];
 }
@@ -35,6 +37,8 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
   const [courseData, setCourseData] = useState({
     title: initialCourseData?.title || "",
     description: initialCourseData?.description || "",
+    company: initialCourseData?.company || "",
+    attachedJobs: initialCourseData?.attachedJobs || [],
   });
   
   const [stages, setStages] = useState<CourseStage[]>(
@@ -58,6 +62,8 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
         .insert({
           title: courseData.title,
           description: courseData.description,
+          company: courseData.company,
+          attached_jobs: courseData.attachedJobs,
           created_by: user?.id,
         })
         .select()

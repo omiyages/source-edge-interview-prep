@@ -1,61 +1,23 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
-interface CourseStage {
-  id: string;
-  title: string;
-  description: string | null;
-  information: string | null;
-  stage_order: number;
-}
+import { RichTextDisplay } from "@/components/ui/rich-text-display";
 
 interface StageInformationProps {
-  selectedStage: CourseStage;
+  information: string | null;
 }
 
-export const StageInformation = ({ selectedStage }: StageInformationProps) => {
-  // Function to format text with markdown-like bold syntax
-  const formatText = (text: string) => {
-    if (!text) return text;
-    
-    // Split by ** to find bold sections
-    const parts = text.split('**');
-    return parts.map((part, index) => {
-      // Every odd index should be bold
-      if (index % 2 === 1) {
-        return <strong key={index}>{part}</strong>;
-      }
-      // Convert line breaks to <br> tags for regular text
-      return part.split('\n').map((line, lineIndex, lines) => (
-        <span key={`${index}-${lineIndex}`}>
-          {line}
-          {lineIndex < lines.length - 1 && <br />}
-        </span>
-      ));
-    });
-  };
+export const StageInformation = ({ information }: StageInformationProps) => {
+  if (!information) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No information available for this stage.</p>
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Badge>{selectedStage.stage_order}</Badge>
-          {selectedStage.title}
-        </CardTitle>
-        {selectedStage.description && (
-          <p className="text-gray-600 mt-2">{selectedStage.description}</p>
-        )}
-      </CardHeader>
-      {selectedStage.information && (
-        <CardContent>
-          <div className="prose prose-blue max-w-none">
-            <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {formatText(selectedStage.information)}
-            </div>
-          </div>
-        </CardContent>
-      )}
-    </Card>
+    <div className="bg-white rounded-lg border p-6">
+      <h3 className="text-lg font-semibold mb-4">Stage Information</h3>
+      <RichTextDisplay content={information} />
+    </div>
   );
 };

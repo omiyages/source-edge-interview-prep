@@ -4,15 +4,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { EditCourseStages } from "./EditCourseStages";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { CourseCompanyJobFields } from "@/components/CourseCompanyJobFields";
 
 interface Course {
   id: string;
   title: string;
   description: string | null;
+  company: string | null;
+  attached_jobs: string[] | null;
 }
 
 interface CourseStage {
@@ -35,6 +38,8 @@ export const EditCourseForm = ({ course, onSuccess }: EditCourseFormProps) => {
   const [formData, setFormData] = useState({
     title: course.title,
     description: course.description || "",
+    company: course.company || "",
+    attachedJobs: course.attached_jobs || [],
   });
   const [stages, setStages] = useState<CourseStage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +81,8 @@ export const EditCourseForm = ({ course, onSuccess }: EditCourseFormProps) => {
         .update({
           title: formData.title,
           description: formData.description,
+          company: formData.company,
+          attached_jobs: formData.attachedJobs,
         })
         .eq('id', course.id);
 
@@ -144,14 +151,19 @@ export const EditCourseForm = ({ course, onSuccess }: EditCourseFormProps) => {
 
         <div className="space-y-2">
           <Label htmlFor="description">Course Description</Label>
-          <Textarea
-            id="description"
-            placeholder="Brief description of what this course covers..."
+          <RichTextEditor
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={3}
+            onChange={(description) => setFormData({ ...formData, description })}
+            placeholder="Brief description of what this course covers..."
           />
         </div>
+
+        <CourseCompanyJobFields
+          company={formData.company}
+          attachedJobs={formData.attachedJobs}
+          onCompanyChange={(company) => setFormData({ ...formData, company })}
+          onAttachedJobsChange={(attachedJobs) => setFormData({ ...formData, attachedJobs })}
+        />
       </div>
 
       <EditCourseStages stages={stages} onStagesChange={setStages} />
