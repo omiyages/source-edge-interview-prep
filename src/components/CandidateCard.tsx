@@ -6,9 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Mail, Building2, X, Briefcase, Trash2 } from 'lucide-react';
+import { ExternalLink, Mail, Building2, Briefcase, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRemoveCandidateFromPipelineMutation, useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
+import { useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
 
 interface Candidate {
   id: string;
@@ -36,7 +36,6 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   dragId,
   isUnassigned = false,
 }) => {
-  const removeCandidateFromPipelineMutation = useRemoveCandidateFromPipelineMutation();
   const deleteCandidateCompletelyMutation = useDeleteCandidateCompletely();
 
   const {
@@ -73,24 +72,6 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
   const companyIcon = getCompanyIcon(candidate.applied_company);
 
-  const handleRemoveFromPipeline = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log('🗑️ Remove from pipeline button clicked for candidate:', {
-      candidateId: candidate.id,
-      applicationId: candidate.applicationId,
-      email: candidate.email,
-      isUnassigned
-    });
-    
-    if (candidate.applicationId) {
-      console.log('🔄 Removing candidate from pipeline with applicationId:', candidate.applicationId);
-      removeCandidateFromPipelineMutation.mutate({ applicationId: candidate.applicationId });
-    } else {
-      console.log('🚫 No applicationId found, cannot remove from pipeline');
-      toast.error('Cannot remove candidate - no pipeline entry found');
-    }
-  };
-
   const handleDeleteCompletely = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('🗑️ Delete completely button clicked for candidate:', {
@@ -105,17 +86,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     }
   };
 
-  // Determine which buttons to show based on the candidate's state
-  const hasApplicationId = Boolean(candidate.applicationId);
-  const showRemoveButton = hasApplicationId && !isUnassigned; // Show X for candidates in stages
-  const showDeleteButton = isUnassigned || !hasApplicationId; // Show trash for unassigned or candidates not in pipeline
-
   console.log('🎴 CandidateCard render decision:', {
     email: candidate.email,
-    hasApplicationId,
+    hasApplicationId: Boolean(candidate.applicationId),
     isUnassigned,
-    showRemoveButton,
-    showDeleteButton,
     dragId
   });
 
@@ -156,28 +130,15 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     <ExternalLink className="h-3 w-3" />
                   </Button>
                 )}
-                {showRemoveButton && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
-                    onClick={handleRemoveFromPipeline}
-                    title="Remove from pipeline (move to unassigned)"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-                {showDeleteButton && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={handleDeleteCompletely}
-                    title="Delete user permanently"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={handleDeleteCompletely}
+                  title="Delete user permanently"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               </div>
             </div>
             

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { KanbanColumn } from './KanbanColumn';
@@ -13,7 +14,7 @@ export const KanbanBoard = () => {
   
   const { data: stages = [] } = useHiringStages();
   const { data: candidates = [] } = useCandidatesWithPipeline();
-  const { getCandidatesForStage, getUnassignedCandidates } = useKanbanHelpers(candidates);
+  const { getCandidatesForStage } = useKanbanHelpers(candidates);
   const { handleSelectCandidate } = useKanbanActions(stages);
   const { sensors, activeCandidate, handleDragStart, handleDragEnd } = useKanbanDragDrop(candidates);
 
@@ -27,15 +28,7 @@ export const KanbanBoard = () => {
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-6 overflow-x-auto h-full pb-4">
-          {/* Unassigned candidates column */}
-          <KanbanColumn
-            id="unassigned"
-            title="Unassigned"
-            color="#64748b"
-            candidates={getUnassignedCandidates()}
-          />
-          
-          {/* Stage columns */}
+          {/* All stage columns - including unassigned if it exists as a hiring stage */}
           {stages.map(stage => (
             <KanbanColumn
               key={stage.id}

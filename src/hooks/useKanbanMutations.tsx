@@ -69,35 +69,6 @@ export const useAddUnassignedCandidateToStageMutation = () => {
   });
 };
 
-export const useRemoveCandidateFromPipelineMutation = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ applicationId }: { applicationId: string }) => {
-      console.log('🗑️ Removing candidate application from pipeline:', { applicationId });
-      const { error } = await supabase
-        .from('candidate_pipeline')
-        .delete()
-        .eq('id', applicationId);
-
-      if (error) {
-        console.error('❌ Error removing candidate from pipeline:', error);
-        throw error;
-      }
-      console.log('✅ Candidate application removed from pipeline successfully');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
-      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
-      toast.success('Candidate removed from pipeline');
-    },
-    onError: (error) => {
-      console.error('❌ Failed to remove candidate:', error);
-      toast.error('Failed to remove candidate from pipeline');
-    },
-  });
-};
-
 export const useDeleteCandidateCompletely = () => {
   const queryClient = useQueryClient();
   
@@ -155,24 +126,38 @@ export const useAddCandidateToPipelineMutation = () => {
     }) => {
       console.log('🔄 Adding candidate to pipeline:', { candidateId, appliedCompany, appliedJobTitle, stageId });
       
-      // If no stageId is provided, we need to get the first hiring stage
+      // If no stageId is provided, we need to get the "unassigned" stage or first hiring stage
       let targetStageId = stageId;
       
       if (!targetStageId) {
-        console.log('📋 No stage specified, fetching first hiring stage...');
-        const { data: stages, error: stagesError } = await supabase
+        console.log('📋 No stage specified, fetching unassigned or first hiring stage...');
+        
+        // First try to find an "unassigned" stage
+        const { data: unassignedStage, error: unassignedError } = await supabase
           .from('hiring_stages')
           .select('id')
-          .order('stage_order')
+          .eq('name', 'Unassigned')
           .limit(1);
         
-        if (stagesError || !stages || stages.length === 0) {
-          console.error('❌ Error fetching hiring stages:', stagesError);
-          throw new Error('No hiring stages found');
+        if (!unassignedError && unassignedStage && unassignedStage.length > 0) {
+          targetStageId = unassignedStage[0].id;
+          console.log('✅ Using unassigned stage:', targetStageId);
+        } else {
+          // Fall back to first hiring stage
+          const { data: stages, error: stagesError } = await supabase
+            .from('hiring_stages')
+            .select('id')
+            .order('stage_order')
+            .limit(1);
+          
+          if (stagesError || !stages || stages.length === 0) {
+            console.error('❌ Error fetching hiring stages:', stagesError);
+            throw new Error('No hiring stages found');
+          }
+          
+          targetStageId = stages[0].id;
+          console.log('✅ Using first hiring stage:', targetStageId);
         }
-        
-        targetStageId = stages[0].id;
-        console.log('✅ Using first hiring stage:', targetStageId);
       }
       
       const { data, error } = await supabase
@@ -219,12 +204,12 @@ export const useKanbanActions = (stages: HiringStage[]) => {
       appliedJobTitle 
     });
     
-    // Add to first hiring stage when explicitly selected from search dialog
+    // Add to unassigned stage or first hiring stage when explicitly selected from search dialog
     addCandidateToPipelineMutation.mutate({
       candidateId: candidate.id,
       appliedCompany,
       appliedJobTitle,
-      // Don't specify stageId so it uses the first hiring stage
+      // Don't specify stageId so it uses the unassigned stage or first hiring stage
     });
   };
 

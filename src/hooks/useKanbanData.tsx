@@ -91,8 +91,6 @@ export const useCandidatesWithPipeline = () => {
       candidatesWithApplications.forEach(candidate => {
         if (candidate.applications?.length > 0) {
           console.log(`👤 ${candidate.email}: ${candidate.applications.length} applications`);
-        } else {
-          console.log(`👤 ${candidate.email}: no pipeline entries (won't show in unassigned)`);
         }
       });
       
@@ -125,26 +123,10 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
   };
 
   const getUnassignedCandidates = () => {
-    // IMPORTANT: Only return candidates that have pipeline entries but are in unassigned stages
-    // Do NOT include candidates who have never been added to the pipeline
-    console.log('🔍 Getting unassigned candidates (candidates with pipeline entries only)...');
-    
-    const unassignedCandidates: any[] = [];
-    
-    candidates.forEach(candidate => {
-      // Only process candidates who have pipeline applications
-      if (candidate.applications && candidate.applications.length > 0) {
-        candidate.applications.forEach(application => {
-          // We would need to check if this application is in an "unassigned" stage
-          // But since we don't have an explicit "unassigned" stage, 
-          // let's not show any candidates in unassigned by default
-          // They only get here when explicitly moved
-        });
-      }
-    });
-    
-    console.log(`📊 Found ${unassignedCandidates.length} truly unassigned candidates in pipeline`);
-    return unassignedCandidates;
+    // This will now be handled by getCandidatesForStage with the "unassigned" stage ID
+    // Return empty array as unassigned candidates will be shown via the unassigned stage
+    console.log('🔍 Getting unassigned candidates (now handled by stage system)...');
+    return [];
   };
 
   return {

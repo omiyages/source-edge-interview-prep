@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { toast } from 'sonner';
 import { Candidate } from './useKanbanData';
-import { useMoveCandidateMutation, useAddUnassignedCandidateToStageMutation, useRemoveCandidateFromPipelineMutation } from './useKanbanMutations';
+import { useMoveCandidateMutation, useAddUnassignedCandidateToStageMutation } from './useKanbanMutations';
 
 // Extended candidate type for drag operations
 interface DragCandidate extends Candidate {
@@ -16,7 +16,6 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
   const [activeCandidate, setActiveCandidate] = useState<DragCandidate | null>(null);
   const moveCandidateMutation = useMoveCandidateMutation();
   const addUnassignedCandidateToStageMutation = useAddUnassignedCandidateToStageMutation();
-  const removeCandidateFromPipelineMutation = useRemoveCandidateFromPipelineMutation();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -98,8 +97,8 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
       return;
     }
 
-    // Handle moving unassigned candidate to a stage
-    if (isUnassignedCandidate && newStageId !== 'unassigned') {
+    // Handle moving unassigned candidate to a stage (including "unassigned" stage)
+    if (isUnassignedCandidate) {
       console.log('🔄 Moving unassigned candidate to stage:', { candidateId, newStageId });
       addUnassignedCandidateToStageMutation.mutate({ 
         candidateId, 
@@ -108,21 +107,14 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
       return;
     }
 
-    // Handle moving candidate TO unassigned (remove from pipeline)
-    if (newStageId === 'unassigned' && applicationId) {
-      console.log('🔄 Moving candidate to unassigned (removing from pipeline):', applicationId);
-      removeCandidateFromPipelineMutation.mutate({ applicationId });
-      return;
-    }
-
-    // Handle moving from one stage to another (within pipeline)
-    if (applicationId && currentStageId && currentStageId !== newStageId && newStageId !== 'unassigned') {
+    // Handle moving from one stage to another (within pipeline, including to "unassigned")
+    if (applicationId && currentStageId && currentStageId !== newStageId) {
       console.log('🔄 Moving application between stages:', { applicationId, from: currentStageId, to: newStageId });
       moveCandidateMutation.mutate({ applicationId, stageId: newStageId });
       return;
     }
 
-    // If we reach here, it's likely a no-op (same stage or invalid move)
+    // If we reach here, it's likely a no-op (same stage)
     console.log('🔄 No action needed for this drag operation');
   };
 
