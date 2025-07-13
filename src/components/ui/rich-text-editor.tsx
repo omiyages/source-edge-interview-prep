@@ -49,21 +49,23 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
           fontWeight: 'normal',
         }}
       />
-      <style jsx global>{`
-        .ql-editor {
-          font-weight: normal !important;
-          font-family: inherit;
-        }
-        .ql-editor p {
-          font-weight: normal !important;
-        }
-        .ql-editor strong {
-          font-weight: bold !important;
-        }
-        .ql-editor b {
-          font-weight: bold !important;
-        }
-      `}</style>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .ql-editor {
+            font-weight: normal !important;
+            font-family: inherit;
+          }
+          .ql-editor p {
+            font-weight: normal !important;
+          }
+          .ql-editor strong {
+            font-weight: bold !important;
+          }
+          .ql-editor b {
+            font-weight: bold !important;
+          }
+        `
+      }} />
     </div>
   );
 };
