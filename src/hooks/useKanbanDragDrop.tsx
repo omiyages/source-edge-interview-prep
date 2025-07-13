@@ -5,8 +5,15 @@ import { toast } from 'sonner';
 import { Candidate } from './useKanbanData';
 import { useMoveCandidateMutation, useAddUnassignedCandidateToStageMutation, useRemoveCandidateFromPipelineMutation } from './useKanbanMutations';
 
+// Extended candidate type for drag operations
+interface DragCandidate extends Candidate {
+  applicationId?: string;
+  applied_company?: string | null;
+  applied_job_title?: string | null;
+}
+
 export const useKanbanDragDrop = (candidates: Candidate[]) => {
-  const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
+  const [activeCandidate, setActiveCandidate] = useState<DragCandidate | null>(null);
   const moveCandidateMutation = useMoveCandidateMutation();
   const addUnassignedCandidateToStageMutation = useAddUnassignedCandidateToStageMutation();
   const removeCandidateFromPipelineMutation = useRemoveCandidateFromPipelineMutation();
