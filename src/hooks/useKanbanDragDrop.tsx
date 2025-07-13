@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { toast } from 'sonner';
 import { Candidate } from './useKanbanData';
-import { useMoveCandidateMutation } from './useKanbanMutations';
+import { useMoveCandidateMutation, useAddUnassignedCandidateToStageMutation } from './useKanbanMutations';
 
 export const useKanbanDragDrop = (candidates: Candidate[]) => {
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
   const moveCandidateMutation = useMoveCandidateMutation();
+  const addUnassignedCandidateToStageMutation = useAddUnassignedCandidateToStageMutation();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -53,22 +54,19 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
 
     console.log('🎯 Drop event:', { draggedId, newStageId });
 
-    // Handle moving from unassigned to a stage
-    if (newStageId !== 'unassigned') {
-      // Check if this is an unassigned candidate (no application)
-      const unassignedCandidate = candidates.find(c => c.id === draggedId && (!c.applications || c.applications.length === 0));
-      
-      if (unassignedCandidate) {
-        console.log('🔄 Moving unassigned candidate to stage:', newStageId);
-        // For unassigned candidates, we need to create a new application entry
-        // This should be handled by a separate mutation for moving unassigned candidates
-        console.log('⚠️ Moving unassigned candidates to stages not yet implemented');
-        toast.error('Moving unassigned candidates to stages not yet implemented');
-        return;
-      }
+    // Check if this is an unassigned candidate (no application)
+    const unassignedCandidate = candidates.find(c => c.id === draggedId && (!c.applications || c.applications.length === 0));
+    
+    if (unassignedCandidate && newStageId !== 'unassigned') {
+      console.log('🔄 Moving unassigned candidate to stage:', newStageId);
+      addUnassignedCandidateToStageMutation.mutate({ 
+        candidateId: unassignedCandidate.id, 
+        stageId: newStageId 
+      });
+      return;
     }
 
-    // Find the application being moved
+    // Handle moving from one stage to another (existing application)
     let applicationId = null;
     let currentStageId = null;
 

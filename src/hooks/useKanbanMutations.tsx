@@ -32,6 +32,41 @@ export const useMoveCandidateMutation = () => {
   });
 };
 
+export const useAddUnassignedCandidateToStageMutation = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ candidateId, stageId }: { candidateId: string; stageId: string }) => {
+      console.log('🔄 Adding unassigned candidate to stage:', { candidateId, stageId });
+      
+      const { data, error } = await supabase
+        .from('candidate_pipeline')
+        .insert({
+          candidate_id: candidateId,
+          stage_id: stageId,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error adding candidate to stage:', error);
+        throw error;
+      }
+      
+      console.log('✅ Candidate added to stage successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+      toast.success('Candidate moved to stage successfully');
+    },
+    onError: (error) => {
+      console.error('❌ Failed to add candidate to stage:', error);
+      toast.error('Failed to move candidate to stage');
+    },
+  });
+};
+
 export const useRemoveCandidateFromPipelineMutation = () => {
   const queryClient = useQueryClient();
   
@@ -72,12 +107,12 @@ export const useAddCandidateToPipelineMutation = () => {
     }) => {
       console.log('🔄 Adding candidate to pipeline (Unassigned):', { candidateId, appliedCompany, appliedJobTitle });
       
-      // Always add to "unassigned" - we'll use a special stage ID for this
+      // Always add to "unassigned" stage
       const { data, error } = await supabase
         .from('candidate_pipeline')
         .insert({
           candidate_id: candidateId,
-          stage_id: 'unassigned', // Special ID for unassigned candidates
+          stage_id: 'unassigned',
           applied_company: appliedCompany,
           applied_job_title: appliedJobTitle,
         })
