@@ -117,6 +117,7 @@ const CourseDetail = () => {
           isAdmin={isAdmin}
           onManageResourcesClick={() => setShowResourcesDialog(true)}
           onManageQuestionsClick={() => setShowQuestionsDialog(true)}
+          onQuestionsUpdate={refetchQuestions}
         />
 
         {/* Manage Resources Dialog */}

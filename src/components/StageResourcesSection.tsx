@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Plus, Settings2 } from "lucide-react";
+import { useEffect } from "react";
 
 interface Resource {
   id: string;
@@ -21,7 +22,7 @@ interface StageResourcesSectionProps {
 }
 
 export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: StageResourcesSectionProps) => {
-  const { data: stageResources, isLoading } = useQuery({
+  const { data: stageResources, isLoading, refetch } = useQuery({
     queryKey: ['stage-resources-display', stageId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -36,6 +37,30 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
       return data.map(item => item.resources) as Resource[];
     },
   });
+
+  // Set up real-time subscription for stage resources
+  useEffect(() => {
+    const channel = supabase
+      .channel('stage-resources-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'stage_resources',
+          filter: `stage_id=eq.${stageId}`
+        },
+        () => {
+          console.log('Stage resources changed, refetching...');
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [stageId, refetch]);
 
   if (isLoading) {
     return (

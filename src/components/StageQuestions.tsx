@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-react";
 import QuestionCard from "./QuestionCard";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InterviewQuestion {
   id: string;
@@ -26,9 +28,43 @@ interface StageQuestionsProps {
   questions: InterviewQuestion[] | undefined;
   isAdmin: boolean;
   onManageClick: () => void;
+  stageId?: string;
+  onQuestionsUpdate?: () => void;
 }
 
-export const StageQuestions = ({ questions, isAdmin, onManageClick }: StageQuestionsProps) => {
+export const StageQuestions = ({ 
+  questions, 
+  isAdmin, 
+  onManageClick, 
+  stageId,
+  onQuestionsUpdate 
+}: StageQuestionsProps) => {
+  // Set up real-time subscription for stage questions
+  useEffect(() => {
+    if (!stageId || !onQuestionsUpdate) return;
+
+    const channel = supabase
+      .channel('stage-questions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'stage_questions',
+          filter: `stage_id=eq.${stageId}`
+        },
+        () => {
+          console.log('Stage questions changed, refetching...');
+          onQuestionsUpdate();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [stageId, onQuestionsUpdate]);
+
   return (
     <Card>
       <CardHeader>

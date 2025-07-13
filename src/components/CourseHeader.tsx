@@ -75,7 +75,7 @@ export const CourseHeader = ({
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">{course.title}</h1>
         {course.description && (
-          <p className="text-lg text-gray-600 max-w-3xl">{course.description}</p>
+          <p className="text-lg text-gray-600">{course.description}</p>
         )}
       </div>
     </>

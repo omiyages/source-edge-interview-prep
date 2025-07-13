@@ -246,3 +246,8 @@
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Remove max-width restriction for course descriptions */
+p.text-lg.text-gray-600.max-w-3xl {
+  max-width: inherit;
+}

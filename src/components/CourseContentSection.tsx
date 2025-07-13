@@ -1,3 +1,4 @@
+
 import { StageInformation } from "@/components/StageInformation";
 import { StageResourcesSection } from "@/components/StageResourcesSection";
 import { StageQuestions } from "@/components/StageQuestions";
@@ -34,6 +35,7 @@ interface CourseContentSectionProps {
   isAdmin: boolean;
   onManageResourcesClick: () => void;
   onManageQuestionsClick: () => void;
+  onQuestionsUpdate?: () => void;
 }
 
 export const CourseContentSection = ({
@@ -42,6 +44,7 @@ export const CourseContentSection = ({
   isAdmin,
   onManageResourcesClick,
   onManageQuestionsClick,
+  onQuestionsUpdate,
 }: CourseContentSectionProps) => {
   if (!selectedStage) return null;
 
@@ -59,6 +62,8 @@ export const CourseContentSection = ({
         questions={stageQuestions}
         isAdmin={isAdmin}
         onManageClick={onManageQuestionsClick}
+        stageId={selectedStage.id}
+        onQuestionsUpdate={onQuestionsUpdate}
       />
     </div>
   );
