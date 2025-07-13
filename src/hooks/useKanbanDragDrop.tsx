@@ -3,12 +3,13 @@ import { useState } from 'react';
 import { DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { toast } from 'sonner';
 import { Candidate } from './useKanbanData';
-import { useMoveCandidateMutation, useAddUnassignedCandidateToStageMutation } from './useKanbanMutations';
+import { useMoveCandidateMutation, useAddUnassignedCandidateToStageMutation, useRemoveCandidateFromPipelineMutation } from './useKanbanMutations';
 
 export const useKanbanDragDrop = (candidates: Candidate[]) => {
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
   const moveCandidateMutation = useMoveCandidateMutation();
   const addUnassignedCandidateToStageMutation = useAddUnassignedCandidateToStageMutation();
+  const removeCandidateFromPipelineMutation = useRemoveCandidateFromPipelineMutation();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -64,6 +65,25 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
         stageId: newStageId 
       });
       return;
+    }
+
+    // Handle moving TO unassigned (remove from pipeline)
+    if (newStageId === 'unassigned') {
+      let applicationId = null;
+      
+      for (const candidate of candidates) {
+        const application = candidate.applications?.find(app => app.id === draggedId);
+        if (application) {
+          applicationId = application.id;
+          break;
+        }
+      }
+
+      if (applicationId) {
+        console.log('🔄 Moving candidate to unassigned (removing from pipeline):', applicationId);
+        removeCandidateFromPipelineMutation.mutate({ applicationId });
+        return;
+      }
     }
 
     // Handle moving from one stage to another (existing application)
