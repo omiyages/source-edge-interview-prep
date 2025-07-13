@@ -1,11 +1,15 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
 
 interface Candidate {
   id: string;
@@ -36,6 +40,113 @@ export const AddCandidateToPipelineDialog: React.FC<AddCandidateToPipelineDialog
   const [appliedJobTitle, setAppliedJobTitle] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [newJobTitle, setNewJobTitle] = useState('');
+  const [showNewJobInput, setShowNewJobInput] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  // Fetch companies from interview_questions table for dropdown
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies-from-questions'],
+    queryFn: async () => {
+      console.log('🔍 Fetching companies from interview questions...');
+      
+      const { data, error } = await supabase
+        .from('interview_questions')
+        .select('company')
+        .not('company', 'is', null);
+      
+      if (error) {
+        console.error('❌ Error fetching companies:', error);
+        throw error;
+      }
+      
+      // Get unique companies
+      const uniqueCompanies = [...new Set(data.map(question => question.company).filter(Boolean))];
+      console.log('✅ Companies loaded:', uniqueCompanies.length);
+      return uniqueCompanies as string[];
+    },
+    enabled: open,
+  });
+
+  // Fetch job titles from courses' attached_jobs
+  const { data: jobTitles = [] } = useQuery({
+    queryKey: ['job-titles-from-courses'],
+    queryFn: async () => {
+      console.log('🔍 Fetching job titles from courses...');
+      
+      const { data, error } = await supabase
+        .from('courses')
+        .select('attached_jobs')
+        .not('attached_jobs', 'is', null);
+      
+      if (error) {
+        console.error('❌ Error fetching job titles:', error);
+        throw error;
+      }
+      
+      // Flatten all attached_jobs arrays and get unique job titles
+      const allJobTitles = data
+        .flatMap(course => course.attached_jobs || [])
+        .filter(Boolean);
+      const uniqueJobTitles = [...new Set(allJobTitles)];
+      
+      console.log('✅ Job titles loaded:', uniqueJobTitles.length);
+      return uniqueJobTitles as string[];
+    },
+    enabled: open,
+  });
+
+  // Mutation to add new job title to courses
+  const addJobTitleMutation = useMutation({
+    mutationFn: async (newJobTitle: string) => {
+      console.log('🔄 Adding new job title to courses:', newJobTitle);
+      
+      // Get all courses that don't already have this job title
+      const { data: courses, error: fetchError } = await supabase
+        .from('courses')
+        .select('id, attached_jobs');
+      
+      if (fetchError) throw fetchError;
+      
+      // Update each course to include the new job title if it's not already there
+      const updates = courses?.map(course => {
+        const currentJobs = course.attached_jobs || [];
+        if (!currentJobs.includes(newJobTitle)) {
+          return supabase
+            .from('courses')
+            .update({
+              attached_jobs: [...currentJobs, newJobTitle]
+            })
+            .eq('id', course.id);
+        }
+        return null;
+      }).filter(Boolean) || [];
+      
+      // Execute all updates
+      if (updates.length > 0) {
+        const results = await Promise.all(updates);
+        const errors = results.filter(result => result?.error);
+        if (errors.length > 0) {
+          throw errors[0].error;
+        }
+      }
+      
+      console.log('✅ Job title added to courses');
+      return newJobTitle;
+    },
+    onSuccess: (newJobTitle) => {
+      queryClient.invalidateQueries({ queryKey: ['job-titles-from-courses'] });
+      setAppliedJobTitle(newJobTitle);
+      setNewJobTitle('');
+      setShowNewJobInput(false);
+      toast.success('New job title added successfully');
+    },
+    onError: (error) => {
+      console.error('❌ Error adding job title:', error);
+      toast.error('Failed to add new job title');
+    },
+  });
 
   const handleLinkedinImport = async () => {
     if (!linkedinUrl || !candidate) return;
@@ -86,6 +197,8 @@ export const AddCandidateToPipelineDialog: React.FC<AddCandidateToPipelineDialog
     setAppliedCompany('');
     setAppliedJobTitle('');
     setLinkedinUrl('');
+    setNewJobTitle('');
+    setShowNewJobInput(false);
     onOpenChange(false);
   };
 
@@ -93,7 +206,15 @@ export const AddCandidateToPipelineDialog: React.FC<AddCandidateToPipelineDialog
     setAppliedCompany('');
     setAppliedJobTitle('');
     setLinkedinUrl('');
+    setNewJobTitle('');
+    setShowNewJobInput(false);
     onOpenChange(false);
+  };
+
+  const handleAddNewJobTitle = () => {
+    if (newJobTitle.trim()) {
+      addJobTitleMutation.mutate(newJobTitle.trim());
+    }
   };
 
   if (!candidate) return null;
@@ -134,22 +255,73 @@ export const AddCandidateToPipelineDialog: React.FC<AddCandidateToPipelineDialog
           <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="company">Applied - Company *</Label>
-              <Input
-                id="company"
-                placeholder="e.g., Acme Corporation"
-                value={appliedCompany}
-                onChange={(e) => setAppliedCompany(e.target.value)}
-              />
+              <Select value={appliedCompany} onValueChange={setAppliedCompany}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select company..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company} value={company}>
+                      {company}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="job">Applied - Job Title *</Label>
-              <Input
-                id="job"
-                placeholder="e.g., Senior Software Engineer"
-                value={appliedJobTitle}
-                onChange={(e) => setAppliedJobTitle(e.target.value)}
-              />
+              {!showNewJobInput ? (
+                <div className="flex gap-2">
+                  <Select value={appliedJobTitle} onValueChange={setAppliedJobTitle}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select job title..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobTitles.map((jobTitle) => (
+                        <SelectItem key={jobTitle} value={jobTitle}>
+                          {jobTitle}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowNewJobInput(true)}
+                    className="px-3"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter new job title..."
+                    value={newJobTitle}
+                    onChange={(e) => setNewJobTitle(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleAddNewJobTitle}
+                    disabled={!newJobTitle.trim() || addJobTitleMutation.isPending}
+                    size="sm"
+                  >
+                    {addJobTitleMutation.isPending ? 'Adding...' : 'Add'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowNewJobInput(false);
+                      setNewJobTitle('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

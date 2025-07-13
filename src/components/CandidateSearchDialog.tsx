@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Search, Mail, Building2, ExternalLink } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Search, Mail, Building2, ExternalLink, Plus } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface Candidate {
   id: string;
@@ -35,6 +36,10 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [appliedCompany, setAppliedCompany] = useState('');
   const [appliedJobTitle, setAppliedJobTitle] = useState('');
+  const [newJobTitle, setNewJobTitle] = useState('');
+  const [showNewJobInput, setShowNewJobInput] = useState(false);
+
+  const queryClient = useQueryClient();
 
   // Fetch available candidates (users who are not in pipeline or admins)
   const { data: candidates = [], isLoading } = useQuery({
@@ -88,12 +93,99 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
     enabled: open,
   });
 
+  // Fetch job titles from courses' attached_jobs
+  const { data: jobTitles = [] } = useQuery({
+    queryKey: ['job-titles-from-courses'],
+    queryFn: async () => {
+      console.log('🔍 Fetching job titles from courses...');
+      
+      const { data, error } = await supabase
+        .from('courses')
+        .select('attached_jobs')
+        .not('attached_jobs', 'is', null);
+      
+      if (error) {
+        console.error('❌ Error fetching job titles:', error);
+        throw error;
+      }
+      
+      // Flatten all attached_jobs arrays and get unique job titles
+      const allJobTitles = data
+        .flatMap(course => course.attached_jobs || [])
+        .filter(Boolean);
+      const uniqueJobTitles = [...new Set(allJobTitles)];
+      
+      console.log('✅ Job titles loaded:', uniqueJobTitles.length);
+      return uniqueJobTitles as string[];
+    },
+    enabled: open,
+  });
+
+  // Mutation to add new job title to courses
+  const addJobTitleMutation = useMutation({
+    mutationFn: async (newJobTitle: string) => {
+      console.log('🔄 Adding new job title to courses:', newJobTitle);
+      
+      // Get all courses that don't already have this job title
+      const { data: courses, error: fetchError } = await supabase
+        .from('courses')
+        .select('id, attached_jobs');
+      
+      if (fetchError) throw fetchError;
+      
+      // Update each course to include the new job title if it's not already there
+      const updates = courses?.map(course => {
+        const currentJobs = course.attached_jobs || [];
+        if (!currentJobs.includes(newJobTitle)) {
+          return supabase
+            .from('courses')
+            .update({
+              attached_jobs: [...currentJobs, newJobTitle]
+            })
+            .eq('id', course.id);
+        }
+        return null;
+      }).filter(Boolean) || [];
+      
+      // Execute all updates
+      if (updates.length > 0) {
+        const results = await Promise.all(updates);
+        const errors = results.filter(result => result?.error);
+        if (errors.length > 0) {
+          throw errors[0].error;
+        }
+      }
+      
+      console.log('✅ Job title added to courses');
+      return newJobTitle;
+    },
+    onSuccess: (newJobTitle) => {
+      queryClient.invalidateQueries({ queryKey: ['job-titles-from-courses'] });
+      setAppliedJobTitle(newJobTitle);
+      setNewJobTitle('');
+      setShowNewJobInput(false);
+      toast.success('New job title added successfully');
+    },
+    onError: (error) => {
+      console.error('❌ Error adding job title:', error);
+      toast.error('Failed to add new job title');
+    },
+  });
+
   const handleSelectCandidate = (candidate: Candidate) => {
     onSelectCandidate(candidate, appliedCompany || undefined, appliedJobTitle || undefined);
     onOpenChange(false);
     setSearchTerm('');
     setAppliedCompany('');
     setAppliedJobTitle('');
+    setNewJobTitle('');
+    setShowNewJobInput(false);
+  };
+
+  const handleAddNewJobTitle = () => {
+    if (newJobTitle.trim()) {
+      addJobTitleMutation.mutate(newJobTitle.trim());
+    }
   };
 
   const getInitials = (candidate: Candidate) => {
@@ -144,11 +236,57 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Applied - Job Title</label>
-              <Input
-                placeholder="Enter job title..."
-                value={appliedJobTitle}
-                onChange={(e) => setAppliedJobTitle(e.target.value)}
-              />
+              {!showNewJobInput ? (
+                <div className="flex gap-2">
+                  <Select value={appliedJobTitle} onValueChange={setAppliedJobTitle}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select job title..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobTitles.map((jobTitle) => (
+                        <SelectItem key={jobTitle} value={jobTitle}>
+                          {jobTitle}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowNewJobInput(true)}
+                    className="px-3"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter new job title..."
+                    value={newJobTitle}
+                    onChange={(e) => setNewJobTitle(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleAddNewJobTitle}
+                    disabled={!newJobTitle.trim() || addJobTitleMutation.isPending}
+                    size="sm"
+                  >
+                    {addJobTitleMutation.isPending ? 'Adding...' : 'Add'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowNewJobInput(false);
+                      setNewJobTitle('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
