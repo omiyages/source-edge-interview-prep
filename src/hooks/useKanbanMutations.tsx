@@ -22,7 +22,9 @@ export const useMoveCandidateMutation = () => {
       console.log('✅ Candidate moved successfully');
     },
     onSuccess: () => {
+      // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate moved successfully');
     },
     onError: (error) => {
@@ -57,7 +59,9 @@ export const useAddUnassignedCandidateToStageMutation = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate moved to stage successfully');
     },
     onError: (error) => {
@@ -72,7 +76,7 @@ export const useRemoveCandidateFromPipelineMutation = () => {
   
   return useMutation({
     mutationFn: async ({ applicationId }: { applicationId: string }) => {
-      console.log('🗑️ Removing candidate from pipeline:', { applicationId });
+      console.log('🗑️ Removing candidate application from pipeline:', { applicationId });
       const { error } = await supabase
         .from('candidate_pipeline')
         .delete()
@@ -82,9 +86,10 @@ export const useRemoveCandidateFromPipelineMutation = () => {
         console.error('❌ Error removing candidate from pipeline:', error);
         throw error;
       }
-      console.log('✅ Candidate removed from pipeline successfully');
+      console.log('✅ Candidate application removed from pipeline successfully');
     },
     onSuccess: () => {
+      // Invalidate all related queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate removed from pipeline');

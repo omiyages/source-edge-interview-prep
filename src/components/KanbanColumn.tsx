@@ -37,6 +37,12 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
   const isUnassignedColumn = id === 'unassigned';
 
+  // Create sortable items with proper IDs
+  // For pipeline candidates, use applicationId; for unassigned, use candidate.id
+  const sortableItems = candidates.map(candidate => 
+    candidate.applicationId || candidate.id
+  );
+
   // Debug logging
   React.useEffect(() => {
     console.log(`🏛️ KanbanColumn "${title}" (${id}):`, {
@@ -44,7 +50,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       candidates: candidates.map(c => ({ 
         email: c.email, 
         applicationId: c.applicationId,
-        applied_company: c.applied_company 
+        applied_company: c.applied_company,
+        dragId: c.applicationId || c.id
       }))
     });
   }, [candidates, title, id]);
@@ -71,7 +78,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         }`}
       >
         <SortableContext
-          items={candidates.map(c => c.applicationId || c.id)}
+          items={sortableItems}
           strategy={verticalListSortingStrategy}
         >
           <div className="space-y-3">

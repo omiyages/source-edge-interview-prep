@@ -21,20 +21,25 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
 
   const handleDragStart = (event: DragStartEvent) => {
     console.log('🎯 Drag started with ID:', event.active.id);
-    const applicationId = event.active.id as string;
+    const dragId = event.active.id as string;
     
-    // Find the candidate by searching through all applications
+    // First, try to find by application ID (for candidates in pipeline)
     for (const candidate of candidates) {
-      const application = candidate.applications?.find(app => app.id === applicationId);
+      const application = candidate.applications?.find(app => app.id === dragId);
       if (application) {
-        console.log('🎯 Found candidate for drag:', candidate.email);
-        setActiveCandidate(candidate);
+        console.log('🎯 Found pipeline candidate for drag:', candidate.email);
+        setActiveCandidate({
+          ...candidate,
+          applicationId: application.id,
+          applied_company: application.applied_company,
+          applied_job_title: application.applied_job_title,
+        });
         return;
       }
     }
     
-    // If not found in applications, check if it's an unassigned candidate
-    const unassignedCandidate = candidates.find(c => c.id === applicationId);
+    // If not found by application ID, try by candidate ID (for unassigned candidates)
+    const unassignedCandidate = candidates.find(c => c.id === dragId);
     if (unassignedCandidate) {
       console.log('🎯 Found unassigned candidate for drag:', unassignedCandidate.email);
       setActiveCandidate(unassignedCandidate);
@@ -55,60 +60,63 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
 
     console.log('🎯 Drop event:', { draggedId, newStageId });
 
-    // Check if this is an unassigned candidate (no application)
-    const unassignedCandidate = candidates.find(c => c.id === draggedId && (!c.applications || c.applications.length === 0));
-    
-    if (unassignedCandidate && newStageId !== 'unassigned') {
-      console.log('🔄 Moving unassigned candidate to stage:', newStageId);
-      addUnassignedCandidateToStageMutation.mutate({ 
-        candidateId: unassignedCandidate.id, 
-        stageId: newStageId 
-      });
-      return;
-    }
-
-    // Handle moving TO unassigned (remove from pipeline)
-    if (newStageId === 'unassigned') {
-      // Find the application ID for the dragged candidate
-      for (const candidate of candidates) {
-        const application = candidate.applications?.find(app => app.id === draggedId);
-        if (application) {
-          console.log('🔄 Moving candidate to unassigned (removing from pipeline):', application.id);
-          removeCandidateFromPipelineMutation.mutate({ applicationId: application.id });
-          return;
-        }
-      }
-      
-      // If we reach here, it might already be unassigned
-      console.log('🔄 Candidate is already unassigned or not found in pipeline');
-      return;
-    }
-
-    // Handle moving from one stage to another (existing application)
+    // Determine if this is an unassigned candidate or pipeline candidate
+    let isUnassignedCandidate = false;
+    let candidateId = null;
     let applicationId = null;
     let currentStageId = null;
 
+    // First check if draggedId matches any application ID (pipeline candidate)
     for (const candidate of candidates) {
       const application = candidate.applications?.find(app => app.id === draggedId);
       if (application) {
         applicationId = application.id;
         currentStageId = application.stage_id;
+        candidateId = candidate.id;
         break;
       }
     }
 
-    if (!applicationId || !currentStageId) {
-      console.error('❌ Could not find application for drag ID:', draggedId);
+    // If not found as application, check if it's an unassigned candidate
+    if (!applicationId) {
+      const unassignedCandidate = candidates.find(c => c.id === draggedId);
+      if (unassignedCandidate) {
+        isUnassignedCandidate = true;
+        candidateId = unassignedCandidate.id;
+      }
+    }
+
+    if (!candidateId) {
+      console.error('❌ Could not identify candidate for drag ID:', draggedId);
       return;
     }
 
-    if (currentStageId === newStageId) {
-      console.log('🔄 Same stage, no move needed');
+    // Handle moving unassigned candidate to a stage
+    if (isUnassignedCandidate && newStageId !== 'unassigned') {
+      console.log('🔄 Moving unassigned candidate to stage:', { candidateId, newStageId });
+      addUnassignedCandidateToStageMutation.mutate({ 
+        candidateId, 
+        stageId: newStageId 
+      });
       return;
     }
 
-    console.log('🔄 Moving application:', { applicationId, from: currentStageId, to: newStageId });
-    moveCandidateMutation.mutate({ applicationId, stageId: newStageId });
+    // Handle moving candidate TO unassigned (remove from pipeline)
+    if (newStageId === 'unassigned' && applicationId) {
+      console.log('🔄 Moving candidate to unassigned (removing from pipeline):', applicationId);
+      removeCandidateFromPipelineMutation.mutate({ applicationId });
+      return;
+    }
+
+    // Handle moving from one stage to another (within pipeline)
+    if (applicationId && currentStageId && currentStageId !== newStageId && newStageId !== 'unassigned') {
+      console.log('🔄 Moving application between stages:', { applicationId, from: currentStageId, to: newStageId });
+      moveCandidateMutation.mutate({ applicationId, stageId: newStageId });
+      return;
+    }
+
+    // If we reach here, it's likely a no-op (same stage or invalid move)
+    console.log('🔄 No action needed for this drag operation');
   };
 
   return {
