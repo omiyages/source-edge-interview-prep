@@ -64,14 +64,14 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
     enabled: open,
   });
 
-  // Fetch companies for dropdown
+  // Fetch companies from interview_questions table for dropdown
   const { data: companies = [] } = useQuery({
-    queryKey: ['companies-for-dropdown'],
+    queryKey: ['companies-from-questions'],
     queryFn: async () => {
-      console.log('🔍 Fetching companies for dropdown...');
+      console.log('🔍 Fetching companies from interview questions...');
       
       const { data, error } = await supabase
-        .from('courses')
+        .from('interview_questions')
         .select('company')
         .not('company', 'is', null);
       
@@ -81,7 +81,7 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
       }
       
       // Get unique companies
-      const uniqueCompanies = [...new Set(data.map(course => course.company).filter(Boolean))];
+      const uniqueCompanies = [...new Set(data.map(question => question.company).filter(Boolean))];
       console.log('✅ Companies loaded:', uniqueCompanies.length);
       return uniqueCompanies as string[];
     },

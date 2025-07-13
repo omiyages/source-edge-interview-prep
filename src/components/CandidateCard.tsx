@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Mail, Building2, X } from 'lucide-react';
+import { ExternalLink, Mail, Building2, X, Briefcase } from 'lucide-react';
 import { useRemoveCandidateFromPipelineMutation } from '@/hooks/useKanbanMutations';
 
 interface Candidate {
@@ -121,21 +121,26 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               <span className="truncate">{candidate.email}</span>
             </div>
 
-            {(candidate.applied_company || candidate.current_company) && (
+            {/* Applied Company and Job Title */}
+            {candidate.applied_company && (
+              <div className="flex items-center gap-1 text-xs text-foreground mb-2 bg-primary/10 px-2 py-1 rounded">
+                <Briefcase className="h-3 w-3" />
+                <span className="truncate font-medium">
+                  {candidate.applied_job_title && (
+                    <>
+                      {candidate.applied_job_title} • 
+                    </>
+                  )}
+                  {candidate.applied_company}
+                </span>
+              </div>
+            )}
+
+            {/* Current Company (if no applied company) */}
+            {!candidate.applied_company && candidate.current_company && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                 <Building2 className="h-3 w-3" />
-                <span className="truncate">
-                  {candidate.applied_company ? (
-                    <>
-                      <span className="font-medium">{candidate.applied_company}</span>
-                      {candidate.applied_job_title && (
-                        <span className="text-muted-foreground"> • {candidate.applied_job_title}</span>
-                      )}
-                    </>
-                  ) : (
-                    candidate.current_company
-                  )}
-                </span>
+                <span className="truncate">{candidate.current_company}</span>
               </div>
             )}
 
