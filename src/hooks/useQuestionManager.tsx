@@ -25,6 +25,26 @@ export const useQuestionManager = (stageId: string) => {
     interview_stage: ""
   });
 
+  // Verify stage exists before proceeding
+  const { data: stageExists } = useQuery({
+    queryKey: ['stage-exists', stageId],
+    queryFn: async () => {
+      console.log('Verifying stage exists:', stageId);
+      const { data, error } = await supabase
+        .from('course_stages')
+        .select('id')
+        .eq('id', stageId)
+        .single();
+      
+      if (error) {
+        console.error('Error checking stage existence:', error);
+        return false;
+      }
+      console.log('Stage exists:', !!data);
+      return !!data;
+    },
+  });
+
   // Fetch all questions
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
     queryKey: ['all-questions-for-stage'],
@@ -61,6 +81,7 @@ export const useQuestionManager = (stageId: string) => {
       console.log('Current stage questions:', data);
       return new Set(data.map(item => item.question_id));
     },
+    enabled: !!stageExists, // Only fetch if stage exists
   });
 
   useEffect(() => {
@@ -112,6 +133,16 @@ export const useQuestionManager = (stageId: string) => {
   };
 
   const handleSave = async (onSuccess: () => void) => {
+    if (!stageExists) {
+      console.error('Cannot save questions: Stage does not exist');
+      toast({
+        title: "Error",
+        description: "Invalid stage. Please refresh the page and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       console.log('Starting to save stage questions...');
@@ -158,9 +189,18 @@ export const useQuestionManager = (stageId: string) => {
       onSuccess();
     } catch (error) {
       console.error('Error updating stage questions:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to update questions. Please try again.";
+      if (error && typeof error === 'object' && 'code' in error) {
+        if (error.code === '23503') {
+          errorMessage = "Invalid stage or question reference. Please refresh the page and try again.";
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to update questions. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -177,7 +217,7 @@ export const useQuestionManager = (stageId: string) => {
     allQuestions,
     filteredQuestions,
     isLoadingQuestions,
-    isLoadingCurrent,
+    isLoadingCurrent: isLoadingCurrent || !stageExists,
     toggleQuestion,
     handleFilterChange,
     clearFilters,
