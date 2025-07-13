@@ -101,6 +101,50 @@ export const useRemoveCandidateFromPipelineMutation = () => {
   });
 };
 
+export const useDeleteCandidateCompletely = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ candidateId }: { candidateId: string }) => {
+      console.log('🗑️ Deleting candidate completely:', { candidateId });
+      
+      // First remove from pipeline if exists
+      const { error: pipelineError } = await supabase
+        .from('candidate_pipeline')
+        .delete()
+        .eq('candidate_id', candidateId);
+
+      if (pipelineError) {
+        console.error('❌ Error removing candidate from pipeline:', pipelineError);
+        // Don't throw error here as candidate might not be in pipeline
+      }
+
+      // Then delete the candidate profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', candidateId);
+
+      if (profileError) {
+        console.error('❌ Error deleting candidate profile:', profileError);
+        throw profileError;
+      }
+      
+      console.log('✅ Candidate deleted completely');
+    },
+    onSuccess: () => {
+      // Invalidate all related queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
+      toast.success('Candidate deleted completely');
+    },
+    onError: (error) => {
+      console.error('❌ Failed to delete candidate:', error);
+      toast.error('Failed to delete candidate');
+    },
+  });
+};
+
 export const useAddCandidateToPipelineMutation = () => {
   const queryClient = useQueryClient();
   

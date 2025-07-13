@@ -6,8 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Mail, Building2, X, Briefcase } from 'lucide-react';
-import { useRemoveCandidateFromPipelineMutation } from '@/hooks/useKanbanMutations';
+import { ExternalLink, Mail, Building2, X, Briefcase, Trash2 } from 'lucide-react';
+import { useRemoveCandidateFromPipelineMutation, useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
 
 interface Candidate {
   id: string;
@@ -35,7 +35,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   dragId,
   isUnassigned = false,
 }) => {
-  const removeCandidateMutation = useRemoveCandidateFromPipelineMutation();
+  const removeCandidateFromPipelineMutation = useRemoveCandidateFromPipelineMutation();
+  const deleteCandidateCompletelyMutation = useDeleteCandidateCompletely();
 
   const {
     attributes,
@@ -71,33 +72,43 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
   const companyIcon = getCompanyIcon(candidate.applied_company);
 
-  const handleRemoveCandidate = (e: React.MouseEvent) => {
+  const handleRemoveFromPipeline = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('🗑️ Remove button clicked for candidate:', {
+    console.log('🗑️ Remove from pipeline button clicked for candidate:', {
       candidateId: candidate.id,
       applicationId: candidate.applicationId,
-      isUnassigned,
       email: candidate.email
     });
     
-    // Only remove if candidate has an applicationId (is in pipeline)
     if (candidate.applicationId) {
       console.log('🔄 Removing candidate from pipeline with applicationId:', candidate.applicationId);
-      removeCandidateMutation.mutate({ applicationId: candidate.applicationId });
-    } else {
-      console.log('⚠️ Cannot remove candidate - no application ID found (candidate is not in pipeline)');
+      removeCandidateFromPipelineMutation.mutate({ applicationId: candidate.applicationId });
     }
   };
 
-  // Show remove button only for candidates that are in the pipeline (have applicationId)
-  // This means they have an active application in some stage
-  const showRemoveButton = Boolean(candidate.applicationId);
+  const handleDeleteCompletely = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('🗑️ Delete completely button clicked for candidate:', {
+      candidateId: candidate.id,
+      email: candidate.email,
+      isUnassigned
+    });
+    
+    if (window.confirm(`Are you sure you want to permanently delete ${displayName}? This action cannot be undone.`)) {
+      deleteCandidateCompletelyMutation.mutate({ candidateId: candidate.id });
+    }
+  };
+
+  // Show appropriate buttons based on candidate status
+  const showRemoveFromPipelineButton = Boolean(candidate.applicationId);
+  const showDeleteCompletelyButton = isUnassigned;
 
   console.log('🎴 CandidateCard render:', {
     email: candidate.email,
     applicationId: candidate.applicationId,
     isUnassigned,
-    showRemoveButton,
+    showRemoveFromPipelineButton,
+    showDeleteCompletelyButton,
     dragId
   });
 
@@ -138,15 +149,26 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     <ExternalLink className="h-3 w-3" />
                   </Button>
                 )}
-                {showRemoveButton && (
+                {showRemoveFromPipelineButton && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                    onClick={handleRemoveCandidate}
-                    title="Remove from pipeline"
+                    className="h-6 w-6 p-0 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                    onClick={handleRemoveFromPipeline}
+                    title="Remove from pipeline (move to unassigned)"
                   >
                     <X className="h-3 w-3" />
+                  </Button>
+                )}
+                {showDeleteCompletelyButton && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleDeleteCompletely}
+                    title="Delete candidate permanently"
+                  >
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 )}
               </div>
