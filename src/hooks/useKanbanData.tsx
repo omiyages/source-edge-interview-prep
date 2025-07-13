@@ -55,7 +55,7 @@ export const useCandidatesWithPipeline = () => {
     queryFn: async () => {
       console.log('🔍 Fetching candidates with pipeline data...');
       
-      // First get all candidates
+      // First get all candidates with role 'user'
       const { data: candidates, error: candidatesError } = await supabase
         .from('profiles')
         .select('*')
@@ -91,6 +91,8 @@ export const useCandidatesWithPipeline = () => {
       candidatesWithApplications.forEach(candidate => {
         if (candidate.applications?.length > 0) {
           console.log(`👤 ${candidate.email}: ${candidate.applications.length} applications`);
+        } else {
+          console.log(`👤 ${candidate.email}: unassigned (no pipeline entries)`);
         }
       });
       
@@ -123,8 +125,9 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
   };
 
   const getUnassignedCandidates = () => {
+    // Only show candidates that have NO pipeline entries (truly unassigned)
     const unassigned = candidates.filter(candidate => !candidate.applications || candidate.applications.length === 0);
-    console.log(`📊 Found ${unassigned.length} unassigned candidates`);
+    console.log(`📊 Found ${unassigned.length} truly unassigned candidates`);
     return unassigned;
   };
 

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Mail, Building2, X, Briefcase, Trash2 } from 'lucide-react';
-import { useRemoveCandidateFromPipelineMutation, useRemoveUnassignedCandidateFromPipelineMutation, useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
+import { useRemoveCandidateFromPipelineMutation, useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
 
 interface Candidate {
   id: string;
@@ -36,7 +36,6 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   isUnassigned = false,
 }) => {
   const removeCandidateFromPipelineMutation = useRemoveCandidateFromPipelineMutation();
-  const removeUnassignedCandidateFromPipelineMutation = useRemoveUnassignedCandidateFromPipelineMutation();
   const deleteCandidateCompletelyMutation = useDeleteCandidateCompletely();
 
   const {
@@ -83,9 +82,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     });
     
     if (isUnassigned) {
-      // For unassigned candidates, just remove them from any pipeline entries
-      console.log('🔄 Removing unassigned candidate from pipeline:', candidate.id);
-      removeUnassignedCandidateFromPipelineMutation.mutate({ candidateId: candidate.id });
+      // For truly unassigned candidates (no pipeline entries), we can't remove them from pipeline
+      // So this button shouldn't do anything or should be hidden
+      console.log('🚫 Cannot remove unassigned candidate from pipeline - no pipeline entries exist');
+      return;
     } else if (candidate.applicationId) {
       // For candidates in stages, remove the specific application
       console.log('🔄 Removing candidate from pipeline with applicationId:', candidate.applicationId);
@@ -106,9 +106,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     }
   };
 
-  // Show remove button for all candidates (different behavior for unassigned vs pipeline)
-  const showRemoveButton = true;
-  // Only show delete completely button as a secondary action for unassigned candidates
+  // For candidates in pipeline stages, show remove button
+  // For unassigned candidates, show delete completely button
+  const showRemoveButton = !isUnassigned && candidate.applicationId;
   const showDeleteCompletelyButton = isUnassigned;
 
   console.log('🎴 CandidateCard render:', {
@@ -163,7 +163,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     size="sm"
                     className="h-6 w-6 p-0 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
                     onClick={handleRemoveFromPipeline}
-                    title={isUnassigned ? "Remove from candidate pool" : "Remove from pipeline (move to unassigned)"}
+                    title="Remove from pipeline (move to unassigned)"
                   >
                     <X className="h-3 w-3" />
                   </Button>

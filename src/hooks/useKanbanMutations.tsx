@@ -101,38 +101,6 @@ export const useRemoveCandidateFromPipelineMutation = () => {
   });
 };
 
-export const useRemoveUnassignedCandidateFromPipelineMutation = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ candidateId }: { candidateId: string }) => {
-      console.log('🗑️ Removing unassigned candidate from pipeline:', { candidateId });
-      
-      // Remove any pipeline entries for this candidate
-      const { error } = await supabase
-        .from('candidate_pipeline')
-        .delete()
-        .eq('candidate_id', candidateId);
-
-      if (error) {
-        console.error('❌ Error removing unassigned candidate from pipeline:', error);
-        throw error;
-      }
-      console.log('✅ Unassigned candidate removed from pipeline successfully');
-    },
-    onSuccess: () => {
-      // Invalidate all related queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
-      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
-      toast.success('Candidate removed from pipeline');
-    },
-    onError: (error) => {
-      console.error('❌ Failed to remove unassigned candidate:', error);
-      toast.error('Failed to remove candidate from pipeline');
-    },
-  });
-};
-
 export const useDeleteCandidateCompletely = () => {
   const queryClient = useQueryClient();
   
@@ -177,6 +145,8 @@ export const useDeleteCandidateCompletely = () => {
   });
 };
 
+// This function will ONLY be used when explicitly adding candidates to pipeline
+// NOT during user creation
 export const useAddCandidateToPipelineMutation = () => {
   const queryClient = useQueryClient();
   
@@ -241,18 +211,19 @@ export const useAddCandidateToPipelineMutation = () => {
   });
 };
 
+// This hook is for the candidate search dialog - when manually adding candidates to pipeline
 export const useKanbanActions = (stages: HiringStage[]) => {
   const addCandidateToPipelineMutation = useAddCandidateToPipelineMutation();
 
   const handleSelectCandidate = (candidate: Candidate, appliedCompany?: string, appliedJobTitle?: string) => {
-    console.log('🎯 Handling candidate selection:', { 
+    console.log('🎯 Handling candidate selection from search dialog:', { 
       candidateId: candidate.id, 
       candidateEmail: candidate.email,
       appliedCompany, 
       appliedJobTitle 
     });
     
-    // Add to first hiring stage instead of "unassigned"
+    // Add to first hiring stage when explicitly selected from search dialog
     addCandidateToPipelineMutation.mutate({
       candidateId: candidate.id,
       appliedCompany,
