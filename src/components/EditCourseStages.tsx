@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Minus } from "lucide-react";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -92,10 +93,12 @@ export const EditCourseStages = ({ stages, onStagesChange }: EditCourseStagesPro
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`stage-description-${index}`}>Short Description</Label>
-                <RichTextEditor
-                  value={stage.description}
-                  onChange={(value) => updateStage(index, 'description', value)}
+                <Textarea
+                  id={`stage-description-${index}`}
                   placeholder="Brief description..."
+                  value={stage.description}
+                  onChange={(e) => updateStage(index, 'description', e.target.value)}
+                  rows={2}
                 />
               </div>
               <div className="space-y-2">

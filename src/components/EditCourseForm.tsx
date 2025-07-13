@@ -5,9 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { EditCourseStages } from "./EditCourseStages";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { CourseCompanyJobFields } from "@/components/CourseCompanyJobFields";
 
 interface Course {
@@ -151,10 +151,12 @@ export const EditCourseForm = ({ course, onSuccess }: EditCourseFormProps) => {
 
         <div className="space-y-2">
           <Label htmlFor="description">Course Description</Label>
-          <RichTextEditor
-            value={formData.description}
-            onChange={(description) => setFormData({ ...formData, description })}
+          <Textarea
+            id="description"
             placeholder="Brief description of what this course covers..."
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
           />
         </div>
 

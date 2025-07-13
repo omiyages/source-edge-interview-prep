@@ -45,6 +45,7 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
         style={{
           backgroundColor: 'white',
           borderRadius: '6px',
+          minHeight: '200px',
         }}
       />
     </div>
