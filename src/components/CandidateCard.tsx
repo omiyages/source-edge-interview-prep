@@ -26,12 +26,14 @@ interface CandidateCardProps {
   candidate: Candidate;
   isDragging?: boolean;
   dragId?: string;
+  isUnassigned?: boolean;
 }
 
 export const CandidateCard: React.FC<CandidateCardProps> = ({
   candidate,
   isDragging = false,
   dragId,
+  isUnassigned = false,
 }) => {
   const removeCandidateMutation = useRemoveCandidateFromPipelineMutation();
 
@@ -71,10 +73,26 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
   const handleRemoveCandidate = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (candidate.applicationId) {
+    console.log('🗑️ Remove button clicked for candidate:', {
+      candidateId: candidate.id,
+      applicationId: candidate.applicationId,
+      isUnassigned,
+      email: candidate.email
+    });
+    
+    // For assigned candidates, we need the applicationId to remove from pipeline
+    if (candidate.applicationId && !isUnassigned) {
+      console.log('🔄 Removing assigned candidate from pipeline');
       removeCandidateMutation.mutate({ applicationId: candidate.applicationId });
+    } else {
+      console.log('⚠️ Cannot remove unassigned candidate or missing applicationId');
+      // For unassigned candidates, we might want to show a message or handle differently
+      // Since unassigned candidates are not in the pipeline, there's nothing to remove
     }
   };
+
+  // Only show remove button for candidates that are actually in the pipeline
+  const showRemoveButton = !isUnassigned && candidate.applicationId;
 
   return (
     <Card
@@ -113,7 +131,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     <ExternalLink className="h-3 w-3" />
                   </Button>
                 )}
-                {candidate.applicationId && (
+                {showRemoveButton && (
                   <Button
                     variant="ghost"
                     size="sm"

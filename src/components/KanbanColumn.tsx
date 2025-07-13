@@ -35,6 +35,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
     id: id,
   });
 
+  const isUnassignedColumn = id === 'unassigned';
+
   // Debug logging
   React.useEffect(() => {
     console.log(`🏛️ KanbanColumn "${title}" (${id}):`, {
@@ -78,6 +80,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 key={candidate.applicationId || candidate.id}
                 candidate={candidate}
                 dragId={candidate.applicationId || candidate.id}
+                isUnassigned={isUnassignedColumn}
               />
             ))}
           </div>
