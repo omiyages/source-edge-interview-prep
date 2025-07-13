@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Calendar, Edit, Trash2, CheckCircle, Building2, Briefcase } from "lucide-react";
+import { BookOpen, Calendar, Edit, Trash2, CheckCircle, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
@@ -113,43 +112,13 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
               </p>
             )}
             
-            {/* Company and Jobs Section */}
-            <div className="space-y-token-sm">
-              {course.company && (
-                <div className="flex items-center gap-token-xs text-token-sm text-muted-foreground">
-                  <Building2 className="w-4 h-4 text-primary" />
-                  <span className="font-medium text-foreground">{course.company}</span>
-                </div>
-              )}
-              
-              {course.attached_jobs && course.attached_jobs.length > 0 && (
-                <div className="space-y-token-xs">
-                  <div className="flex items-center gap-token-xs text-token-sm text-muted-foreground">
-                    <Briefcase className="w-4 h-4 text-primary" />
-                    <span className="font-medium">Relevant Positions:</span>
-                  </div>
-                  <div className="flex flex-wrap gap-token-xs">
-                    {course.attached_jobs.slice(0, 3).map((job, index) => (
-                      <Badge 
-                        key={index} 
-                        variant="outline" 
-                        className="text-token-xs bg-muted/30 text-muted-foreground border-muted-foreground/20"
-                      >
-                        {job}
-                      </Badge>
-                    ))}
-                    {course.attached_jobs.length > 3 && (
-                      <Badge 
-                        variant="outline" 
-                        className="text-token-xs bg-muted/30 text-muted-foreground border-muted-foreground/20"
-                      >
-                        +{course.attached_jobs.length - 3} more
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Company Section - Only show company, removed jobs */}
+            {course.company && (
+              <div className="flex items-center gap-token-xs text-token-sm text-muted-foreground mb-token-md">
+                <Building2 className="w-4 h-4 text-primary" />
+                <span className="font-medium text-foreground">{course.company}</span>
+              </div>
+            )}
           </div>
           {isAdmin && (
             <div className="flex gap-token-xs ml-token-lg" onClick={(e) => e.stopPropagation()}>
@@ -225,15 +194,12 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
               <span>{new Date(course.created_at).toLocaleDateString()}</span>
             </div>
           </div>
+          {/* Show company name instead of Active/Completed */}
           <Badge 
             variant="secondary" 
-            className={`hover-scale ${
-              !isAdmin && courseProgress?.progress_percentage === 100 
-                ? "bg-green-100 text-green-800 border-green-200" 
-                : "bg-primary/10 text-primary border-primary/20"
-            }`}
+            className="hover-scale bg-primary/10 text-primary border-primary/20"
           >
-            {!isAdmin && courseProgress?.progress_percentage === 100 ? "Completed" : "Active"}
+            {course.company || "No Company"}
           </Badge>
         </div>
       </CardContent>

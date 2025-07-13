@@ -74,26 +74,26 @@ export const CourseHeader = ({
 
       {/* Course Info */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">{course.title}</h1>
+        <div className="flex items-center gap-4 mb-4">
+          <h1 className="text-4xl font-bold text-gray-900">{course.title}</h1>
+          {/* Company Badge Circle */}
+          {course.company && (
+            <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full border border-primary/20">
+              <div className="flex flex-col items-center">
+                <Building2 className="w-4 h-4 text-primary mb-0.5" />
+                <span className="text-xs font-medium text-primary leading-none">{course.company.slice(0, 3).toUpperCase()}</span>
+              </div>
+            </div>
+          )}
+        </div>
+        
         {course.description && (
           <p className="text-lg text-gray-600 mb-6">{course.description}</p>
         )}
         
-        {/* Company and Jobs Information */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100/50 space-y-4">
-          {course.company && (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
-                <Building2 className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Company</p>
-                <p className="text-lg font-semibold text-gray-900">{course.company}</p>
-              </div>
-            </div>
-          )}
-          
-          {course.attached_jobs && course.attached_jobs.length > 0 && (
+        {/* Jobs Information Only */}
+        {course.attached_jobs && course.attached_jobs.length > 0 && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100/50">
             <div className="flex items-start gap-3">
               <div className="flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-lg mt-1">
                 <Briefcase className="w-5 h-5 text-indigo-600" />
@@ -113,14 +113,16 @@ export const CourseHeader = ({
                 </div>
               </div>
             </div>
-          )}
-          
-          {!course.company && (!course.attached_jobs || course.attached_jobs.length === 0) && (
+          </div>
+        )}
+        
+        {(!course.attached_jobs || course.attached_jobs.length === 0) && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100/50">
             <div className="text-center py-4">
-              <p className="text-gray-500 text-sm">No company or position information available</p>
+              <p className="text-gray-500 text-sm">No position information available</p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </>
   );
