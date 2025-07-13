@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Download } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UserProfile } from "@/types/user";
+import { scrapeLinkedInProfile } from "@/utils/linkedinScraper";
 
 interface EnhancedUserFormData {
   full_name: string;
@@ -44,6 +45,7 @@ export const EnhancedUserForm = ({ user, onSuccess, onCancel }: EnhancedUserForm
   const [newSkill, setNewSkill] = useState("");
   const [newCompany, setNewCompany] = useState("");
   const [newNote, setNewNote] = useState("");
+  const [isScrapingLinkedIn, setIsScrapingLinkedIn] = useState(false);
 
   const form = useForm<EnhancedUserFormData>({
     defaultValues: {
@@ -172,6 +174,69 @@ export const EnhancedUserForm = ({ user, onSuccess, onCancel }: EnhancedUserForm
     setUserNotes(userNotes.filter((_, i) => i !== index));
   };
 
+  const handleLinkedInScrape = async () => {
+    const linkedinUrl = form.getValues('linkedin_profile');
+    
+    if (!linkedinUrl || !linkedinUrl.includes('linkedin.com')) {
+      toast({
+        title: "Invalid LinkedIn URL",
+        description: "Please enter a valid LinkedIn profile URL first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsScrapingLinkedIn(true);
+    
+    try {
+      const profileData = await scrapeLinkedInProfile(linkedinUrl);
+      
+      if (profileData) {
+        // Update form fields with scraped data
+        if (profileData.name && !form.getValues('full_name')) {
+          form.setValue('full_name', profileData.name);
+        }
+        
+        if (profileData.company && !form.getValues('current_company')) {
+          form.setValue('current_company', profileData.company);
+        }
+        
+        if (profileData.experience && !form.getValues('years_of_experience')) {
+          form.setValue('years_of_experience', profileData.experience);
+        }
+        
+        // Update skills if not already set
+        if (profileData.skills && profileData.skills.length > 0 && skills.length === 0) {
+          setSkills(profileData.skills);
+        }
+        
+        // Update past companies if not already set
+        if (profileData.pastCompanies && profileData.pastCompanies.length > 0 && companies.length === 0) {
+          setCompanies(profileData.pastCompanies);
+        }
+        
+        // Add scraped note
+        if (profileData.note) {
+          setUserNotes([...userNotes, profileData.note]);
+        }
+        
+        toast({
+          title: "LinkedIn Profile Imported",
+          description: "Profile information has been imported from LinkedIn",
+        });
+      }
+    } catch (error) {
+      console.error('LinkedIn scraping failed:', error);
+      toast({
+        title: "Import Failed",
+        description: "Failed to import LinkedIn profile information",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScrapingLinkedIn(false);
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -289,9 +354,21 @@ export const EnhancedUserForm = ({ user, onSuccess, onCancel }: EnhancedUserForm
           render={({ field }) => (
             <FormItem>
               <FormLabel>LinkedIn Profile</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter LinkedIn profile URL" {...field} />
-              </FormControl>
+              <div className="flex gap-2">
+                <FormControl>
+                  <Input placeholder="Enter LinkedIn profile URL" {...field} />
+                </FormControl>
+                <Button
+                  type="button"
+                  onClick={handleLinkedInScrape}
+                  disabled={isScrapingLinkedIn || !field.value}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {isScrapingLinkedIn ? "Importing..." : "Import"}
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}

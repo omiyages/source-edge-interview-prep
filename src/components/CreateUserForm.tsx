@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,8 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Download } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { scrapeLinkedInProfile } from "@/utils/linkedinScraper";
 
 interface CreateUserFormData {
   fullName: string;
@@ -17,6 +17,7 @@ interface CreateUserFormData {
   password: string;
   confirmPassword: string;
   role: 'user' | 'admin';
+  linkedinProfile?: string;
 }
 
 interface CreateUserFormProps {
@@ -27,6 +28,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isScrapingLinkedIn, setIsScrapingLinkedIn] = useState(false);
   
   const form = useForm<CreateUserFormData>({
     defaultValues: {
@@ -143,6 +145,46 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
     },
   });
 
+  const handleLinkedInScrape = async () => {
+    const linkedinUrl = form.getValues('linkedinProfile');
+    
+    if (!linkedinUrl || !linkedinUrl.includes('linkedin.com')) {
+      toast({
+        title: "Invalid LinkedIn URL",
+        description: "Please enter a valid LinkedIn profile URL first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsScrapingLinkedIn(true);
+    
+    try {
+      const profileData = await scrapeLinkedInProfile(linkedinUrl);
+      
+      if (profileData) {
+        // Update form fields with scraped data
+        if (profileData.name && !form.getValues('fullName')) {
+          form.setValue('fullName', profileData.name);
+        }
+        
+        toast({
+          title: "LinkedIn Profile Imported",
+          description: "Name has been imported from LinkedIn profile",
+        });
+      }
+    } catch (error) {
+      console.error('LinkedIn scraping failed:', error);
+      toast({
+        title: "Import Failed",
+        description: "Failed to import LinkedIn profile information",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScrapingLinkedIn(false);
+    }
+  };
+
   const handleCreateUser = async (data: CreateUserFormData) => {
     createUserMutation.mutate(data);
   };
@@ -215,6 +257,32 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="linkedinProfile"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>LinkedIn Profile (Optional)</FormLabel>
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Input placeholder="Enter LinkedIn profile URL" {...field} />
+                    </FormControl>
+                    <Button
+                      type="button"
+                      onClick={handleLinkedInScrape}
+                      disabled={isScrapingLinkedIn || !field.value}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {isScrapingLinkedIn ? "Importing..." : "Import"}
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
