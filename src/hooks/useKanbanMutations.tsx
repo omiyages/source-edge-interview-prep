@@ -22,6 +22,7 @@ export const useMoveCandidateMutation = () => {
       console.log('✅ Candidate moved successfully');
     },
     onSuccess: () => {
+      // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate moved successfully');
@@ -58,6 +59,7 @@ export const useAddUnassignedCandidateToStageMutation = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate moved to stage successfully');
@@ -87,6 +89,7 @@ export const useRemoveCandidateFromPipelineMutation = () => {
       console.log('✅ Candidate application removed from pipeline successfully');
     },
     onSuccess: () => {
+      // Invalidate all related queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate removed from pipeline');
@@ -94,59 +97,6 @@ export const useRemoveCandidateFromPipelineMutation = () => {
     onError: (error) => {
       console.error('❌ Failed to remove candidate:', error);
       toast.error('Failed to remove candidate from pipeline');
-    },
-  });
-};
-
-export const useCleanupSpecificCandidatesMutation = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async () => {
-      console.log('🧹 Cleaning up specific candidates from pipeline...');
-      
-      // Get candidate IDs for Paul Lee and Namtae Lee
-      const { data: candidates, error: candidatesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .or('full_name.ilike.%paul lee%,full_name.ilike.%namtae lee%,email.ilike.%namtae%');
-
-      if (candidatesError) {
-        console.error('❌ Error fetching candidates:', candidatesError);
-        throw candidatesError;
-      }
-
-      if (!candidates || candidates.length === 0) {
-        console.log('📝 No matching candidates found');
-        return;
-      }
-
-      console.log('🎯 Found candidates to clean up:', candidates);
-
-      // Remove all pipeline entries for these candidates
-      const candidateIds = candidates.map(c => c.id);
-      const { error: deleteError } = await supabase
-        .from('candidate_pipeline')
-        .delete()
-        .in('candidate_id', candidateIds);
-
-      if (deleteError) {
-        console.error('❌ Error removing candidates from pipeline:', deleteError);
-        throw deleteError;
-      }
-
-      console.log('✅ Successfully cleaned up candidates from pipeline');
-      return candidates;
-    },
-    onSuccess: (candidates) => {
-      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
-      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
-      const count = candidates?.length || 0;
-      toast.success(`Successfully removed ${count} candidate(s) from pipeline`);
-    },
-    onError: (error) => {
-      console.error('❌ Failed to cleanup candidates:', error);
-      toast.error('Failed to cleanup candidates from pipeline');
     },
   });
 };
@@ -163,6 +113,7 @@ export const useAddCandidateToPipelineMutation = () => {
     }) => {
       console.log('🔄 Adding candidate to pipeline:', { candidateId, appliedCompany, appliedJobTitle, stageId });
       
+      // If no stageId is provided, we need to get the first hiring stage (not unassigned)
       let targetStageId = stageId;
       
       if (!targetStageId) {
@@ -225,10 +176,12 @@ export const useKanbanActions = (stages: HiringStage[]) => {
       appliedJobTitle 
     });
     
+    // Add to first hiring stage instead of "unassigned"
     addCandidateToPipelineMutation.mutate({
       candidateId: candidate.id,
       appliedCompany,
       appliedJobTitle,
+      // Don't specify stageId so it uses the first hiring stage
     });
   };
 
