@@ -54,17 +54,75 @@ serve(async (req) => {
 
     const person = data.data;
 
+    // Helper function to format date ranges
+    const formatDateRange = (startDate: string | null, endDate: string | null) => {
+      if (!startDate) return '';
+      
+      const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+      };
+      
+      const start = formatDate(startDate);
+      const end = endDate ? formatDate(endDate) : 'Present';
+      return `${start} - ${end}`;
+    };
+
+    // Get current company from most recent experience
+    let currentCompany = person.job_company_name || '';
+    let yearsOfExperience = 0;
+
+    // If we have experience array, use the most recent one for current company
+    if (person.experience && person.experience.length > 0) {
+      const currentJob = person.experience[0]; // Most recent job
+      currentCompany = currentJob.company?.name || currentCompany;
+    }
+
+    // Calculate total years of experience
+    if (person.experience && person.experience.length > 0) {
+      let totalMonths = 0;
+      
+      person.experience.forEach((exp: any) => {
+        if (exp.start_date) {
+          const startDate = new Date(exp.start_date);
+          const endDate = exp.end_date ? new Date(exp.end_date) : new Date();
+          
+          const months = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                        (endDate.getMonth() - startDate.getMonth());
+          totalMonths += Math.max(0, months);
+        }
+      });
+      
+      yearsOfExperience = Math.round(totalMonths / 12);
+    } else if (person.job_start_date) {
+      // Fallback to job_start_date if no experience array
+      const startDate = new Date(person.job_start_date);
+      const now = new Date();
+      yearsOfExperience = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+    }
+
+    // Format past companies with job titles and date ranges
+    const pastCompanies: string[] = [];
+    if (person.experience && person.experience.length > 1) {
+      // Skip the first one (current job) and format the rest
+      person.experience.slice(1).forEach((exp: any) => {
+        if (exp.company?.name) {
+          const companyName = exp.company.name;
+          const title = exp.title || 'N/A';
+          const dateRange = formatDateRange(exp.start_date, exp.end_date);
+          
+          pastCompanies.push(`${companyName} - ${title} (${dateRange || 'Dates not available'})`);
+        }
+      });
+    }
+
     // Transform People Data Labs response to our expected format
     const profileData = {
       name: person.full_name || '',
-      company: person.job_company_name || person.experience?.[0]?.company?.name || '',
-      experience: person.job_start_date ? 
-        Math.floor((new Date().getTime() - new Date(person.job_start_date).getTime()) / (1000 * 60 * 60 * 24 * 365)) : 
-        person.experience?.length || 0,
+      company: currentCompany,
+      experience: yearsOfExperience,
       skills: person.skills || [],
-      pastCompanies: person.experience ? 
-        person.experience.slice(1).map((exp: any) => exp.company?.name).filter(Boolean) : 
-        [],
+      pastCompanies: pastCompanies,
       note: `Profile imported from LinkedIn via People Data Labs: ${url}. Last updated: ${new Date().toISOString()}`
     };
 
