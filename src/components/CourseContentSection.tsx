@@ -47,7 +47,7 @@ export const CourseContentSection = ({
 
   return (
     <div className="space-y-8">
-      <StageInformation selectedStage={selectedStage} />
+      <StageInformation information={selectedStage.information} />
 
       <StageResourcesSection
         stageId={selectedStage.id}

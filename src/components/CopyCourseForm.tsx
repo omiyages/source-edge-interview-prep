@@ -12,6 +12,8 @@ interface Course {
   id: string;
   title: string;
   description: string | null;
+  company: string | null;
+  attached_jobs: string[] | null;
   created_at: string;
 }
 
@@ -123,6 +125,8 @@ export const CopyCourseForm = ({ onSuccess }: CopyCourseFormProps) => {
           initialCourseData={{
             title: `Copy of ${selectedCourse.title}`,
             description: selectedCourse.description || "",
+            company: selectedCourse.company || "",
+            attachedJobs: selectedCourse.attached_jobs || [],
           }}
           initialStages={courseStages}
         />
