@@ -45,9 +45,25 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
         style={{
           backgroundColor: 'white',
           borderRadius: '6px',
-          minHeight: '200px',
+          minHeight: '300px',
+          fontWeight: 'normal',
         }}
       />
+      <style jsx global>{`
+        .ql-editor {
+          font-weight: normal !important;
+          font-family: inherit;
+        }
+        .ql-editor p {
+          font-weight: normal !important;
+        }
+        .ql-editor strong {
+          font-weight: bold !important;
+        }
+        .ql-editor b {
+          font-weight: bold !important;
+        }
+      `}</style>
     </div>
   );
 };
