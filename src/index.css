@@ -50,6 +50,10 @@
 
   .rounded-lg.border.bg-card.text-card-foreground.shadow-sm.mb-8 {
     background: #fafafa;
+
+   .rounded-lg.border.bg-card.text-card-foreground.shadow-sm.mb-8 {
+    border: white;
+}
 }
 
   .dark {
