@@ -64,7 +64,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
 
       console.log('✅ Session valid for user:', sessionData.session.user.email);
 
-      // Prepare payload
+      // Create user directly using Supabase admin functions through our edge function
       const payload = {
         email: data.email.trim().toLowerCase(),
         password: data.password,
@@ -74,10 +74,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
 
       console.log('📤 Calling admin-user-management function...');
       
-      // Call edge function with correct URL construction
-      const functionUrl = `https://satshobhbkjptsbmfsia.supabase.co/functions/v1/admin-user-management`;
-      
-      const response = await fetch(functionUrl, {
+      const response = await fetch(`https://satshobhbkjptsbmfsia.supabase.co/functions/v1/admin-user-management`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${sessionData.session.access_token}`,
@@ -170,7 +167,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
               rules={{ required: "Full name is required" }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>Full Name *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter full name" {...field} />
                   </FormControl>
@@ -191,7 +188,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
               }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email *</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="Enter email address" {...field} />
                   </FormControl>
@@ -206,7 +203,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
               rules={{ required: "Role is required" }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>Role *</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -235,7 +232,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
               }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Password *</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="Enter password" {...field} />
                   </FormControl>
@@ -254,7 +251,7 @@ export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
               }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel>Confirm Password *</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="Confirm password" {...field} />
                   </FormControl>
