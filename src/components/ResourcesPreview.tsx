@@ -120,6 +120,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
                     size="sm"
                     onClick={() => window.open(resource.url, '_blank')}
                     className="shrink-0"
+                    style={{ borderColor: 'rgb(219 234 254 / 0.5)' }}
                   >
                     <ExternalLink className="w-4 h-4" />
                   </Button>
@@ -132,6 +133,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
                 <Button 
                   variant="outline"
                   onClick={() => window.location.href = '/resources'}
+                  style={{ borderColor: 'rgb(219 234 254 / 0.5)' }}
                 >
                   View All Resources ({resources.length})
                 </Button>

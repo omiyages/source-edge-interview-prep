@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -33,6 +34,18 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const { setNodeRef, isOver } = useDroppable({
     id: id,
   });
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log(`🏛️ KanbanColumn "${title}" (${id}):`, {
+      candidateCount: candidates.length,
+      candidates: candidates.map(c => ({ 
+        email: c.email, 
+        applicationId: c.applicationId,
+        applied_company: c.applied_company 
+      }))
+    });
+  }, [candidates, title, id]);
 
   return (
     <div className="flex flex-col min-w-[300px] max-w-[300px]">
