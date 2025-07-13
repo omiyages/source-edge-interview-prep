@@ -53,12 +53,21 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   };
 
   const displayName = candidate.full_name || candidate.email.split('@')[0];
-  const initials = displayName
-    .split(' ')
-    .map(name => name[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  
+  // Function to get company icon based on applied company
+  const getCompanyIcon = (companyName?: string | null) => {
+    if (!companyName) return displayName.split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2);
+    
+    const company = companyName.toLowerCase();
+    if (company.includes('woven')) return 'Woven';
+    if (company.includes('wismettac')) return 'Wis';
+    if (company.includes('lexxpluss')) return 'LP';
+    
+    // For other companies, use first two letters
+    return companyName.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const companyIcon = getCompanyIcon(candidate.applied_company);
 
   const handleRemoveCandidate = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -80,7 +89,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+            <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+              {companyIcon}
+            </AvatarFallback>
           </Avatar>
           
           <div className="flex-1 min-w-0">
