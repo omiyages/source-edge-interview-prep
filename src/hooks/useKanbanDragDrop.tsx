@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { toast } from 'sonner';
 import { Candidate } from './useKanbanData';
 import { useMoveCandidateMutation } from './useKanbanMutations';
 
