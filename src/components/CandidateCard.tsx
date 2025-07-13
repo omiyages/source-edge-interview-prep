@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Mail, Building2, X, Briefcase, Trash2 } from 'lucide-react';
-import { useRemoveCandidateFromPipelineMutation, useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
+import { useRemoveCandidateFromPipelineMutation, useRemoveUnassignedCandidateFromPipelineMutation, useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
 
 interface Candidate {
   id: string;
@@ -36,6 +36,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   isUnassigned = false,
 }) => {
   const removeCandidateFromPipelineMutation = useRemoveCandidateFromPipelineMutation();
+  const removeUnassignedCandidateFromPipelineMutation = useRemoveUnassignedCandidateFromPipelineMutation();
   const deleteCandidateCompletelyMutation = useDeleteCandidateCompletely();
 
   const {
@@ -77,10 +78,16 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     console.log('🗑️ Remove from pipeline button clicked for candidate:', {
       candidateId: candidate.id,
       applicationId: candidate.applicationId,
-      email: candidate.email
+      email: candidate.email,
+      isUnassigned
     });
     
-    if (candidate.applicationId) {
+    if (isUnassigned) {
+      // For unassigned candidates, just remove them from any pipeline entries
+      console.log('🔄 Removing unassigned candidate from pipeline:', candidate.id);
+      removeUnassignedCandidateFromPipelineMutation.mutate({ candidateId: candidate.id });
+    } else if (candidate.applicationId) {
+      // For candidates in stages, remove the specific application
       console.log('🔄 Removing candidate from pipeline with applicationId:', candidate.applicationId);
       removeCandidateFromPipelineMutation.mutate({ applicationId: candidate.applicationId });
     }
@@ -94,20 +101,21 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       isUnassigned
     });
     
-    if (window.confirm(`Are you sure you want to permanently delete ${displayName}? This action cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to permanently delete ${displayName}? This action cannot be undone and will remove the user entirely from the system.`)) {
       deleteCandidateCompletelyMutation.mutate({ candidateId: candidate.id });
     }
   };
 
-  // Show appropriate buttons based on candidate status
-  const showRemoveFromPipelineButton = Boolean(candidate.applicationId);
+  // Show remove button for all candidates (different behavior for unassigned vs pipeline)
+  const showRemoveButton = true;
+  // Only show delete completely button as a secondary action for unassigned candidates
   const showDeleteCompletelyButton = isUnassigned;
 
   console.log('🎴 CandidateCard render:', {
     email: candidate.email,
     applicationId: candidate.applicationId,
     isUnassigned,
-    showRemoveFromPipelineButton,
+    showRemoveButton,
     showDeleteCompletelyButton,
     dragId
   });
@@ -149,13 +157,13 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     <ExternalLink className="h-3 w-3" />
                   </Button>
                 )}
-                {showRemoveFromPipelineButton && (
+                {showRemoveButton && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
                     onClick={handleRemoveFromPipeline}
-                    title="Remove from pipeline (move to unassigned)"
+                    title={isUnassigned ? "Remove from candidate pool" : "Remove from pipeline (move to unassigned)"}
                   >
                     <X className="h-3 w-3" />
                   </Button>
@@ -166,7 +174,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     size="sm"
                     className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={handleDeleteCompletely}
-                    title="Delete candidate permanently"
+                    title="Delete user permanently"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

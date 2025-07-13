@@ -101,6 +101,38 @@ export const useRemoveCandidateFromPipelineMutation = () => {
   });
 };
 
+export const useRemoveUnassignedCandidateFromPipelineMutation = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ candidateId }: { candidateId: string }) => {
+      console.log('🗑️ Removing unassigned candidate from pipeline:', { candidateId });
+      
+      // Remove any pipeline entries for this candidate
+      const { error } = await supabase
+        .from('candidate_pipeline')
+        .delete()
+        .eq('candidate_id', candidateId);
+
+      if (error) {
+        console.error('❌ Error removing unassigned candidate from pipeline:', error);
+        throw error;
+      }
+      console.log('✅ Unassigned candidate removed from pipeline successfully');
+    },
+    onSuccess: () => {
+      // Invalidate all related queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
+      toast.success('Candidate removed from pipeline');
+    },
+    onError: (error) => {
+      console.error('❌ Failed to remove unassigned candidate:', error);
+      toast.error('Failed to remove candidate from pipeline');
+    },
+  });
+};
+
 export const useDeleteCandidateCompletely = () => {
   const queryClient = useQueryClient();
   
