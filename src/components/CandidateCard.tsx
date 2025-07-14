@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,7 +30,7 @@ interface CandidateCardProps {
   isUnassigned?: boolean;
 }
 
-export const CandidateCard: React.FC<CandidateCardProps> = ({
+export const CandidateCard: React.FC<CandidateCardProps> = memo(({
   candidate,
   isDragging = false,
   dragId,
@@ -195,4 +195,6 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       </CardContent>
     </Card>
   );
-};
+});
+
+CandidateCard.displayName = 'CandidateCard';

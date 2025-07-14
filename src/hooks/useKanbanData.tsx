@@ -1,5 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface HiringStage {
@@ -100,7 +101,7 @@ export const useCandidatesWithPipeline = () => {
 };
 
 export const useKanbanHelpers = (candidates: Candidate[]) => {
-  const getCandidatesForStage = (stageId: string) => {
+  const getCandidatesForStage = useCallback((stageId: string) => {
     console.log(`🔍 Getting candidates for stage: ${stageId}`);
     const applications: any[] = [];
     
@@ -120,17 +121,17 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
     
     console.log(`📊 Found ${applications.length} applications for stage ${stageId}`);
     return applications;
-  };
+  }, [candidates]);
 
-  const getUnassignedCandidates = () => {
+  const getUnassignedCandidates = useCallback(() => {
     // This will now be handled by getCandidatesForStage with the "unassigned" stage ID
     // Return empty array as unassigned candidates will be shown via the unassigned stage
     console.log('🔍 Getting unassigned candidates (now handled by stage system)...');
     return [];
-  };
+  }, []);
 
-  return {
+  return useMemo(() => ({
     getCandidatesForStage,
     getUnassignedCandidates,
-  };
+  }), [getCandidatesForStage, getUnassignedCandidates]);
 };

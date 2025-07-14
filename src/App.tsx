@@ -13,12 +13,14 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import PublicSignup from "./pages/PublicSignup";
 
-// Lazy load heavy components
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const Resources = lazy(() => import("./pages/Resources"));
-const CourseDetail = lazy(() => import("./pages/CourseDetail"));
-const Track = lazy(() => import("./pages/Track"));
-const UserDashboard = lazy(() => import("./pages/UserDashboard"));
+// Import lazy components
+import {
+  AdminDashboard,
+  Resources,
+  CourseDetail,
+  Track,
+  UserDashboard
+} from "@/components/LazyComponents";
 
 // Loading component for suspense
 const PageLoader = () => (

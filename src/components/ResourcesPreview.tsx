@@ -1,5 +1,6 @@
 
 import { useState, useMemo, memo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface ResourcesPreviewProps {
 const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const navigate = useNavigate();
 
   // Get unique categories - memoized
   const uniqueCategories = useMemo(() => 
@@ -132,7 +134,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
               <div className="col-span-full text-center pt-4">
                 <Button 
                   variant="outline"
-                  onClick={() => window.location.href = '/resources'}
+                  onClick={() => navigate('/resources')}
                   style={{ borderColor: 'rgb(219 234 254 / 0.5)' }}
                 >
                   View All Resources ({resources.length})

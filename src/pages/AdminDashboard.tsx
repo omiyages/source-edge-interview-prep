@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ interface InterviewQuestion {
 
 const AdminDashboard = () => {
   const { user, profile, isAdmin, signOut, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -213,7 +214,7 @@ const AdminDashboard = () => {
           <div className="flex gap-4">
             <Button 
               variant="outline" 
-              onClick={() => window.location.href = '/'}
+              onClick={() => navigate('/')}
             >
               <Home className="w-4 h-4 mr-2" />
               Back to Home

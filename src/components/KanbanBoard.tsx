@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { KanbanColumn } from './KanbanColumn';
 import { CandidateCard } from './CandidateCard';
@@ -9,7 +9,7 @@ import { useHiringStages, useCandidatesWithPipeline, useKanbanHelpers } from '@/
 import { useKanbanActions } from '@/hooks/useKanbanMutations';
 import { useKanbanDragDrop } from '@/hooks/useKanbanDragDrop';
 
-export const KanbanBoard = () => {
+export const KanbanBoard = memo(() => {
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   
   const { data: stages = [] } = useHiringStages();
@@ -57,4 +57,6 @@ export const KanbanBoard = () => {
       />
     </div>
   );
-};
+});
+
+KanbanBoard.displayName = 'KanbanBoard';
