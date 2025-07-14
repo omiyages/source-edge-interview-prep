@@ -1,11 +1,10 @@
-
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Minus } from "lucide-react";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { Plus, Trash2 } from "lucide-react";
 
 interface CourseStage {
   title: string;
@@ -21,98 +20,88 @@ interface StageDefinitionFormProps {
 
 export const StageDefinitionForm = ({ stages, setStages }: StageDefinitionFormProps) => {
   const updateStage = (index: number, field: keyof CourseStage, value: string | number) => {
-    const updatedStages = [...stages];
-    updatedStages[index] = { ...updatedStages[index], [field]: value };
-    setStages(updatedStages);
+    const newStages = [...stages];
+    newStages[index] = { ...newStages[index], [field]: value };
+    setStages(newStages);
   };
 
   const addStage = () => {
     const newStage: CourseStage = {
-      title: `Stage ${stages.length + 1}`,
+      title: "",
       description: "",
       information: "",
-      stage_order: stages.length + 1
+      stage_order: stages.length + 1,
     };
     setStages([...stages, newStage]);
   };
 
   const removeStage = (index: number) => {
-    if (stages.length === 1) return;
-    const updatedStages = stages.filter((_, i) => i !== index);
-    updatedStages.forEach((stage, i) => {
+    if (stages.length <= 1) return;
+    const newStages = stages.filter((_, i) => i !== index);
+    // Update stage orders
+    newStages.forEach((stage, i) => {
       stage.stage_order = i + 1;
     });
-    setStages(updatedStages);
+    setStages(newStages);
   };
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <Label className="text-sm font-medium">Define your interview stages</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addStage}
-        >
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h4 className="text-md font-medium">Define Interview Stages</h4>
+        <Button onClick={addStage} size="sm">
           <Plus className="w-4 h-4 mr-2" />
           Add Stage
         </Button>
       </div>
 
-      <div className="space-y-4 mb-6">
-        {stages.map((stage, index) => (
-          <Card key={index}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-sm">Stage {index + 1}</CardTitle>
-                {stages.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeStage(index)}
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor={`stage-title-${index}`}>Stage Title *</Label>
-                <Input
-                  id={`stage-title-${index}`}
-                  placeholder="e.g., Technical Assessment"
-                  value={stage.title}
-                  onChange={(e) => updateStage(index, 'title', e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`stage-description-${index}`}>Short Description</Label>
-                <Textarea
-                  id={`stage-description-${index}`}
-                  placeholder="Brief description..."
-                  value={stage.description}
-                  onChange={(e) => updateStage(index, 'description', e.target.value)}
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`stage-information-${index}`}>
-                  Detailed Information
-                </Label>
-                <RichTextEditor
-                  value={stage.information}
-                  onChange={(value) => updateStage(index, 'information', value)}
-                  placeholder="Detailed information about this stage, preparation tips, what to expect, etc..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </>
+      {stages.map((stage, index) => (
+        <Card key={index}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h5 className="font-medium">Stage {stage.stage_order}</h5>
+            {stages.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeStage(index)}
+                className="h-8 w-8 p-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor={`title-${index}`}>Stage Title</Label>
+              <Input
+                id={`title-${index}`}
+                value={stage.title}
+                onChange={(e) => updateStage(index, "title", e.target.value)}
+                placeholder="e.g., Phone Screening, Technical Interview"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor={`description-${index}`}>Stage Description</Label>
+              <Input
+                id={`description-${index}`}
+                value={stage.description}
+                onChange={(e) => updateStage(index, "description", e.target.value)}
+                placeholder="Brief description of this stage"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor={`information-${index}`}>Detailed Information</Label>
+              <RichTextEditor
+                value={stage.information}
+                onChange={(value) => updateStage(index, "information", value)}
+                placeholder="Detailed information about this stage, expectations, and guidelines"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 };
