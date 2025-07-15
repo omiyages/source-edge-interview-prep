@@ -91,7 +91,7 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
         )}
       </div>
       
-      <p className="text-base sm:text-lg text-gray-600 mb-4 px-4">
+      <p className="text-lg sm:text-xl md:text-2xl lg:text-4xl text-gray-600 mb-8 pt-8 px-4 leading-relaxed">
         Real interview questions from top companies to help you prepare for your next opportunity.
       </p>
       <p className="text-xs sm:text-sm text-gray-500 mb-6 px-4">
