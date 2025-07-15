@@ -59,7 +59,7 @@
   }
 
   p.text-base.sm\:text-lg.text-gray-600.mb-4.px-4 {
-    padding-top: 30px;
+    padding-top: 30px !important;
 }
 
   .dark {
