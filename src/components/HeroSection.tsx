@@ -95,7 +95,7 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
         Real interview questions to help you prepare for your next opportunity.
       </p>
       <p className="text-xs sm:text-sm text-gray-500 mb-6 px-4">
-        Welcome back, {profile?.email} ({profile?.role})
+        Welcome back, {profile?.full_name?.split(' ')[0] || profile?.email} 👋
         {isAdmin && <span className="text-purple-600 font-semibold ml-2">👑 Admin</span>}
       </p>
       
