@@ -233,7 +233,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           value={formData.additional_context}
           onChange={(e) => setFormData({ ...formData, additional_context: e.target.value })}
           rows={4}
-          showPreview={true}
+          showPreview={false}
         />
       </div>
 
