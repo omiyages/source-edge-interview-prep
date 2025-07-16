@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { slugify } from "@/utils/slugify";
 
 interface Course {
   id: string;
@@ -36,35 +37,45 @@ interface InterviewQuestion {
   position_name: string | null;
 }
 
-export const useCourseData = (courseId: string | undefined, user: any) => {
+export const useCourseData = (slug: string | undefined, user: any) => {
   const { data: course, refetch: refetchCourse, isLoading: isLoadingCourse } = useQuery({
-    queryKey: ['course', courseId],
+    queryKey: ['course', slug],
     queryFn: async () => {
-      console.log('🔄 Fetching course with ID:', courseId);
-      const { data, error } = await supabase
+      console.log('🔄 Fetching course with slug:', slug);
+      
+      // First get all courses to find the one with matching slug
+      const { data: courses, error } = await supabase
         .from('courses')
-        .select('*')
-        .eq('id', courseId)
-        .single();
+        .select('*');
       
       if (error) {
-        console.error('❌ Error fetching course:', error);
+        console.error('❌ Error fetching courses:', error);
         throw error;
       }
-      console.log('✅ Course fetched:', data);
-      return data as Course;
+      
+      // Find course by matching slug
+      const course = courses?.find(c => slugify(c.title) === slug);
+      
+      if (!course) {
+        throw new Error('Course not found');
+      }
+      
+      console.log('✅ Course fetched:', course);
+      return course as Course;
     },
-    enabled: !!user && !!courseId,
+    enabled: !!user && !!slug,
   });
 
   const { data: stages, refetch: refetchStages } = useQuery({
-    queryKey: ['course-stages', courseId],
+    queryKey: ['course-stages', course?.id],
     queryFn: async () => {
-      console.log('🔄 Fetching stages for course:', courseId);
+      if (!course?.id) return [];
+      
+      console.log('🔄 Fetching stages for course:', course.id);
       const { data, error } = await supabase
         .from('course_stages')
         .select('*')
-        .eq('course_id', courseId)
+        .eq('course_id', course.id)
         .order('stage_order');
       
       if (error) {
@@ -74,7 +85,7 @@ export const useCourseData = (courseId: string | undefined, user: any) => {
       console.log('✅ Stages fetched:', data?.length || 0);
       return data as CourseStage[];
     },
-    enabled: !!user && !!courseId,
+    enabled: !!user && !!course?.id,
   });
 
   return {

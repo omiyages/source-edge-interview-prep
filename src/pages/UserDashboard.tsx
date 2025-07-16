@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BookOpen, Clock, CheckCircle } from "lucide-react";
+import { slugify } from "@/utils/slugify";
 
 interface AssignedCourse {
   id: string;
@@ -196,7 +197,7 @@ const UserDashboard = () => {
                       </div>
                     </div>
 
-                    <Link to={`/course/${assignment.course_id}`} className="block mt-auto">
+                    <Link to={`/course/${slugify(assignment.courses.title)}`} className="block mt-auto">
                       <Button className="w-full">
                         {progress.progress_percentage === 100 ? "Review Course" : "Continue Learning"}
                       </Button>

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 import type { Course } from "@/types/course";
+import { slugify } from "@/utils/slugify";
 
 interface CourseCardProps {
   course: Course;
@@ -94,8 +95,8 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
   });
 
   const handleCardClick = () => {
-    // Fix: Navigate to the correct route that matches App.tsx
-    navigate(`/course/${course.id}`);
+    // Navigate using slugified course title
+    navigate(`/course/${slugify(course.title)}`);
   };
 
   return (

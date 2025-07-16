@@ -77,7 +77,7 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/course/:id" 
+                  path="/course/:slug" 
                   element={
                     <ProtectedRoute>
                       <CourseDetail />

@@ -23,7 +23,7 @@ interface CourseStage {
 }
 
 const CourseDetail = () => {
-  const { id: courseId } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const { user, loading, isAdmin } = useAuth();
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
   const [showResourcesDialog, setShowResourcesDialog] = useState(false);
@@ -35,9 +35,9 @@ const CourseDetail = () => {
   }
 
   // Custom hooks for data fetching
-  const { course, stages, refetchCourse, refetchStages, isLoadingCourse } = useCourseData(courseId, user);
+  const { course, stages, refetchCourse, refetchStages, isLoadingCourse } = useCourseData(slug, user);
   const { stageQuestions, refetchQuestions } = useStageQuestions(selectedStage);
-  const { userProgress } = useUserProgress(user, courseId);
+  const { userProgress } = useUserProgress(user, course?.id);
 
   useEffect(() => {
     if (stages && stages.length > 0 && !selectedStage) {
@@ -108,7 +108,7 @@ const CourseDetail = () => {
             <div className="md:flex-shrink-0">
               <StageCompleteButton
                 selectedStage={selectedStage}
-                courseId={courseId!}
+                courseId={course?.id!}
                 userProgress={userProgress}
                 isAdmin={isAdmin}
               />
