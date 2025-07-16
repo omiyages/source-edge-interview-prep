@@ -95,20 +95,24 @@ const CourseDetail = () => {
         />
 
         <div className="mb-8">
-          <StageNavigation
-            stages={stages || []}
-            selectedStage={selectedStage}
-            onStageSelect={setSelectedStage}
-          />
-          
-          {/* Complete Stage Button - positioned below on mobile */}
-          <div className="md:hidden mt-4">
-            <StageCompleteButton
-              selectedStage={selectedStage}
-              courseId={courseId!}
-              userProgress={userProgress}
-              isAdmin={isAdmin}
-            />
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex-1">
+              <StageNavigation
+                stages={stages || []}
+                selectedStage={selectedStage}
+                onStageSelect={setSelectedStage}
+              />
+            </div>
+            
+            {/* Complete Stage Button - always visible but responsive positioning */}
+            <div className="md:flex-shrink-0">
+              <StageCompleteButton
+                selectedStage={selectedStage}
+                courseId={courseId!}
+                userProgress={userProgress}
+                isAdmin={isAdmin}
+              />
+            </div>
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -66,7 +67,7 @@ export const StageCompleteButton = ({
       onClick={() => completeStageMutation.mutate(selectedStage.id)}
       disabled={completeStageMutation.isPending || isStageCompleted(selectedStage.id)}
       variant={isStageCompleted(selectedStage.id) ? "outline" : "default"}
-      className="w-full md:w-auto md:ml-4 flex items-center gap-2 justify-center"
+      className="w-full md:w-auto flex items-center gap-2 justify-center"
     >
       {isStageCompleted(selectedStage.id) ? (
         <>
