@@ -175,21 +175,21 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
           </div>
         )}
         
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-token-md text-token-sm">
-          <div className="flex flex-wrap items-center gap-token-lg text-muted-foreground">
+        <div className="flex items-center justify-between text-token-sm">
+          <div className="flex items-center gap-token-lg text-muted-foreground">
             <div className="flex items-center gap-token-xs">
               <BookOpen className="w-4 h-4" />
               <span>Course</span>
             </div>
             <div className="flex items-center gap-token-xs">
               <Calendar className="w-4 h-4" />
-              <span className="text-token-xs sm:text-token-sm">{new Date(course.created_at).toLocaleDateString()}</span>
+              <span>{new Date(course.created_at).toLocaleDateString()}</span>
             </div>
           </div>
           {/* Show company name instead of Active/Completed */}
           <Badge 
             variant="secondary" 
-            className="hover-scale bg-primary/10 text-primary border-primary/20 self-start sm:self-auto text-token-xs sm:text-token-sm whitespace-nowrap"
+            className="hover-scale bg-primary/10 text-primary border-primary/20"
           >
             {course.company || "No Company"}
           </Badge>
