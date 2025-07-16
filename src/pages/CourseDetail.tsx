@@ -94,20 +94,22 @@ const CourseDetail = () => {
           isAdmin={isAdmin}
         />
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8">
           <StageNavigation
             stages={stages || []}
             selectedStage={selectedStage}
             onStageSelect={setSelectedStage}
           />
           
-          {/* Complete Stage Button */}
-          <StageCompleteButton
-            selectedStage={selectedStage}
-            courseId={courseId!}
-            userProgress={userProgress}
-            isAdmin={isAdmin}
-          />
+          {/* Complete Stage Button - positioned below on mobile */}
+          <div className="md:hidden mt-4">
+            <StageCompleteButton
+              selectedStage={selectedStage}
+              courseId={courseId!}
+              userProgress={userProgress}
+              isAdmin={isAdmin}
+            />
+          </div>
         </div>
 
         {/* Selected Stage Content */}

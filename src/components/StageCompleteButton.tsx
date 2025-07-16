@@ -66,7 +66,7 @@ export const StageCompleteButton = ({
       onClick={() => completeStageMutation.mutate(selectedStage.id)}
       disabled={completeStageMutation.isPending || isStageCompleted(selectedStage.id)}
       variant={isStageCompleted(selectedStage.id) ? "outline" : "default"}
-      className="ml-4 flex items-center gap-2"
+      className="w-full md:w-auto md:ml-4 flex items-center gap-2 justify-center"
     >
       {isStageCompleted(selectedStage.id) ? (
         <>
