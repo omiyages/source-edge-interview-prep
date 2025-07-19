@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -15,6 +14,7 @@ import { UserApprovalSection } from "@/components/UserApprovalSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AssignCourseForm } from "@/components/AssignCourseForm";
 import { KanbanBoard } from "@/components/KanbanBoard";
+import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
 
 interface InterviewQuestion {
   id: string;
@@ -239,7 +239,7 @@ const AdminDashboard = () => {
         )}
 
         <Tabs defaultValue="ats" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="ats">
               ATS Pipeline
             </TabsTrigger>
@@ -249,6 +249,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="assignments">
               Course Assignments
+            </TabsTrigger>
+            <TabsTrigger value="reviews">
+              Course Reviews
             </TabsTrigger>
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
@@ -272,6 +275,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="assignments">
             <AssignCourseForm />
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            <CourseReviewsAdmin />
           </TabsContent>
 
           <TabsContent value="pending">
