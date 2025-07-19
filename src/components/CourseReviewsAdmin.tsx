@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,32 +67,38 @@ export const CourseReviewsAdmin = () => {
       
       if (!data) return [];
       
-      // Transform the data to match our interface with proper type casting
-      return data.map(review => ({
-        id: review.id,
-        user_id: review.user_id,
-        course_id: review.course_id,
-        overall_rating: review.overall_rating,
-        stage_ratings: Array.isArray(review.stage_ratings) 
-          ? review.stage_ratings as Array<{
-              stageId: string;
-              stageName: string;
-              helpfulness: number;
-              accuracy: number;
-            }>
-          : [],
-        support_feedback: review.support_feedback,
-        improvement_suggestions: review.improvement_suggestions,
-        created_at: review.created_at,
-        profiles: {
-          email: review.profiles?.email || '',
-          full_name: review.profiles?.full_name || null
-        },
-        courses: {
-          title: review.courses?.title || '',
-          company: review.courses?.company || null
-        }
-      })) as CourseReview[];
+      // Transform the data to match our interface
+      return data.map(review => {
+        // Type assertion to help TypeScript understand the structure
+        const profileData = review.profiles as any;
+        const courseData = review.courses as any;
+        
+        return {
+          id: review.id,
+          user_id: review.user_id,
+          course_id: review.course_id,
+          overall_rating: review.overall_rating,
+          stage_ratings: Array.isArray(review.stage_ratings) 
+            ? review.stage_ratings as Array<{
+                stageId: string;
+                stageName: string;
+                helpfulness: number;
+                accuracy: number;
+              }>
+            : [],
+          support_feedback: review.support_feedback,
+          improvement_suggestions: review.improvement_suggestions,
+          created_at: review.created_at,
+          profiles: {
+            email: profileData?.email || '',
+            full_name: profileData?.full_name || null
+          },
+          courses: {
+            title: courseData?.title || '',
+            company: courseData?.company || null
+          }
+        } as CourseReview;
+      });
     },
   });
 
