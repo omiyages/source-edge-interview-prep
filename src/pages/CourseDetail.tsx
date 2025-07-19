@@ -12,6 +12,7 @@ import { CourseContentSection } from "@/components/CourseContentSection";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm";
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
+import { CourseReviewForm } from "@/components/CourseReviewForm";
 import { useCourseData, useStageQuestions, useUserProgress } from "@/hooks/useCourseData";
 
 interface CourseStage {
@@ -38,6 +39,13 @@ const CourseDetail = () => {
   const { course, stages, refetchCourse, refetchStages, isLoadingCourse } = useCourseData(slug, user);
   const { stageQuestions, refetchQuestions } = useStageQuestions(selectedStage);
   const { userProgress } = useUserProgress(user, course?.id);
+
+  // Check if all stages are completed
+  const allStagesCompleted = stages && userProgress && stages.length > 0 
+    ? stages.every(stage => 
+        userProgress.some(progress => progress.stage_id === stage.id)
+      )
+    : false;
 
   useEffect(() => {
     if (stages && stages.length > 0 && !selectedStage) {
@@ -116,15 +124,33 @@ const CourseDetail = () => {
           </div>
         </div>
 
-        {/* Selected Stage Content */}
-        <CourseContentSection
-          selectedStage={selectedStage}
-          stageQuestions={stageQuestions}
-          isAdmin={isAdmin}
-          onManageResourcesClick={() => setShowResourcesDialog(true)}
-          onManageQuestionsClick={() => setShowQuestionsDialog(true)}
-          onQuestionsUpdate={refetchQuestions}
-        />
+        {/* Selected Stage Content or Course Review */}
+        {allStagesCompleted ? (
+          <div className="space-y-8">
+            <div className="text-center py-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+              <h2 className="text-2xl font-bold text-green-800 mb-2">
+                🎉 Congratulations!
+              </h2>
+              <p className="text-green-700">
+                You've completed all stages of this course. Please share your feedback below.
+              </p>
+            </div>
+            
+            <CourseReviewForm
+              courseId={course.id}
+              stages={stages || []}
+            />
+          </div>
+        ) : (
+          <CourseContentSection
+            selectedStage={selectedStage}
+            stageQuestions={stageQuestions}
+            isAdmin={isAdmin}
+            onManageResourcesClick={() => setShowResourcesDialog(true)}
+            onManageQuestionsClick={() => setShowQuestionsDialog(true)}
+            onQuestionsUpdate={refetchQuestions}
+          />
+        )}
 
         {/* Manage Resources Dialog */}
         <Dialog open={showResourcesDialog} onOpenChange={setShowResourcesDialog}>

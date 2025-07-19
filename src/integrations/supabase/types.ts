@@ -107,6 +107,42 @@ export type Database = {
           },
         ]
       }
+      course_reviews: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          improvement_suggestions: string | null
+          overall_rating: number
+          stage_ratings: Json
+          support_feedback: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          improvement_suggestions?: string | null
+          overall_rating: number
+          stage_ratings?: Json
+          support_feedback?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          improvement_suggestions?: string | null
+          overall_rating?: number
+          stage_ratings?: Json
+          support_feedback?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       course_stages: {
         Row: {
           course_id: string
