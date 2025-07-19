@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +65,11 @@ export const CourseReviewsAdmin = () => {
         throw error;
       }
       
-      return data as CourseReview[];
+      // Transform the data to match our interface
+      return data?.map(review => ({
+        ...review,
+        stage_ratings: Array.isArray(review.stage_ratings) ? review.stage_ratings : []
+      })) as CourseReview[];
     },
   });
 
