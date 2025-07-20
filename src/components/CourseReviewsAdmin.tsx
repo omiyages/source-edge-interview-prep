@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,6 @@ interface CourseReview {
   id: string;
   user_id: string;
   course_id: string;
-  overall_rating: number;
   stage_ratings: Array<{
     stageId: string;
     stageName: string;
@@ -42,9 +42,23 @@ const StarDisplay = ({ rating }: { rating: number }) => {
           }`}
         />
       ))}
-      <span className="ml-2 text-sm font-medium">{rating}/5</span>
+      <span className="ml-2 text-sm font-medium">{rating.toFixed(1)}/5</span>
     </div>
   );
+};
+
+const calculateAggregateRatings = (stageRatings: CourseReview['stage_ratings']) => {
+  if (!stageRatings || stageRatings.length === 0) {
+    return { helpfulness: 0, accuracy: 0 };
+  }
+
+  const totalHelpfulness = stageRatings.reduce((sum, stage) => sum + stage.helpfulness, 0);
+  const totalAccuracy = stageRatings.reduce((sum, stage) => sum + stage.accuracy, 0);
+  
+  return {
+    helpfulness: totalHelpfulness / stageRatings.length,
+    accuracy: totalAccuracy / stageRatings.length
+  };
 };
 
 export const CourseReviewsAdmin = () => {
@@ -77,7 +91,6 @@ export const CourseReviewsAdmin = () => {
           id: review.id,
           user_id: review.user_id,
           course_id: review.course_id,
-          overall_rating: review.overall_rating,
           stage_ratings: Array.isArray(review.stage_ratings) 
             ? review.stage_ratings as Array<{
                 stageId: string;
@@ -138,92 +151,102 @@ export const CourseReviewsAdmin = () => {
       </div>
 
       <div className="grid gap-6">
-        {reviews.map((review) => (
-          <Card key={review.id} className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <CardTitle className="text-lg">{review.courses.title}</CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>By: {review.profiles.full_name || review.profiles.email}</span>
-                    {review.courses.company && (
-                      <Badge variant="outline">{review.courses.company}</Badge>
-                    )}
-                    <span>{new Date(review.created_at).toLocaleDateString()}</span>
+        {reviews.map((review) => {
+          const aggregateRatings = calculateAggregateRatings(review.stage_ratings);
+          
+          return (
+            <Card key={review.id} className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <CardTitle className="text-lg">{review.courses.title}</CardTitle>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>By: {review.profiles.full_name || review.profiles.email}</span>
+                      {review.courses.company && (
+                        <Badge variant="outline">{review.courses.company}</Badge>
+                      )}
+                      <span>{new Date(review.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="text-right space-y-2">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Average Helpfulness</p>
+                      <StarDisplay rating={aggregateRatings.helpfulness} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Average Accuracy</p>
+                      <StarDisplay rating={aggregateRatings.accuracy} />
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Overall Rating</p>
-                  <StarDisplay rating={review.overall_rating} />
-                </div>
-              </div>
-            </CardHeader>
+              </CardHeader>
 
-            <CardContent className="space-y-6">
-              {/* Stage Ratings */}
-              {review.stage_ratings && review.stage_ratings.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Stage Ratings</h4>
-                  <div className="grid gap-3">
-                    {review.stage_ratings.map((stage, index) => (
-                      <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                        <h5 className="font-medium mb-2">{stage.stageName}</h5>
-                        <div className="grid md:grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-1">Helpfulness</p>
-                            <StarDisplay rating={stage.helpfulness} />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-1">Accuracy</p>
-                            <StarDisplay rating={stage.accuracy} />
+              <CardContent className="space-y-6">
+                {/* Stage Ratings */}
+                {review.stage_ratings && review.stage_ratings.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Stage Ratings</h4>
+                    <div className="grid gap-3">
+                      {review.stage_ratings.map((stage, index) => (
+                        <div key={index} className="p-3 bg-muted/30 rounded-lg">
+                          <h5 className="font-medium mb-2">{stage.stageName}</h5>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">Helpfulness</p>
+                              <StarDisplay rating={stage.helpfulness} />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">Accuracy</p>
+                              <StarDisplay rating={stage.accuracy} />
+                            </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Support Feedback */}
+                {review.support_feedback && (
+                  <>
+                    <Separator />
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <MessageSquare className="h-4 w-4 text-primary" />
+                        <h4 className="font-semibold">Support Request</h4>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      <p className="text-sm text-muted-foreground italic mb-1">
+                        "Which part of the interview process would you like more support with?"
+                      </p>
+                      <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                        <p className="text-foreground">{review.support_feedback}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
 
-              {/* Support Feedback */}
-              {review.support_feedback && (
-                <>
-                  <Separator />
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <MessageSquare className="h-4 w-4 text-primary" />
-                      <h4 className="font-semibold">Support Request</h4>
+                {/* Improvement Suggestions */}
+                {review.improvement_suggestions && (
+                  <>
+                    <Separator />
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Lightbulb className="h-4 w-4 text-primary" />
+                        <h4 className="font-semibold">Improvement Suggestions</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground italic mb-1">
+                        "Do you have any suggestions for improving the course?"
+                      </p>
+                      <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
+                        <p className="text-foreground">{review.improvement_suggestions}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground italic mb-1">
-                      "Which part of the interview process would you like more support with?"
-                    </p>
-                    <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
-                      <p className="text-foreground">{review.support_feedback}</p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Improvement Suggestions */}
-              {review.improvement_suggestions && (
-                <>
-                  <Separator />
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Lightbulb className="h-4 w-4 text-primary" />
-                      <h4 className="font-semibold">Improvement Suggestions</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground italic mb-1">
-                      "Do you have any suggestions for improving the course?"
-                    </p>
-                    <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
-                      <p className="text-foreground">{review.improvement_suggestions}</p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
