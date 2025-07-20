@@ -113,7 +113,6 @@ export type Database = {
           created_at: string
           id: string
           improvement_suggestions: string | null
-          overall_rating: number
           stage_ratings: Json
           support_feedback: string | null
           updated_at: string
@@ -124,7 +123,6 @@ export type Database = {
           created_at?: string
           id?: string
           improvement_suggestions?: string | null
-          overall_rating: number
           stage_ratings?: Json
           support_feedback?: string | null
           updated_at?: string
@@ -135,7 +133,6 @@ export type Database = {
           created_at?: string
           id?: string
           improvement_suggestions?: string | null
-          overall_rating?: number
           stage_ratings?: Json
           support_feedback?: string | null
           updated_at?: string

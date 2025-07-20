@@ -170,11 +170,11 @@ export const CourseReviewsAdmin = () => {
                   </div>
                   <div className="text-right space-y-2">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Average Helpfulness</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Overall Helpfulness</p>
                       <StarDisplay rating={aggregateRatings.helpfulness} />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Average Accuracy</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Overall Accuracy</p>
                       <StarDisplay rating={aggregateRatings.accuracy} />
                     </div>
                   </div>
