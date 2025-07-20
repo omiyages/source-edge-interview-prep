@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +35,6 @@ const stageRatingSchema = z.object({
 });
 
 const reviewFormSchema = z.object({
-  overallRating: z.number().min(1).max(5),
   stageRatings: z.array(stageRatingSchema),
   supportFeedback: z.string().optional(),
   improvementSuggestions: z.string().optional(),
@@ -51,7 +51,6 @@ export const CourseReviewForm = ({ courseId, stages, onReviewSubmitted }: Course
   const form = useForm<ReviewFormData>({
     resolver: zodResolver(reviewFormSchema),
     defaultValues: {
-      overallRating: 1,
       stageRatings: stages.map(stage => ({
         stageId: stage.id,
         stageName: stage.title,
@@ -93,7 +92,6 @@ export const CourseReviewForm = ({ courseId, stages, onReviewSubmitted }: Course
             }));
             
         form.reset({
-          overallRating: data.overall_rating,
           stageRatings,
           supportFeedback: data.support_feedback || "",
           improvementSuggestions: data.improvement_suggestions || "",
@@ -120,7 +118,6 @@ export const CourseReviewForm = ({ courseId, stages, onReviewSubmitted }: Course
       const reviewData = {
         user_id: user.id,
         course_id: courseId,
-        overall_rating: data.overallRating,
         stage_ratings: data.stageRatings,
         support_feedback: data.supportFeedback || null,
         improvement_suggestions: data.improvementSuggestions || null,
@@ -175,31 +172,6 @@ export const CourseReviewForm = ({ courseId, stages, onReviewSubmitted }: Course
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* Overall Rating */}
-            <FormField
-              control={form.control}
-              name="overallRating"
-              render={({ field }) => (
-                <FormItem className="text-center">
-                  <FormLabel className="text-lg font-semibold">
-                    Overall Course Rating
-                  </FormLabel>
-                  <FormControl>
-                    <div className="flex justify-center">
-                      <StarRating
-                        rating={field.value}
-                        onRatingChange={field.onChange}
-                        size="lg"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
             {/* Stage Ratings */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Rate Each Stage</h3>
