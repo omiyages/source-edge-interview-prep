@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AssignCourseForm } from "@/components/AssignCourseForm";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
+import { DataVisualization } from "@/components/DataVisualization";
 
 interface InterviewQuestion {
   id: string;
@@ -261,12 +262,30 @@ const AdminDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="ats" className="h-[600px]">
+          <TabsContent value="ats">
             <div className="mb-4">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Candidate Pipeline</h2>
-              <p className="text-muted-foreground">Drag and drop candidates through hiring stages</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">ATS Pipeline Management</h2>
+              <p className="text-muted-foreground">Manage candidate pipeline and view analytics</p>
             </div>
-            <KanbanBoard />
+            
+            <Tabs defaultValue="kanban" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="kanban">
+                  Candidate Pipeline (Kanban)
+                </TabsTrigger>
+                <TabsTrigger value="visualization">
+                  Data Visualization
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="kanban" className="h-[600px]">
+                <KanbanBoard />
+              </TabsContent>
+
+              <TabsContent value="visualization">
+                <DataVisualization />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="users">
