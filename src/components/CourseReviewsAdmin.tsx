@@ -1,10 +1,11 @@
 
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Star, MessageSquare, Lightbulb } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { MessageSquare } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CourseReviewFilters } from "./CourseReviewFilters";
+import { CourseReviewCard } from "./CourseReviewCard";
 
 interface CourseReview {
   id: string;
@@ -19,6 +20,9 @@ interface CourseReview {
   support_feedback: string | null;
   improvement_suggestions: string | null;
   created_at: string;
+  read_status: boolean;
+  read_at: string | null;
+  read_by: string | null;
   profiles: {
     email: string;
     full_name: string | null;
@@ -29,39 +33,11 @@ interface CourseReview {
   };
 }
 
-const StarDisplay = ({ rating }: { rating: number }) => {
-  return (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={`h-4 w-4 ${
-            star <= rating
-              ? "fill-yellow-400 text-yellow-400"
-              : "text-muted-foreground"
-          }`}
-        />
-      ))}
-      <span className="ml-2 text-sm font-medium">{rating.toFixed(1)}/5</span>
-    </div>
-  );
-};
-
-const calculateAggregateRatings = (stageRatings: CourseReview['stage_ratings']) => {
-  if (!stageRatings || stageRatings.length === 0) {
-    return { helpfulness: 0, accuracy: 0 };
-  }
-
-  const totalHelpfulness = stageRatings.reduce((sum, stage) => sum + stage.helpfulness, 0);
-  const totalAccuracy = stageRatings.reduce((sum, stage) => sum + stage.accuracy, 0);
-  
-  return {
-    helpfulness: totalHelpfulness / stageRatings.length,
-    accuracy: totalAccuracy / stageRatings.length
-  };
-};
-
 export const CourseReviewsAdmin = () => {
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("unread");
+
   const { data: reviews, isLoading, error } = useQuery({
     queryKey: ['admin-course-reviews'],
     queryFn: async () => {
@@ -102,6 +78,9 @@ export const CourseReviewsAdmin = () => {
           support_feedback: review.support_feedback,
           improvement_suggestions: review.improvement_suggestions,
           created_at: review.created_at,
+          read_status: review.read_status || false,
+          read_at: review.read_at,
+          read_by: review.read_by,
           profiles: {
             email: profileData?.email || '',
             full_name: profileData?.full_name || null
@@ -114,6 +93,21 @@ export const CourseReviewsAdmin = () => {
       });
     },
   });
+
+  // Filter reviews based on selected filters
+  const filteredReviews = useMemo(() => {
+    if (!reviews) return [];
+    
+    return reviews.filter(review => {
+      const courseMatch = !selectedCourse || review.course_id === selectedCourse;
+      const companyMatch = !selectedCompany || review.courses.company === selectedCompany;
+      return courseMatch && companyMatch;
+    });
+  }, [reviews, selectedCourse, selectedCompany]);
+
+  // Separate unread and read reviews
+  const unreadReviews = filteredReviews.filter(review => !review.read_status);
+  const readReviews = filteredReviews.filter(review => review.read_status);
 
   if (isLoading) {
     return (
@@ -133,121 +127,77 @@ export const CourseReviewsAdmin = () => {
     );
   }
 
-  if (!reviews || reviews.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold text-muted-foreground mb-2">No reviews yet</h3>
-        <p className="text-muted-foreground">Course reviews will appear here once users submit them.</p>
-      </div>
-    );
-  }
+  const EmptyState = ({ isUnread }: { isUnread: boolean }) => (
+    <div className="text-center py-12">
+      <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+      <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+        No {isUnread ? 'unread' : 'read'} reviews
+      </h3>
+      <p className="text-muted-foreground">
+        {isUnread 
+          ? 'New course reviews will appear here when users submit them.'
+          : 'Reviews you\'ve marked as read will appear here.'
+        }
+      </p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-foreground mb-2">Course Reviews</h2>
-        <p className="text-muted-foreground">View feedback and ratings from course participants</p>
+        <p className="text-muted-foreground">View and manage feedback and ratings from course participants</p>
       </div>
 
-      <div className="grid gap-6">
-        {reviews.map((review) => {
-          const aggregateRatings = calculateAggregateRatings(review.stage_ratings);
-          
-          return (
-            <Card key={review.id} className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="text-lg">{review.courses.title}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>By: {review.profiles.full_name || review.profiles.email}</span>
-                      {review.courses.company && (
-                        <Badge variant="outline">{review.courses.company}</Badge>
-                      )}
-                      <span>{new Date(review.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <div className="text-right space-y-2">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Overall Helpfulness</p>
-                      <StarDisplay rating={aggregateRatings.helpfulness} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Overall Accuracy</p>
-                      <StarDisplay rating={aggregateRatings.accuracy} />
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
+      <CourseReviewFilters
+        onCourseChange={setSelectedCourse}
+        onCompanyChange={setSelectedCompany}
+        selectedCourse={selectedCourse}
+        selectedCompany={selectedCompany}
+      />
 
-              <CardContent className="space-y-6">
-                {/* Stage Ratings */}
-                {review.stage_ratings && review.stage_ratings.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-3">Stage Ratings</h4>
-                    <div className="grid gap-3">
-                      {review.stage_ratings.map((stage, index) => (
-                        <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                          <h5 className="font-medium mb-2">{stage.stageName}</h5>
-                          <div className="grid md:grid-cols-2 gap-3">
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">Helpfulness</p>
-                              <StarDisplay rating={stage.helpfulness} />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">Accuracy</p>
-                              <StarDisplay rating={stage.accuracy} />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="unread" className="relative">
+            Unread ({unreadReviews.length})
+          </TabsTrigger>
+          <TabsTrigger value="read">
+            Read ({readReviews.length})
+          </TabsTrigger>
+        </TabsList>
 
-                {/* Support Feedback */}
-                {review.support_feedback && (
-                  <>
-                    <Separator />
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare className="h-4 w-4 text-primary" />
-                        <h4 className="font-semibold">Support Request</h4>
-                      </div>
-                      <p className="text-sm text-muted-foreground italic mb-1">
-                        "Which part of the interview process would you like more support with?"
-                      </p>
-                      <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
-                        <p className="text-foreground">{review.support_feedback}</p>
-                      </div>
-                    </div>
-                  </>
-                )}
+        <TabsContent value="unread" className="mt-6">
+          {unreadReviews.length === 0 ? (
+            <EmptyState isUnread={true} />
+          ) : (
+            <div className="grid gap-6">
+              {unreadReviews.map((review) => (
+                <CourseReviewCard 
+                  key={review.id} 
+                  review={review} 
+                  showMarkAsRead={true}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-                {/* Improvement Suggestions */}
-                {review.improvement_suggestions && (
-                  <>
-                    <Separator />
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Lightbulb className="h-4 w-4 text-primary" />
-                        <h4 className="font-semibold">Improvement Suggestions</h4>
-                      </div>
-                      <p className="text-sm text-muted-foreground italic mb-1">
-                        "Do you have any suggestions for improving the course?"
-                      </p>
-                      <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
-                        <p className="text-foreground">{review.improvement_suggestions}</p>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+        <TabsContent value="read" className="mt-6">
+          {readReviews.length === 0 ? (
+            <EmptyState isUnread={false} />
+          ) : (
+            <div className="grid gap-6">
+              {readReviews.map((review) => (
+                <CourseReviewCard 
+                  key={review.id} 
+                  review={review} 
+                  showMarkAsRead={false}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
