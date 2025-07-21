@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, FunnelChart, Funnel, LabelList } from 'recharts';
 import { Users, TrendingUp, Calendar, Globe, Target, Languages } from 'lucide-react';
+import { WorldMapHeatmap } from './WorldMapHeatmap';
 
 export const DataVisualization = () => {
   // Fetch hiring stages
@@ -318,21 +318,16 @@ export const DataVisualization = () => {
           </CardContent>
         </Card>
 
-        {/* Country Heatmap (as horizontal bar chart) */}
-        <Card>
+        {/* World Map Heatmap */}
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Candidates by Country</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Candidates by Country
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={countryData} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={80} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#82ca9d" />
-              </BarChart>
-            </ResponsiveContainer>
+            <WorldMapHeatmap data={countryData} />
           </CardContent>
         </Card>
 
