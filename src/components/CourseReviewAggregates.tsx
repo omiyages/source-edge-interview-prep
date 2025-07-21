@@ -12,6 +12,7 @@ interface CourseReviewAggregatesProps {
 
 interface CourseReview {
   id: string;
+  course_id: string;
   stage_ratings: Array<{
     stageId: string;
     stageName: string;
@@ -53,6 +54,7 @@ export const CourseReviewAggregates = ({
         .from('course_reviews')
         .select(`
           id,
+          course_id,
           stage_ratings,
           courses!inner(title, company)
         `);
@@ -69,6 +71,7 @@ export const CourseReviewAggregates = ({
         
         return {
           id: review.id,
+          course_id: review.course_id,
           stage_ratings: Array.isArray(review.stage_ratings) 
             ? review.stage_ratings as Array<{
                 stageId: string;
@@ -87,17 +90,17 @@ export const CourseReviewAggregates = ({
   });
 
   const aggregateRatings = useMemo(() => {
-    if (!reviews) return { helpfulness: 0, accuracy: 0, totalReviews: 0 };
+    if (!reviews) return { helpfulness: 0, accuracy: 0, totalReviews: 0, courseTitle: null };
     
     // Filter reviews based on selected filters
     const filteredReviews = reviews.filter(review => {
-      const courseMatch = !selectedCourse || review.courses.title === selectedCourse;
+      const courseMatch = !selectedCourse || review.course_id === selectedCourse;
       const companyMatch = !selectedCompany || review.courses.company === selectedCompany;
       return courseMatch && companyMatch;
     });
 
     if (filteredReviews.length === 0) {
-      return { helpfulness: 0, accuracy: 0, totalReviews: 0 };
+      return { helpfulness: 0, accuracy: 0, totalReviews: 0, courseTitle: null };
     }
 
     let totalHelpfulness = 0;
@@ -112,18 +115,24 @@ export const CourseReviewAggregates = ({
       });
     });
 
+    // Get the course title from the first filtered review if a specific course is selected
+    const courseTitle = selectedCourse && filteredReviews.length > 0 
+      ? filteredReviews[0].courses.title 
+      : null;
+
     return {
       helpfulness: totalRatings > 0 ? totalHelpfulness / totalRatings : 0,
       accuracy: totalRatings > 0 ? totalAccuracy / totalRatings : 0,
-      totalReviews: filteredReviews.length
+      totalReviews: filteredReviews.length,
+      courseTitle
     };
   }, [reviews, selectedCourse, selectedCompany]);
 
   const getFilterTitle = () => {
     if (selectedCourse && selectedCompany) {
-      return `${selectedCourse} (${selectedCompany})`;
+      return `${aggregateRatings.courseTitle || 'Selected Course'} (${selectedCompany})`;
     } else if (selectedCourse) {
-      return selectedCourse;
+      return aggregateRatings.courseTitle || 'Selected Course';
     } else if (selectedCompany) {
       return `All courses from ${selectedCompany}`;
     }
