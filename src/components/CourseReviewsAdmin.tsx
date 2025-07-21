@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +5,7 @@ import { MessageSquare } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CourseReviewFilters } from "./CourseReviewFilters";
 import { CourseReviewCard } from "./CourseReviewCard";
+import { CourseReviewAggregates } from "./CourseReviewAggregates";
 
 interface CourseReview {
   id: string;
@@ -152,6 +152,11 @@ export const CourseReviewsAdmin = () => {
       <CourseReviewFilters
         onCourseChange={setSelectedCourse}
         onCompanyChange={setSelectedCompany}
+        selectedCourse={selectedCourse}
+        selectedCompany={selectedCompany}
+      />
+
+      <CourseReviewAggregates
         selectedCourse={selectedCourse}
         selectedCompany={selectedCompany}
       />
