@@ -27,7 +27,7 @@ export const DataVisualization = () => {
     },
   });
 
-  // Fetch pipeline data with candidate info
+  // Fetch pipeline data with candidate info - fix the relationship ambiguity
   const { data: pipelineData = [] } = useQuery({
     queryKey: ['pipeline-visualization-data'],
     queryFn: async () => {
@@ -37,7 +37,7 @@ export const DataVisualization = () => {
         .from('candidate_pipeline')
         .select(`
           *,
-          profiles!inner(email, full_name, current_company, skillsets)
+          profiles!candidate_pipeline_candidate_id_fkey(email, full_name, current_company, skillsets)
         `);
       
       if (error) {
@@ -129,13 +129,17 @@ export const DataVisualization = () => {
     }));
   }, [pipelineData]);
 
-  // Mock region data (would come from candidate profiles in real implementation)
-  const regionData = React.useMemo(() => {
-    const regions = ['Tokyo', 'Osaka', 'Nagoya', 'Fukuoka', 'Sapporo', 'Kyoto'];
-    return regions.map(region => ({
-      name: region,
-      value: Math.floor(Math.random() * 50) + 10, // Mock data
-    }));
+  // Country-based region data (would come from candidate profiles in real implementation)
+  const countryData = React.useMemo(() => {
+    const countries = [
+      'Japan', 'United States', 'United Kingdom', 'Canada', 
+      'Australia', 'Germany', 'France', 'South Korea', 
+      'Singapore', 'Philippines', 'India', 'Brazil'
+    ];
+    return countries.map(country => ({
+      name: country,
+      value: Math.floor(Math.random() * 30) + 5, // Mock data
+    })).sort((a, b) => b.value - a.value);
   }, []);
 
   const totalCandidates = pipelineData.length;
@@ -314,17 +318,17 @@ export const DataVisualization = () => {
           </CardContent>
         </Card>
 
-        {/* Region Heatmap (simplified as bar chart) */}
+        {/* Country Heatmap (as horizontal bar chart) */}
         <Card>
           <CardHeader>
-            <CardTitle>Candidates by Region</CardTitle>
+            <CardTitle>Candidates by Country</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={regionData} layout="horizontal">
+              <BarChart data={countryData} layout="horizontal">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={60} />
+                <YAxis dataKey="name" type="category" width={80} />
                 <Tooltip />
                 <Bar dataKey="value" fill="#82ca9d" />
               </BarChart>
