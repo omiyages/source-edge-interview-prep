@@ -16,6 +16,8 @@ export interface CandidateApplication {
   applied_company: string | null;
   applied_job_title: string | null;
   created_at: string;
+  updated_at: string;
+  moved_at: string;
 }
 
 export interface Candidate {
@@ -26,6 +28,10 @@ export interface Candidate {
   current_company: string | null;
   years_of_experience: number | null;
   skillsets: string[] | null;
+  phone_number: string | null;
+  salary: number | null;
+  past_companies: string[] | null;
+  general_notes: string | null;
   applications?: CandidateApplication[];
 }
 
@@ -56,7 +62,7 @@ export const useCandidatesWithPipeline = () => {
     queryFn: async () => {
       console.log('🔍 Fetching candidates with pipeline data...');
       
-      // Get all candidates with role 'user'
+      // Get all candidates with role 'user' and include all relevant fields
       const { data: candidates, error: candidatesError } = await supabase
         .from('profiles')
         .select('*')
@@ -67,7 +73,7 @@ export const useCandidatesWithPipeline = () => {
         throw candidatesError;
       }
 
-      // Get all pipeline applications
+      // Get all pipeline applications with updated_at field
       const { data: applications, error: applicationsError } = await supabase
         .from('candidate_pipeline')
         .select('*');
@@ -114,6 +120,7 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
             applied_company: application.applied_company,
             applied_job_title: application.applied_job_title,
             application_created_at: application.created_at,
+            moved_at: application.moved_at || application.updated_at,
           });
         }
       });

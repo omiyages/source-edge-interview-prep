@@ -25,6 +25,7 @@ export type Database = {
           moved_by: string | null
           notes: string | null
           stage_id: string
+          updated_at: string | null
         }
         Insert: {
           applied_company?: string | null
@@ -36,6 +37,7 @@ export type Database = {
           moved_by?: string | null
           notes?: string | null
           stage_id: string
+          updated_at?: string | null
         }
         Update: {
           applied_company?: string | null
@@ -47,6 +49,7 @@ export type Database = {
           moved_by?: string | null
           notes?: string | null
           stage_id?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -338,6 +341,7 @@ export type Database = {
           current_company: string | null
           email: string
           full_name: string | null
+          general_notes: string | null
           id: string
           is_active: boolean | null
           last_login_at: string | null
@@ -358,6 +362,7 @@ export type Database = {
           current_company?: string | null
           email: string
           full_name?: string | null
+          general_notes?: string | null
           id: string
           is_active?: boolean | null
           last_login_at?: string | null
@@ -378,6 +383,7 @@ export type Database = {
           current_company?: string | null
           email?: string
           full_name?: string | null
+          general_notes?: string | null
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null

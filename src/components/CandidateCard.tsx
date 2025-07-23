@@ -1,14 +1,16 @@
 
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Mail, Building2, Briefcase, Trash2 } from 'lucide-react';
+import { ExternalLink, Mail, Building2, Briefcase, Trash2, Calendar, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
+import { CandidateDetailDialog } from './CandidateDetailDialog';
+import { formatDate } from '@/utils/formatters';
 
 interface Candidate {
   id: string;
@@ -21,6 +23,12 @@ interface Candidate {
   applicationId?: string;
   applied_company?: string | null;
   applied_job_title?: string | null;
+  application_created_at?: string;
+  moved_at?: string;
+  general_notes?: string;
+  phone_number?: string | null;
+  salary?: number | null;
+  past_companies?: string[] | null;
 }
 
 interface CandidateCardProps {
@@ -36,6 +44,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = memo(({
   dragId,
   isUnassigned = false,
 }) => {
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
   const deleteCandidateCompletelyMutation = useDeleteCandidateCompletely();
 
   const {
@@ -86,6 +95,15 @@ export const CandidateCard: React.FC<CandidateCardProps> = memo(({
     }
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't open dialog if clicking on buttons or during drag
+    if (e.target instanceof HTMLElement && 
+        (e.target.closest('button') || isDragging || isSortableDragging)) {
+      return;
+    }
+    setShowDetailDialog(true);
+  };
+
   console.log('🎴 CandidateCard render decision:', {
     email: candidate.email,
     hasApplicationId: Boolean(candidate.applicationId),
@@ -94,106 +112,131 @@ export const CandidateCard: React.FC<CandidateCardProps> = memo(({
   });
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`cursor-grab active:cursor-grabbing transition-all hover:shadow-md ${
-        isDragging || isSortableDragging ? 'shadow-lg ring-2 ring-primary' : ''
-      }`}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
-              {companyIcon}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <h4 className="font-medium text-sm truncate text-foreground">
-                {displayName}
-              </h4>
-              <div className="flex items-center gap-1">
-                {candidate.linkedin_profile && (
+    <>
+      <Card
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className={`cursor-grab active:cursor-grabbing transition-all hover:shadow-md ${
+          isDragging || isSortableDragging ? 'shadow-lg ring-2 ring-primary' : ''
+        }`}
+        onClick={handleCardClick}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+                {companyIcon}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="font-medium text-sm truncate text-foreground">
+                  {displayName}
+                </h4>
+                <div className="flex items-center gap-1">
+                  {candidate.linkedin_profile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(candidate.linkedin_profile!, '_blank');
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(candidate.linkedin_profile!, '_blank');
-                    }}
+                    className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleDeleteCompletely}
+                    title="Delete user permanently"
                   >
-                    <ExternalLink className="h-3 w-3" />
+                    <Trash2 className="h-3 w-3" />
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={handleDeleteCompletely}
-                  title="Delete user permanently"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-              <Mail className="h-3 w-3" />
-              <span className="truncate">{candidate.email}</span>
-            </div>
-
-            {/* Applied Company and Job Title */}
-            {candidate.applied_company && (
-              <div className="flex items-center gap-1 text-xs text-foreground mb-2 bg-primary/10 px-2 py-1 rounded">
-                <Briefcase className="h-3 w-3" />
-                <span className="truncate font-medium">
-                  {candidate.applied_job_title && (
-                    <>
-                      {candidate.applied_job_title} • 
-                    </>
-                  )}
-                  {candidate.applied_company}
-                </span>
-              </div>
-            )}
-
-            {/* Current Company (if no applied company) */}
-            {!candidate.applied_company && candidate.current_company && (
+              
               <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                <Building2 className="h-3 w-3" />
-                <span className="truncate">{candidate.current_company}</span>
+                <Mail className="h-3 w-3" />
+                <span className="truncate">{candidate.email}</span>
               </div>
-            )}
 
-            {candidate.years_of_experience && (
-              <div className="text-xs text-muted-foreground mb-2">
-                {candidate.years_of_experience} years experience
-              </div>
-            )}
+              {/* Applied Company and Job Title */}
+              {candidate.applied_company && (
+                <div className="flex items-center gap-1 text-xs text-foreground mb-2 bg-primary/10 px-2 py-1 rounded">
+                  <Briefcase className="h-3 w-3" />
+                  <span className="truncate font-medium">
+                    {candidate.applied_job_title && (
+                      <>
+                        {candidate.applied_job_title} • 
+                      </>
+                    )}
+                    {candidate.applied_company}
+                  </span>
+                </div>
+              )}
 
-            {candidate.skillsets && candidate.skillsets.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {candidate.skillsets.slice(0, 3).map((skill, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
-                    {skill}
-                  </Badge>
-                ))}
-                {candidate.skillsets.length > 3 && (
-                  <Badge variant="secondary" className="text-xs px-1 py-0">
-                    +{candidate.skillsets.length - 3}
-                  </Badge>
+              {/* Current Company (if no applied company) */}
+              {!candidate.applied_company && candidate.current_company && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                  <Building2 className="h-3 w-3" />
+                  <span className="truncate">{candidate.current_company}</span>
+                </div>
+              )}
+
+              {candidate.years_of_experience && (
+                <div className="text-xs text-muted-foreground mb-2">
+                  {candidate.years_of_experience} years experience
+                </div>
+              )}
+
+              {/* Date information */}
+              <div className="space-y-1 mb-2">
+                {candidate.application_created_at && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>Applied: {formatDate(candidate.application_created_at)}</span>
+                  </div>
+                )}
+                {candidate.moved_at && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    <span>Updated: {formatDate(candidate.moved_at)}</span>
+                  </div>
                 )}
               </div>
-            )}
+
+              {candidate.skillsets && candidate.skillsets.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {candidate.skillsets.slice(0, 3).map((skill, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
+                      {skill}
+                    </Badge>
+                  ))}
+                  {candidate.skillsets.length > 3 && (
+                    <Badge variant="secondary" className="text-xs px-1 py-0">
+                      +{candidate.skillsets.length - 3}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <CandidateDetailDialog
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        candidate={candidate}
+      />
+    </>
   );
 });
 
