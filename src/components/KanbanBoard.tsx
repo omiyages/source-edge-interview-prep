@@ -5,22 +5,38 @@ import { KanbanColumn } from './KanbanColumn';
 import { CandidateCard } from './CandidateCard';
 import { CandidateSearchDialog } from './CandidateSearchDialog';
 import { KanbanBoardHeader } from './KanbanBoardHeader';
+import { KanbanFilters } from './KanbanFilters';
 import { useHiringStages, useCandidatesWithPipeline, useKanbanHelpers } from '@/hooks/useKanbanData';
 import { useKanbanActions } from '@/hooks/useKanbanMutations';
 import { useKanbanDragDrop } from '@/hooks/useKanbanDragDrop';
+import { useKanbanFilters } from '@/hooks/useKanbanFilters';
 
 export const KanbanBoard = memo(() => {
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   
   const { data: stages = [] } = useHiringStages();
   const { data: candidates = [] } = useCandidatesWithPipeline();
-  const { getCandidatesForStage } = useKanbanHelpers(candidates);
+  const { 
+    roleFilter, 
+    companyFilter, 
+    setRoleFilter, 
+    setCompanyFilter, 
+    filteredCandidates 
+  } = useKanbanFilters(candidates);
+  const { getCandidatesForStage } = useKanbanHelpers(filteredCandidates);
   const { handleSelectCandidate } = useKanbanActions(stages);
-  const { sensors, activeCandidate, handleDragStart, handleDragEnd } = useKanbanDragDrop(candidates);
+  const { sensors, activeCandidate, handleDragStart, handleDragEnd } = useKanbanDragDrop(filteredCandidates);
 
   return (
     <div className="h-full">
       <KanbanBoardHeader onAddCandidate={() => setShowSearchDialog(true)} />
+
+      <KanbanFilters
+        roleFilter={roleFilter}
+        companyFilter={companyFilter}
+        onRoleFilterChange={setRoleFilter}
+        onCompanyFilterChange={setCompanyFilter}
+      />
 
       <DndContext
         sensors={sensors}
@@ -28,7 +44,7 @@ export const KanbanBoard = memo(() => {
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-6 overflow-x-auto h-full pb-4">
-          {/* All stage columns - including unassigned if it exists as a hiring stage */}
+          {/* All stage columns - including the new "New Candidate" stage */}
           {stages.map(stage => (
             <KanbanColumn
               key={stage.id}
