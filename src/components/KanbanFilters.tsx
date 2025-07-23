@@ -36,7 +36,7 @@ export const KanbanFilters: React.FC<KanbanFiltersProps> = ({
                 <SelectValue placeholder="All roles" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All roles</SelectItem>
+                <SelectItem value="all">All roles</SelectItem>
                 {availableRoles.map((role) => (
                   <SelectItem key={role} value={role}>
                     {role}
@@ -57,7 +57,7 @@ export const KanbanFilters: React.FC<KanbanFiltersProps> = ({
                 <SelectValue placeholder="All companies" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All companies</SelectItem>
+                <SelectItem value="all">All companies</SelectItem>
                 {availableCompanies.map((company) => (
                   <SelectItem key={company} value={company}>
                     {company}

@@ -3,8 +3,8 @@ import { useState, useMemo } from 'react';
 import { Candidate } from './useKanbanData';
 
 export const useKanbanFilters = (candidates: Candidate[]) => {
-  const [roleFilter, setRoleFilter] = useState('');
-  const [companyFilter, setCompanyFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
 
   // Extract unique roles and companies from candidates data
   const { availableRoles, availableCompanies } = useMemo(() => {
@@ -36,12 +36,12 @@ export const useKanbanFilters = (candidates: Candidate[]) => {
 
   const filteredCandidates = useMemo(() => {
     return candidates.filter(candidate => {
-      const roleMatch = !roleFilter || 
+      const roleMatch = roleFilter === 'all' || 
         candidate.applications?.some(app => 
           app.applied_job_title === roleFilter
         );
 
-      const companyMatch = !companyFilter || 
+      const companyMatch = companyFilter === 'all' || 
         candidate.current_company === companyFilter ||
         candidate.applications?.some(app => 
           app.applied_company === companyFilter
