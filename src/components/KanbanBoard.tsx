@@ -21,7 +21,9 @@ export const KanbanBoard = memo(() => {
     companyFilter, 
     setRoleFilter, 
     setCompanyFilter, 
-    filteredCandidates 
+    filteredCandidates,
+    availableRoles,
+    availableCompanies
   } = useKanbanFilters(candidates);
   const { getCandidatesForStage } = useKanbanHelpers(filteredCandidates);
   const { handleSelectCandidate } = useKanbanActions(stages);
@@ -36,6 +38,8 @@ export const KanbanBoard = memo(() => {
         companyFilter={companyFilter}
         onRoleFilterChange={setRoleFilter}
         onCompanyFilterChange={setCompanyFilter}
+        availableRoles={availableRoles}
+        availableCompanies={availableCompanies}
       />
 
       <DndContext
