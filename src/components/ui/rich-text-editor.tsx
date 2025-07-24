@@ -74,6 +74,30 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
           .ql-editor span {
             font-size: 14px !important;
           }
+          .ql-editor h1 {
+            font-size: 18px !important;
+          }
+          .ql-editor h2 {
+            font-size: 16px !important;
+          }
+          .ql-editor h3 {
+            font-size: 14px !important;
+          }
+          .ql-editor blockquote {
+            font-size: 14px !important;
+          }
+          .ql-editor code {
+            font-size: 14px !important;
+          }
+          .ql-editor pre {
+            font-size: 14px !important;
+          }
+          .ql-toolbar .ql-picker-label {
+            font-size: 14px !important;
+          }
+          .ql-toolbar .ql-picker-item {
+            font-size: 14px !important;
+          }
         `
       }} />
     </div>

@@ -75,14 +75,14 @@ export default {
 				'token-4xl': 'var(--spacing-4xl)',
 			},
 			fontSize: {
-				'xs': '12px',                // Back to 12px
+				'xs': '14px',                // Changed from 12px to 14px
 				'sm': '14px',                // Minimum font size
-				'base': '14px',              // Minimum body text size
-				'lg': '16px',                // 16px
-				'xl': '18px',                // 18px
-				'2xl': '20px',               // 20px
-				'3xl': '24px',               // 24px
-				'4xl': '30px',               // 30px
+				'base': '16px',              // Standard body text size
+				'lg': '18px',                // 18px
+				'xl': '20px',                // 20px
+				'2xl': '22px',               // 22px
+				'3xl': '26px',               // 26px
+				'4xl': '32px',               // 32px
 				'token-xs': 'var(--text-xs)',
 				'token-sm': 'var(--text-sm)',
 				'token-base': 'var(--text-base)',

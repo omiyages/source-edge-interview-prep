@@ -211,7 +211,7 @@ export const CandidateDetailDialog: React.FC<CandidateDetailDialogProps> = ({
                     <span className="text-sm font-normal text-muted-foreground mb-2 block">Skills:</span>
                     <div className="flex flex-wrap gap-1">
                       {candidate.skillsets.map((skill: string, index: number) => (
-                        <Badge key={index} variant="secondary" className="text-xs font-normal">
+                        <Badge key={index} variant="secondary" className="text-sm font-normal">
                           {skill}
                         </Badge>
                       ))}
@@ -224,7 +224,7 @@ export const CandidateDetailDialog: React.FC<CandidateDetailDialogProps> = ({
                     <span className="text-sm font-normal text-muted-foreground mb-2 block">Past Companies:</span>
                     <div className="flex flex-wrap gap-1">
                       {candidate.past_companies.map((company: string, index: number) => (
-                        <Badge key={index} variant="outline" className="text-xs font-normal">
+                        <Badge key={index} variant="outline" className="text-sm font-normal">
                           {company}
                         </Badge>
                       ))}

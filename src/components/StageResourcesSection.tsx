@@ -122,7 +122,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
               <div key={category}>
                 <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                   <Badge variant="secondary">{category}</Badge>
-                  <span className="text-xs text-gray-500">({resources.length})</span>
+                  <span className="text-sm text-gray-500">({resources.length})</span>
                 </h4>
                 <div className="grid gap-3 md:grid-cols-2">
                   {resources.map((resource) => (
@@ -134,9 +134,9 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
                         <div className="flex-1 min-w-0">
                           <h5 className="font-medium text-sm mb-1">{resource.title}</h5>
                           {resource.description && (
-                            <p className="text-xs text-gray-600 mb-2 line-clamp-2">{resource.description}</p>
+                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{resource.description}</p>
                           )}
-                          <p className="text-xs text-blue-600 truncate">{resource.url}</p>
+                          <p className="text-sm text-blue-600 truncate">{resource.url}</p>
                         </div>
                         <a
                           href={resource.url}

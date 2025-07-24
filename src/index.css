@@ -120,7 +120,7 @@ p.text-lg.text-gray-600.mb-6 {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-weight: 400;
-    font-size: 14px; /* Minimum 14px base font size */
+    font-size: 16px; /* Standard body text */
     line-height: 1.5;
   }
 
@@ -133,10 +133,10 @@ p.text-lg.text-gray-600.mb-6 {
   }
 
   /* Ensure minimum font sizes for accessibility */
-  .text-xs { font-size: 12px !important; } /* Back to 12px */
+  .text-xs { font-size: 14px !important; } /* Changed from 12px to 14px */
   .text-sm { font-size: 14px !important; } /* Minimum 14px */
-  .text-base { font-size: 14px !important; } /* Minimum 14px */
-  .text-lg { font-size: 16px !important; } /* 16px */
+  .text-base { font-size: 16px !important; } /* Standard 16px */
+  .text-lg { font-size: 18px !important; } /* 18px */
 
   /* Better text rendering */
   .text-balance {
@@ -180,14 +180,14 @@ p.text-lg.text-gray-600.mb-6 {
     --spacing-4xl: 4rem;        /* 64px */
 
     /* Typography scale - Updated for 14px minimum */
-    --text-xs: 12px;            /* 12px */
+    --text-xs: 14px;            /* Changed from 12px to 14px */
     --text-sm: 14px;            /* Minimum 14px */
-    --text-base: 14px;          /* Minimum body text size */
-    --text-lg: 16px;            /* 16px */
-    --text-xl: 18px;            /* 18px */
-    --text-2xl: 20px;           /* 20px */
-    --text-3xl: 24px;           /* 24px */
-    --text-4xl: 30px;           /* 30px */
+    --text-base: 16px;          /* Standard body text size */
+    --text-lg: 18px;            /* 18px */
+    --text-xl: 20px;            /* 20px */
+    --text-2xl: 22px;           /* 22px */
+    --text-3xl: 26px;           /* 26px */
+    --text-4xl: 32px;           /* 32px */
 
     /* Enhanced shadows */
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
