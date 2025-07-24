@@ -304,8 +304,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
       <Button 
         type="submit" 
-        className="w-full" 
         variant="gradient"
+        size="default"
+        className="w-full"
         disabled={submitQuestionMutation.isPending}
       >
         {submitQuestionMutation.isPending ? "Submitting..." : "Submit Question"}
