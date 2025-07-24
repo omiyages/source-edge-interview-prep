@@ -67,7 +67,7 @@ export const AdminRoleManager = ({ user, trigger }: AdminRoleManagerProps) => {
 
           <div>
             <Label htmlFor="new-role">New Role</Label>
-            <Select value={newRole} onValueChange={(value: 'admin' | 'user') => setNewRole(value)}>
+            <Select value={newRole} onValueChange={(value) => setNewRole(value as 'admin' | 'user')}>
               <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>

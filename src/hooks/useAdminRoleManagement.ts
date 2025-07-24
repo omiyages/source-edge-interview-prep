@@ -18,24 +18,60 @@ export const useAdminRoleManagement = () => {
 
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, newRole, reason }: UpdateRoleParams) => {
-      const { data, error } = await supabase.rpc('update_user_role', {
-        target_user_id: userId,
-        new_role: newRole,
-        reason: reason || null
-      });
+      // First check if current user is admin
+      const { data: currentUser, error: userError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user?.id)
+        .single();
 
-      if (error) throw error;
-      return data;
+      if (userError || currentUser?.role !== 'admin') {
+        throw new Error('Only admins can update user roles');
+      }
+
+      // Get the current role for audit logging
+      const { data: targetUser, error: targetError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (targetError) throw targetError;
+
+      // Update the user's role
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Log the audit entry
+      const { error: auditError } = await supabase
+        .from('role_change_audit')
+        .insert({
+          target_user_id: userId,
+          old_role: targetUser.role,
+          new_role: newRole,
+          changed_by: user?.id,
+          reason: reason || null
+        });
+
+      if (auditError) {
+        console.error('Failed to log role change audit:', auditError);
+      }
+
+      return { userId, newRole, oldRole: targetUser.role };
     },
-    onSuccess: (_, { userId, newRole, reason }) => {
+    onSuccess: (data, { userId, newRole, reason }) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['pending-users'] });
       
       // Log the admin action
       logAdminAction(
-        `Role updated to ${newRole} for user ${userId}`,
+        `Role updated from ${data.oldRole} to ${newRole} for user ${userId}`,
         user?.id,
-        { targetUserId: userId, newRole, reason }
+        { targetUserId: userId, newRole, oldRole: data.oldRole, reason }
       );
 
       toast({

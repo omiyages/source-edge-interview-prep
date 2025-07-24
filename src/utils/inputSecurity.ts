@@ -46,6 +46,10 @@ export const sanitizeInput = (input: string): string => {
   return sanitized.trim().substring(0, 1000);
 };
 
+export const sanitizeTextInput = (input: string): string => {
+  return sanitizeInput(input);
+};
+
 export const validateAndSanitizeInput = (input: string, maxLength: number = 1000): string => {
   if (!input || typeof input !== 'string') {
     return '';
@@ -57,6 +61,72 @@ export const validateAndSanitizeInput = (input: string, maxLength: number = 1000
   }
   
   return sanitizeInput(input);
+};
+
+// Question validation
+export const validateQuestionInput = (question: string): { isValid: boolean; message?: string } => {
+  if (!question || question.trim().length === 0) {
+    return { isValid: false, message: "Question is required" };
+  }
+  
+  if (question.length < 10) {
+    return { isValid: false, message: "Question must be at least 10 characters long" };
+  }
+  
+  if (question.length > 2000) {
+    return { isValid: false, message: "Question must be less than 2000 characters" };
+  }
+  
+  // Check for suspicious patterns
+  const suspiciousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /<iframe/i
+  ];
+  
+  if (suspiciousPatterns.some(pattern => pattern.test(question))) {
+    return { isValid: false, message: "Question contains invalid content" };
+  }
+  
+  return { isValid: true };
+};
+
+// Company validation
+export const validateCompanyInput = (company: string): { isValid: boolean; message?: string } => {
+  if (!company || company.trim().length === 0) {
+    return { isValid: false, message: "Company is required" };
+  }
+  
+  const validCompanies = ["Woven by Toyota", "LexxPluss", "Wismettac"];
+  if (!validCompanies.includes(company)) {
+    return { isValid: false, message: "Please select a valid company" };
+  }
+  
+  return { isValid: true };
+};
+
+// Role validation
+export const validateRoleInput = (role: string): { isValid: boolean; message?: string } => {
+  if (!role || role.trim().length === 0) {
+    return { isValid: false, message: "Role is required" };
+  }
+  
+  const validRoles = [
+    "Backend Engineer",
+    "Frontend Engineer", 
+    "Full Stack Engineer",
+    "SRE/DevOps",
+    "Engineering Manager",
+    "Product Manager",
+    "Data Engineer"
+  ];
+  
+  if (!validRoles.includes(role)) {
+    return { isValid: false, message: "Please select a valid role" };
+  }
+  
+  return { isValid: true };
 };
 
 // Password strength validation
