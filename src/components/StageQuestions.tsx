@@ -69,15 +69,16 @@ export const StageQuestions = ({
   }, [stageId, onQuestionsUpdate]);
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-gray-200 bg-white shadow-sm">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle>Practice Questions</CardTitle>
+          <CardTitle className="text-lg font-semibold text-gray-900">Practice Questions</CardTitle>
           {isAdmin && (
             <Button
               variant="outline"
               size="sm"
               onClick={onManageClick}
+              className="text-sm border-gray-300 hover:bg-gray-50"
             >
               <Settings2 className="w-4 h-4 mr-2" />
               Manage Questions
@@ -87,18 +88,19 @@ export const StageQuestions = ({
       </CardHeader>
       <CardContent>
         {questions && questions.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {questions.map((question) => (
               <QuestionCard key={question.id} question={question} />
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
+          <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No questions assigned to this stage yet.</p>
             {isAdmin && (
               <Button
                 variant="outline"
                 onClick={onManageClick}
+                className="border-gray-300 hover:bg-gray-50"
               >
                 <Settings2 className="w-4 h-4 mr-2" />
                 Add Questions

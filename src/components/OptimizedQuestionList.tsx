@@ -57,7 +57,7 @@ export const OptimizedQuestionList = memo(({
 
   if (loading && displayQuestions.length === 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-token-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
           <SkeletonCard key={index} />
         ))}
@@ -67,15 +67,15 @@ export const OptimizedQuestionList = memo(({
 
   if (displayQuestions.length === 0) {
     return (
-      <div className="text-center py-token-4xl animate-fade-in">
-        <p className="text-muted-foreground text-token-lg">No questions found.</p>
+      <div className="text-center py-12">
+        <p className="text-gray-500 text-base">No questions found.</p>
       </div>
     );
   }
 
   return (
     <ErrorBoundary>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-token-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayQuestions.map((question, index) => (
           <div 
             key={question.id}
@@ -88,13 +88,13 @@ export const OptimizedQuestionList = memo(({
       </div>
       
       {enableInfiniteScroll && hasNextPage && (
-        <div ref={setTarget} className="flex justify-center py-token-xl">
+        <div ref={setTarget} className="flex justify-center py-6">
           {loading && <LoadingSpinner text="Loading more questions..." />}
         </div>
       )}
       
       {loading && displayQuestions.length > 0 && !enableInfiniteScroll && (
-        <div className="flex justify-center py-token-lg">
+        <div className="flex justify-center py-4">
           <LoadingSpinner text="Loading..." />
         </div>
       )}

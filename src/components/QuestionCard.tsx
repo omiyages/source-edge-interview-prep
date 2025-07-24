@@ -84,46 +84,46 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
 
   const getRoleTypeColor = (roleType: string) => {
     switch (roleType) {
-      case 'Backend Engineer': return 'bg-blue-100 text-blue-800';
-      case 'Frontend Engineer': return 'bg-green-100 text-green-800';
-      case 'SRE/DevOps': return 'bg-orange-100 text-orange-800';
-      case 'Engineering Manager': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Backend Engineer': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'Frontend Engineer': return 'bg-green-50 text-green-700 border-green-200';
+      case 'SRE/DevOps': return 'bg-orange-50 text-orange-700 border-orange-200';
+      case 'Engineering Manager': return 'bg-purple-50 text-purple-700 border-purple-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
   return (
-    <Card className="card-interactive h-full flex flex-col animate-fade-in shadow-token-sm hover:shadow-token-lg">
-      <CardHeader className="pb-token-md">
-        <div className="flex items-start justify-between gap-token-sm mb-token-sm">
-          <div className="flex flex-wrap gap-token-xs">
+    <Card className="group h-full flex flex-col bg-white hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-gray-300">
+      <CardHeader className="pb-3 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <Badge 
               variant="secondary" 
-              className="bg-primary/10 text-primary border-primary/20 hover-scale"
+              className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
             >
               {question.role}
             </Badge>
             {question.status && (
-              <Badge variant="outline" className="hover-scale">
+              <Badge variant="outline" className="text-xs font-medium px-2 py-1">
                 {question.status}
               </Badge>
             )}
           </div>
           {isAdmin && (
-            <div className="flex gap-token-xs">
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="btn-touch hover-scale text-primary hover:bg-primary/10"
+                    className="h-8 w-8 p-0 text-gray-600 hover:text-primary hover:bg-primary/10"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Edit Interview Question</DialogTitle>
+                    <DialogTitle className="text-lg font-semibold">Edit Interview Question</DialogTitle>
                   </DialogHeader>
                   <EditQuestionForm 
                     question={question} 
@@ -139,33 +139,33 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                   deleteQuestionMutation.mutate(question.id);
                 }}
                 disabled={deleteQuestionMutation.isPending}
-                className="btn-touch hover-scale text-destructive hover:bg-destructive/10"
+                className="h-8 w-8 p-0 text-gray-600 hover:text-red-600 hover:bg-red-50"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           )}
         </div>
-        <CardTitle className="text-token-lg leading-tight font-semibold text-card-foreground">
+        <CardTitle className="text-sm font-medium leading-relaxed text-gray-900 line-clamp-3">
           {question.question}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 flex-1 flex flex-col space-y-token-md">
-        <div className="space-y-token-sm flex-1">
-          <div className="text-token-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Company:</span> {question.company}
+      <CardContent className="pt-0 flex-1 flex flex-col space-y-3">
+        <div className="space-y-2 flex-1">
+          <div className="text-xs text-gray-600">
+            <span className="font-medium text-gray-900">Company:</span> {question.company}
           </div>
-          <div className="text-token-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Category:</span> {question.category}
+          <div className="text-xs text-gray-600">
+            <span className="font-medium text-gray-900">Category:</span> {question.category}
           </div>
-          <div className="text-token-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Interview Stage:</span> {question.interview_stage}
+          <div className="text-xs text-gray-600">
+            <span className="font-medium text-gray-900">Stage:</span> {question.interview_stage}
           </div>
           {question.additional_context && (
-            <div className="p-token-md bg-muted/50 rounded-md text-token-sm border border-border/50">
-              <span className="font-medium text-foreground block mb-token-xs">Additional Context:</span>
+            <div className="p-3 bg-gray-50 rounded-md text-xs border border-gray-100">
+              <span className="font-medium text-gray-900 block mb-1">Additional Context:</span>
               <div 
-                className="text-muted-foreground leading-relaxed"
+                className="text-gray-700 leading-relaxed"
                 dangerouslySetInnerHTML={{
                   __html: question.additional_context.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 }}
@@ -173,7 +173,7 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
             </div>
           )}
         </div>
-        <div className="text-token-xs text-muted-foreground mt-token-lg pt-token-md border-t border-border/50">
+        <div className="text-xs text-gray-500 pt-2 border-t border-gray-100">
           Added {new Date(question.created_at).toLocaleDateString()}
         </div>
       </CardContent>
