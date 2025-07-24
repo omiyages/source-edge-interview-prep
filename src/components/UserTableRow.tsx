@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Trash2, Calendar, Clock, Edit, ExternalLink } from "lucide-react";
+import { Trash2, Edit, ExternalLink, Shield } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { UserProfile } from "@/types/user";
-import { formatDate, formatDuration } from "@/utils/formatters";
+import { AdminRoleManager } from "@/components/AdminRoleManager";
 
 interface UserTableRowProps {
   user: UserProfile;
@@ -68,9 +68,19 @@ export const UserTableRow = ({ user, onDelete, isDeleting, onEdit }: UserTableRo
         )}
       </TableCell>
       <TableCell>
-        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-          {user.role}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+            {user.role}
+          </Badge>
+          <AdminRoleManager 
+            user={user} 
+            trigger={
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Shield className="h-3 w-3" />
+              </Button>
+            }
+          />
+        </div>
       </TableCell>
       <TableCell>
         <Badge variant={user.is_active ? 'default' : 'destructive'}>

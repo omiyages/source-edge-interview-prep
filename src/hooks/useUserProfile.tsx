@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/types/auth';
+import { loadOrCreateProfile } from '@/utils/secureProfileService';
 
 export const useUserProfile = (user: User | null) => {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -21,24 +22,14 @@ export const useUserProfile = (user: User | null) => {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-
+        const profileData = await loadOrCreateProfile(user);
+        
         if (!mounted) return;
 
-        if (error) {
-          console.error('Error loading profile:', error);
-          setProfile(null);
-          return;
-        }
-
-        if (data) {
-          setProfile(data);
-          
-          // Update last login time when profile is loaded
+        setProfile(profileData);
+        
+        // Update last login time when profile is loaded
+        if (profileData) {
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ last_login_at: new Date().toISOString() })
@@ -46,28 +37,6 @@ export const useUserProfile = (user: User | null) => {
 
           if (updateError) {
             console.error('Error updating last login:', updateError);
-          }
-        } else {
-          // Create profile if it doesn't exist
-          const isAdminEmail = user.email === 'namtae.quicksit@gmail.com';
-          const defaultRole: 'user' | 'admin' = isAdminEmail ? 'admin' : 'user';
-          
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert([{ 
-              id: user.id, 
-              email: user.email || '',
-              role: defaultRole,
-              last_login_at: new Date().toISOString()
-            }])
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('Error creating profile:', createError);
-            setProfile(null);
-          } else {
-            setProfile(newProfile);
           }
         }
       } catch (error) {

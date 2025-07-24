@@ -1,156 +1,108 @@
 
-// Input validation and sanitization utilities for security
-import { logInvalidInput, logXSSAttempt } from './securityLogger';
+import DOMPurify from 'dompurify';
+import { logXSSAttempt, logInvalidInput } from './securityLogger';
 
-export interface ValidationResult {
-  isValid: boolean;
-  message?: string;
-}
-
-// Enhanced XSS detection patterns
-const xssPatterns = [
-  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-  /javascript:/gi,
-  /on\w+\s*=/gi,
-  /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
-  /<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi,
-  /<embed\b[^<]*>/gi,
-  /<link\b[^<]*>/gi,
-  /<meta\b[^<]*>/gi,
-  /data:text\/html/gi,
-  /vbscript:/gi,
-  /<img[^>]+onerror/gi,
-  /<svg[^>]*on\w+/gi,
-];
-
-const detectXSS = (input: string, userId?: string): boolean => {
-  for (const pattern of xssPatterns) {
-    if (pattern.test(input)) {
-      logXSSAttempt(`XSS attempt detected: ${pattern.source}`, userId, {
-        input: input.substring(0, 100), // Log first 100 chars
-        pattern: pattern.source
-      });
-      return true;
-    }
+// Enhanced input validation and sanitization
+export const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isValid = emailRegex.test(email) && email.length <= 254;
+  
+  if (!isValid) {
+    logInvalidInput(`Invalid email format: ${email.substring(0, 20)}...`, undefined, {
+      email: email.substring(0, 50),
+      length: email.length
+    });
   }
-  return false;
+  
+  return isValid;
 };
 
-export const validateQuestionInput = (question: string, userId?: string): ValidationResult => {
-  if (!question || question.trim().length === 0) {
-    return { isValid: false, message: "Question cannot be empty" };
+export const sanitizeInput = (input: string): string => {
+  // Check for potential XSS attempts
+  const xssPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /<iframe/i,
+    /data:text\/html/i,
+    /vbscript:/i
+  ];
+  
+  const hasXSS = xssPatterns.some(pattern => pattern.test(input));
+  
+  if (hasXSS) {
+    logXSSAttempt(`XSS attempt detected in input: ${input.substring(0, 100)}...`, undefined, {
+      input: input.substring(0, 200),
+      detectedPatterns: xssPatterns.filter(pattern => pattern.test(input)).map(p => p.toString())
+    });
   }
   
-  if (question.length > 2000) {
-    logInvalidInput(`Question exceeds length limit: ${question.length} chars`, userId);
-    return { isValid: false, message: "Question cannot exceed 2000 characters" };
-  }
+  // Sanitize with DOMPurify
+  const sanitized = DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: []
+  });
   
-  // Check for XSS attempts
-  if (detectXSS(question, userId)) {
-    return { isValid: false, message: "Invalid content detected in question" };
-  }
-  
-  return { isValid: true };
+  return sanitized.trim().substring(0, 1000);
 };
 
-export const validateCompanyInput = (company: string, userId?: string): ValidationResult => {
-  if (!company || company.trim().length === 0) {
-    return { isValid: false, message: "Company name cannot be empty" };
-  }
-  
-  if (company.length > 100) {
-    logInvalidInput(`Company name exceeds length limit: ${company.length} chars`, userId);
-    return { isValid: false, message: "Company name cannot exceed 100 characters" };
-  }
-  
-  if (detectXSS(company, userId)) {
-    return { isValid: false, message: "Invalid content detected in company name" };
-  }
-  
-  return { isValid: true };
-};
-
-export const validateRoleInput = (role: string, userId?: string): ValidationResult => {
-  if (!role || role.trim().length === 0) {
-    return { isValid: false, message: "Role cannot be empty" };
-  }
-  
-  if (role.length > 100) {
-    logInvalidInput(`Role exceeds length limit: ${role.length} chars`, userId);
-    return { isValid: false, message: "Role cannot exceed 100 characters" };
-  }
-  
-  if (detectXSS(role, userId)) {
-    return { isValid: false, message: "Invalid content detected in role" };
-  }
-  
-  return { isValid: true };
-};
-
-export const sanitizeTextInput = (input: string): string => {
-  return input
-    .replace(/[<>]/g, '') // Remove potential HTML tags
-    .replace(/javascript:/gi, '') // Remove javascript: protocols
-    .trim()
-    .substring(0, 2000); // Limit length
-};
-
-export const sanitizeUrlInput = (url: string): string => {
-  try {
-    const cleanUrl = url.trim();
-    
-    // Basic URL validation
-    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-      return '';
-    }
-    
-    // Create URL object to validate
-    new URL(cleanUrl);
-    
-    return cleanUrl.substring(0, 500); // Limit length
-  } catch {
+export const validateAndSanitizeInput = (input: string, maxLength: number = 1000): string => {
+  if (!input || typeof input !== 'string') {
     return '';
   }
-};
-
-// Enhanced rate limiting utility with security logging
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-export const checkRateLimit = (key: string, maxRequests: number = 5, windowMs: number = 60000, userId?: string): boolean => {
-  const now = Date.now();
-  const record = rateLimitMap.get(key);
   
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
-    return true;
+  if (input.length > maxLength) {
+    logInvalidInput(`Input too long: ${input.length} characters (max: ${maxLength})`);
+    return sanitizeInput(input.substring(0, maxLength));
   }
   
-  if (record.count >= maxRequests) {
-    logInvalidInput(`Rate limit exceeded for key: ${key}`, userId, {
-      attempts: record.count,
-      maxRequests,
+  return sanitizeInput(input);
+};
+
+// Password strength validation
+export const validatePassword = (password: string): { isValid: boolean; message?: string } => {
+  if (password.length < 8) {
+    return { isValid: false, message: "Password must be at least 8 characters long" };
+  }
+  
+  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+    return { isValid: false, message: "Password must contain at least one uppercase letter, one lowercase letter, and one number" };
+  }
+  
+  // Check for common weak passwords
+  const weakPasswords = ['password', '12345678', 'qwerty123', 'admin123', 'password123'];
+  if (weakPasswords.some(weak => password.toLowerCase().includes(weak))) {
+    return { isValid: false, message: "Password contains common weak patterns" };
+  }
+  
+  return { isValid: true };
+};
+
+// Rate limiting for authentication attempts
+const authAttempts = new Map<string, { count: number; lastAttempt: number }>();
+
+export const checkRateLimit = (identifier: string, maxAttempts: number = 5, windowMs: number = 15 * 60 * 1000): boolean => {
+  const now = Date.now();
+  const key = identifier.toLowerCase();
+  const attempt = authAttempts.get(key) || { count: 0, lastAttempt: 0 };
+  
+  // Reset counter if window has passed
+  if (now - attempt.lastAttempt > windowMs) {
+    attempt.count = 0;
+  }
+  
+  if (attempt.count >= maxAttempts) {
+    logInvalidInput(`Rate limit exceeded for: ${identifier}`, undefined, {
+      identifier,
+      attemptCount: attempt.count,
       windowMs
     });
     return false;
   }
   
-  record.count++;
+  attempt.count++;
+  attempt.lastAttempt = now;
+  authAttempts.set(key, attempt);
+  
   return true;
-};
-
-// Content Security Policy helper
-export const getCSPDirectives = (): string => {
-  return [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Note: Consider removing unsafe-* in production
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self' data:",
-    "connect-src 'self' https:",
-    "frame-src 'none'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; ');
 };
