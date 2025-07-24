@@ -25,35 +25,39 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
     <>
       {!isAdmin && (
         <Link to="/dashboard">
-          <Button variant="outline" className="hover-purple-lift w-full sm:w-auto">
+          <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
             <BookOpen className="w-4 h-4 mr-2" />
             My Dashboard
           </Button>
         </Link>
       )}
       <Link to="/tracks">
-        <Button variant="outline" className="hover-purple-lift w-full sm:w-auto">
+        <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
           <BookOpen className="w-4 h-4 mr-2" />
           Tracks
         </Button>
       </Link>
       <Link to="/resources">
-        <Button variant="outline" className="hover-purple-lift w-full sm:w-auto">
+        <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
           Resources
         </Button>
       </Link>
       {isAdmin && (
         <Link to="/admin">
           <Button 
-            variant="outline" 
-            className="bg-white hover:bg-purple-50 border-purple-200 text-purple-700 hover:text-purple-800 w-full sm:w-auto"
+            variant="ghost" 
+            className="text-muted-foreground hover:text-foreground transition-colors font-medium"
           >
             <Settings className="w-4 h-4 mr-2" />
             Admin Dashboard
           </Button>
         </Link>
       )}
-      <Button variant="outline" onClick={signOut} className="hover-purple-lift w-full sm:w-auto">
+      <Button 
+        variant="ghost" 
+        onClick={signOut} 
+        className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+      >
         <LogOut className="w-4 h-4 mr-2" />
         Sign Out
       </Button>
@@ -61,58 +65,77 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
   );
 
   return (
-    <div className="text-center mb-8">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl sm:text-4xl font-bold text-foreground pl-4">
-          Source Edge Database
-        </h1>
-        
-        {/* Desktop Navigation */}
-        {!isMobile && (
-          <div className="flex gap-2">
-            <NavigationItems />
-          </div>
-        )}
-        
-        {/* Mobile Hamburger Menu */}
-        {isMobile && (
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="mr-4">
-                <Menu className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-64">
-              <div className="flex flex-col gap-4 mt-8">
+    <div className="bg-background">
+      {/* Navigation Header */}
+      <div className="border-b border-border/30">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center py-4">
+            <h1 className="text-xl font-semibold text-foreground">
+              Source Edge Database
+            </h1>
+            
+            {/* Desktop Navigation */}
+            {!isMobile && (
+              <nav className="flex items-center gap-1">
                 <NavigationItems />
-              </div>
-            </SheetContent>
-          </Sheet>
-        )}
+              </nav>
+            )}
+            
+            {/* Mobile Hamburger Menu */}
+            {isMobile && (
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-64">
+                  <div className="flex flex-col gap-2 mt-8">
+                    <NavigationItems />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
+          </div>
+        </div>
       </div>
-      
-      <p className="text-[2rem] text-gray-600 pt-[30px] mb-[10px] px-4">
-        Real interview questions to help you prepare for your next opportunity.
-      </p>
-      <p className="text-xs sm:text-sm text-gray-500 mb-6 px-4">
-        Welcome back, {profile?.full_name || profile?.email} 👋
-        {isAdmin && <span className="text-purple-600 font-semibold ml-2">👑 Admin</span>}
-      </p>
-      
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium px-4 sm:px-6 py-3">
-            <Plus className="w-4 h-4 mr-2" />
-            Submit Question
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Submit New Interview Question</DialogTitle>
-          </DialogHeader>
-          <SubmitQuestionForm onSuccess={onSubmitSuccess} />
-        </DialogContent>
-      </Dialog>
+
+      {/* Hero Content */}
+      <div className="container mx-auto px-4 py-16 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-normal text-foreground mb-6 leading-tight">
+            Real interview questions to help you prepare for your next opportunity
+          </h2>
+          
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            The modern interview preparation experience everyone deserves.
+            You don't have to choose between comprehensive and user-friendly.
+          </p>
+          
+          <p className="text-base text-muted-foreground mb-8">
+            Welcome back, {profile?.full_name || profile?.email} 👋
+            {isAdmin && <span className="text-primary font-semibold ml-2">👑 Admin</span>}
+          </p>
+          
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 rounded-md transition-all duration-200 hover:shadow-lg"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Submit Question
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Submit New Interview Question</DialogTitle>
+              </DialogHeader>
+              <SubmitQuestionForm onSuccess={onSubmitSuccess} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
     </div>
   );
 });

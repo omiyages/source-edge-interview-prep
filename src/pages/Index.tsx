@@ -41,14 +41,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <HeroSection 
-          isAdmin={isAdmin}
-          dialogOpen={dialogOpen}
-          setDialogOpen={setDialogOpen}
-          onSubmitSuccess={handleSubmitSuccess}
-        />
+      <HeroSection 
+        isAdmin={isAdmin}
+        dialogOpen={dialogOpen}
+        setDialogOpen={setDialogOpen}
+        onSubmitSuccess={handleSubmitSuccess}
+      />
 
+      <div className="container mx-auto px-4 py-8">
         <ResourcesPreview 
           resources={resources}
           loading={resourcesLoading}
