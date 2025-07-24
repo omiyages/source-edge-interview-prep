@@ -47,6 +47,7 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
           borderRadius: '6px',
           minHeight: '300px',
           fontWeight: 'normal',
+          fontSize: '16px', // Ensure minimum 16px
         }}
       />
       <style dangerouslySetInnerHTML={{
@@ -54,15 +55,24 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
           .ql-editor {
             font-weight: normal !important;
             font-family: inherit;
+            font-size: 16px !important;
+            line-height: 1.5;
           }
           .ql-editor p {
             font-weight: normal !important;
+            font-size: 16px !important;
           }
           .ql-editor strong {
             font-weight: bold !important;
           }
           .ql-editor b {
             font-weight: bold !important;
+          }
+          .ql-editor li {
+            font-size: 16px !important;
+          }
+          .ql-editor span {
+            font-size: 16px !important;
           }
         `
       }} />

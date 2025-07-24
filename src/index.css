@@ -120,6 +120,8 @@ p.text-lg.text-gray-600.mb-6 {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-weight: 400;
+    font-size: 16px; /* Ensure minimum 16px base font size */
+    line-height: 1.5;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -129,6 +131,12 @@ p.text-lg.text-gray-600.mb-6 {
   p, span, div {
     @apply font-normal;
   }
+
+  /* Ensure minimum font sizes for accessibility */
+  .text-xs { font-size: 14px !important; } /* Increased from 12px */
+  .text-sm { font-size: 16px !important; } /* Increased from 14px */
+  .text-base { font-size: 16px !important; } /* Already 16px */
+  .text-lg { font-size: 18px !important; } /* Keep at 18px */
 
   /* Better text rendering */
   .text-balance {
@@ -171,15 +179,15 @@ p.text-lg.text-gray-600.mb-6 {
     --spacing-3xl: 3rem;        /* 48px */
     --spacing-4xl: 4rem;        /* 64px */
 
-    /* Typography scale */
-    --text-xs: 0.75rem;         /* 12px */
-    --text-sm: 0.875rem;        /* 14px */
-    --text-base: 1rem;          /* 16px */
-    --text-lg: 1.125rem;        /* 18px */
-    --text-xl: 1.25rem;         /* 20px */
-    --text-2xl: 1.5rem;         /* 24px */
-    --text-3xl: 1.875rem;       /* 30px */
-    --text-4xl: 2.25rem;        /* 36px */
+    /* Typography scale - Updated for accessibility */
+    --text-xs: 14px;            /* Increased from 12px */
+    --text-sm: 16px;            /* Increased from 14px */
+    --text-base: 16px;          /* Minimum body text size */
+    --text-lg: 18px;            /* 18px */
+    --text-xl: 20px;            /* 20px */
+    --text-2xl: 24px;           /* 24px */
+    --text-3xl: 30px;           /* 30px */
+    --text-4xl: 36px;           /* 36px */
 
     /* Enhanced shadows */
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -228,7 +236,7 @@ p.text-lg.text-gray-600.mb-6 {
   .space-token-lg { gap: var(--spacing-lg); }
   .space-token-xl { gap: var(--spacing-xl); }
 
-  /* Text utilities using tokens */
+  /* Text utilities using tokens - Updated for accessibility */
   .text-token-xs { font-size: var(--text-xs); }
   .text-token-sm { font-size: var(--text-sm); }
   .text-token-base { font-size: var(--text-base); }
