@@ -10,7 +10,11 @@ interface QuestionManagerActionsProps {
 export const QuestionManagerActions = ({ onSave, isSaving }: QuestionManagerActionsProps) => {
   return (
     <div className="flex justify-end pt-4 border-t">
-      <Button onClick={onSave} disabled={isSaving}>
+      <Button 
+        onClick={onSave} 
+        disabled={isSaving}
+        className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
+      >
         <Save className="w-4 h-4 mr-2" />
         {isSaving ? "Saving..." : "Save Changes"}
       </Button>
