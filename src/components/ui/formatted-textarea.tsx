@@ -1,5 +1,7 @@
+
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { formatAndSanitizeText } from "@/utils/htmlSanitizer"
 
 export interface FormattedTextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -10,12 +12,8 @@ const FormattedTextarea = React.forwardRef<HTMLTextAreaElement, FormattedTextare
   ({ className, showPreview = false, value, ...props }, ref) => {
     const [isPreviewMode, setIsPreviewMode] = React.useState(false)
 
-    const formatText = (text: string) => {
-      return text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold with **text**
-        .replace(/\n/g, '<br />') // Line breaks
-        .replace(/  /g, '&nbsp;&nbsp;') // Double spaces
-    }
+    // Use the secure formatting function
+    const formattedText = formatAndSanitizeText(String(value || ''));
 
     return (
       <div className="space-y-2">
@@ -50,7 +48,7 @@ const FormattedTextarea = React.forwardRef<HTMLTextAreaElement, FormattedTextare
               "min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm whitespace-pre-wrap",
               className
             )}
-            dangerouslySetInnerHTML={{ __html: formatText(String(value || '')) }}
+            dangerouslySetInnerHTML={{ __html: formattedText }}
           />
         ) : (
           <textarea

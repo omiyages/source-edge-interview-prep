@@ -16,6 +16,55 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   }
 })
 
+// Generate cryptographically secure password
+const generateSecurePassword = (length: number = 16): string => {
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += charset[array[i] % charset.length];
+  }
+  
+  // Ensure password meets complexity requirements
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*]/.test(password);
+  
+  if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+    return generateSecurePassword(length);
+  }
+  
+  return password;
+};
+
+// Input validation and sanitization
+const validateAndSanitizeInput = (input: string, maxLength: number = 1000): string => {
+  if (!input || typeof input !== 'string') {
+    throw new Error('Invalid input provided');
+  }
+  
+  // Remove dangerous characters and limit length
+  const sanitized = input
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .trim()
+    .substring(0, maxLength);
+    
+  if (sanitized.length === 0) {
+    throw new Error('Input cannot be empty after sanitization');
+  }
+  
+  return sanitized;
+};
+
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+};
+
 Deno.serve(async (req) => {
   console.log('🚀 Admin user management function called - Method:', req.method);
   
@@ -114,7 +163,7 @@ Deno.serve(async (req) => {
 
     console.log('✅ Admin role verified');
 
-    // 5. Parse request body
+    // 5. Parse and validate request body
     let requestData;
     try {
       const bodyText = await req.text();
@@ -132,7 +181,7 @@ Deno.serve(async (req) => {
       }
       
       requestData = JSON.parse(bodyText);
-      console.log('📋 Parsed data:', requestData);
+      console.log('📋 Parsed data keys:', Object.keys(requestData));
     } catch (parseError) {
       console.error('❌ JSON parse error:', parseError);
       return new Response(
@@ -144,39 +193,54 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, fullName, role = 'user' } = requestData;
+    // Handle different operation types
+    const { method, body } = requestData;
     
+    if (method === 'DELETE_USER') {
+      return await handleDeleteUser(body.userId);
+    }
+    
+    // Default to CREATE_USER for backward compatibility
+    const { email, fullName, role = 'user' } = requestData;
+    
+    // 6. Validate and sanitize inputs
+    if (!email) {
+      console.error('❌ Missing email');
+      return new Response(
+        JSON.stringify({ error: 'Email is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const sanitizedEmail = validateAndSanitizeInput(email.toLowerCase().trim(), 254);
+    const sanitizedFullName = fullName ? validateAndSanitizeInput(fullName, 100) : '';
+    const sanitizedRole = validateAndSanitizeInput(role, 10);
+
+    if (!validateEmail(sanitizedEmail)) {
+      console.error('❌ Invalid email format');
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     console.log('📝 Creating user with:', { 
-      email: email?.toLowerCase().trim(), 
-      fullName: fullName?.trim(), 
-      role,
-      passwordProvided: !!password
+      email: sanitizedEmail, 
+      fullName: sanitizedFullName, 
+      role: sanitizedRole
     });
 
-    // 6. Validate required fields
-    if (!email || !password) {
-      console.error('❌ Missing required fields');
-      return new Response(
-        JSON.stringify({ error: 'Email and password are required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    // 7. Generate secure temporary password
+    const temporaryPassword = generateSecurePassword(16);
+    console.log('🔐 Generated secure temporary password');
 
-    if (password.length < 6) {
-      console.error('❌ Password too short');
-      return new Response(
-        JSON.stringify({ error: 'Password must be at least 6 characters long' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // 7. Check if user already exists
+    // 8. Check if user already exists
     console.log('🔍 Checking if user already exists...');
     const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
@@ -191,7 +255,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const userExists = existingUsers?.users?.some(u => u.email === email.toLowerCase().trim());
+    const userExists = existingUsers?.users?.some(u => u.email === sanitizedEmail);
     
     if (userExists) {
       console.error('❌ User already exists');
@@ -204,15 +268,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 8. Create user
+    // 9. Create user with secure password
     console.log('👤 Creating new user...');
     
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: email.toLowerCase().trim(),
-      password: password,
+      email: sanitizedEmail,
+      password: temporaryPassword,
       email_confirm: true,
       user_metadata: {
-        full_name: fullName?.trim() || ''
+        full_name: sanitizedFullName
       }
     });
 
@@ -242,7 +306,7 @@ Deno.serve(async (req) => {
 
     console.log('✅ User created successfully with ID:', newUser.user.id);
 
-    // 9. Create profile record with proper enum casting
+    // 10. Create profile record
     console.log('👤 Creating profile record...');
     
     try {
@@ -251,8 +315,8 @@ Deno.serve(async (req) => {
         .upsert({
           id: newUser.user.id,
           email: newUser.user.email,
-          full_name: fullName?.trim() || '',
-          role: role as 'user' | 'admin', // Ensure proper typing
+          full_name: sanitizedFullName,
+          role: sanitizedRole as 'user' | 'admin',
           created_by: user.id,
           is_active: true
         });
@@ -266,7 +330,7 @@ Deno.serve(async (req) => {
     } catch (profileError) {
       console.error('❌ Critical profile creation error:', profileError);
       
-      // If profile creation fails, we should clean up the user
+      // Clean up user if profile creation fails
       try {
         await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
         console.log('🧹 Cleaned up user after profile creation failure');
@@ -285,18 +349,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 10. Return success response
+    // 11. Return success response with temporary password
     const successResponse = {
       success: true,
       message: 'User created successfully',
       user: {
         id: newUser.user.id,
         email: newUser.user.email,
-        full_name: fullName || '',
-        role: role,
+        full_name: sanitizedFullName,
+        role: sanitizedRole,
         created_at: newUser.user.created_at,
         email_confirmed: true
-      }
+      },
+      temporaryPassword: temporaryPassword,
+      note: 'Please share this temporary password securely with the user. They should change it on first login.'
     };
 
     console.log('🎉 Returning success response');
@@ -325,3 +391,54 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Handle user deletion
+async function handleDeleteUser(userId: string) {
+  try {
+    console.log('🗑️ Deleting user:', userId);
+    
+    if (!userId || typeof userId !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Valid user ID is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Delete user from auth
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    
+    if (deleteError) {
+      console.error('❌ User deletion failed:', deleteError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to delete user: ' + deleteError.message }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('✅ User deleted successfully');
+
+    return new Response(
+      JSON.stringify({ success: true, message: 'User deleted successfully' }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+
+  } catch (error) {
+    console.error('💥 Error in handleDeleteUser:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to delete user' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+}

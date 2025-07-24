@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { validateQuestionInput, validateCompanyInput, validateRoleInput, sanitizeTextInput, checkRateLimit } from "@/utils/inputSecurity";
+import { logInvalidInput, logRateLimitExceeded } from "@/utils/securityLogger";
 
 interface SubmitQuestionFormProps {
   onSuccess: () => void;
@@ -28,6 +30,35 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     team: "",
     position_name: "",
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    // Validate question
+    const questionValidation = validateQuestionInput(formData.question);
+    if (!questionValidation.isValid) {
+      errors.question = questionValidation.message || "Invalid question";
+      logInvalidInput(`Question validation failed: ${questionValidation.message}`, user?.id);
+    }
+    
+    // Validate company
+    const companyValidation = validateCompanyInput(formData.company);
+    if (!companyValidation.isValid) {
+      errors.company = companyValidation.message || "Invalid company";
+      logInvalidInput(`Company validation failed: ${companyValidation.message}`, user?.id);
+    }
+    
+    // Validate role
+    const roleValidation = validateRoleInput(formData.role);
+    if (!roleValidation.isValid) {
+      errors.role = roleValidation.message || "Invalid role";
+      logInvalidInput(`Role validation failed: ${roleValidation.message}`, user?.id);
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const submitQuestionMutation = useMutation({
     mutationFn: async (questionData: any) => {
@@ -70,6 +101,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         team: "",
         position_name: "",
       });
+      setValidationErrors({});
 
       onSuccess();
     },
@@ -95,24 +127,38 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    if (!formData.question.trim() || !formData.company || !formData.role) {
+    // Check rate limiting
+    const rateLimitKey = `submit_question_${user.id}`;
+    if (!checkRateLimit(rateLimitKey, 5, 300000)) { // 5 requests per 5 minutes
+      logRateLimitExceeded(`Question submission rate limit exceeded`, user.id);
       toast({
-        title: "Missing required fields",
-        description: "Please fill in all required fields (Question, Company, Role).",
+        title: "Rate limit exceeded",
+        description: "You're submitting questions too quickly. Please wait a moment and try again.",
         variant: "destructive",
       });
       return;
     }
 
+    // Validate form
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please correct the errors in the form.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Sanitize inputs before submission
     const questionData = {
-      question: formData.question.trim(),
-      company: formData.company,
-      role: formData.role,
-      category: formData.category,
-      interview_stage: formData.interview_stage,
-      additional_context: formData.additional_context.trim() || null,
-      team: formData.team || null,
-      position_name: formData.position_name.trim() || null,
+      question: sanitizeTextInput(formData.question),
+      company: sanitizeTextInput(formData.company),
+      role: sanitizeTextInput(formData.role),
+      category: sanitizeTextInput(formData.category),
+      interview_stage: sanitizeTextInput(formData.interview_stage),
+      additional_context: formData.additional_context.trim() ? sanitizeTextInput(formData.additional_context) : null,
+      team: formData.team ? sanitizeTextInput(formData.team) : null,
+      position_name: formData.position_name.trim() ? sanitizeTextInput(formData.position_name) : null,
       submitted_by: profile?.email || user.email,
       question_type: 'user_submitted',
       status: profile?.role === 'admin' ? 'approved' : 'pending',
@@ -132,14 +178,21 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           onChange={(e) => setFormData({ ...formData, question: e.target.value })}
           required
           rows={3}
+          className={validationErrors.question ? "border-red-500" : ""}
         />
+        {validationErrors.question && (
+          <p className="text-sm text-red-600">{validationErrors.question}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="company">Company *</Label>
-          <Select value={formData.company} onValueChange={(value) => setFormData({ ...formData, company: value })}>
-            <SelectTrigger>
+          <Select 
+            value={formData.company} 
+            onValueChange={(value) => setFormData({ ...formData, company: value })}
+          >
+            <SelectTrigger className={validationErrors.company ? "border-red-500" : ""}>
               <SelectValue placeholder="Select company" />
             </SelectTrigger>
             <SelectContent>
@@ -148,12 +201,18 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               <SelectItem value="Wismettac">Wismettac</SelectItem>
             </SelectContent>
           </Select>
+          {validationErrors.company && (
+            <p className="text-sm text-red-600">{validationErrors.company}</p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="role">Role *</Label>
-          <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-            <SelectTrigger>
+          <Select 
+            value={formData.role} 
+            onValueChange={(value) => setFormData({ ...formData, role: value })}
+          >
+            <SelectTrigger className={validationErrors.role ? "border-red-500" : ""}>
               <SelectValue placeholder="Select role type" />
             </SelectTrigger>
             <SelectContent>
@@ -166,6 +225,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               <SelectItem value="Data Engineer">Data Engineer</SelectItem>
             </SelectContent>
           </Select>
+          {validationErrors.role && (
+            <p className="text-sm text-red-600">{validationErrors.role}</p>
+          )}
         </div>
       </div>
 
@@ -211,6 +273,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
             placeholder="e.g., Cloud & AI (optional)"
             value={formData.team}
             onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+            maxLength={100}
           />
         </div>
 
@@ -221,6 +284,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
             placeholder="e.g., Senior Software Engineer (optional)"
             value={formData.position_name}
             onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
+            maxLength={100}
           />
         </div>
       </div>
@@ -234,6 +298,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           onChange={(e) => setFormData({ ...formData, additional_context: e.target.value })}
           rows={4}
           showPreview={false}
+          maxLength={2000}
         />
       </div>
 

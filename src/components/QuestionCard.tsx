@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EditQuestionForm } from "./EditQuestionForm";
+import { formatAndSanitizeText } from "@/utils/htmlSanitizer";
 
 interface InterviewQuestion {
   id: string;
@@ -92,6 +93,11 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
     }
   };
 
+  // Securely format additional context
+  const formattedContext = question.additional_context 
+    ? formatAndSanitizeText(question.additional_context)
+    : null;
+
   return (
     <Card className="group h-full flex flex-col bg-white hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-gray-300">
       <CardHeader className="pb-3 space-y-3">
@@ -161,14 +167,12 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
           <div className="text-xs text-gray-600">
             <span className="font-medium text-gray-900">Stage:</span> {question.interview_stage}
           </div>
-          {question.additional_context && (
+          {formattedContext && (
             <div className="p-3 bg-gray-50 rounded-md text-xs border border-gray-100">
               <span className="font-medium text-gray-900 block mb-1">Additional Context:</span>
               <div 
                 className="text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: question.additional_context.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                }}
+                dangerouslySetInnerHTML={{ __html: formattedContext }}
               />
             </div>
           )}
