@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EditQuestionForm } from "./EditQuestionForm";
-import { formatAndSanitizeText } from "@/utils/htmlSanitizer";
+import { sanitizeHtml } from "@/utils/htmlSanitizer";
 
 interface InterviewQuestion {
   id: string;
@@ -93,9 +92,9 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
     }
   };
 
-  // Securely format additional context
+  // Securely sanitize additional context
   const formattedContext = question.additional_context 
-    ? formatAndSanitizeText(question.additional_context)
+    ? sanitizeHtml(question.additional_context)
     : null;
 
   return (
