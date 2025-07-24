@@ -304,7 +304,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
       <Button 
         type="submit" 
-        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+        className="w-full" 
+        variant="gradient"
         disabled={submitQuestionMutation.isPending}
       >
         {submitQuestionMutation.isPending ? "Submitting..." : "Submit Question"}

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +55,7 @@ export const UsersList = () => {
           </CardTitle>
           <Button 
             onClick={() => setShowUserForm(true)}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            variant="gradient"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Candidate

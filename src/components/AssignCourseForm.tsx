@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -145,6 +146,7 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
             type="submit" 
             disabled={assignCourseMutation.isPending || !selectedUser || !selectedCourse}
             className="w-full"
+            variant="gradient"
           >
             {assignCourseMutation.isPending ? "Assigning..." : "Assign Course"}
           </Button>
