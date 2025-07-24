@@ -16,7 +16,7 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors",
         ghost: "hover:bg-accent hover:text-accent-foreground transition-colors",
         link: "text-primary underline-offset-4 hover:underline transition-colors",
-        gradient: "!bg-gradient-to-r !from-purple-500 !to-purple-700 hover:!from-purple-600 hover:!to-purple-800 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5",
+        gradient: "text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5",
       },
       size: {
         default: "h-10 px-4 py-2",
@@ -41,11 +41,34 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    
+    // Apply gradient styles directly via style prop for gradient variant
+    const gradientStyle = variant === "gradient" ? {
+      background: "linear-gradient(to right, rgb(168 85 247), rgb(126 34 206))",
+      ...(props.style || {})
+    } : props.style;
+    
+    const gradientHoverClass = variant === "gradient" ? 
+      "hover:bg-none" : "";
+    
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size }), className)}
+        className={cn(buttonVariants({ variant, size }), gradientHoverClass, className)}
+        style={gradientStyle}
         ref={ref}
         {...props}
+        onMouseEnter={(e) => {
+          if (variant === "gradient") {
+            e.currentTarget.style.background = "linear-gradient(to right, rgb(147 51 234), rgb(109 40 217))";
+          }
+          props.onMouseEnter?.(e);
+        }}
+        onMouseLeave={(e) => {
+          if (variant === "gradient") {
+            e.currentTarget.style.background = "linear-gradient(to right, rgb(168 85 247), rgb(126 34 206))";
+          }
+          props.onMouseLeave?.(e);
+        }}
       />
     )
   }

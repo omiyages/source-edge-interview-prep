@@ -1,4 +1,3 @@
-
 import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -107,11 +106,6 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
             Real interview questions to help you prepare for your next opportunity
           </h2>
           
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-            The modern interview preparation experience everyone deserves.
-            You don't have to choose between comprehensive and user-friendly.
-          </p>
-          
           <p className="text-base text-muted-foreground mb-8">
             Welcome back, {profile?.full_name || profile?.email} 👋
             {isAdmin && <span className="text-primary font-semibold ml-2">👑 Admin</span>}
@@ -121,7 +115,8 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
             <DialogTrigger asChild>
               <Button 
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8 py-3 rounded-md transition-all duration-200 hover:shadow-lg"
+                variant="gradient"
+                className="px-8 py-3 rounded-md"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Submit Question
