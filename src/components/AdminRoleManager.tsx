@@ -38,6 +38,10 @@ export const AdminRoleManager = ({ user, trigger }: AdminRoleManagerProps) => {
     );
   };
 
+  const handleRoleChange = (value: string) => {
+    setNewRole(value as 'admin' | 'user');
+  };
+
   const isRoleChange = newRole !== user.role;
   const isPromotingToAdmin = newRole === 'admin' && user.role === 'user';
 
@@ -67,7 +71,7 @@ export const AdminRoleManager = ({ user, trigger }: AdminRoleManagerProps) => {
 
           <div>
             <Label htmlFor="new-role">New Role</Label>
-            <Select value={newRole} onValueChange={(value) => setNewRole(value as 'admin' | 'user')}>
+            <Select value={newRole} onValueChange={handleRoleChange}>
               <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>

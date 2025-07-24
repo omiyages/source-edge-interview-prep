@@ -38,28 +38,14 @@ export const useAdminRoleManagement = () => {
 
       if (targetError) throw targetError;
 
-      // Update the user's role
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
+      // Use the RPC function to update the role
+      const { data, error } = await supabase.rpc('update_user_role', {
+        target_user_id: userId,
+        new_role: newRole,
+        reason: reason || null
+      });
 
-      if (updateError) throw updateError;
-
-      // Log the audit entry
-      const { error: auditError } = await supabase
-        .from('role_change_audit')
-        .insert({
-          target_user_id: userId,
-          old_role: targetUser.role,
-          new_role: newRole,
-          changed_by: user?.id,
-          reason: reason || null
-        });
-
-      if (auditError) {
-        console.error('Failed to log role change audit:', auditError);
-      }
+      if (error) throw error;
 
       return { userId, newRole, oldRole: targetUser.role };
     },
