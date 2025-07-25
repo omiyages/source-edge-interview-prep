@@ -17,7 +17,7 @@ interface AdminRoleManagerProps {
 
 export const AdminRoleManager = ({ user, trigger }: AdminRoleManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [newRole, setNewRole] = useState<'admin' | 'user'>(user.role);
+  const [newRole, setNewRole] = useState<'admin' | 'user'>(user.role as 'admin' | 'user');
   const [reason, setReason] = useState('');
   const { updateUserRole } = useAdminRoleManagement();
 
