@@ -39,7 +39,9 @@ export const AdminRoleManager = ({ user, trigger }: AdminRoleManagerProps) => {
   };
 
   const handleRoleChange = (value: string) => {
-    setNewRole(value as 'admin' | 'user');
+    if (value === 'admin' || value === 'user') {
+      setNewRole(value);
+    }
   };
 
   const isRoleChange = newRole !== user.role;
