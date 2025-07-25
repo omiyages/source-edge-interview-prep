@@ -38,14 +38,13 @@ export const useAdminRoleManagement = () => {
 
       if (targetError) throw targetError;
 
-      // Use the RPC function to update the role
-      const { data, error } = await supabase.rpc('update_user_role', {
-        target_user_id: userId,
-        new_role: newRole,
-        reason: reason || null
-      });
+      // Update the user's role directly
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       return { userId, newRole, oldRole: targetUser.role };
     },
