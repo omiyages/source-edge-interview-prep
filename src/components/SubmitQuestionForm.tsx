@@ -293,7 +293,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         <Label htmlFor="additional_context">Additional Context</Label>
         <FormattedTextarea
           id="additional_context"
-          placeholder="Any additional context about the question, difficulty, or experience...&#10;&#10;You can use **bold text** for emphasis and preserve line breaks and spacing when copying text."
+          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
           value={formData.additional_context}
           onChange={(e) => setFormData({ ...formData, additional_context: e.target.value })}
           rows={4}
