@@ -13,6 +13,23 @@ function base64UrlEncode(str: string): string {
   return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
+function pemToDer(pem: string): Uint8Array {
+  // Remove the header, footer, and newlines
+  const pemContents = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\n/g, '')
+    .replace(/\r/g, '');
+  
+  // Convert base64 to binary
+  const binaryString = atob(pemContents);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
 async function createJWT(serviceAccountKey: any): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const expiry = now + 3600; // 1 hour
@@ -34,10 +51,13 @@ async function createJWT(serviceAccountKey: any): Promise<string> {
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const unsignedToken = `${encodedHeader}.${encodedPayload}`;
 
+  // Convert PEM to DER format
+  const privateKeyDer = pemToDer(serviceAccountKey.private_key);
+
   // Import the private key
   const privateKey = await crypto.subtle.importKey(
     'pkcs8',
-    new TextEncoder().encode(serviceAccountKey.private_key.replace(/\\n/g, '\n')),
+    privateKeyDer,
     {
       name: 'RSASSA-PKCS1-v1_5',
       hash: 'SHA-256'
