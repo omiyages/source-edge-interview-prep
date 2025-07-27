@@ -21,6 +21,7 @@ export type Database = {
           candidate_id: string
           created_at: string
           id: string
+          is_active: boolean
           moved_at: string
           moved_by: string | null
           notes: string | null
@@ -33,6 +34,7 @@ export type Database = {
           candidate_id: string
           created_at?: string
           id?: string
+          is_active?: boolean
           moved_at?: string
           moved_by?: string | null
           notes?: string | null
@@ -45,6 +47,7 @@ export type Database = {
           candidate_id?: string
           created_at?: string
           id?: string
+          is_active?: boolean
           moved_at?: string
           moved_by?: string | null
           notes?: string | null

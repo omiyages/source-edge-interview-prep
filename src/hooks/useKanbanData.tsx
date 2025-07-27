@@ -18,6 +18,7 @@ export interface CandidateApplication {
   created_at: string;
   updated_at: string;
   moved_at: string;
+  is_active: boolean;
 }
 
 export interface Candidate {
@@ -73,10 +74,11 @@ export const useCandidatesWithPipeline = () => {
         throw candidatesError;
       }
 
-      // Get all pipeline applications with updated_at field
+      // Get only active pipeline applications
       const { data: applications, error: applicationsError } = await supabase
         .from('candidate_pipeline')
-        .select('*');
+        .select('*')
+        .eq('is_active', true);
       
       if (applicationsError) {
         console.error('❌ Error fetching pipeline applications:', applicationsError);
@@ -85,7 +87,8 @@ export const useCandidatesWithPipeline = () => {
 
       console.log('📊 Raw data:', {
         candidates: candidates?.length || 0,
-        applications: applications?.length || 0
+        applications: applications?.length || 0,
+        activeApplications: applications?.filter(app => app.is_active).length || 0
       });
 
       // Map applications to candidates
@@ -97,7 +100,7 @@ export const useCandidatesWithPipeline = () => {
       console.log('✅ Candidates with applications processed:', candidatesWithApplications.length);
       candidatesWithApplications.forEach(candidate => {
         if (candidate.applications?.length > 0) {
-          console.log(`👤 ${candidate.email}: ${candidate.applications.length} applications`);
+          console.log(`👤 ${candidate.email}: ${candidate.applications.length} active applications`);
         }
       });
       
@@ -113,7 +116,7 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
     
     candidates.forEach(candidate => {
       candidate.applications?.forEach(application => {
-        if (application.stage_id === stageId) {
+        if (application.stage_id === stageId && application.is_active) {
           applications.push({
             ...candidate,
             applicationId: application.id,
@@ -126,7 +129,7 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
       });
     });
     
-    console.log(`📊 Found ${applications.length} applications for stage ${stageId}`);
+    console.log(`📊 Found ${applications.length} active applications for stage ${stageId}`);
     return applications;
   }, [candidates]);
 

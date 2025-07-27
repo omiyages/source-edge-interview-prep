@@ -45,6 +45,7 @@ export const useAddUnassignedCandidateToStageMutation = () => {
         .insert({
           candidate_id: candidateId,
           stage_id: stageId,
+          is_active: true,
         })
         .select()
         .single();
@@ -167,6 +168,7 @@ export const useAddCandidateToPipelineMutation = () => {
           stage_id: targetStageId,
           applied_company: appliedCompany,
           applied_job_title: appliedJobTitle,
+          is_active: true,
         })
         .select()
         .single();

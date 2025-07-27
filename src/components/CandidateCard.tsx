@@ -6,9 +6,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Mail, Building2, Briefcase, Trash2, Calendar, Clock } from 'lucide-react';
+import { ExternalLink, Mail, Building2, Briefcase, Trash2, Calendar, Clock, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
+import { useMakeCandidateInactive } from '@/hooks/useCandidateInactive';
 import { CandidateDetailDialog } from './CandidateDetailDialog';
 import { formatDate } from '@/utils/formatters';
 
@@ -46,6 +47,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = memo(({
 }) => {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const deleteCandidateCompletelyMutation = useDeleteCandidateCompletely();
+  const makeCandidateInactiveMutation = useMakeCandidateInactive();
 
   const {
     attributes,
@@ -80,6 +82,25 @@ export const CandidateCard: React.FC<CandidateCardProps> = memo(({
   };
 
   const companyIcon = getCompanyIcon(candidate.applied_company);
+
+  const handleMakeInactive = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('🔄 Make inactive button clicked for candidate:', {
+      candidateId: candidate.id,
+      applicationId: candidate.applicationId,
+      email: candidate.email
+    });
+    
+    if (!candidate.applicationId) {
+      toast.error('Cannot make inactive: No application ID found');
+      return;
+    }
+    
+    if (window.confirm(`Are you sure you want to make ${displayName} inactive? They will be hidden from the pipeline but their data will be preserved for reporting.`)) {
+      console.log('🔄 Proceeding with making candidate inactive:', candidate.applicationId);
+      makeCandidateInactiveMutation.mutate({ applicationId: candidate.applicationId });
+    }
+  };
 
   const handleDeleteCompletely = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -148,6 +169,17 @@ export const CandidateCard: React.FC<CandidateCardProps> = memo(({
                       }}
                     >
                       <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  )}
+                  {candidate.applicationId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                      onClick={handleMakeInactive}
+                      title="Make inactive (hide from pipeline)"
+                    >
+                      <EyeOff className="h-3 w-3" />
                     </Button>
                   )}
                   <Button
