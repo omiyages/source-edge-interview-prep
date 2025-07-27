@@ -171,6 +171,18 @@ serve(async (req) => {
     const [headers, ...rows] = data.values;
     const candidates = [];
 
+    // Get the first hiring stage for pipeline entries
+    const { data: firstStage } = await supabase
+      .from('hiring_stages')
+      .select('id')
+      .order('stage_order', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (!firstStage) {
+      throw new Error('No hiring stages found. Please create hiring stages first.');
+    }
+
     // Process each row and create candidate data
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -184,6 +196,7 @@ serve(async (req) => {
 
       let appliedCompany = null;
       let appliedJobTitle = null;
+      let hasEmail = false;
 
       // Map columns based on columnMappings
       headers.forEach((header: string, index: number) => {
@@ -192,6 +205,7 @@ serve(async (req) => {
           switch (mapping) {
             case 'email':
               candidateData.email = row[index];
+              hasEmail = true;
               break;
             case 'full_name':
               candidateData.full_name = row[index];
@@ -230,35 +244,54 @@ serve(async (req) => {
         }
       });
 
-      // Email is required
-      if (!candidateData.email) {
-        console.log(`Skipping row ${i + 2}: No email found`);
+      // Skip if no name provided
+      if (!candidateData.full_name) {
+        console.log(`Skipping row ${i + 2}: No name found`);
         continue;
       }
 
-      // Check if candidate already exists
-      const { data: existingCandidate } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', candidateData.email)
-        .eq('role', 'user')
-        .single();
-
       let candidateId;
-      if (existingCandidate) {
-        // Update existing candidate
-        candidateId = existingCandidate.id;
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update(candidateData)
-          .eq('id', candidateId);
 
-        if (updateError) {
-          console.error('Error updating candidate:', updateError);
-          continue;
+      if (hasEmail) {
+        // Check if candidate already exists by email
+        const { data: existingCandidate } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', candidateData.email)
+          .eq('role', 'user')
+          .single();
+
+        if (existingCandidate) {
+          // Update existing candidate
+          candidateId = existingCandidate.id;
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(candidateData)
+            .eq('id', candidateId);
+
+          if (updateError) {
+            console.error('Error updating candidate:', updateError);
+            continue;
+          }
+        } else {
+          // Create new candidate with email
+          const { data: newCandidate, error: insertError } = await supabase
+            .from('profiles')
+            .insert(candidateData)
+            .select('id')
+            .single();
+
+          if (insertError) {
+            console.error('Error inserting candidate:', insertError);
+            continue;
+          }
+          candidateId = newCandidate.id;
         }
       } else {
-        // Create new candidate
+        // Create candidate without email - just add to pipeline directly
+        // We'll create a temporary email for the profile
+        candidateData.email = `temp_${crypto.randomUUID()}@pipeline.temp`;
+        
         const { data: newCandidate, error: insertError } = await supabase
           .from('profiles')
           .insert(candidateData)
@@ -266,55 +299,27 @@ serve(async (req) => {
           .single();
 
         if (insertError) {
-          console.error('Error inserting candidate:', insertError);
+          console.error('Error inserting candidate without email:', insertError);
           continue;
         }
         candidateId = newCandidate.id;
       }
 
-      // Handle pipeline entry with applied company and job title
-      if (appliedCompany || appliedJobTitle) {
-        // Get the first hiring stage (typically "Applied" or similar)
-        const { data: firstStage } = await supabase
-          .from('hiring_stages')
-          .select('id')
-          .order('stage_order', { ascending: true })
-          .limit(1)
-          .single();
+      // Add to pipeline
+      const { error: pipelineError } = await supabase
+        .from('candidate_pipeline')
+        .insert({
+          candidate_id: candidateId,
+          stage_id: firstStage.id,
+          applied_company: appliedCompany,
+          applied_job_title: appliedJobTitle,
+          moved_by: user.id,
+          is_active: true,
+        });
 
-        if (firstStage) {
-          // Check if candidate is already in pipeline
-          const { data: existingPipeline } = await supabase
-            .from('candidate_pipeline')
-            .select('id')
-            .eq('candidate_id', candidateId)
-            .eq('is_active', true)
-            .single();
-
-          if (existingPipeline) {
-            // Update existing pipeline entry
-            await supabase
-              .from('candidate_pipeline')
-              .update({
-                applied_company: appliedCompany,
-                applied_job_title: appliedJobTitle,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', existingPipeline.id);
-          } else {
-            // Create new pipeline entry
-            await supabase
-              .from('candidate_pipeline')
-              .insert({
-                candidate_id: candidateId,
-                stage_id: firstStage.id,
-                applied_company: appliedCompany,
-                applied_job_title: appliedJobTitle,
-                moved_by: user.id,
-                is_active: true,
-              });
-          }
-        }
+      if (pipelineError) {
+        console.error('Error adding to pipeline:', pipelineError);
+        continue;
       }
 
       // Track the import
@@ -323,7 +328,7 @@ serve(async (req) => {
         .upsert({
           integration_id: integrationId,
           candidate_id: candidateId,
-          sheet_row_number: i + 2, // +2 because we skip header and arrays are 0-indexed
+          sheet_row_number: i + 2,
           import_data: Object.fromEntries(
             headers.map((header: string, index: number) => [header, row[index]])
           ),
@@ -331,11 +336,12 @@ serve(async (req) => {
 
       candidates.push({
         id: candidateId,
-        email: candidateData.email,
+        email: hasEmail ? candidateData.email : null,
         full_name: candidateData.full_name,
         applied_company: appliedCompany,
         applied_job_title: appliedJobTitle,
-        row: i + 2
+        row: i + 2,
+        has_email: hasEmail
       });
     }
 
@@ -349,7 +355,8 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         imported_count: candidates.length,
-        candidates: candidates
+        candidates: candidates,
+        candidates_without_email: candidates.filter(c => !c.has_email).length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
