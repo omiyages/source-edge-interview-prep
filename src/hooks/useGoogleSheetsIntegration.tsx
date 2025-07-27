@@ -14,6 +14,7 @@ interface GoogleSheetsIntegration {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  access_token?: string | null;
 }
 
 interface CreateGoogleSheetsIntegrationData {
@@ -21,6 +22,7 @@ interface CreateGoogleSheetsIntegrationData {
   sheet_name?: string | null;
   range_specification?: string;
   column_mappings?: Record<string, string>;
+  access_token?: string | null;
 }
 
 export const useGoogleSheetsIntegrations = () => {
@@ -55,6 +57,7 @@ export const useCreateGoogleSheetsIntegration = () => {
           sheet_name: integration.sheet_name,
           range_specification: integration.range_specification || 'A:Z',
           column_mappings: integration.column_mappings || {},
+          access_token: integration.access_token,
         })
         .select()
         .single();
@@ -99,6 +102,7 @@ export const useSyncGoogleSheets = () => {
           sheetId: integration.sheet_id,
           range: integration.range_specification,
           columnMappings: integration.column_mappings,
+          accessToken: integration.access_token,
         },
       });
 

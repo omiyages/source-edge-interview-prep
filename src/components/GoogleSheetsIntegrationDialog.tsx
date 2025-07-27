@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCreateGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration';
+import { GoogleOAuthButton } from './GoogleOAuthButton';
 
 interface GoogleSheetsIntegrationDialogProps {
   open: boolean;
@@ -36,6 +39,8 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
   const [range, setRange] = useState('A:Z');
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
   const [sampleColumns, setSampleColumns] = useState<string[]>([]);
+  const [accessToken, setAccessToken] = useState('');
+  const [authType, setAuthType] = useState<'api-key' | 'oauth'>('oauth');
 
   const createIntegration = useCreateGoogleSheetsIntegration();
 
@@ -44,19 +49,30 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
       return;
     }
 
+    if (authType === 'oauth' && !accessToken) {
+      return;
+    }
+
     createIntegration.mutate({
       sheet_id: sheetId,
       sheet_name: sheetName || null,
       range_specification: range,
       column_mappings: columnMappings,
+      access_token: authType === 'oauth' ? accessToken : null,
     });
 
     onOpenChange(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
     setSheetId('');
     setSheetName('');
     setRange('A:Z');
     setColumnMappings({});
     setSampleColumns([]);
+    setAccessToken('');
+    setAuthType('oauth');
   };
 
   const addColumnMapping = () => {
@@ -82,6 +98,10 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
     setSampleColumns(sampleColumns.filter(c => c !== column));
   };
 
+  const handleTokenReceived = (token: string) => {
+    setAccessToken(token);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -90,6 +110,43 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
         </DialogHeader>
         
         <div className="space-y-4">
+          <Tabs value={authType} onValueChange={(value) => setAuthType(value as 'api-key' | 'oauth')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="oauth">Private Sheets (OAuth)</TabsTrigger>
+              <TabsTrigger value="api-key">Public Sheets (API Key)</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="oauth" className="space-y-4">
+              <Alert>
+                <AlertDescription>
+                  Use OAuth authentication to access private Google Sheets securely without making them public.
+                </AlertDescription>
+              </Alert>
+              
+              <GoogleOAuthButton
+                onTokenReceived={handleTokenReceived}
+                disabled={!!accessToken}
+              />
+              
+              {accessToken && (
+                <Alert>
+                  <AlertDescription>
+                    ✅ Successfully authenticated with Google. You can now access private sheets.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="api-key" className="space-y-4">
+              <Alert>
+                <AlertDescription>
+                  API key authentication only works with publicly accessible Google Sheets. 
+                  Make sure to share your sheet with "Anyone with the link can view" permissions.
+                </AlertDescription>
+              </Alert>
+            </TabsContent>
+          </Tabs>
+
           <div>
             <Label htmlFor="sheetId">Google Sheets ID *</Label>
             <Input
@@ -190,7 +247,10 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!sheetId.trim()}>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={!sheetId.trim() || (authType === 'oauth' && !accessToken)}
+          >
             Create Integration
           </Button>
         </DialogFooter>

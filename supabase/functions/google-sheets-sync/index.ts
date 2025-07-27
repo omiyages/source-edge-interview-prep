@@ -14,11 +14,14 @@ serve(async (req) => {
   }
 
   try {
-    const { integrationId, sheetId, range, columnMappings } = await req.json();
+    const { integrationId, sheetId, range, columnMappings, accessToken } = await req.json();
     
+    // Check if we have an access token for OAuth or fall back to API key
     const googleApiKey = Deno.env.get('GOOGLE_SHEETS_API_KEY');
-    if (!googleApiKey) {
-      throw new Error('Google Sheets API key not configured');
+    const useOAuth = !!accessToken;
+    
+    if (!useOAuth && !googleApiKey) {
+      throw new Error('Either Google access token or API key is required');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -39,9 +42,21 @@ serve(async (req) => {
 
     console.log('Fetching Google Sheets data for sheet:', sheetId);
     
+    // Prepare request headers
+    const headers: Record<string, string> = {};
+    let sheetsUrl: string;
+    
+    if (useOAuth) {
+      // Use OAuth 2.0 with access token
+      headers['Authorization'] = `Bearer ${accessToken}`;
+      sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
+    } else {
+      // Use API key (requires public sheet)
+      sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${googleApiKey}`;
+    }
+    
     // Fetch data from Google Sheets
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${googleApiKey}`;
-    const response = await fetch(sheetsUrl);
+    const response = await fetch(sheetsUrl, { headers });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -49,7 +64,13 @@ serve(async (req) => {
       
       // Provide more specific error messages
       if (response.status === 403) {
-        throw new Error('Permission denied: Make sure the Google Sheet is publicly accessible or the API key has proper permissions. You can make the sheet public by clicking "Share" > "Anyone with the link can view".');
+        if (useOAuth) {
+          throw new Error('Permission denied: The access token may have expired or insufficient permissions. Please re-authenticate with Google.');
+        } else {
+          throw new Error('Permission denied: Make sure the Google Sheet is publicly accessible or use OAuth authentication for private sheets.');
+        }
+      } else if (response.status === 401) {
+        throw new Error('Authentication failed: Please re-authenticate with Google or check your API key.');
       } else if (response.status === 404) {
         throw new Error('Sheet not found: Please check that the Sheet ID is correct and the sheet exists.');
       } else if (response.status === 400) {
