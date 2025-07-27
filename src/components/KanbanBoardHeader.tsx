@@ -1,7 +1,12 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, EyeOff, Eye } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Plus, FileSpreadsheet } from 'lucide-react';
+import { GoogleSheetsIntegrationSection } from './GoogleSheetsIntegrationSection';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useState } from 'react';
 
 interface KanbanBoardHeaderProps {
   onAddCandidate: () => void;
@@ -9,31 +14,47 @@ interface KanbanBoardHeaderProps {
   onToggleInactive: () => void;
 }
 
-export const KanbanBoardHeader = ({ onAddCandidate, showInactive, onToggleInactive }: KanbanBoardHeaderProps) => {
+export const KanbanBoardHeader: React.FC<KanbanBoardHeaderProps> = ({
+  onAddCandidate,
+  showInactive,
+  onToggleInactive,
+}) => {
+  const [showSheetsDialog, setShowSheetsDialog] = useState(false);
+
   return (
-    <div className="mb-4 flex justify-between items-center">
-      <div>
-        <h3 className="text-lg font-medium">Candidate Pipeline</h3>
-        <p className="text-sm text-muted-foreground">
-          Drag candidates between stages or add new candidates to the pipeline
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <Button 
-          onClick={onToggleInactive}
-          variant="outline"
-          size="sm"
-        >
-          {showInactive ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-          {showInactive ? 'Hide Inactive' : 'Show Inactive'}
-        </Button>
-        <Button 
-          onClick={onAddCandidate}
-          variant="gradient"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Candidate
-        </Button>
+    <div className="mb-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Candidate Pipeline</h1>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-inactive"
+              checked={showInactive}
+              onCheckedChange={onToggleInactive}
+            />
+            <Label htmlFor="show-inactive">Show Inactive</Label>
+          </div>
+          
+          <Dialog open={showSheetsDialog} onOpenChange={setShowSheetsDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Google Sheets
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Google Sheets Integration</DialogTitle>
+              </DialogHeader>
+              <GoogleSheetsIntegrationSection />
+            </DialogContent>
+          </Dialog>
+          
+          <Button onClick={onAddCandidate}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Candidate
+          </Button>
+        </div>
       </div>
     </div>
   );

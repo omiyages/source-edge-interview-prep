@@ -244,6 +244,87 @@ export type Database = {
         }
         Relationships: []
       }
+      google_sheets_candidate_imports: {
+        Row: {
+          candidate_id: string | null
+          id: string
+          import_data: Json | null
+          imported_at: string
+          integration_id: string | null
+          sheet_row_number: number | null
+        }
+        Insert: {
+          candidate_id?: string | null
+          id?: string
+          import_data?: Json | null
+          imported_at?: string
+          integration_id?: string | null
+          sheet_row_number?: number | null
+        }
+        Update: {
+          candidate_id?: string | null
+          id?: string
+          import_data?: Json | null
+          imported_at?: string
+          integration_id?: string | null
+          sheet_row_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_sheets_candidate_imports_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_sheets_candidate_imports_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "google_sheets_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_sheets_integrations: {
+        Row: {
+          column_mappings: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          range_specification: string | null
+          sheet_id: string
+          sheet_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          column_mappings?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          range_specification?: string | null
+          sheet_id: string
+          sheet_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          column_mappings?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          range_specification?: string | null
+          sheet_id?: string
+          sheet_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hiring_stages: {
         Row: {
           color: string | null
