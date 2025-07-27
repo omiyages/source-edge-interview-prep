@@ -288,6 +288,7 @@ export type Database = {
       }
       google_sheets_integrations: {
         Row: {
+          access_token: string | null
           column_mappings: Json | null
           created_at: string
           id: string
@@ -300,6 +301,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_token?: string | null
           column_mappings?: Json | null
           created_at?: string
           id?: string
@@ -312,6 +314,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_token?: string | null
           column_mappings?: Json | null
           created_at?: string
           id?: string
