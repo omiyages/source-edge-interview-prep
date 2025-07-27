@@ -70,6 +70,9 @@ serve(async (req) => {
         is_active: true,
       };
 
+      let appliedCompany = null;
+      let appliedJobTitle = null;
+
       // Map columns based on columnMappings
       headers.forEach((header: string, index: number) => {
         const mapping = columnMappings[header];
@@ -104,6 +107,12 @@ serve(async (req) => {
               break;
             case 'general_notes':
               candidateData.general_notes = row[index];
+              break;
+            case 'applied_company':
+              appliedCompany = row[index];
+              break;
+            case 'applied_job_title':
+              appliedJobTitle = row[index];
               break;
           }
         }
@@ -151,6 +160,51 @@ serve(async (req) => {
         candidateId = newCandidate.id;
       }
 
+      // Handle pipeline entry with applied company and job title
+      if (appliedCompany || appliedJobTitle) {
+        // Get the first hiring stage (typically "Applied" or similar)
+        const { data: firstStage } = await supabase
+          .from('hiring_stages')
+          .select('id')
+          .order('stage_order', { ascending: true })
+          .limit(1)
+          .single();
+
+        if (firstStage) {
+          // Check if candidate is already in pipeline
+          const { data: existingPipeline } = await supabase
+            .from('candidate_pipeline')
+            .select('id')
+            .eq('candidate_id', candidateId)
+            .eq('is_active', true)
+            .single();
+
+          if (existingPipeline) {
+            // Update existing pipeline entry
+            await supabase
+              .from('candidate_pipeline')
+              .update({
+                applied_company: appliedCompany,
+                applied_job_title: appliedJobTitle,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingPipeline.id);
+          } else {
+            // Create new pipeline entry
+            await supabase
+              .from('candidate_pipeline')
+              .insert({
+                candidate_id: candidateId,
+                stage_id: firstStage.id,
+                applied_company: appliedCompany,
+                applied_job_title: appliedJobTitle,
+                moved_by: user.id,
+                is_active: true,
+              });
+          }
+        }
+      }
+
       // Track the import
       await supabase
         .from('google_sheets_candidate_imports')
@@ -167,6 +221,8 @@ serve(async (req) => {
         id: candidateId,
         email: candidateData.email,
         full_name: candidateData.full_name,
+        applied_company: appliedCompany,
+        applied_job_title: appliedJobTitle,
         row: i + 2
       });
     }

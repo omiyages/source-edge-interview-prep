@@ -23,6 +23,8 @@ const COLUMN_MAPPING_OPTIONS = [
   { value: 'skillsets', label: 'Skills (comma-separated)' },
   { value: 'past_companies', label: 'Past Companies (comma-separated)' },
   { value: 'general_notes', label: 'General Notes' },
+  { value: 'applied_company', label: 'Applied Company' },
+  { value: 'applied_job_title', label: 'Applied Job Title' },
 ];
 
 export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDialogProps> = ({

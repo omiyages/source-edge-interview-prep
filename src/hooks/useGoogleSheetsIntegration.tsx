@@ -16,6 +16,13 @@ interface GoogleSheetsIntegration {
   updated_at: string;
 }
 
+interface CreateGoogleSheetsIntegrationData {
+  sheet_id: string;
+  sheet_name?: string | null;
+  range_specification?: string;
+  column_mappings?: Record<string, string>;
+}
+
 export const useGoogleSheetsIntegrations = () => {
   return useQuery({
     queryKey: ['google-sheets-integrations'],
@@ -36,10 +43,19 @@ export const useCreateGoogleSheetsIntegration = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (integration: Partial<GoogleSheetsIntegration>) => {
+    mutationFn: async (integration: CreateGoogleSheetsIntegrationData) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('google_sheets_integrations')
-        .insert(integration)
+        .insert({
+          user_id: user.id,
+          sheet_id: integration.sheet_id,
+          sheet_name: integration.sheet_name,
+          range_specification: integration.range_specification || 'A:Z',
+          column_mappings: integration.column_mappings || {},
+        })
         .select()
         .single();
 
