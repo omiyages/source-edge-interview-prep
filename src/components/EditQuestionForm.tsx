@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FormattedTextarea } from "@/components/ui/formatted-textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -191,13 +190,10 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
 
       <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
-        <FormattedTextarea
-          id="additional_context"
-          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
+        <RichTextEditor
           value={formData.additional_context}
-          onChange={(e) => setFormData({ ...formData, additional_context: e.target.value })}
-          rows={4}
-          showPreview={false}
+          onChange={(value) => setFormData({ ...formData, additional_context: value })}
+          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
         />
       </div>
 

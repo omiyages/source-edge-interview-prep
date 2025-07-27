@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EditQuestionForm } from "./EditQuestionForm";
-import { sanitizeHtml } from "@/utils/htmlSanitizer";
+import { RichTextDisplay } from "@/components/ui/rich-text-display";
 
 interface InterviewQuestion {
   id: string;
@@ -92,11 +92,6 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
     }
   };
 
-  // Securely sanitize additional context
-  const formattedContext = question.additional_context 
-    ? sanitizeHtml(question.additional_context)
-    : null;
-
   return (
     <Card className="group h-full flex flex-col bg-white hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-gray-300">
       <CardHeader className="pb-3 space-y-3">
@@ -166,13 +161,10 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
           <div className="text-xs text-gray-600">
             <span className="font-medium text-gray-900">Stage:</span> {question.interview_stage}
           </div>
-          {formattedContext && (
+          {question.additional_context && (
             <div className="p-3 bg-gray-50 rounded-md text-xs border border-gray-100">
               <span className="font-medium text-gray-900 block mb-1">Additional Context:</span>
-              <div 
-                className="text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: formattedContext }}
-              />
+              <RichTextDisplay content={question.additional_context} className="text-xs" />
             </div>
           )}
         </div>

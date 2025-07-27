@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FormattedTextarea } from "@/components/ui/formatted-textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -149,14 +149,14 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    // Sanitize inputs before submission
+    // Sanitize inputs before submission - note: additional_context is now HTML from rich text editor
     const questionData = {
       question: sanitizeTextInput(formData.question),
       company: sanitizeTextInput(formData.company),
       role: sanitizeTextInput(formData.role),
       category: sanitizeTextInput(formData.category),
       interview_stage: sanitizeTextInput(formData.interview_stage),
-      additional_context: formData.additional_context.trim() ? sanitizeTextInput(formData.additional_context) : null,
+      additional_context: formData.additional_context.trim() ? formData.additional_context : null,
       team: formData.team ? sanitizeTextInput(formData.team) : null,
       position_name: formData.position_name.trim() ? sanitizeTextInput(formData.position_name) : null,
       submitted_by: profile?.email || user.email,
@@ -291,14 +291,10 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
       <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
-        <FormattedTextarea
-          id="additional_context"
-          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
+        <RichTextEditor
           value={formData.additional_context}
-          onChange={(e) => setFormData({ ...formData, additional_context: e.target.value })}
-          rows={4}
-          showPreview={false}
-          maxLength={2000}
+          onChange={(value) => setFormData({ ...formData, additional_context: value })}
+          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
         />
       </div>
 
