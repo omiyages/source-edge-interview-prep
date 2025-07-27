@@ -57,11 +57,11 @@ export const useHiringStages = () => {
   });
 };
 
-export const useCandidatesWithPipeline = () => {
+export const useCandidatesWithPipeline = (showInactive: boolean = false) => {
   return useQuery({
-    queryKey: ['candidates-with-pipeline'],
+    queryKey: ['candidates-with-pipeline', showInactive],
     queryFn: async () => {
-      console.log('🔍 Fetching candidates with pipeline data...');
+      console.log('🔍 Fetching candidates with pipeline data...', { showInactive });
       
       // Get all candidates with role 'user' and include all relevant fields
       const { data: candidates, error: candidatesError } = await supabase
@@ -74,11 +74,16 @@ export const useCandidatesWithPipeline = () => {
         throw candidatesError;
       }
 
-      // Get only active pipeline applications
-      const { data: applications, error: applicationsError } = await supabase
+      // Get pipeline applications based on showInactive flag
+      const applicationsQuery = supabase
         .from('candidate_pipeline')
-        .select('*')
-        .eq('is_active', true);
+        .select('*');
+      
+      if (!showInactive) {
+        applicationsQuery.eq('is_active', true);
+      }
+      
+      const { data: applications, error: applicationsError } = await applicationsQuery;
       
       if (applicationsError) {
         console.error('❌ Error fetching pipeline applications:', applicationsError);
@@ -88,7 +93,9 @@ export const useCandidatesWithPipeline = () => {
       console.log('📊 Raw data:', {
         candidates: candidates?.length || 0,
         applications: applications?.length || 0,
-        activeApplications: applications?.filter(app => app.is_active).length || 0
+        activeApplications: applications?.filter(app => app.is_active).length || 0,
+        inactiveApplications: applications?.filter(app => !app.is_active).length || 0,
+        showInactive
       });
 
       // Map applications to candidates
@@ -100,7 +107,9 @@ export const useCandidatesWithPipeline = () => {
       console.log('✅ Candidates with applications processed:', candidatesWithApplications.length);
       candidatesWithApplications.forEach(candidate => {
         if (candidate.applications?.length > 0) {
-          console.log(`👤 ${candidate.email}: ${candidate.applications.length} active applications`);
+          const activeApps = candidate.applications.filter(app => app.is_active).length;
+          const inactiveApps = candidate.applications.filter(app => !app.is_active).length;
+          console.log(`👤 ${candidate.email}: ${activeApps} active, ${inactiveApps} inactive applications`);
         }
       });
       
@@ -116,7 +125,7 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
     
     candidates.forEach(candidate => {
       candidate.applications?.forEach(application => {
-        if (application.stage_id === stageId && application.is_active) {
+        if (application.stage_id === stageId) {
           applications.push({
             ...candidate,
             applicationId: application.id,
@@ -124,12 +133,13 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
             applied_job_title: application.applied_job_title,
             application_created_at: application.created_at,
             moved_at: application.moved_at || application.updated_at,
+            is_active: application.is_active,
           });
         }
       });
     });
     
-    console.log(`📊 Found ${applications.length} active applications for stage ${stageId}`);
+    console.log(`📊 Found ${applications.length} applications for stage ${stageId}`);
     return applications;
   }, [candidates]);
 

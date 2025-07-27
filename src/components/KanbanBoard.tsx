@@ -13,9 +13,10 @@ import { useKanbanFilters } from '@/hooks/useKanbanFilters';
 
 export const KanbanBoard = memo(() => {
   const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   
   const { data: stages = [] } = useHiringStages();
-  const { data: candidates = [] } = useCandidatesWithPipeline();
+  const { data: candidates = [] } = useCandidatesWithPipeline(showInactive);
   const { 
     roleFilter, 
     companyFilter, 
@@ -31,7 +32,11 @@ export const KanbanBoard = memo(() => {
 
   return (
     <div className="h-full">
-      <KanbanBoardHeader onAddCandidate={() => setShowSearchDialog(true)} />
+      <KanbanBoardHeader 
+        onAddCandidate={() => setShowSearchDialog(true)}
+        showInactive={showInactive}
+        onToggleInactive={() => setShowInactive(!showInactive)}
+      />
 
       <KanbanFilters
         roleFilter={roleFilter}
@@ -56,6 +61,7 @@ export const KanbanBoard = memo(() => {
               title={stage.name}
               color={stage.color}
               candidates={getCandidatesForStage(stage.id)}
+              showInactive={showInactive}
             />
           ))}
         </div>

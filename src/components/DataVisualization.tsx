@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, FunnelChart, Funnel, LabelList } from 'recharts';
-import { Users, TrendingUp, Calendar, Globe, Target, Languages } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, FunnelChart, Funnel, LabelList, LineChart, Line } from 'recharts';
+import { Users, TrendingUp, Calendar, Globe, Target, Languages, TrendingDown } from 'lucide-react';
 import { WorldMapHeatmap } from './WorldMapHeatmap';
 
 export const DataVisualization = () => {
@@ -27,7 +27,7 @@ export const DataVisualization = () => {
     },
   });
 
-  // Fetch pipeline data with candidate info - fix the relationship ambiguity
+  // Fetch ALL pipeline data (including inactive) for conversion rate calculations
   const { data: pipelineData = [] } = useQuery({
     queryKey: ['pipeline-visualization-data'],
     queryFn: async () => {
@@ -51,13 +51,51 @@ export const DataVisualization = () => {
 
   // Process data for visualizations
   const stageDistribution = stages.map(stage => {
-    const count = pipelineData.filter(app => app.stage_id === stage.id).length;
+    const activeCount = pipelineData.filter(app => app.stage_id === stage.id && app.is_active).length;
+    const inactiveCount = pipelineData.filter(app => app.stage_id === stage.id && !app.is_active).length;
+    const totalCount = activeCount + inactiveCount;
+    
     return {
       name: stage.name,
-      count,
+      count: activeCount,
+      total: totalCount,
+      inactive: inactiveCount,
       color: stage.color,
     };
   });
+
+  // Calculate conversion rates between stages
+  const conversionRates = React.useMemo(() => {
+    if (stages.length === 0) return [];
+    
+    const sortedStages = [...stages].sort((a, b) => a.stage_order - b.stage_order);
+    const conversionData = [];
+    
+    for (let i = 0; i < sortedStages.length; i++) {
+      const currentStage = sortedStages[i];
+      const currentStageTotal = pipelineData.filter(app => app.stage_id === currentStage.id).length;
+      const currentStageActive = pipelineData.filter(app => app.stage_id === currentStage.id && app.is_active).length;
+      
+      let conversionRate = 100; // Start with 100% for the first stage
+      
+      if (i > 0) {
+        const previousStage = sortedStages[i - 1];
+        const previousStageTotal = pipelineData.filter(app => app.stage_id === previousStage.id).length;
+        conversionRate = previousStageTotal > 0 ? (currentStageTotal / previousStageTotal) * 100 : 0;
+      }
+      
+      conversionData.push({
+        name: currentStage.name,
+        total: currentStageTotal,
+        active: currentStageActive,
+        inactive: currentStageTotal - currentStageActive,
+        conversionRate: Math.round(conversionRate * 100) / 100,
+        dropOffRate: Math.round((100 - conversionRate) * 100) / 100,
+      });
+    }
+    
+    return conversionData;
+  }, [stages, pipelineData]);
 
   const companyDistribution = React.useMemo(() => {
     const companies = pipelineData.reduce((acc, app) => {
@@ -72,7 +110,6 @@ export const DataVisualization = () => {
     }));
   }, [pipelineData]);
 
-  // New data processing for additional charts
   const conversionData = React.useMemo(() => {
     if (stages.length === 0) return [];
     
@@ -143,6 +180,8 @@ export const DataVisualization = () => {
   }, []);
 
   const totalCandidates = pipelineData.length;
+  const activeCandidates = pipelineData.filter(app => app.is_active).length;
+  const inactiveCandidates = pipelineData.filter(app => !app.is_active).length;
   const uniqueCompanies = new Set(pipelineData.map(app => app.applied_company).filter(Boolean)).size;
   const recentApplications = pipelineData.filter(app => {
     const createdAt = new Date(app.created_at);
@@ -161,7 +200,7 @@ export const DataVisualization = () => {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Candidates</CardTitle>
@@ -170,20 +209,33 @@ export const DataVisualization = () => {
           <CardContent>
             <div className="text-2xl font-bold">{totalCandidates}</div>
             <p className="text-xs text-muted-foreground">
-              Active in pipeline
+              All applications
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Companies</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Candidates</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{uniqueCompanies}</div>
+            <div className="text-2xl font-bold">{activeCandidates}</div>
             <p className="text-xs text-muted-foreground">
-              Unique companies applied to
+              Currently in pipeline
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Inactive Candidates</CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{inactiveCandidates}</div>
+            <p className="text-xs text-muted-foreground">
+              No longer active
             </p>
           </CardContent>
         </Card>
@@ -235,13 +287,48 @@ export const DataVisualization = () => {
                 />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#8884d8" />
+                <Bar dataKey="count" fill="#8884d8" name="Active" />
+                <Bar dataKey="inactive" fill="#ff7c7c" name="Inactive" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Company Distribution Pie Chart */}
+        {/* Conversion Rate Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Stage Conversion Rates</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={conversionRates}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  fontSize={12}
+                />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    `${value}%`, 
+                    name === 'conversionRate' ? 'Conversion Rate' : 'Drop-off Rate'
+                  ]}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="conversionRate" 
+                  stroke="#8884d8" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Applications by Company</CardTitle>
@@ -269,7 +356,6 @@ export const DataVisualization = () => {
           </CardContent>
         </Card>
 
-        {/* Conversion Rate Funnel */}
         <Card>
           <CardHeader>
             <CardTitle>Conversion Funnel</CardTitle>
@@ -290,7 +376,6 @@ export const DataVisualization = () => {
           </CardContent>
         </Card>
 
-        {/* Role Type Distribution */}
         <Card>
           <CardHeader>
             <CardTitle>Role Type Distribution</CardTitle>
@@ -318,7 +403,6 @@ export const DataVisualization = () => {
           </CardContent>
         </Card>
 
-        {/* World Map Heatmap */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -331,7 +415,6 @@ export const DataVisualization = () => {
           </CardContent>
         </Card>
 
-        {/* Skills Word Cloud (simplified as bar chart) */}
         <Card>
           <CardHeader>
             <CardTitle>Top Skills</CardTitle>
@@ -352,29 +435,36 @@ export const DataVisualization = () => {
         </Card>
       </div>
 
-      {/* Stage Breakdown Table */}
+      {/* Enhanced Stage Breakdown Table with Conversion Rates */}
       <Card>
         <CardHeader>
-          <CardTitle>Stage Breakdown</CardTitle>
+          <CardTitle>Stage Breakdown with Conversion Rates</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {stages.map(stage => {
-              const count = pipelineData.filter(app => app.stage_id === stage.id).length;
-              const percentage = totalCandidates > 0 ? (count / totalCandidates * 100).toFixed(1) : '0';
+            {conversionRates.map((stage, index) => {
+              const stageInfo = stages.find(s => s.name === stage.name);
               
               return (
-                <div key={stage.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={stage.name} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: stage.color }}
+                      style={{ backgroundColor: stageInfo?.color || '#6366f1' }}
                     />
                     <span className="font-medium">{stage.name}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary">{count} candidates</Badge>
-                    <span className="text-sm text-muted-foreground">{percentage}%</span>
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-medium text-green-600">{stage.active}</span> active, 
+                      <span className="font-medium text-red-600 ml-1">{stage.inactive}</span> inactive
+                    </div>
+                    <Badge variant="secondary">{stage.total} total</Badge>
+                    {index > 0 && (
+                      <Badge variant={stage.conversionRate > 70 ? "default" : stage.conversionRate > 40 ? "secondary" : "destructive"}>
+                        {stage.conversionRate}% conversion
+                      </Badge>
+                    )}
                   </div>
                 </div>
               );

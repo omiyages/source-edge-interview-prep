@@ -1,101 +1,67 @@
 
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CandidateCard } from './CandidateCard';
-import { Badge } from '@/components/ui/badge';
-
-interface Candidate {
-  id: string;
-  email: string;
-  full_name: string | null;
-  linkedin_profile: string | null;
-  current_company: string | null;
-  years_of_experience: number | null;
-  skillsets: string[] | null;
-  applicationId?: string;
-  applied_company?: string | null;
-  applied_job_title?: string | null;
-}
+import { cn } from '@/lib/utils';
 
 interface KanbanColumnProps {
   id: string;
   title: string;
   color: string;
-  candidates: Candidate[];
+  candidates: any[];
+  showInactive?: boolean;
 }
 
-export const KanbanColumn: React.FC<KanbanColumnProps> = ({
-  id,
-  title,
-  color,
-  candidates,
-}) => {
+export const KanbanColumn = ({ 
+  id, 
+  title, 
+  color, 
+  candidates, 
+  showInactive = false 
+}: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
-    id: id,
+    id,
   });
 
-  const isUnassignedColumn = id === 'unassigned';
-
-  // Create sortable items with proper IDs
-  // For pipeline candidates, use applicationId; for unassigned, use candidate.id
-  const sortableItems = candidates.map(candidate => 
-    candidate.applicationId || candidate.id
-  );
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log(`🏛️ KanbanColumn "${title}" (${id}):`, {
-      candidateCount: candidates.length,
-      candidates: candidates.map(c => ({ 
-        email: c.email, 
-        applicationId: c.applicationId,
-        applied_company: c.applied_company,
-        dragId: c.applicationId || c.id
-      }))
-    });
-  }, [candidates, title, id]);
+  // Filter candidates based on showInactive flag
+  const visibleCandidates = showInactive 
+    ? candidates 
+    : candidates.filter(candidate => candidate.is_active !== false);
 
   return (
     <div className="flex flex-col min-w-[300px] max-w-[300px]">
-      <div className="flex items-center justify-between mb-4 p-3 bg-card rounded-lg border">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-          <h3 className="font-medium text-foreground">{title}</h3>
-        </div>
-        <Badge variant="secondary" className="text-xs">
-          {candidates.length}
-        </Badge>
+      <div 
+        className="flex items-center gap-2 p-4 border-b bg-card"
+        style={{ borderTopColor: color }}
+      >
+        <div 
+          className="w-3 h-3 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+        <h3 className="font-medium text-sm">{title}</h3>
+        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+          {visibleCandidates.length}
+        </span>
       </div>
 
       <div
         ref={setNodeRef}
-        className={`flex-1 min-h-[400px] p-2 rounded-lg transition-colors ${
-          isOver ? 'bg-muted/50 border-2 border-dashed border-primary' : 'bg-muted/20'
-        }`}
+        className={cn(
+          "flex-1 p-4 space-y-3 min-h-[200px] transition-colors",
+          isOver && "bg-muted/50"
+        )}
       >
-        <SortableContext
-          items={sortableItems}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-3">
-            {candidates.map(candidate => (
-              <CandidateCard
-                key={candidate.applicationId || candidate.id}
-                candidate={candidate}
-                dragId={candidate.applicationId || candidate.id}
-                isUnassigned={isUnassignedColumn}
-              />
-            ))}
-          </div>
-        </SortableContext>
-
-        {candidates.length === 0 && (
-          <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-            Drop candidates here
+        {visibleCandidates.map((candidate) => (
+          <CandidateCard
+            key={candidate.applicationId || candidate.id}
+            candidate={candidate}
+            showInactive={showInactive}
+          />
+        ))}
+        
+        {visibleCandidates.length === 0 && (
+          <div className="text-center text-muted-foreground text-sm py-8">
+            No candidates
           </div>
         )}
       </div>
