@@ -46,14 +46,24 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Google Sheets API error:', response.status, errorText);
-      throw new Error(`Google Sheets API error: ${response.status}`);
+      
+      // Provide more specific error messages
+      if (response.status === 403) {
+        throw new Error('Permission denied: Make sure the Google Sheet is publicly accessible or the API key has proper permissions. You can make the sheet public by clicking "Share" > "Anyone with the link can view".');
+      } else if (response.status === 404) {
+        throw new Error('Sheet not found: Please check that the Sheet ID is correct and the sheet exists.');
+      } else if (response.status === 400) {
+        throw new Error('Invalid request: Please check the range specification (e.g., "A:Z" or "Sheet1!A1:Z100").');
+      } else {
+        throw new Error(`Google Sheets API error (${response.status}): ${errorText}`);
+      }
     }
 
     const data = await response.json();
     console.log('Google Sheets response:', data);
 
     if (!data.values || data.values.length === 0) {
-      throw new Error('No data found in the specified range');
+      throw new Error('No data found in the specified range. Please check that your sheet contains data in the specified range.');
     }
 
     const [headers, ...rows] = data.values;
