@@ -8,22 +8,92 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// JWT helper functions for service account authentication
+function base64UrlEncode(str: string): string {
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+async function createJWT(serviceAccountKey: any): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const expiry = now + 3600; // 1 hour
+
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT'
+  };
+
+  const payload = {
+    iss: serviceAccountKey.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: expiry,
+    iat: now
+  };
+
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+
+  // Import the private key
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    new TextEncoder().encode(serviceAccountKey.private_key.replace(/\\n/g, '\n')),
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256'
+    },
+    false,
+    ['sign']
+  );
+
+  // Sign the token
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    privateKey,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  const encodedSignature = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
+  return `${unsignedToken}.${encodedSignature}`;
+}
+
+async function getAccessToken(serviceAccountKey: any): Promise<string> {
+  const jwt = await createJWT(serviceAccountKey);
+  
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get access token: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { integrationId, sheetId, range, columnMappings, accessToken } = await req.json();
+    const { integrationId, sheetId, range, columnMappings } = await req.json();
     
-    // Check if we have an access token for OAuth or fall back to API key
-    const googleApiKey = Deno.env.get('GOOGLE_SHEETS_API_KEY');
-    const useOAuth = !!accessToken;
-    
-    if (!useOAuth && !googleApiKey) {
-      throw new Error('Either Google access token or API key is required');
+    const serviceAccountKeyString = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
+    if (!serviceAccountKeyString) {
+      throw new Error('Google service account key not configured');
     }
 
+    const serviceAccountKey = JSON.parse(serviceAccountKeyString);
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -42,21 +112,16 @@ serve(async (req) => {
 
     console.log('Fetching Google Sheets data for sheet:', sheetId);
     
-    // Prepare request headers
-    const headers: Record<string, string> = {};
-    let sheetsUrl: string;
-    
-    if (useOAuth) {
-      // Use OAuth 2.0 with access token
-      headers['Authorization'] = `Bearer ${accessToken}`;
-      sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
-    } else {
-      // Use API key (requires public sheet)
-      sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${googleApiKey}`;
-    }
+    // Get access token using service account
+    const accessToken = await getAccessToken(serviceAccountKey);
     
     // Fetch data from Google Sheets
-    const response = await fetch(sheetsUrl, { headers });
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
+    const response = await fetch(sheetsUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -64,13 +129,9 @@ serve(async (req) => {
       
       // Provide more specific error messages
       if (response.status === 403) {
-        if (useOAuth) {
-          throw new Error('Permission denied: The access token may have expired or insufficient permissions. Please re-authenticate with Google.');
-        } else {
-          throw new Error('Permission denied: Make sure the Google Sheet is publicly accessible or use OAuth authentication for private sheets.');
-        }
+        throw new Error('Permission denied: Make sure the service account has access to the Google Sheet. Share the sheet with the service account email: ' + serviceAccountKey.client_email);
       } else if (response.status === 401) {
-        throw new Error('Authentication failed: Please re-authenticate with Google or check your API key.');
+        throw new Error('Authentication failed: Please check the service account configuration.');
       } else if (response.status === 404) {
         throw new Error('Sheet not found: Please check that the Sheet ID is correct and the sheet exists.');
       } else if (response.status === 400) {
