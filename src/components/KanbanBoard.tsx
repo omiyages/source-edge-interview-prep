@@ -6,7 +6,8 @@ import { CandidateCard } from './CandidateCard';
 import { CandidateSearchDialog } from './CandidateSearchDialog';
 import { KanbanBoardHeader } from './KanbanBoardHeader';
 import { KanbanFilters } from './KanbanFilters';
-import { useHiringStages, useCandidatesWithPipeline, useKanbanHelpers } from '@/hooks/useKanbanData';
+import { useHiringStages, useCandidatesWithPipeline } from '@/hooks/useKanbanData';
+import { useKanbanStageData } from '@/hooks/useKanbanStageData';
 import { useKanbanActions } from '@/hooks/useKanbanMutations';
 import { useKanbanDragDrop } from '@/hooks/useKanbanDragDrop';
 import { useKanbanFilters } from '@/hooks/useKanbanFilters';
@@ -26,7 +27,8 @@ export const KanbanBoard = memo(() => {
     availableRoles,
     availableCompanies
   } = useKanbanFilters(candidates);
-  const { getCandidatesForStage } = useKanbanHelpers(filteredCandidates);
+  
+  const { getCandidatesForStage } = useKanbanStageData(filteredCandidates);
   const { handleSelectCandidate } = useKanbanActions(stages);
   const { sensors, activeCandidate, handleDragStart, handleDragEnd } = useKanbanDragDrop(filteredCandidates);
 
@@ -53,7 +55,6 @@ export const KanbanBoard = memo(() => {
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-6 overflow-x-auto h-full pb-4">
-          {/* All stage columns - including the new "New Candidate" stage */}
           {stages.map(stage => (
             <KanbanColumn
               key={stage.id}

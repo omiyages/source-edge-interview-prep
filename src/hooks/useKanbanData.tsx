@@ -101,12 +101,16 @@ export const useCandidatesWithPipeline = (showInactive: boolean = false) => {
       });
 
       // Map applications to candidates using candidate_id
-      const candidatesWithApplications = candidates?.map(candidate => ({
-        ...candidate,
-        applications: applications?.filter(app => 
+      const candidatesWithApplications = candidates?.map(candidate => {
+        const candidateApplications = applications?.filter(app => 
           app.candidate_id === candidate.id
-        ) || []
-      })) || [];
+        ) || [];
+        
+        return {
+          ...candidate,
+          applications: candidateApplications
+        };
+      }) || [];
 
       console.log('✅ Candidates with applications processed:', candidatesWithApplications.length);
       candidatesWithApplications.forEach(candidate => {
@@ -122,6 +126,7 @@ export const useCandidatesWithPipeline = (showInactive: boolean = false) => {
   });
 };
 
+// Legacy hook for backward compatibility - will be removed after refactoring
 export const useKanbanHelpers = (candidates: Candidate[]) => {
   const getCandidatesForStage = useCallback((stageId: string) => {
     console.log(`🔍 Getting candidates for stage: ${stageId}`);
