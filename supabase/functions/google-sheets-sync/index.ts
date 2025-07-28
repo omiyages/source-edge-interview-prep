@@ -171,17 +171,18 @@ serve(async (req) => {
     const [headers, ...rows] = data.values;
     const candidates = [];
 
-    // Get the first hiring stage for pipeline entries
-    const { data: firstStage } = await supabase
+    // Get all hiring stages for kanban stage mapping
+    const { data: hiringStages } = await supabase
       .from('hiring_stages')
-      .select('id')
-      .order('stage_order', { ascending: true })
-      .limit(1)
-      .single();
+      .select('id, name')
+      .order('stage_order', { ascending: true });
 
-    if (!firstStage) {
+    if (!hiringStages || hiringStages.length === 0) {
       throw new Error('No hiring stages found. Please create hiring stages first.');
     }
+
+    // Get the first hiring stage as default
+    const firstStage = hiringStages[0];
 
     // Process each row and create candidate data
     for (let i = 0; i < rows.length; i++) {
@@ -196,6 +197,7 @@ serve(async (req) => {
 
       let appliedCompany = null;
       let appliedJobTitle = null;
+      let kanbanStage = null;
       let hasEmail = false;
 
       // Map columns based on columnMappings
@@ -239,6 +241,9 @@ serve(async (req) => {
               break;
             case 'applied_job_title':
               appliedJobTitle = row[index];
+              break;
+            case 'kanban_stage':
+              kanbanStage = row[index];
               break;
           }
         }
@@ -305,12 +310,28 @@ serve(async (req) => {
         candidateId = newCandidate.id;
       }
 
+      // Determine which stage to assign the candidate to
+      let targetStageId = firstStage.id;
+      
+      if (kanbanStage) {
+        // Try to find the matching stage by name
+        const matchingStage = hiringStages.find(stage => 
+          stage.name.toLowerCase() === kanbanStage.toLowerCase()
+        );
+        if (matchingStage) {
+          targetStageId = matchingStage.id;
+          console.log(`Assigning candidate to stage: ${matchingStage.name}`);
+        } else {
+          console.log(`Stage "${kanbanStage}" not found, using default stage: ${firstStage.name}`);
+        }
+      }
+
       // Add to pipeline
       const { error: pipelineError } = await supabase
         .from('candidate_pipeline')
         .insert({
           candidate_id: candidateId,
-          stage_id: firstStage.id,
+          stage_id: targetStageId,
           applied_company: appliedCompany,
           applied_job_title: appliedJobTitle,
           moved_by: user.id,
@@ -340,6 +361,8 @@ serve(async (req) => {
         full_name: candidateData.full_name,
         applied_company: appliedCompany,
         applied_job_title: appliedJobTitle,
+        kanban_stage: kanbanStage,
+        assigned_stage: hiringStages.find(s => s.id === targetStageId)?.name,
         row: i + 2,
         has_email: hasEmail
       });

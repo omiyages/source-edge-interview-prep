@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCreateGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration';
+import { useHiringStages } from '@/hooks/useKanbanData';
 import { InfoIcon } from 'lucide-react';
 
 interface GoogleSheetsIntegrationDialogProps {
@@ -27,6 +28,7 @@ const COLUMN_MAPPING_OPTIONS = [
   { value: 'general_notes', label: 'General Notes' },
   { value: 'applied_company', label: 'Applied Company' },
   { value: 'applied_job_title', label: 'Applied Job Title' },
+  { value: 'kanban_stage', label: 'Kanban Stage' },
 ];
 
 export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDialogProps> = ({
@@ -40,6 +42,7 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
   const [sampleColumns, setSampleColumns] = useState<string[]>([]);
 
   const createIntegration = useCreateGoogleSheetsIntegration();
+  const { data: hiringStages } = useHiringStages();
 
   const handleSubmit = () => {
     if (!sheetId.trim()) {
@@ -144,6 +147,15 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
             <p className="text-sm text-muted-foreground mb-2">
               Map your Google Sheets columns to candidate fields
             </p>
+            
+            {columnMappings && Object.values(columnMappings).includes('kanban_stage') && (
+              <Alert className="mb-4">
+                <InfoIcon className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Kanban Stage Mapping:</strong> Use the exact stage names from your hiring pipeline. Available stages: {hiringStages?.map(stage => stage.name).join(', ')}
+                </AlertDescription>
+              </Alert>
+            )}
             
             <div className="space-y-2">
               {sampleColumns.map((column) => (

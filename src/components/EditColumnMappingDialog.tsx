@@ -1,21 +1,29 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUpdateGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration';
+import { useHiringStages } from '@/hooks/useKanbanData';
+import { InfoIcon } from 'lucide-react';
+
+interface GoogleSheetsIntegration {
+  id: string;
+  sheet_id: string;
+  sheet_name: string | null;
+  range_specification: string;
+  column_mappings: Record<string, string>;
+  last_sync_at: string | null;
+  is_active: boolean;
+}
 
 interface EditColumnMappingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  integration: {
-    id: string;
-    sheet_id: string;
-    sheet_name: string | null;
-    column_mappings: Record<string, string>;
-  };
+  integration: GoogleSheetsIntegration;
 }
 
 const COLUMN_MAPPING_OPTIONS = [
@@ -31,6 +39,7 @@ const COLUMN_MAPPING_OPTIONS = [
   { value: 'general_notes', label: 'General Notes' },
   { value: 'applied_company', label: 'Applied Company' },
   { value: 'applied_job_title', label: 'Applied Job Title' },
+  { value: 'kanban_stage', label: 'Kanban Stage' },
 ];
 
 export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = ({
@@ -38,14 +47,28 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   onOpenChange,
   integration,
 }) => {
-  const [columnMappings, setColumnMappings] = useState<Record<string, string>>(integration.column_mappings || {});
-  const [sampleColumns, setSampleColumns] = useState<string[]>(Object.keys(integration.column_mappings || {}));
+  const [sheetName, setSheetName] = useState('');
+  const [range, setRange] = useState('A:Z');
+  const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
+  const [sampleColumns, setSampleColumns] = useState<string[]>([]);
 
   const updateIntegration = useUpdateGoogleSheetsIntegration();
+  const { data: hiringStages } = useHiringStages();
+
+  useEffect(() => {
+    if (integration && open) {
+      setSheetName(integration.sheet_name || '');
+      setRange(integration.range_specification || 'A:Z');
+      setColumnMappings(integration.column_mappings || {});
+      setSampleColumns(Object.keys(integration.column_mappings || {}));
+    }
+  }, [integration, open]);
 
   const handleSubmit = () => {
     updateIntegration.mutate({
       id: integration.id,
+      sheet_name: sheetName || null,
+      range_specification: range,
       column_mappings: columnMappings,
     });
 
@@ -79,15 +102,30 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Column Mappings</DialogTitle>
+          <DialogTitle>Edit Column Mapping</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
           <div>
-            <Label>Sheet: {integration.sheet_name || 'Default Sheet'}</Label>
-            <p className="text-sm text-muted-foreground">
-              Sheet ID: {integration.sheet_id}
-            </p>
+            <Label htmlFor="sheetName">Sheet Name (Optional)</Label>
+            <Input
+              id="sheetName"
+              value={sheetName}
+              onChange={(e) => setSheetName(e.target.value)}
+              placeholder="e.g., 'Candidates' or leave blank for default"
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="range">Range</Label>
+            <Input
+              id="range"
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+              placeholder="e.g., A:Z or Sheet1!A1:Z100"
+              className="mt-1"
+            />
           </div>
 
           <div>
@@ -95,6 +133,15 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
             <p className="text-sm text-muted-foreground mb-2">
               Map your Google Sheets columns to candidate fields
             </p>
+            
+            {columnMappings && Object.values(columnMappings).includes('kanban_stage') && (
+              <Alert className="mb-4">
+                <InfoIcon className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Kanban Stage Mapping:</strong> Use the exact stage names from your hiring pipeline. Available stages: {hiringStages?.map(stage => stage.name).join(', ')}
+                </AlertDescription>
+              </Alert>
+            )}
             
             <div className="space-y-2">
               {sampleColumns.map((column) => (
@@ -155,7 +202,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={updateIntegration.isPending}>
-            {updateIntegration.isPending ? 'Saving...' : 'Save Changes'}
+            {updateIntegration.isPending ? 'Updating...' : 'Update Integration'}
           </Button>
         </DialogFooter>
       </DialogContent>
