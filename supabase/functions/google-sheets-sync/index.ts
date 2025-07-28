@@ -131,6 +131,7 @@ serve(async (req) => {
     }
 
     console.log('Fetching Google Sheets data for sheet:', sheetId);
+    console.log('Column mappings:', columnMappings);
     
     // Get access token using service account
     const accessToken = await getAccessToken(serviceAccountKey);
@@ -162,7 +163,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Google Sheets response:', data);
+    console.log('Google Sheets response headers:', Object.keys(data.values?.[0] || []));
 
     if (!data.values || data.values.length === 0) {
       throw new Error('No data found in the specified range. Please check that your sheet contains data in the specified range.');
@@ -199,59 +200,86 @@ serve(async (req) => {
       let appliedJobTitle = null;
       let kanbanStage = null;
       let hasEmail = false;
+      let foundName = false;
 
       // Map columns based on columnMappings
       headers.forEach((header: string, index: number) => {
         const mapping = columnMappings[header];
-        if (mapping && row[index]) {
+        const cellValue = row[index];
+        
+        if (mapping && cellValue && cellValue.trim()) {
           switch (mapping) {
             case 'email':
-              candidateData.email = row[index];
+              candidateData.email = cellValue.trim();
               hasEmail = true;
               break;
             case 'full_name':
-              candidateData.full_name = row[index];
+              candidateData.full_name = cellValue.trim();
+              foundName = true;
               break;
             case 'linkedin_profile':
-              candidateData.linkedin_profile = row[index];
+              candidateData.linkedin_profile = cellValue.trim();
               break;
             case 'current_company':
-              candidateData.current_company = row[index];
+              candidateData.current_company = cellValue.trim();
               break;
             case 'phone_number':
-              candidateData.phone_number = row[index];
+              candidateData.phone_number = cellValue.trim();
               break;
             case 'years_of_experience':
-              candidateData.years_of_experience = parseInt(row[index]) || null;
+              candidateData.years_of_experience = parseInt(cellValue) || null;
               break;
             case 'salary':
-              candidateData.salary = parseInt(row[index]) || null;
+              candidateData.salary = parseInt(cellValue) || null;
               break;
             case 'skillsets':
-              candidateData.skillsets = row[index].split(',').map((s: string) => s.trim());
+              candidateData.skillsets = cellValue.split(',').map((s: string) => s.trim()).filter(s => s);
               break;
             case 'past_companies':
-              candidateData.past_companies = row[index].split(',').map((s: string) => s.trim());
+              candidateData.past_companies = cellValue.split(',').map((s: string) => s.trim()).filter(s => s);
               break;
             case 'general_notes':
-              candidateData.general_notes = row[index];
+              candidateData.general_notes = cellValue.trim();
               break;
             case 'applied_company':
-              appliedCompany = row[index];
+              appliedCompany = cellValue.trim();
               break;
             case 'applied_job_title':
-              appliedJobTitle = row[index];
+              appliedJobTitle = cellValue.trim();
               break;
             case 'kanban_stage':
-              kanbanStage = row[index];
+              kanbanStage = cellValue.trim();
               break;
           }
         }
       });
 
-      // Skip if no name provided
-      if (!candidateData.full_name) {
-        console.log(`Skipping row ${i + 2}: No name found`);
+      // If no name found through mapping, try to detect it automatically
+      if (!foundName) {
+        // Look for common name column headers
+        const nameHeaders = ['name', 'full_name', 'candidate_name', 'candidate', 'person', 'full name'];
+        for (let j = 0; j < headers.length; j++) {
+          const header = headers[j].toLowerCase().trim();
+          if (nameHeaders.includes(header) && row[j] && row[j].trim()) {
+            candidateData.full_name = row[j].trim();
+            foundName = true;
+            console.log(`Auto-detected name in column "${headers[j]}" (${header}): ${row[j].trim()}`);
+            break;
+          }
+        }
+      }
+
+      // If still no name found, try Column C (index 2) as fallback
+      if (!foundName && row[2] && row[2].trim()) {
+        candidateData.full_name = row[2].trim();
+        foundName = true;
+        console.log(`Using Column C as fallback for name: ${row[2].trim()}`);
+      }
+
+      // Skip if no name found after all attempts
+      if (!foundName) {
+        console.log(`Skipping row ${i + 2}: No name found after checking mappings, common headers, and Column C`);
+        console.log(`Row data:`, row);
         continue;
       }
 
