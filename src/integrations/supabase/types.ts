@@ -18,7 +18,7 @@ export type Database = {
         Row: {
           applied_company: string | null
           applied_job_title: string | null
-          candidate_id: string
+          candidate_id: string | null
           candidate_ref_id: string | null
           created_at: string
           id: string
@@ -32,7 +32,7 @@ export type Database = {
         Insert: {
           applied_company?: string | null
           applied_job_title?: string | null
-          candidate_id: string
+          candidate_id?: string | null
           candidate_ref_id?: string | null
           created_at?: string
           id?: string
@@ -46,7 +46,7 @@ export type Database = {
         Update: {
           applied_company?: string | null
           applied_job_title?: string | null
-          candidate_id?: string
+          candidate_id?: string | null
           candidate_ref_id?: string | null
           created_at?: string
           id?: string
