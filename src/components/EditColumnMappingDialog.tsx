@@ -50,7 +50,6 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   const [sheetName, setSheetName] = useState('');
   const [range, setRange] = useState('A:Z');
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
-  const [sampleColumns, setSampleColumns] = useState<string[]>([]);
 
   const updateIntegration = useUpdateGoogleSheetsIntegration();
   const { data: hiringStages } = useHiringStages();
@@ -60,7 +59,6 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
       setSheetName(integration.sheet_name || '');
       setRange(integration.range_specification || 'A:Z');
       setColumnMappings(integration.column_mappings || {});
-      setSampleColumns(Object.keys(integration.column_mappings || {}));
     }
   }, [integration, open]);
 
@@ -77,11 +75,20 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
 
   const addColumnMapping = () => {
     const newColumn = `Column ${Object.keys(columnMappings).length + 1}`;
-    setSampleColumns([...sampleColumns, newColumn]);
     setColumnMappings({
       ...columnMappings,
       [newColumn]: '',
     });
+  };
+
+  const updateColumnName = (oldColumnName: string, newColumnName: string) => {
+    if (oldColumnName === newColumnName) return;
+    
+    const newMappings = { ...columnMappings };
+    const mappingValue = newMappings[oldColumnName];
+    delete newMappings[oldColumnName];
+    newMappings[newColumnName] = mappingValue;
+    setColumnMappings(newMappings);
   };
 
   const updateColumnMapping = (column: string, mapping: string) => {
@@ -95,7 +102,6 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
     const newMappings = { ...columnMappings };
     delete newMappings[column];
     setColumnMappings(newMappings);
-    setSampleColumns(sampleColumns.filter(c => c !== column));
   };
 
   return (
@@ -144,18 +150,11 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
             )}
             
             <div className="space-y-2">
-              {sampleColumns.map((column) => (
+              {Object.keys(columnMappings).map((column) => (
                 <div key={column} className="flex items-center gap-2">
                   <Input
                     value={column}
-                    onChange={(e) => {
-                      const newColumns = sampleColumns.map(c => c === column ? e.target.value : c);
-                      setSampleColumns(newColumns);
-                      const newMappings = { ...columnMappings };
-                      newMappings[e.target.value] = newMappings[column];
-                      delete newMappings[column];
-                      setColumnMappings(newMappings);
-                    }}
+                    onChange={(e) => updateColumnName(column, e.target.value)}
                     placeholder="Sheet column name"
                     className="flex-1"
                   />
