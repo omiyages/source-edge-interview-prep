@@ -74,22 +74,34 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   };
 
   const addColumnMapping = () => {
-    const existingColumns = Object.keys(columnMappings);
-    const newColumn = `Column ${existingColumns.length + 1}`;
-    setColumnMappings(prev => ({
-      ...prev,
-      [newColumn]: '',
-    }));
+    setColumnMappings(prev => {
+      const existingColumns = Object.keys(prev);
+      let counter = 1;
+      let newColumn = `Column ${counter}`;
+      
+      // Find a unique column name
+      while (existingColumns.includes(newColumn)) {
+        counter++;
+        newColumn = `Column ${counter}`;
+      }
+      
+      return {
+        ...prev,
+        [newColumn]: '',
+      };
+    });
   };
 
   const updateColumnName = (oldColumnName: string, newColumnName: string) => {
     if (oldColumnName === newColumnName) return;
     
-    const newMappings = { ...columnMappings };
-    const mappingValue = newMappings[oldColumnName];
-    delete newMappings[oldColumnName];
-    newMappings[newColumnName] = mappingValue;
-    setColumnMappings(newMappings);
+    setColumnMappings(prev => {
+      const newMappings = { ...prev };
+      const mappingValue = newMappings[oldColumnName];
+      delete newMappings[oldColumnName];
+      newMappings[newColumnName] = mappingValue;
+      return newMappings;
+    });
   };
 
   const updateColumnMapping = (column: string, mapping: string) => {
