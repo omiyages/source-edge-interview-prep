@@ -43,7 +43,7 @@ export const useAddCandidateToStageMutation = () => {
       const { data, error } = await supabase
         .from('candidate_pipeline')
         .insert({
-          candidate_ref_id: candidateId,
+          candidate_id: candidateId,
           stage_id: stageId,
           is_active: true,
         })
@@ -81,7 +81,7 @@ export const useDeleteCandidateCompletely = () => {
       const { error: pipelineError } = await supabase
         .from('candidate_pipeline')
         .delete()
-        .eq('candidate_ref_id', candidateId);
+        .eq('candidate_id', candidateId);
 
       if (pipelineError) {
         console.error('❌ Error removing candidate from pipeline:', pipelineError);
@@ -145,7 +145,7 @@ export const useAddCandidateToPipelineMutation = () => {
       const { data, error } = await supabase
         .from('candidate_pipeline')
         .insert({
-          candidate_ref_id: candidateId,
+          candidate_id: candidateId,
           stage_id: targetStageId,
           applied_company: appliedCompany,
           applied_job_title: appliedJobTitle,

@@ -99,11 +99,11 @@ export const useCandidatesWithPipeline = (showInactive: boolean = false) => {
         showInactive
       });
 
-      // Map applications to candidates using both candidate_id and candidate_ref_id
+      // Map applications to candidates using candidate_id
       const candidatesWithApplications = candidates?.map(candidate => ({
         ...candidate,
         applications: applications?.filter(app => 
-          app.candidate_id === candidate.id || app.candidate_ref_id === candidate.id
+          app.candidate_id === candidate.id
         ) || []
       })) || [];
 
