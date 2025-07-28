@@ -272,12 +272,26 @@ serve(async (req) => {
       let candidateId;
       let isNewCandidate = false;
 
-      // Check if candidate already exists
-      const { data: existingCandidate } = await supabase
-        .from('candidates')
-        .select('id')
-        .or(`email.eq.${candidateData.email || ''},full_name.eq.${candidateData.full_name}`)
-        .single();
+      // Check if candidate already exists (by email if provided, otherwise by name)
+      let existingCandidate = null;
+      if (candidateData.email) {
+        const { data } = await supabase
+          .from('candidates')
+          .select('id')
+          .eq('email', candidateData.email)
+          .single();
+        existingCandidate = data;
+      }
+      
+      // If no match by email, try by name
+      if (!existingCandidate) {
+        const { data } = await supabase
+          .from('candidates')
+          .select('id')
+          .eq('full_name', candidateData.full_name)
+          .single();
+        existingCandidate = data;
+      }
 
       if (existingCandidate) {
         // Update existing candidate
@@ -322,8 +336,34 @@ serve(async (req) => {
         }
       }
 
-      // Add/update pipeline entry - using candidate_id instead of candidate_ref_id
-      if (isNewCandidate) {
+      // Check if candidate already has an active pipeline entry
+      const { data: existingPipeline } = await supabase
+        .from('candidate_pipeline')
+        .select('id')
+        .eq('candidate_id', candidateId)
+        .eq('is_active', true)
+        .single();
+
+      if (existingPipeline) {
+        // Update existing pipeline entry
+        const { error: pipelineError } = await supabase
+          .from('candidate_pipeline')
+          .update({
+            stage_id: targetStageId,
+            applied_company: appliedCompany,
+            applied_job_title: appliedJobTitle,
+            moved_by: user.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingPipeline.id);
+
+        if (pipelineError) {
+          console.error('Error updating pipeline:', pipelineError);
+          continue;
+        }
+        console.log(`Updated pipeline for candidate: ${candidateData.full_name}`);
+      } else {
+        // Create new pipeline entry
         const { error: pipelineError } = await supabase
           .from('candidate_pipeline')
           .insert({
@@ -340,25 +380,6 @@ serve(async (req) => {
           continue;
         }
         console.log(`Added candidate to pipeline: ${candidateData.full_name}`);
-      } else {
-        // Update existing pipeline entry
-        const { error: pipelineError } = await supabase
-          .from('candidate_pipeline')
-          .update({
-            stage_id: targetStageId,
-            applied_company: appliedCompany,
-            applied_job_title: appliedJobTitle,
-            moved_by: user.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('candidate_id', candidateId)
-          .eq('is_active', true);
-
-        if (pipelineError) {
-          console.error('Error updating pipeline:', pipelineError);
-          continue;
-        }
-        console.log(`Updated pipeline for candidate: ${candidateData.full_name}`);
       }
 
       // Track the import
