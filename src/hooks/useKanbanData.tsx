@@ -19,6 +19,7 @@ export interface CandidateApplication {
   updated_at: string;
   moved_at: string;
   is_active: boolean;
+  candidate_id: string;
 }
 
 export interface Candidate {
@@ -127,19 +128,22 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
     const applications: any[] = [];
     
     candidates.forEach(candidate => {
-      candidate.applications?.forEach(application => {
-        if (application.stage_id === stageId) {
-          applications.push({
-            ...candidate,
-            applicationId: application.id,
-            applied_company: application.applied_company,
-            applied_job_title: application.applied_job_title,
-            application_created_at: application.created_at,
-            moved_at: application.moved_at || application.updated_at,
-            is_active: application.is_active,
-          });
-        }
-      });
+      if (candidate.applications && candidate.applications.length > 0) {
+        candidate.applications.forEach(application => {
+          if (application.stage_id === stageId && application.is_active) {
+            console.log(`📋 Adding candidate ${candidate.full_name} to stage ${stageId}`);
+            applications.push({
+              ...candidate,
+              applicationId: application.id,
+              applied_company: application.applied_company,
+              applied_job_title: application.applied_job_title,
+              application_created_at: application.created_at,
+              moved_at: application.moved_at || application.updated_at,
+              is_active: application.is_active,
+            });
+          }
+        });
+      }
     });
     
     console.log(`📊 Found ${applications.length} applications for stage ${stageId}`);
