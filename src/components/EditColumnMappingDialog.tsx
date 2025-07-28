@@ -26,6 +26,12 @@ interface EditColumnMappingDialogProps {
   integration: GoogleSheetsIntegration;
 }
 
+interface ColumnMappingItem {
+  id: string;
+  columnName: string;
+  fieldMapping: string;
+}
+
 const COLUMN_MAPPING_OPTIONS = [
   { value: 'email', label: 'Email' },
   { value: 'full_name', label: 'Full Name' },
@@ -49,7 +55,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
 }) => {
   const [sheetName, setSheetName] = useState('');
   const [range, setRange] = useState('A:Z');
-  const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
+  const [columnMappings, setColumnMappings] = useState<ColumnMappingItem[]>([]);
 
   const updateIntegration = useUpdateGoogleSheetsIntegration();
   const { data: hiringStages } = useHiringStages();
@@ -58,66 +64,79 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
     if (integration && open) {
       setSheetName(integration.sheet_name || '');
       setRange(integration.range_specification || 'A:Z');
-      setColumnMappings(integration.column_mappings || {});
+      
+      // Convert Record<string, string> to ColumnMappingItem[]
+      const mappingItems = Object.entries(integration.column_mappings || {}).map(([columnName, fieldMapping], index) => ({
+        id: `${columnName}-${index}`,
+        columnName,
+        fieldMapping,
+      }));
+      setColumnMappings(mappingItems);
     }
   }, [integration, open]);
 
   const handleSubmit = () => {
+    // Convert ColumnMappingItem[] back to Record<string, string>
+    const mappingsRecord = columnMappings.reduce((acc, item) => {
+      if (item.columnName.trim()) {
+        acc[item.columnName] = item.fieldMapping;
+      }
+      return acc;
+    }, {} as Record<string, string>);
+
     updateIntegration.mutate({
       id: integration.id,
       sheet_name: sheetName || null,
       range_specification: range,
-      column_mappings: columnMappings,
+      column_mappings: mappingsRecord,
     });
 
     onOpenChange(false);
   };
 
   const addColumnMapping = () => {
-    setColumnMappings(prev => {
-      const existingColumns = Object.keys(prev);
-      let counter = 1;
-      let newColumn = `Column ${counter}`;
-      
-      // Find a unique column name
-      while (existingColumns.includes(newColumn)) {
-        counter++;
-        newColumn = `Column ${counter}`;
-      }
-      
-      return {
-        ...prev,
-        [newColumn]: '',
-      };
-    });
-  };
-
-  const updateColumnName = (oldColumnName: string, newColumnName: string) => {
-    if (oldColumnName === newColumnName) return;
+    const existingNumbers = columnMappings
+      .map(item => item.columnName.match(/^Column (\d+)$/))
+      .filter(match => match !== null)
+      .map(match => parseInt(match![1]));
     
-    setColumnMappings(prev => {
-      const newMappings = { ...prev };
-      const mappingValue = newMappings[oldColumnName];
-      delete newMappings[oldColumnName];
-      newMappings[newColumnName] = mappingValue;
-      return newMappings;
-    });
+    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+    const newColumnName = `Column ${nextNumber}`;
+    
+    const newItem: ColumnMappingItem = {
+      id: `new-${Date.now()}-${Math.random()}`,
+      columnName: newColumnName,
+      fieldMapping: '',
+    };
+    
+    setColumnMappings(prev => [...prev, newItem]);
   };
 
-  const updateColumnMapping = (column: string, mapping: string) => {
-    setColumnMappings(prev => ({
-      ...prev,
-      [column]: mapping,
-    }));
+  const updateColumnName = (id: string, newColumnName: string) => {
+    setColumnMappings(prev => 
+      prev.map(item => 
+        item.id === id 
+          ? { ...item, columnName: newColumnName }
+          : item
+      )
+    );
   };
 
-  const removeColumnMapping = (column: string) => {
-    setColumnMappings(prev => {
-      const newMappings = { ...prev };
-      delete newMappings[column];
-      return newMappings;
-    });
+  const updateColumnMapping = (id: string, fieldMapping: string) => {
+    setColumnMappings(prev => 
+      prev.map(item => 
+        item.id === id 
+          ? { ...item, fieldMapping }
+          : item
+      )
+    );
   };
+
+  const removeColumnMapping = (id: string) => {
+    setColumnMappings(prev => prev.filter(item => item.id !== id));
+  };
+
+  const hasKanbanStageMapping = columnMappings.some(item => item.fieldMapping === 'kanban_stage');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -155,7 +174,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
               Map your Google Sheets columns to candidate fields
             </p>
             
-            {columnMappings && Object.values(columnMappings).includes('kanban_stage') && (
+            {hasKanbanStageMapping && (
               <Alert className="mb-4">
                 <InfoIcon className="h-4 w-4" />
                 <AlertDescription>
@@ -165,17 +184,17 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
             )}
             
             <div className="space-y-2">
-              {Object.keys(columnMappings).map((column) => (
-                <div key={column} className="flex items-center gap-2">
+              {columnMappings.map((item) => (
+                <div key={item.id} className="flex items-center gap-2">
                   <Input
-                    value={column}
-                    onChange={(e) => updateColumnName(column, e.target.value)}
+                    value={item.columnName}
+                    onChange={(e) => updateColumnName(item.id, e.target.value)}
                     placeholder="Sheet column name"
                     className="flex-1"
                   />
                   <Select
-                    value={columnMappings[column] || ''}
-                    onValueChange={(value) => updateColumnMapping(column, value)}
+                    value={item.fieldMapping}
+                    onValueChange={(value) => updateColumnMapping(item.id, value)}
                   >
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Select field" />
@@ -192,7 +211,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => removeColumnMapping(column)}
+                    onClick={() => removeColumnMapping(item.id)}
                   >
                     Remove
                   </Button>
