@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -142,25 +141,20 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get the authorization header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       throw new Error('Authorization header missing');
     }
 
-    // Set the user context
     const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
     if (userError || !user) {
       throw new Error('Invalid user token');
     }
 
     console.log('Fetching Google Sheets data for sheet:', sheetId);
-    console.log('Column mappings:', columnMappings);
     
-    // Get access token using service account
     const accessToken = await getAccessToken(serviceAccountKey);
     
-    // Fetch data from Google Sheets
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
     const response = await fetch(sheetsUrl, {
       headers: {
@@ -172,31 +166,27 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error('Google Sheets API error:', response.status, errorText);
       
-      // Provide more specific error messages
       if (response.status === 403) {
-        throw new Error('Permission denied: Make sure the service account has access to the Google Sheet. Share the sheet with the service account email: ' + serviceAccountKey.client_email);
+        throw new Error('Permission denied: Make sure the service account has access to the Google Sheet');
       } else if (response.status === 401) {
-        throw new Error('Authentication failed: Please check the service account configuration.');
+        throw new Error('Authentication failed: Please check the service account configuration');
       } else if (response.status === 404) {
-        throw new Error('Sheet not found: Please check that the Sheet ID is correct and the sheet exists.');
-      } else if (response.status === 400) {
-        throw new Error('Invalid request: Please check the range specification (e.g., "A:Z" or "Sheet1!A1:Z100").');
+        throw new Error('Sheet not found: Please check that the Sheet ID is correct');
       } else {
         throw new Error(`Google Sheets API error (${response.status}): ${errorText}`);
       }
     }
 
     const data = await response.json();
-    console.log('Google Sheets response headers:', Object.keys(data.values?.[0] || []));
-
+    
     if (!data.values || data.values.length === 0) {
-      throw new Error('No data found in the specified range. Please check that your sheet contains data in the specified range.');
+      throw new Error('No data found in the specified range');
     }
 
     const [headers, ...rows] = data.values;
     const candidates = [];
 
-    // Get all hiring stages for kanban stage mapping
+    // Get all hiring stages
     const { data: hiringStages } = await supabase
       .from('hiring_stages')
       .select('id, name')
@@ -206,25 +196,21 @@ serve(async (req) => {
       throw new Error('No hiring stages found. Please create hiring stages first.');
     }
 
-    // Get the first hiring stage as default
     const firstStage = hiringStages[0];
 
     // Process each row and create candidate data
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const candidateData: any = {
-        role: 'user',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        is_active: true,
+        is_user: false,
       };
 
       let appliedCompany = null;
       let appliedJobTitle = null;
       let kanbanStage = null;
-      let hasEmail = false;
       let foundName = false;
-      let candidateEmail = null;
 
       // Map columns based on columnMappings
       headers.forEach((header: string, index: number) => {
@@ -235,8 +221,6 @@ serve(async (req) => {
           switch (mapping) {
             case 'email':
               candidateData.email = cellValue.trim();
-              candidateEmail = cellValue.trim();
-              hasEmail = true;
               break;
             case 'full_name':
               candidateData.full_name = cellValue.trim();
@@ -279,213 +263,71 @@ serve(async (req) => {
         }
       });
 
-      // If no name found through mapping, try to detect it automatically
+      // Skip if no name found
       if (!foundName) {
-        // Look for common name column headers
-        const nameHeaders = ['name', 'full_name', 'candidate_name', 'candidate', 'person', 'full name'];
-        for (let j = 0; j < headers.length; j++) {
-          const header = headers[j].toLowerCase().trim();
-          if (nameHeaders.includes(header) && row[j] && row[j].trim()) {
-            candidateData.full_name = row[j].trim();
-            foundName = true;
-            console.log(`Auto-detected name in column "${headers[j]}" (${header}): ${row[j].trim()}`);
-            break;
-          }
-        }
-      }
-
-      // If still no name found, try Column C (index 2) as fallback
-      if (!foundName && row[2] && row[2].trim()) {
-        candidateData.full_name = row[2].trim();
-        foundName = true;
-        console.log(`Using Column C as fallback for name: ${row[2].trim()}`);
-      }
-
-      // Skip if no name found after all attempts
-      if (!foundName) {
-        console.log(`Skipping row ${i + 2}: No name found after checking mappings, common headers, and Column C`);
-        console.log(`Row data:`, row);
+        console.log(`Skipping row ${i + 2}: No name found`);
         continue;
       }
 
       let candidateId;
       let isNewCandidate = false;
 
-      if (hasEmail) {
-        // Check if candidate already exists by email
-        const { data: existingCandidate } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', candidateData.email)
-          .eq('role', 'user')
-          .single();
+      // Check if candidate already exists
+      const { data: existingCandidate } = await supabase
+        .from('candidates')
+        .select('id')
+        .or(`email.eq.${candidateData.email || ''},full_name.eq.${candidateData.full_name}`)
+        .single();
 
-        if (existingCandidate) {
-          // Update existing candidate
-          candidateId = existingCandidate.id;
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update(candidateData)
-            .eq('id', candidateId);
+      if (existingCandidate) {
+        // Update existing candidate
+        candidateId = existingCandidate.id;
+        const { error: updateError } = await supabase
+          .from('candidates')
+          .update(candidateData)
+          .eq('id', candidateId);
 
-          if (updateError) {
-            console.error('Error updating candidate:', updateError);
-            continue;
-          }
-          console.log(`Updated existing candidate: ${candidateData.full_name}`);
-        } else {
-          // Create new candidate with email
-          const { data: newUserData, error: createError } = await supabase.functions.invoke('admin-user-management', {
-            body: {
-              email: candidateData.email,
-              fullName: candidateData.full_name,
-              role: 'user'
-            },
-            headers: {
-              Authorization: authHeader,
-            }
-          });
-
-          if (createError) {
-            console.error('Error creating user through admin function:', createError);
-            continue;
-          }
-
-          if (newUserData?.user?.id) {
-            candidateId = newUserData.user.id;
-            isNewCandidate = true;
-            
-            // Update the profile with additional candidate data
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({
-                linkedin_profile: candidateData.linkedin_profile,
-                current_company: candidateData.current_company,
-                phone_number: candidateData.phone_number,
-                years_of_experience: candidateData.years_of_experience,
-                salary: candidateData.salary,
-                skillsets: candidateData.skillsets,
-                past_companies: candidateData.past_companies,
-                general_notes: candidateData.general_notes,
-              })
-              .eq('id', candidateId);
-
-            if (updateError) {
-              console.error('Error updating candidate profile:', updateError);
-              continue;
-            }
-            console.log(`Created new candidate with email: ${candidateData.full_name}`);
-          } else {
-            console.error('No user ID returned from admin function');
-            continue;
-          }
+        if (updateError) {
+          console.error('Error updating candidate:', updateError);
+          continue;
         }
+        console.log(`Updated existing candidate: ${candidateData.full_name}`);
       } else {
-        // Check if candidate already exists by name (for candidates without email)
-        const { data: existingCandidate } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('full_name', candidateData.full_name)
-          .eq('role', 'user')
-          .is('email', null)
+        // Create new candidate
+        const { data: newCandidate, error: createError } = await supabase
+          .from('candidates')
+          .insert(candidateData)
+          .select()
           .single();
 
-        if (existingCandidate) {
-          // Update existing candidate
-          candidateId = existingCandidate.id;
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              linkedin_profile: candidateData.linkedin_profile,
-              current_company: candidateData.current_company,
-              phone_number: candidateData.phone_number,
-              years_of_experience: candidateData.years_of_experience,
-              salary: candidateData.salary,
-              skillsets: candidateData.skillsets,
-              past_companies: candidateData.past_companies,
-              general_notes: candidateData.general_notes,
-            })
-            .eq('id', candidateId);
-
-          if (updateError) {
-            console.error('Error updating candidate without email:', updateError);
-            continue;
-          }
-          console.log(`Updated existing candidate without email: ${candidateData.full_name}`);
-        } else {
-          // Create new candidate without email using a proper email
-          const userEmail = `${candidateData.full_name.toLowerCase().replace(/\s+/g, '.')}@noemail.local`;
-          
-          const { data: newUserData, error: createError } = await supabase.functions.invoke('admin-user-management', {
-            body: {
-              email: userEmail,
-              fullName: candidateData.full_name,
-              role: 'user'
-            },
-            headers: {
-              Authorization: authHeader,
-            }
-          });
-
-          if (createError) {
-            console.error('Error creating user without email through admin function:', createError);
-            continue;
-          }
-
-          if (newUserData?.user?.id) {
-            candidateId = newUserData.user.id;
-            isNewCandidate = true;
-            
-            // Update the profile with additional candidate data and clear the email
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({
-                email: null, // Clear the temporary email
-                linkedin_profile: candidateData.linkedin_profile,
-                current_company: candidateData.current_company,
-                phone_number: candidateData.phone_number,
-                years_of_experience: candidateData.years_of_experience,
-                salary: candidateData.salary,
-                skillsets: candidateData.skillsets,
-                past_companies: candidateData.past_companies,
-                general_notes: candidateData.general_notes,
-              })
-              .eq('id', candidateId);
-
-            if (updateError) {
-              console.error('Error updating candidate profile without email:', updateError);
-              continue;
-            }
-            console.log(`Created new candidate without email: ${candidateData.full_name}`);
-          } else {
-            console.error('No user ID returned from admin function for candidate without email');
-            continue;
-          }
+        if (createError) {
+          console.error('Error creating candidate:', createError);
+          continue;
         }
+
+        candidateId = newCandidate.id;
+        isNewCandidate = true;
+        console.log(`Created new candidate: ${candidateData.full_name}`);
       }
 
-      // Determine which stage to assign the candidate to
+      // Determine target stage
       let targetStageId = firstStage.id;
       
       if (kanbanStage) {
-        // Try to find the matching stage by name
         const matchingStage = hiringStages.find(stage => 
           stage.name.toLowerCase() === kanbanStage.toLowerCase()
         );
         if (matchingStage) {
           targetStageId = matchingStage.id;
-          console.log(`Assigning candidate to stage: ${matchingStage.name}`);
-        } else {
-          console.log(`Stage "${kanbanStage}" not found, using default stage: ${firstStage.name}`);
         }
       }
 
-      // Only add to pipeline if it's a new candidate or update existing pipeline entry
+      // Add/update pipeline entry
       if (isNewCandidate) {
         const { error: pipelineError } = await supabase
           .from('candidate_pipeline')
           .insert({
-            candidate_id: candidateId,
+            candidate_ref_id: candidateId,
             stage_id: targetStageId,
             applied_company: appliedCompany,
             applied_job_title: appliedJobTitle,
@@ -508,7 +350,7 @@ serve(async (req) => {
             moved_by: user.id,
             updated_at: new Date().toISOString(),
           })
-          .eq('candidate_id', candidateId)
+          .eq('candidate_ref_id', candidateId)
           .eq('is_active', true);
 
         if (pipelineError) {
@@ -531,14 +373,8 @@ serve(async (req) => {
 
       candidates.push({
         id: candidateId,
-        email: hasEmail ? candidateEmail : null,
         full_name: candidateData.full_name,
-        applied_company: appliedCompany,
-        applied_job_title: appliedJobTitle,
-        kanban_stage: kanbanStage,
-        assigned_stage: hiringStages.find(s => s.id === targetStageId)?.name,
-        row: i + 2,
-        has_email: hasEmail,
+        email: candidateData.email,
         is_new: isNewCandidate
       });
     }
@@ -559,7 +395,6 @@ serve(async (req) => {
         new_candidates: newCandidates,
         updated_candidates: updatedCandidates,
         candidates: candidates,
-        candidates_without_email: candidates.filter(c => !c.has_email).length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

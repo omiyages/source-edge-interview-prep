@@ -1,11 +1,9 @@
 
 import { useState } from 'react';
 import { DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { toast } from 'sonner';
 import { Candidate } from './useKanbanData';
-import { useMoveCandidateMutation, useAddUnassignedCandidateToStageMutation } from './useKanbanMutations';
+import { useMoveCandidateMutation, useAddCandidateToStageMutation } from './useKanbanMutations';
 
-// Extended candidate type for drag operations
 interface DragCandidate extends Candidate {
   applicationId?: string;
   applied_company?: string | null;
@@ -15,7 +13,7 @@ interface DragCandidate extends Candidate {
 export const useKanbanDragDrop = (candidates: Candidate[]) => {
   const [activeCandidate, setActiveCandidate] = useState<DragCandidate | null>(null);
   const moveCandidateMutation = useMoveCandidateMutation();
-  const addUnassignedCandidateToStageMutation = useAddUnassignedCandidateToStageMutation();
+  const addCandidateToStageMutation = useAddCandidateToStageMutation();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -33,7 +31,7 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
     for (const candidate of candidates) {
       const application = candidate.applications?.find(app => app.id === dragId);
       if (application) {
-        console.log('🎯 Found pipeline candidate for drag:', candidate.email);
+        console.log('🎯 Found pipeline candidate for drag:', candidate.full_name);
         setActiveCandidate({
           ...candidate,
           applicationId: application.id,
@@ -47,7 +45,7 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
     // If not found by application ID, try by candidate ID (for unassigned candidates)
     const unassignedCandidate = candidates.find(c => c.id === dragId);
     if (unassignedCandidate) {
-      console.log('🎯 Found unassigned candidate for drag:', unassignedCandidate.email);
+      console.log('🎯 Found unassigned candidate for drag:', unassignedCandidate.full_name);
       setActiveCandidate(unassignedCandidate);
     }
   };
@@ -97,24 +95,23 @@ export const useKanbanDragDrop = (candidates: Candidate[]) => {
       return;
     }
 
-    // Handle moving unassigned candidate to a stage (including "unassigned" stage)
+    // Handle moving unassigned candidate to a stage
     if (isUnassignedCandidate) {
       console.log('🔄 Moving unassigned candidate to stage:', { candidateId, newStageId });
-      addUnassignedCandidateToStageMutation.mutate({ 
+      addCandidateToStageMutation.mutate({ 
         candidateId, 
         stageId: newStageId 
       });
       return;
     }
 
-    // Handle moving from one stage to another (within pipeline, including to "unassigned")
+    // Handle moving from one stage to another
     if (applicationId && currentStageId && currentStageId !== newStageId) {
       console.log('🔄 Moving application between stages:', { applicationId, from: currentStageId, to: newStageId });
       moveCandidateMutation.mutate({ applicationId, stageId: newStageId });
       return;
     }
 
-    // If we reach here, it's likely a no-op (same stage)
     console.log('🔄 No action needed for this drag operation');
   };
 

@@ -47,26 +47,22 @@ export const ConvertCandidateToUserDialog = ({
     setLoading(true);
 
     try {
-      // First, update the candidate profile with the real email
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ email: email })
-        .eq('id', candidate.id);
-
-      if (updateError) {
-        console.error('Error updating candidate profile:', updateError);
-        toast.error('Failed to update candidate profile');
-        return;
+      // Get current session for admin function call
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session');
       }
 
-      // Create auth user account
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: email,
-        password: password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: candidate.full_name,
+      // Create auth user account via admin function
+      const { data: authData, error: authError } = await supabase.functions.invoke('admin-user-management', {
+        body: {
+          email: email,
+          fullName: candidate.full_name,
+          role: 'user'
         },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
       });
 
       if (authError) {
@@ -75,15 +71,23 @@ export const ConvertCandidateToUserDialog = ({
         return;
       }
 
-      // Update the profile with the auth user ID
+      if (!authData?.user?.id) {
+        throw new Error('No user ID returned from user creation');
+      }
+
+      // Update the candidate record to link to the new user
       const { error: linkError } = await supabase
-        .from('profiles')
-        .update({ id: authData.user.id })
+        .from('candidates')
+        .update({ 
+          email: email,
+          is_user: true,
+          user_id: authData.user.id
+        })
         .eq('id', candidate.id);
 
       if (linkError) {
-        console.error('Error linking profile to auth user:', linkError);
-        toast.error('Failed to link profile to user account');
+        console.error('Error linking candidate to user:', linkError);
+        toast.error('Failed to link candidate to user account');
         return;
       }
 

@@ -35,8 +35,8 @@ export const CandidateDetailDialog = ({
 
   if (!candidate) return null;
 
-  const isTemporaryEmail = candidate.email?.includes('@pipeline.temp');
-  const hasRealEmail = candidate.email && !isTemporaryEmail;
+  const isUser = candidate.is_user || candidate.user_id;
+  const hasEmail = candidate.email && !candidate.email.includes('@noemail.local');
 
   const handleConvertSuccess = () => {
     onRefresh?.();
@@ -51,18 +51,28 @@ export const CandidateDetailDialog = ({
             <DialogTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
               {candidate.full_name || 'Unnamed Candidate'}
+              {!isUser && (
+                <Badge variant="secondary" className="ml-2">
+                  Candidate
+                </Badge>
+              )}
+              {isUser && (
+                <Badge variant="default" className="ml-2">
+                  User
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
             {/* Convert to User Button */}
-            {!hasRealEmail && (
+            {!isUser && (
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-medium text-blue-900">Pipeline Candidate</h3>
                     <p className="text-sm text-blue-700 mt-1">
-                      This candidate doesn't have a user account yet. Convert them to a user to enable full functionality.
+                      This candidate is not yet a user. Convert them to a user to enable full functionality.
                     </p>
                   </div>
                   <Button
@@ -82,7 +92,7 @@ export const CandidateDetailDialog = ({
               <h3 className="font-semibold text-lg">Contact Information</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {hasRealEmail && (
+                {hasEmail && (
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-500" />
                     <span className="text-sm">{candidate.email}</span>

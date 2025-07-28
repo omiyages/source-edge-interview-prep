@@ -19,6 +19,7 @@ export type Database = {
           applied_company: string | null
           applied_job_title: string | null
           candidate_id: string
+          candidate_ref_id: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -32,6 +33,7 @@ export type Database = {
           applied_company?: string | null
           applied_job_title?: string | null
           candidate_id: string
+          candidate_ref_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -45,6 +47,7 @@ export type Database = {
           applied_company?: string | null
           applied_job_title?: string | null
           candidate_id?: string
+          candidate_ref_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -63,6 +66,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "candidate_pipeline_candidate_ref_id_fkey"
+            columns: ["candidate_ref_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "candidate_pipeline_moved_by_fkey"
             columns: ["moved_by"]
             isOneToOne: false
@@ -77,6 +87,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      candidates: {
+        Row: {
+          created_at: string
+          current_company: string | null
+          email: string | null
+          full_name: string | null
+          general_notes: string | null
+          id: string
+          is_user: boolean
+          linkedin_profile: string | null
+          past_companies: string[] | null
+          phone_number: string | null
+          salary: number | null
+          skillsets: string[] | null
+          updated_at: string
+          user_id: string | null
+          years_of_experience: number | null
+        }
+        Insert: {
+          created_at?: string
+          current_company?: string | null
+          email?: string | null
+          full_name?: string | null
+          general_notes?: string | null
+          id?: string
+          is_user?: boolean
+          linkedin_profile?: string | null
+          past_companies?: string[] | null
+          phone_number?: string | null
+          salary?: number | null
+          skillsets?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          years_of_experience?: number | null
+        }
+        Update: {
+          created_at?: string
+          current_company?: string | null
+          email?: string | null
+          full_name?: string | null
+          general_notes?: string | null
+          id?: string
+          is_user?: boolean
+          linkedin_profile?: string | null
+          past_companies?: string[] | null
+          phone_number?: string | null
+          salary?: number | null
+          skillsets?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          years_of_experience?: number | null
+        }
+        Relationships: []
       }
       course_assignments: {
         Row: {

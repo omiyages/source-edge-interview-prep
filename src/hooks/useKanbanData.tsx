@@ -23,7 +23,7 @@ export interface CandidateApplication {
 
 export interface Candidate {
   id: string;
-  email: string;
+  email: string | null;
   full_name: string | null;
   linkedin_profile: string | null;
   current_company: string | null;
@@ -33,6 +33,8 @@ export interface Candidate {
   salary: number | null;
   past_companies: string[] | null;
   general_notes: string | null;
+  is_user: boolean;
+  user_id: string | null;
   applications?: CandidateApplication[];
 }
 
@@ -63,11 +65,10 @@ export const useCandidatesWithPipeline = (showInactive: boolean = false) => {
     queryFn: async () => {
       console.log('🔍 Fetching candidates with pipeline data...', { showInactive });
       
-      // Get all candidates with role 'user' and include all relevant fields
+      // Get all candidates from the new candidates table
       const { data: candidates, error: candidatesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'user');
+        .from('candidates')
+        .select('*');
       
       if (candidatesError) {
         console.error('❌ Error fetching candidates:', candidatesError);
@@ -98,10 +99,12 @@ export const useCandidatesWithPipeline = (showInactive: boolean = false) => {
         showInactive
       });
 
-      // Map applications to candidates
+      // Map applications to candidates using both candidate_id and candidate_ref_id
       const candidatesWithApplications = candidates?.map(candidate => ({
         ...candidate,
-        applications: applications?.filter(app => app.candidate_id === candidate.id) || []
+        applications: applications?.filter(app => 
+          app.candidate_id === candidate.id || app.candidate_ref_id === candidate.id
+        ) || []
       })) || [];
 
       console.log('✅ Candidates with applications processed:', candidatesWithApplications.length);
@@ -109,7 +112,7 @@ export const useCandidatesWithPipeline = (showInactive: boolean = false) => {
         if (candidate.applications?.length > 0) {
           const activeApps = candidate.applications.filter(app => app.is_active).length;
           const inactiveApps = candidate.applications.filter(app => !app.is_active).length;
-          console.log(`👤 ${candidate.email}: ${activeApps} active, ${inactiveApps} inactive applications`);
+          console.log(`👤 ${candidate.full_name}: ${activeApps} active, ${inactiveApps} inactive applications`);
         }
       });
       
@@ -144,9 +147,7 @@ export const useKanbanHelpers = (candidates: Candidate[]) => {
   }, [candidates]);
 
   const getUnassignedCandidates = useCallback(() => {
-    // This will now be handled by getCandidatesForStage with the "unassigned" stage ID
-    // Return empty array as unassigned candidates will be shown via the unassigned stage
-    console.log('🔍 Getting unassigned candidates (now handled by stage system)...');
+    console.log('🔍 Getting unassigned candidates...');
     return [];
   }, []);
 
