@@ -322,12 +322,12 @@ serve(async (req) => {
         }
       }
 
-      // Add/update pipeline entry
+      // Add/update pipeline entry - using candidate_id instead of candidate_ref_id
       if (isNewCandidate) {
         const { error: pipelineError } = await supabase
           .from('candidate_pipeline')
           .insert({
-            candidate_ref_id: candidateId,
+            candidate_id: candidateId,
             stage_id: targetStageId,
             applied_company: appliedCompany,
             applied_job_title: appliedJobTitle,
@@ -339,6 +339,7 @@ serve(async (req) => {
           console.error('Error adding to pipeline:', pipelineError);
           continue;
         }
+        console.log(`Added candidate to pipeline: ${candidateData.full_name}`);
       } else {
         // Update existing pipeline entry
         const { error: pipelineError } = await supabase
@@ -350,13 +351,14 @@ serve(async (req) => {
             moved_by: user.id,
             updated_at: new Date().toISOString(),
           })
-          .eq('candidate_ref_id', candidateId)
+          .eq('candidate_id', candidateId)
           .eq('is_active', true);
 
         if (pipelineError) {
           console.error('Error updating pipeline:', pipelineError);
           continue;
         }
+        console.log(`Updated pipeline for candidate: ${candidateData.full_name}`);
       }
 
       // Track the import
