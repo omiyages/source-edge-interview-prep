@@ -309,6 +309,7 @@ serve(async (req) => {
       }
 
       let candidateId;
+      let isNewCandidate = false;
 
       if (hasEmail) {
         // Check if candidate already exists by email
@@ -331,64 +332,12 @@ serve(async (req) => {
             console.error('Error updating candidate:', updateError);
             continue;
           }
+          console.log(`Updated existing candidate: ${candidateData.full_name}`);
         } else {
-          // Create new candidate with email using admin function
-          try {
-            const { data: newUserData, error: createError } = await supabase.functions.invoke('admin-user-management', {
-              body: {
-                email: candidateData.email,
-                fullName: candidateData.full_name,
-                role: 'user'
-              },
-              headers: {
-                Authorization: authHeader,
-              }
-            });
-
-            if (createError) {
-              console.error('Error creating user through admin function:', createError);
-              continue;
-            }
-
-            if (newUserData?.user?.id) {
-              candidateId = newUserData.user.id;
-              
-              // Update the profile with additional candidate data
-              const { error: updateError } = await supabase
-                .from('profiles')
-                .update({
-                  linkedin_profile: candidateData.linkedin_profile,
-                  current_company: candidateData.current_company,
-                  phone_number: candidateData.phone_number,
-                  years_of_experience: candidateData.years_of_experience,
-                  salary: candidateData.salary,
-                  skillsets: candidateData.skillsets,
-                  past_companies: candidateData.past_companies,
-                  general_notes: candidateData.general_notes,
-                })
-                .eq('id', candidateId);
-
-              if (updateError) {
-                console.error('Error updating candidate profile:', updateError);
-                continue;
-              }
-            } else {
-              console.error('No user ID returned from admin function');
-              continue;
-            }
-          } catch (error) {
-            console.error('Error calling admin-user-management function:', error);
-            continue;
-          }
-        }
-      } else {
-        // For candidates without email, create them using admin function with a temporary email
-        const tempEmail = `temp_${crypto.randomUUID()}@pipeline.temp`;
-        
-        try {
+          // Create new candidate with email
           const { data: newUserData, error: createError } = await supabase.functions.invoke('admin-user-management', {
             body: {
-              email: tempEmail,
+              email: candidateData.email,
               fullName: candidateData.full_name,
               role: 'user'
             },
@@ -398,12 +347,13 @@ serve(async (req) => {
           });
 
           if (createError) {
-            console.error('Error creating user without email through admin function:', createError);
+            console.error('Error creating user through admin function:', createError);
             continue;
           }
 
           if (newUserData?.user?.id) {
             candidateId = newUserData.user.id;
+            isNewCandidate = true;
             
             // Update the profile with additional candidate data
             const { error: updateError } = await supabase
@@ -421,16 +371,96 @@ serve(async (req) => {
               .eq('id', candidateId);
 
             if (updateError) {
+              console.error('Error updating candidate profile:', updateError);
+              continue;
+            }
+            console.log(`Created new candidate with email: ${candidateData.full_name}`);
+          } else {
+            console.error('No user ID returned from admin function');
+            continue;
+          }
+        }
+      } else {
+        // Check if candidate already exists by name (for candidates without email)
+        const { data: existingCandidate } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('full_name', candidateData.full_name)
+          .eq('role', 'user')
+          .is('email', null)
+          .single();
+
+        if (existingCandidate) {
+          // Update existing candidate
+          candidateId = existingCandidate.id;
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+              linkedin_profile: candidateData.linkedin_profile,
+              current_company: candidateData.current_company,
+              phone_number: candidateData.phone_number,
+              years_of_experience: candidateData.years_of_experience,
+              salary: candidateData.salary,
+              skillsets: candidateData.skillsets,
+              past_companies: candidateData.past_companies,
+              general_notes: candidateData.general_notes,
+            })
+            .eq('id', candidateId);
+
+          if (updateError) {
+            console.error('Error updating candidate without email:', updateError);
+            continue;
+          }
+          console.log(`Updated existing candidate without email: ${candidateData.full_name}`);
+        } else {
+          // Create new candidate without email using a proper email
+          const userEmail = `${candidateData.full_name.toLowerCase().replace(/\s+/g, '.')}@noemail.local`;
+          
+          const { data: newUserData, error: createError } = await supabase.functions.invoke('admin-user-management', {
+            body: {
+              email: userEmail,
+              fullName: candidateData.full_name,
+              role: 'user'
+            },
+            headers: {
+              Authorization: authHeader,
+            }
+          });
+
+          if (createError) {
+            console.error('Error creating user without email through admin function:', createError);
+            continue;
+          }
+
+          if (newUserData?.user?.id) {
+            candidateId = newUserData.user.id;
+            isNewCandidate = true;
+            
+            // Update the profile with additional candidate data and clear the email
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                email: null, // Clear the temporary email
+                linkedin_profile: candidateData.linkedin_profile,
+                current_company: candidateData.current_company,
+                phone_number: candidateData.phone_number,
+                years_of_experience: candidateData.years_of_experience,
+                salary: candidateData.salary,
+                skillsets: candidateData.skillsets,
+                past_companies: candidateData.past_companies,
+                general_notes: candidateData.general_notes,
+              })
+              .eq('id', candidateId);
+
+            if (updateError) {
               console.error('Error updating candidate profile without email:', updateError);
               continue;
             }
+            console.log(`Created new candidate without email: ${candidateData.full_name}`);
           } else {
             console.error('No user ID returned from admin function for candidate without email');
             continue;
           }
-        } catch (error) {
-          console.error('Error calling admin-user-management function for candidate without email:', error);
-          continue;
         }
       }
 
@@ -450,21 +480,41 @@ serve(async (req) => {
         }
       }
 
-      // Add to pipeline
-      const { error: pipelineError } = await supabase
-        .from('candidate_pipeline')
-        .insert({
-          candidate_id: candidateId,
-          stage_id: targetStageId,
-          applied_company: appliedCompany,
-          applied_job_title: appliedJobTitle,
-          moved_by: user.id,
-          is_active: true,
-        });
+      // Only add to pipeline if it's a new candidate or update existing pipeline entry
+      if (isNewCandidate) {
+        const { error: pipelineError } = await supabase
+          .from('candidate_pipeline')
+          .insert({
+            candidate_id: candidateId,
+            stage_id: targetStageId,
+            applied_company: appliedCompany,
+            applied_job_title: appliedJobTitle,
+            moved_by: user.id,
+            is_active: true,
+          });
 
-      if (pipelineError) {
-        console.error('Error adding to pipeline:', pipelineError);
-        continue;
+        if (pipelineError) {
+          console.error('Error adding to pipeline:', pipelineError);
+          continue;
+        }
+      } else {
+        // Update existing pipeline entry
+        const { error: pipelineError } = await supabase
+          .from('candidate_pipeline')
+          .update({
+            stage_id: targetStageId,
+            applied_company: appliedCompany,
+            applied_job_title: appliedJobTitle,
+            moved_by: user.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('candidate_id', candidateId)
+          .eq('is_active', true);
+
+        if (pipelineError) {
+          console.error('Error updating pipeline:', pipelineError);
+          continue;
+        }
       }
 
       // Track the import
@@ -488,7 +538,8 @@ serve(async (req) => {
         kanban_stage: kanbanStage,
         assigned_stage: hiringStages.find(s => s.id === targetStageId)?.name,
         row: i + 2,
-        has_email: hasEmail
+        has_email: hasEmail,
+        is_new: isNewCandidate
       });
     }
 
@@ -498,10 +549,15 @@ serve(async (req) => {
       .update({ last_sync_at: new Date().toISOString() })
       .eq('id', integrationId);
 
+    const newCandidates = candidates.filter(c => c.is_new).length;
+    const updatedCandidates = candidates.filter(c => !c.is_new).length;
+
     return new Response(
       JSON.stringify({
         success: true,
         imported_count: candidates.length,
+        new_candidates: newCandidates,
+        updated_candidates: updatedCandidates,
         candidates: candidates,
         candidates_without_email: candidates.filter(c => !c.has_email).length
       }),
