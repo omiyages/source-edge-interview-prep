@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCreateGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration';
 import { useHiringStages } from '@/hooks/useKanbanData';
-import { InfoIcon } from 'lucide-react';
+import { useGoogleSheetsSample } from '@/hooks/useGoogleSheetsSample';
+import { ColumnMappingPreview } from './ColumnMappingPreview';
+import { InfoIcon, Eye, EyeOff } from 'lucide-react';
 
 interface GoogleSheetsIntegrationDialogProps {
   open: boolean;
@@ -40,9 +42,11 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
   const [range, setRange] = useState('A:Z');
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({});
   const [sampleColumns, setSampleColumns] = useState<string[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   const createIntegration = useCreateGoogleSheetsIntegration();
   const { data: hiringStages } = useHiringStages();
+  const { sampleData, isLoading: isLoadingSample, fetchSampleData } = useGoogleSheetsSample();
 
   const handleSubmit = () => {
     if (!sheetId.trim()) {
@@ -66,6 +70,14 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
     setRange('A:Z');
     setColumnMappings({});
     setSampleColumns([]);
+    setShowPreview(false);
+  };
+
+  const handlePreviewToggle = () => {
+    if (!showPreview && sheetId.trim()) {
+      fetchSampleData(sheetId, sheetName, 'A1:Z10');
+    }
+    setShowPreview(!showPreview);
   };
 
   const addColumnMapping = () => {
@@ -93,7 +105,7 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Connect Google Sheets</DialogTitle>
         </DialogHeader>
@@ -143,7 +155,31 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
           </div>
 
           <div>
-            <Label>Column Mappings</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Column Mappings</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewToggle}
+                disabled={!sheetId.trim() || isLoadingSample}
+              >
+                {isLoadingSample ? (
+                  'Loading...'
+                ) : showPreview ? (
+                  <>
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    Hide Preview
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Show Preview
+                  </>
+                )}
+              </Button>
+            </div>
+            
             <p className="text-sm text-muted-foreground mb-2">
               Map your Google Sheets columns to candidate fields
             </p>
@@ -209,6 +245,14 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
               </Button>
             </div>
           </div>
+
+          {showPreview && (
+            <ColumnMappingPreview
+              sampleData={sampleData}
+              columnMappings={columnMappings}
+              className="mt-4"
+            />
+          )}
         </div>
 
         <DialogFooter>

@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUpdateGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration';
 import { useHiringStages } from '@/hooks/useKanbanData';
-import { InfoIcon } from 'lucide-react';
+import { useGoogleSheetsSample } from '@/hooks/useGoogleSheetsSample';
+import { ColumnMappingPreview } from './ColumnMappingPreview';
+import { InfoIcon, Eye, EyeOff } from 'lucide-react';
 
 interface GoogleSheetsIntegration {
   id: string;
@@ -56,9 +58,11 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   const [sheetName, setSheetName] = useState('');
   const [range, setRange] = useState('A:Z');
   const [columnMappings, setColumnMappings] = useState<ColumnMappingItem[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   const updateIntegration = useUpdateGoogleSheetsIntegration();
   const { data: hiringStages } = useHiringStages();
+  const { sampleData, isLoading: isLoadingSample, fetchSampleData } = useGoogleSheetsSample();
 
   useEffect(() => {
     if (integration && open) {
@@ -92,6 +96,13 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
     });
 
     onOpenChange(false);
+  };
+
+  const handlePreviewToggle = () => {
+    if (!showPreview && integration.sheet_id) {
+      fetchSampleData(integration.sheet_id, sheetName, 'A1:Z10');
+    }
+    setShowPreview(!showPreview);
   };
 
   const addColumnMapping = () => {
@@ -138,9 +149,17 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
 
   const hasKanbanStageMapping = columnMappings.some(item => item.fieldMapping === 'kanban_stage');
 
+  // Convert ColumnMappingItem[] to Record<string, string> for preview
+  const columnMappingsRecord = columnMappings.reduce((acc, item) => {
+    if (item.columnName.trim()) {
+      acc[item.columnName] = item.fieldMapping;
+    }
+    return acc;
+  }, {} as Record<string, string>);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Column Mapping</DialogTitle>
         </DialogHeader>
@@ -169,7 +188,31 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
           </div>
 
           <div>
-            <Label>Column Mappings</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Column Mappings</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewToggle}
+                disabled={!integration.sheet_id || isLoadingSample}
+              >
+                {isLoadingSample ? (
+                  'Loading...'
+                ) : showPreview ? (
+                  <>
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    Hide Preview
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Show Preview
+                  </>
+                )}
+              </Button>
+            </div>
+            
             <p className="text-sm text-muted-foreground mb-2">
               Map your Google Sheets columns to candidate fields
             </p>
@@ -228,6 +271,14 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
               </Button>
             </div>
           </div>
+
+          {showPreview && (
+            <ColumnMappingPreview
+              sampleData={sampleData}
+              columnMappings={columnMappingsRecord}
+              className="mt-4"
+            />
+          )}
         </div>
 
         <DialogFooter>
