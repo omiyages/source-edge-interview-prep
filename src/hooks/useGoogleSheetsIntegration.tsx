@@ -152,9 +152,14 @@ export const useSyncGoogleSheets = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+      
+      const message = data.default_stage_assignments > 0 
+        ? `Successfully imported ${data.imported_count} candidates (${data.default_stage_assignments} assigned to default stage "${data.default_stage_name}").`
+        : `Successfully imported ${data.imported_count} candidates from Google Sheets.`;
+      
       toast({
         title: 'Sync completed',
-        description: `Successfully imported ${data.imported_count} candidates from Google Sheets.`,
+        description: message,
       });
     },
     onError: (error) => {

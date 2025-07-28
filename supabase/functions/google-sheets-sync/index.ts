@@ -196,7 +196,17 @@ serve(async (req) => {
       throw new Error('No hiring stages found. Please create hiring stages first.');
     }
 
-    const firstStage = hiringStages[0];
+    // Find "Scheduled a call" stage or use first stage as fallback
+    let defaultStage = hiringStages.find(stage => 
+      stage.name.toLowerCase().includes('scheduled') && stage.name.toLowerCase().includes('call')
+    );
+    
+    if (!defaultStage) {
+      defaultStage = hiringStages[0];
+      console.log('No "Scheduled a call" stage found, using first stage as default:', defaultStage.name);
+    } else {
+      console.log('Using "Scheduled a call" as default stage:', defaultStage.name);
+    }
 
     // Process each row and create candidate data
     for (let i = 0; i < rows.length; i++) {
@@ -324,8 +334,8 @@ serve(async (req) => {
         console.log(`Created new candidate: ${candidateData.full_name}`);
       }
 
-      // Determine target stage
-      let targetStageId = firstStage.id;
+      // Determine target stage - use default stage if no kanban stage mapping or invalid stage
+      let targetStageId = defaultStage.id;
       
       if (kanbanStage) {
         const matchingStage = hiringStages.find(stage => 
@@ -333,7 +343,12 @@ serve(async (req) => {
         );
         if (matchingStage) {
           targetStageId = matchingStage.id;
+          console.log(`Using mapped stage "${matchingStage.name}" for candidate: ${candidateData.full_name}`);
+        } else {
+          console.log(`Stage "${kanbanStage}" not found, using default stage "${defaultStage.name}" for candidate: ${candidateData.full_name}`);
         }
+      } else {
+        console.log(`No kanban stage specified, using default stage "${defaultStage.name}" for candidate: ${candidateData.full_name}`);
       }
 
       // Check if candidate already has an active pipeline entry
@@ -398,7 +413,8 @@ serve(async (req) => {
         id: candidateId,
         full_name: candidateData.full_name,
         email: candidateData.email,
-        is_new: isNewCandidate
+        is_new: isNewCandidate,
+        stage: targetStageId === defaultStage.id ? defaultStage.name : hiringStages.find(s => s.id === targetStageId)?.name
       });
     }
 
@@ -410,6 +426,9 @@ serve(async (req) => {
 
     const newCandidates = candidates.filter(c => c.is_new).length;
     const updatedCandidates = candidates.filter(c => !c.is_new).length;
+    const defaultStageCandidates = candidates.filter(c => c.stage === defaultStage.name).length;
+
+    console.log(`Sync completed: ${newCandidates} new, ${updatedCandidates} updated, ${defaultStageCandidates} assigned to default stage "${defaultStage.name}"`);
 
     return new Response(
       JSON.stringify({
@@ -417,6 +436,8 @@ serve(async (req) => {
         imported_count: candidates.length,
         new_candidates: newCandidates,
         updated_candidates: updatedCandidates,
+        default_stage_assignments: defaultStageCandidates,
+        default_stage_name: defaultStage.name,
         candidates: candidates,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
