@@ -16,9 +16,10 @@ interface CandidateCardProps {
   candidate: any;
   isDragging?: boolean;
   onClick?: () => void;
+  showInactive?: boolean;
 }
 
-export const CandidateCard = memo(({ candidate, isDragging, onClick }: CandidateCardProps) => {
+export const CandidateCard = memo(({ candidate, isDragging, onClick, showInactive = false }: CandidateCardProps) => {
   const isTemporaryEmail = candidate.email?.includes('@pipeline.temp');
   const hasRealEmail = candidate.email && !isTemporaryEmail;
 
