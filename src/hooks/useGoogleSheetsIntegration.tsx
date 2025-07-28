@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -18,6 +17,13 @@ interface GoogleSheetsIntegration {
 
 interface CreateGoogleSheetsIntegrationData {
   sheet_id: string;
+  sheet_name?: string | null;
+  range_specification?: string;
+  column_mappings?: Record<string, string>;
+}
+
+interface UpdateGoogleSheetsIntegrationData {
+  id: string;
   sheet_name?: string | null;
   range_specification?: string;
   column_mappings?: Record<string, string>;
@@ -73,6 +79,44 @@ export const useCreateGoogleSheetsIntegration = () => {
       toast({
         title: 'Error',
         description: `Failed to create integration: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useUpdateGoogleSheetsIntegration = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (integration: UpdateGoogleSheetsIntegrationData) => {
+      const { data, error } = await supabase
+        .from('google_sheets_integrations')
+        .update({
+          sheet_name: integration.sheet_name,
+          range_specification: integration.range_specification,
+          column_mappings: integration.column_mappings,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', integration.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
+      toast({
+        title: 'Integration updated',
+        description: 'Google Sheets integration has been updated successfully.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to update integration: ${error.message}`,
         variant: 'destructive',
       });
     },
