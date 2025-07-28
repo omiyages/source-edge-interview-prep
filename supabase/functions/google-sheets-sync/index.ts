@@ -99,6 +99,30 @@ async function getAccessToken(serviceAccountKey: any): Promise<string> {
   return data.access_token;
 }
 
+// Generate cryptographically secure password
+const generateSecurePassword = (length: number = 16): string => {
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += charset[array[i] % charset.length];
+  }
+  
+  // Ensure password meets complexity requirements
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*]/.test(password);
+  
+  if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+    return generateSecurePassword(length);
+  }
+  
+  return password;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -189,7 +213,6 @@ serve(async (req) => {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const candidateData: any = {
-        id: crypto.randomUUID(),
         role: 'user',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -201,6 +224,7 @@ serve(async (req) => {
       let kanbanStage = null;
       let hasEmail = false;
       let foundName = false;
+      let candidateEmail = null;
 
       // Map columns based on columnMappings
       headers.forEach((header: string, index: number) => {
@@ -211,6 +235,7 @@ serve(async (req) => {
           switch (mapping) {
             case 'email':
               candidateData.email = cellValue.trim();
+              candidateEmail = cellValue.trim();
               hasEmail = true;
               break;
             case 'full_name':
@@ -307,35 +332,106 @@ serve(async (req) => {
             continue;
           }
         } else {
-          // Create new candidate with email
-          const { data: newCandidate, error: insertError } = await supabase
-            .from('profiles')
-            .insert(candidateData)
-            .select('id')
-            .single();
+          // Create new candidate with email using admin function
+          try {
+            const { data: newUserData, error: createError } = await supabase.functions.invoke('admin-user-management', {
+              body: {
+                email: candidateData.email,
+                fullName: candidateData.full_name,
+                role: 'user'
+              },
+              headers: {
+                Authorization: authHeader,
+              }
+            });
 
-          if (insertError) {
-            console.error('Error inserting candidate:', insertError);
+            if (createError) {
+              console.error('Error creating user through admin function:', createError);
+              continue;
+            }
+
+            if (newUserData?.user?.id) {
+              candidateId = newUserData.user.id;
+              
+              // Update the profile with additional candidate data
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({
+                  linkedin_profile: candidateData.linkedin_profile,
+                  current_company: candidateData.current_company,
+                  phone_number: candidateData.phone_number,
+                  years_of_experience: candidateData.years_of_experience,
+                  salary: candidateData.salary,
+                  skillsets: candidateData.skillsets,
+                  past_companies: candidateData.past_companies,
+                  general_notes: candidateData.general_notes,
+                })
+                .eq('id', candidateId);
+
+              if (updateError) {
+                console.error('Error updating candidate profile:', updateError);
+                continue;
+              }
+            } else {
+              console.error('No user ID returned from admin function');
+              continue;
+            }
+          } catch (error) {
+            console.error('Error calling admin-user-management function:', error);
             continue;
           }
-          candidateId = newCandidate.id;
         }
       } else {
-        // Create candidate without email - just add to pipeline directly
-        // We'll create a temporary email for the profile
-        candidateData.email = `temp_${crypto.randomUUID()}@pipeline.temp`;
+        // For candidates without email, create them using admin function with a temporary email
+        const tempEmail = `temp_${crypto.randomUUID()}@pipeline.temp`;
         
-        const { data: newCandidate, error: insertError } = await supabase
-          .from('profiles')
-          .insert(candidateData)
-          .select('id')
-          .single();
+        try {
+          const { data: newUserData, error: createError } = await supabase.functions.invoke('admin-user-management', {
+            body: {
+              email: tempEmail,
+              fullName: candidateData.full_name,
+              role: 'user'
+            },
+            headers: {
+              Authorization: authHeader,
+            }
+          });
 
-        if (insertError) {
-          console.error('Error inserting candidate without email:', insertError);
+          if (createError) {
+            console.error('Error creating user without email through admin function:', createError);
+            continue;
+          }
+
+          if (newUserData?.user?.id) {
+            candidateId = newUserData.user.id;
+            
+            // Update the profile with additional candidate data
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                linkedin_profile: candidateData.linkedin_profile,
+                current_company: candidateData.current_company,
+                phone_number: candidateData.phone_number,
+                years_of_experience: candidateData.years_of_experience,
+                salary: candidateData.salary,
+                skillsets: candidateData.skillsets,
+                past_companies: candidateData.past_companies,
+                general_notes: candidateData.general_notes,
+              })
+              .eq('id', candidateId);
+
+            if (updateError) {
+              console.error('Error updating candidate profile without email:', updateError);
+              continue;
+            }
+          } else {
+            console.error('No user ID returned from admin function for candidate without email');
+            continue;
+          }
+        } catch (error) {
+          console.error('Error calling admin-user-management function for candidate without email:', error);
           continue;
         }
-        candidateId = newCandidate.id;
       }
 
       // Determine which stage to assign the candidate to
@@ -385,7 +481,7 @@ serve(async (req) => {
 
       candidates.push({
         id: candidateId,
-        email: hasEmail ? candidateData.email : null,
+        email: hasEmail ? candidateEmail : null,
         full_name: candidateData.full_name,
         applied_company: appliedCompany,
         applied_job_title: appliedJobTitle,
