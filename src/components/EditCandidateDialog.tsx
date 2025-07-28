@@ -67,6 +67,7 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
     try {
       const updateData = {
         full_name: formData.full_name,
+        email: formData.email || null, // Allow null for email
         phone_number: formData.phone_number,
         linkedin_profile: formData.linkedin_profile,
         current_company: formData.current_company,
@@ -77,8 +78,9 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
         general_notes: formData.general_notes
       };
 
+      // Update the candidates table, not profiles
       const { error } = await supabase
-        .from('profiles')
+        .from('candidates')
         .update(updateData)
         .eq('id', candidate.id);
 
@@ -124,13 +126,14 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
               </div>
               
               <div>
-                <Label htmlFor="email" className="text-sm">Email</Label>
+                <Label htmlFor="email" className="text-sm">Email (Optional)</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
-                  disabled
-                  className="mt-1 bg-muted"
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="Enter email address (optional)"
+                  className="mt-1"
                 />
               </div>
               
@@ -240,7 +243,7 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
             <Button onClick={handleSave} disabled={isLoading}>
               {isLoading ? 'Saving...' : 'Save Changes'}
             </Button>
-          </div>
+            </div>
         </div>
       </DialogContent>
     </Dialog>
