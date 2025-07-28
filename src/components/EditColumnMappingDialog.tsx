@@ -74,11 +74,12 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   };
 
   const addColumnMapping = () => {
-    const newColumn = `Column ${Object.keys(columnMappings).length + 1}`;
-    setColumnMappings({
-      ...columnMappings,
+    const existingColumns = Object.keys(columnMappings);
+    const newColumn = `Column ${existingColumns.length + 1}`;
+    setColumnMappings(prev => ({
+      ...prev,
       [newColumn]: '',
-    });
+    }));
   };
 
   const updateColumnName = (oldColumnName: string, newColumnName: string) => {
@@ -92,16 +93,18 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   };
 
   const updateColumnMapping = (column: string, mapping: string) => {
-    setColumnMappings({
-      ...columnMappings,
+    setColumnMappings(prev => ({
+      ...prev,
       [column]: mapping,
-    });
+    }));
   };
 
   const removeColumnMapping = (column: string) => {
-    const newMappings = { ...columnMappings };
-    delete newMappings[column];
-    setColumnMappings(newMappings);
+    setColumnMappings(prev => {
+      const newMappings = { ...prev };
+      delete newMappings[column];
+      return newMappings;
+    });
   };
 
   return (
