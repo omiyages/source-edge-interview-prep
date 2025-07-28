@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -13,14 +14,12 @@ function base64UrlEncode(str: string): string {
 }
 
 function pemToDer(pem: string): Uint8Array {
-  // Remove the header, footer, and newlines
   const pemContents = pem
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
     .replace(/-----END PRIVATE KEY-----/, '')
     .replace(/\n/g, '')
     .replace(/\r/g, '');
   
-  // Convert base64 to binary
   const binaryString = atob(pemContents);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
@@ -50,10 +49,8 @@ async function createJWT(serviceAccountKey: any): Promise<string> {
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const unsignedToken = `${encodedHeader}.${encodedPayload}`;
 
-  // Convert PEM to DER format
   const privateKeyDer = pemToDer(serviceAccountKey.private_key);
 
-  // Import the private key
   const privateKey = await crypto.subtle.importKey(
     'pkcs8',
     privateKeyDer,
@@ -65,7 +62,6 @@ async function createJWT(serviceAccountKey: any): Promise<string> {
     ['sign']
   );
 
-  // Sign the token
   const signature = await crypto.subtle.sign(
     'RSASSA-PKCS1-v1_5',
     privateKey,
@@ -98,29 +94,237 @@ async function getAccessToken(serviceAccountKey: any): Promise<string> {
   return data.access_token;
 }
 
-// Generate cryptographically secure password
-const generateSecurePassword = (length: number = 16): string => {
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
+// Process candidates in batches to avoid memory issues
+async function processCandidateBatch(
+  rows: any[],
+  headers: string[],
+  columnMappings: Record<string, string>,
+  supabase: any,
+  userId: string,
+  defaultStage: any,
+  hiringStages: any[],
+  integrationId: string,
+  startIndex: number
+) {
+  const batchResults = [];
   
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += charset[array[i] % charset.length];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const candidateData: any = {
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_user: false,
+    };
+
+    let appliedCompany = null;
+    let appliedJobTitle = null;
+    let kanbanStage = null;
+    let foundName = false;
+
+    // Map columns based on columnMappings
+    headers.forEach((header: string, index: number) => {
+      const mapping = columnMappings[header];
+      const cellValue = row[index];
+      
+      if (mapping && cellValue && cellValue.trim()) {
+        switch (mapping) {
+          case 'email':
+            candidateData.email = cellValue.trim();
+            break;
+          case 'full_name':
+            candidateData.full_name = cellValue.trim();
+            foundName = true;
+            break;
+          case 'linkedin_profile':
+            candidateData.linkedin_profile = cellValue.trim();
+            break;
+          case 'current_company':
+            candidateData.current_company = cellValue.trim();
+            break;
+          case 'phone_number':
+            candidateData.phone_number = cellValue.trim();
+            break;
+          case 'years_of_experience':
+            candidateData.years_of_experience = parseInt(cellValue) || null;
+            break;
+          case 'salary':
+            candidateData.salary = parseInt(cellValue) || null;
+            break;
+          case 'skillsets':
+            candidateData.skillsets = cellValue.split(',').map((s: string) => s.trim()).filter(s => s);
+            break;
+          case 'past_companies':
+            candidateData.past_companies = cellValue.split(',').map((s: string) => s.trim()).filter(s => s);
+            break;
+          case 'general_notes':
+            candidateData.general_notes = cellValue.trim();
+            break;
+          case 'applied_company':
+            appliedCompany = cellValue.trim();
+            break;
+          case 'applied_job_title':
+            appliedJobTitle = cellValue.trim();
+            break;
+          case 'kanban_stage':
+            kanbanStage = cellValue.trim();
+            break;
+        }
+      }
+    });
+
+    // Skip if no name found
+    if (!foundName) {
+      console.log(`Skipping row ${startIndex + i + 2}: No name found`);
+      continue;
+    }
+
+    try {
+      let candidateId;
+      let isNewCandidate = false;
+
+      // Check if candidate already exists
+      let existingCandidate = null;
+      if (candidateData.email) {
+        const { data } = await supabase
+          .from('candidates')
+          .select('id')
+          .eq('email', candidateData.email)
+          .single();
+        existingCandidate = data;
+      }
+      
+      // If no match by email, try by name
+      if (!existingCandidate) {
+        const { data } = await supabase
+          .from('candidates')
+          .select('id')
+          .eq('full_name', candidateData.full_name)
+          .single();
+        existingCandidate = data;
+      }
+
+      if (existingCandidate) {
+        // Update existing candidate
+        candidateId = existingCandidate.id;
+        const { error: updateError } = await supabase
+          .from('candidates')
+          .update(candidateData)
+          .eq('id', candidateId);
+
+        if (updateError) {
+          console.error('Error updating candidate:', updateError);
+          continue;
+        }
+        console.log(`Updated existing candidate: ${candidateData.full_name}`);
+      } else {
+        // Create new candidate
+        const { data: newCandidate, error: createError } = await supabase
+          .from('candidates')
+          .insert(candidateData)
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating candidate:', createError);
+          continue;
+        }
+
+        candidateId = newCandidate.id;
+        isNewCandidate = true;
+        console.log(`Created new candidate: ${candidateData.full_name}`);
+      }
+
+      // Determine target stage
+      let targetStageId = defaultStage.id;
+      
+      if (kanbanStage) {
+        const matchingStage = hiringStages.find(stage => 
+          stage.name.toLowerCase() === kanbanStage.toLowerCase()
+        );
+        if (matchingStage) {
+          targetStageId = matchingStage.id;
+          console.log(`Using mapped stage "${matchingStage.name}" for candidate: ${candidateData.full_name}`);
+        } else {
+          console.log(`Stage "${kanbanStage}" not found, using default stage "${defaultStage.name}" for candidate: ${candidateData.full_name}`);
+        }
+      } else {
+        console.log(`No kanban stage specified, using default stage "${defaultStage.name}" for candidate: ${candidateData.full_name}`);
+      }
+
+      // Check if candidate already has an active pipeline entry
+      const { data: existingPipeline } = await supabase
+        .from('candidate_pipeline')
+        .select('id')
+        .eq('candidate_id', candidateId)
+        .eq('is_active', true)
+        .single();
+
+      if (existingPipeline) {
+        // Update existing pipeline entry
+        const { error: pipelineError } = await supabase
+          .from('candidate_pipeline')
+          .update({
+            stage_id: targetStageId,
+            applied_company: appliedCompany,
+            applied_job_title: appliedJobTitle,
+            moved_by: userId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingPipeline.id);
+
+        if (pipelineError) {
+          console.error('Error updating pipeline:', pipelineError);
+          continue;
+        }
+        console.log(`Updated pipeline for candidate: ${candidateData.full_name}`);
+      } else {
+        // Create new pipeline entry
+        const { error: pipelineError } = await supabase
+          .from('candidate_pipeline')
+          .insert({
+            candidate_id: candidateId,
+            stage_id: targetStageId,
+            applied_company: appliedCompany,
+            applied_job_title: appliedJobTitle,
+            moved_by: userId,
+            is_active: true,
+          });
+
+        if (pipelineError) {
+          console.error('Error adding to pipeline:', pipelineError);
+          continue;
+        }
+        console.log(`Added candidate to pipeline: ${candidateData.full_name}`);
+      }
+
+      // Track the import
+      await supabase
+        .from('google_sheets_candidate_imports')
+        .upsert({
+          integration_id: integrationId,
+          candidate_id: candidateId,
+          sheet_row_number: startIndex + i + 2,
+          import_data: Object.fromEntries(
+            headers.map((header: string, index: number) => [header, row[index]])
+          ),
+        });
+
+      batchResults.push({
+        id: candidateId,
+        full_name: candidateData.full_name,
+        email: candidateData.email,
+        is_new: isNewCandidate,
+        stage: targetStageId === defaultStage.id ? defaultStage.name : hiringStages.find(s => s.id === targetStageId)?.name
+      });
+
+    } catch (error) {
+      console.error(`Error processing candidate ${candidateData.full_name}:`, error);
+      continue;
+    }
   }
-  
-  // Ensure password meets complexity requirements
-  const hasUpper = /[A-Z]/.test(password);
-  const hasLower = /[a-z]/.test(password);
-  const hasDigit = /[0-9]/.test(password);
-  const hasSpecial = /[!@#$%^&*]/.test(password);
-  
-  if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
-    return generateSecurePassword(length);
-  }
-  
-  return password;
-};
+
+  return batchResults;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -129,6 +333,8 @@ serve(async (req) => {
 
   try {
     const { integrationId, sheetId, range, columnMappings } = await req.json();
+    
+    console.log('Starting Google Sheets sync for integration:', integrationId);
     
     const serviceAccountKeyString = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
     if (!serviceAccountKeyString) {
@@ -184,7 +390,7 @@ serve(async (req) => {
     }
 
     const [headers, ...rows] = data.values;
-    const candidates = [];
+    console.log(`Processing ${rows.length} rows from Google Sheets`);
 
     // Get all hiring stages
     const { data: hiringStages } = await supabase
@@ -208,214 +414,27 @@ serve(async (req) => {
       console.log('Using "Scheduled a call" as default stage:', defaultStage.name);
     }
 
-    // Process each row and create candidate data
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const candidateData: any = {
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_user: false,
-      };
-
-      let appliedCompany = null;
-      let appliedJobTitle = null;
-      let kanbanStage = null;
-      let foundName = false;
-
-      // Map columns based on columnMappings
-      headers.forEach((header: string, index: number) => {
-        const mapping = columnMappings[header];
-        const cellValue = row[index];
-        
-        if (mapping && cellValue && cellValue.trim()) {
-          switch (mapping) {
-            case 'email':
-              candidateData.email = cellValue.trim();
-              break;
-            case 'full_name':
-              candidateData.full_name = cellValue.trim();
-              foundName = true;
-              break;
-            case 'linkedin_profile':
-              candidateData.linkedin_profile = cellValue.trim();
-              break;
-            case 'current_company':
-              candidateData.current_company = cellValue.trim();
-              break;
-            case 'phone_number':
-              candidateData.phone_number = cellValue.trim();
-              break;
-            case 'years_of_experience':
-              candidateData.years_of_experience = parseInt(cellValue) || null;
-              break;
-            case 'salary':
-              candidateData.salary = parseInt(cellValue) || null;
-              break;
-            case 'skillsets':
-              candidateData.skillsets = cellValue.split(',').map((s: string) => s.trim()).filter(s => s);
-              break;
-            case 'past_companies':
-              candidateData.past_companies = cellValue.split(',').map((s: string) => s.trim()).filter(s => s);
-              break;
-            case 'general_notes':
-              candidateData.general_notes = cellValue.trim();
-              break;
-            case 'applied_company':
-              appliedCompany = cellValue.trim();
-              break;
-            case 'applied_job_title':
-              appliedJobTitle = cellValue.trim();
-              break;
-            case 'kanban_stage':
-              kanbanStage = cellValue.trim();
-              break;
-          }
-        }
-      });
-
-      // Skip if no name found
-      if (!foundName) {
-        console.log(`Skipping row ${i + 2}: No name found`);
-        continue;
-      }
-
-      let candidateId;
-      let isNewCandidate = false;
-
-      // Check if candidate already exists (by email if provided, otherwise by name)
-      let existingCandidate = null;
-      if (candidateData.email) {
-        const { data } = await supabase
-          .from('candidates')
-          .select('id')
-          .eq('email', candidateData.email)
-          .single();
-        existingCandidate = data;
-      }
+    // Process candidates in batches of 10 to avoid memory issues
+    const BATCH_SIZE = 10;
+    const allCandidates = [];
+    
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE);
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(rows.length / BATCH_SIZE)}`);
       
-      // If no match by email, try by name
-      if (!existingCandidate) {
-        const { data } = await supabase
-          .from('candidates')
-          .select('id')
-          .eq('full_name', candidateData.full_name)
-          .single();
-        existingCandidate = data;
-      }
-
-      if (existingCandidate) {
-        // Update existing candidate
-        candidateId = existingCandidate.id;
-        const { error: updateError } = await supabase
-          .from('candidates')
-          .update(candidateData)
-          .eq('id', candidateId);
-
-        if (updateError) {
-          console.error('Error updating candidate:', updateError);
-          continue;
-        }
-        console.log(`Updated existing candidate: ${candidateData.full_name}`);
-      } else {
-        // Create new candidate
-        const { data: newCandidate, error: createError } = await supabase
-          .from('candidates')
-          .insert(candidateData)
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating candidate:', createError);
-          continue;
-        }
-
-        candidateId = newCandidate.id;
-        isNewCandidate = true;
-        console.log(`Created new candidate: ${candidateData.full_name}`);
-      }
-
-      // Determine target stage - use default stage if no kanban stage mapping or invalid stage
-      let targetStageId = defaultStage.id;
+      const batchResults = await processCandidateBatch(
+        batch,
+        headers,
+        columnMappings,
+        supabase,
+        user.id,
+        defaultStage,
+        hiringStages,
+        integrationId,
+        i
+      );
       
-      if (kanbanStage) {
-        const matchingStage = hiringStages.find(stage => 
-          stage.name.toLowerCase() === kanbanStage.toLowerCase()
-        );
-        if (matchingStage) {
-          targetStageId = matchingStage.id;
-          console.log(`Using mapped stage "${matchingStage.name}" for candidate: ${candidateData.full_name}`);
-        } else {
-          console.log(`Stage "${kanbanStage}" not found, using default stage "${defaultStage.name}" for candidate: ${candidateData.full_name}`);
-        }
-      } else {
-        console.log(`No kanban stage specified, using default stage "${defaultStage.name}" for candidate: ${candidateData.full_name}`);
-      }
-
-      // Check if candidate already has an active pipeline entry
-      const { data: existingPipeline } = await supabase
-        .from('candidate_pipeline')
-        .select('id')
-        .eq('candidate_id', candidateId)
-        .eq('is_active', true)
-        .single();
-
-      if (existingPipeline) {
-        // Update existing pipeline entry
-        const { error: pipelineError } = await supabase
-          .from('candidate_pipeline')
-          .update({
-            stage_id: targetStageId,
-            applied_company: appliedCompany,
-            applied_job_title: appliedJobTitle,
-            moved_by: user.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingPipeline.id);
-
-        if (pipelineError) {
-          console.error('Error updating pipeline:', pipelineError);
-          continue;
-        }
-        console.log(`Updated pipeline for candidate: ${candidateData.full_name}`);
-      } else {
-        // Create new pipeline entry
-        const { error: pipelineError } = await supabase
-          .from('candidate_pipeline')
-          .insert({
-            candidate_id: candidateId,
-            stage_id: targetStageId,
-            applied_company: appliedCompany,
-            applied_job_title: appliedJobTitle,
-            moved_by: user.id,
-            is_active: true,
-          });
-
-        if (pipelineError) {
-          console.error('Error adding to pipeline:', pipelineError);
-          continue;
-        }
-        console.log(`Added candidate to pipeline: ${candidateData.full_name}`);
-      }
-
-      // Track the import
-      await supabase
-        .from('google_sheets_candidate_imports')
-        .upsert({
-          integration_id: integrationId,
-          candidate_id: candidateId,
-          sheet_row_number: i + 2,
-          import_data: Object.fromEntries(
-            headers.map((header: string, index: number) => [header, row[index]])
-          ),
-        });
-
-      candidates.push({
-        id: candidateId,
-        full_name: candidateData.full_name,
-        email: candidateData.email,
-        is_new: isNewCandidate,
-        stage: targetStageId === defaultStage.id ? defaultStage.name : hiringStages.find(s => s.id === targetStageId)?.name
-      });
+      allCandidates.push(...batchResults);
     }
 
     // Update last sync time
@@ -424,21 +443,21 @@ serve(async (req) => {
       .update({ last_sync_at: new Date().toISOString() })
       .eq('id', integrationId);
 
-    const newCandidates = candidates.filter(c => c.is_new).length;
-    const updatedCandidates = candidates.filter(c => !c.is_new).length;
-    const defaultStageCandidates = candidates.filter(c => c.stage === defaultStage.name).length;
+    const newCandidates = allCandidates.filter(c => c.is_new).length;
+    const updatedCandidates = allCandidates.filter(c => !c.is_new).length;
+    const defaultStageCandidates = allCandidates.filter(c => c.stage === defaultStage.name).length;
 
     console.log(`Sync completed: ${newCandidates} new, ${updatedCandidates} updated, ${defaultStageCandidates} assigned to default stage "${defaultStage.name}"`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        imported_count: candidates.length,
+        imported_count: allCandidates.length,
         new_candidates: newCandidates,
         updated_candidates: updatedCandidates,
         default_stage_assignments: defaultStageCandidates,
         default_stage_name: defaultStage.name,
-        candidates: candidates,
+        candidates: allCandidates,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
