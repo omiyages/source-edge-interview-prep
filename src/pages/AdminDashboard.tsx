@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { KanbanBoard } from '@/components/KanbanBoard';
-import { QuestionManager } from '@/components/QuestionManager';
 import { DataVisualization } from '@/components/DataVisualization';
 import { SecurityMonitor } from '@/components/SecurityMonitor';
 import { GoogleSheetsIntegrationSection } from '@/components/GoogleSheetsIntegrationSection';
@@ -34,10 +33,9 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="pipeline" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="questions">Questions</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
@@ -56,10 +54,6 @@ const AdminDashboard = () => {
 
         <TabsContent value="users" className="space-y-6">
           <UsersList />
-        </TabsContent>
-
-        <TabsContent value="questions" className="space-y-6">
-          <QuestionManager />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
