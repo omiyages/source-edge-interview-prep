@@ -96,6 +96,7 @@ export type Database = {
           full_name: string | null
           general_notes: string | null
           id: string
+          is_active: boolean | null
           is_user: boolean
           linkedin_profile: string | null
           past_companies: string[] | null
@@ -113,6 +114,7 @@ export type Database = {
           full_name?: string | null
           general_notes?: string | null
           id?: string
+          is_active?: boolean | null
           is_user?: boolean
           linkedin_profile?: string | null
           past_companies?: string[] | null
@@ -130,6 +132,7 @@ export type Database = {
           full_name?: string | null
           general_notes?: string | null
           id?: string
+          is_active?: boolean | null
           is_user?: boolean
           linkedin_profile?: string | null
           past_companies?: string[] | null
@@ -398,6 +401,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          order_index: number
           stage_order: number
           updated_at: string
         }
@@ -406,6 +410,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          order_index: number
           stage_order: number
           updated_at?: string
         }
@@ -414,6 +419,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          order_index?: number
           stage_order?: number
           updated_at?: string
         }

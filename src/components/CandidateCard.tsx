@@ -9,9 +9,15 @@ import type { Candidate } from '@/hooks/useKanbanData';
 
 interface CandidateCardProps {
   candidate: Candidate;
+  isDragging?: boolean;
+  showInactive?: boolean;
 }
 
-export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate }) => {
+export const CandidateCard: React.FC<CandidateCardProps> = ({ 
+  candidate, 
+  isDragging = false, 
+  showInactive = false 
+}) => {
   const [showConvertDialog, setShowConvertDialog] = useState(false);
 
   const handleConvertSuccess = () => {
@@ -21,7 +27,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate }) => {
 
   return (
     <>
-      <Card className="w-full mb-3 hover:shadow-md transition-shadow cursor-pointer bg-card">
+      <Card className={`w-full mb-3 hover:shadow-md transition-shadow cursor-pointer bg-card ${isDragging ? 'opacity-50' : ''}`}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">

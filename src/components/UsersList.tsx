@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +31,8 @@ import { Loader2, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Profile } from '@/types/auth';
 
+type UserRole = 'user' | 'admin';
+
 interface UserTableRowProps {
   userProfile: Profile;
   onDelete: (userId: string) => void;
@@ -46,7 +49,7 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
   isAdmin
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
-  const [newRole, setNewRole] = useState(userProfile.role);
+  const [newRole, setNewRole] = useState<UserRole>(userProfile.role as UserRole);
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
   const handleDelete = async () => {
@@ -73,14 +76,13 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
       <td className="p-2">{userProfile.email}</td>
       <td className="p-2">
         {isAdmin ? (
-          <Select value={newRole} onValueChange={(value) => setNewRole(value)}>
+          <Select value={newRole} onValueChange={(value: UserRole) => setNewRole(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select a role" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="user">User</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="candidate">Candidate</SelectItem>
             </SelectContent>
           </Select>
         ) : (
@@ -247,11 +249,11 @@ const UsersList = () => {
   }, [allUsers, searchTerm, selectedRole]);
 
   // Transform candidates to match UserProfile interface for display
-  const transformCandidateToUserProfile = (candidate: any) => ({
+  const transformCandidateToUserProfile = (candidate: any): Profile => ({
     id: candidate.id,
     email: candidate.email || '',
     full_name: candidate.full_name || '',
-    role: 'candidate',
+    role: 'user' as const,
     created_at: candidate.created_at,
     updated_at: candidate.updated_at,
     last_login_at: null,
@@ -298,7 +300,6 @@ const UsersList = () => {
             <SelectItem value="all">All Roles</SelectItem>
             <SelectItem value="user">User</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="candidate">Candidate</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -332,7 +333,7 @@ const UsersList = () => {
                     isAdmin={isAdmin}
                   />
                 ))}
-                {candidatesData?.map((candidate) => (
+                {candidatesData?.filter(candidate => !candidate.is_user).map((candidate) => (
                   <UserTableRow
                     key={`candidate-${candidate.id}`}
                     userProfile={transformCandidateToUserProfile(candidate)}

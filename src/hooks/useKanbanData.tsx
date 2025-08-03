@@ -9,10 +9,21 @@ export interface HiringStage {
   order_index: number;
 }
 
+export interface Application {
+  id: string;
+  stage_id: string;
+  applied_company: string | null;
+  applied_job_title: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  moved_at: string | null;
+}
+
 export interface Candidate {
   id: string;
-  pipeline_id: string;
-  stage_id: string;
+  pipeline_id?: string;
+  stage_id?: string;
   full_name: string | null;
   email: string | null;
   phone_number: string | null;
@@ -29,6 +40,7 @@ export interface Candidate {
   created_at: string;
   updated_at: string;
   stage: HiringStage | null;
+  applications?: Application[];
 }
 
 export const useHiringStages = () => {
@@ -78,7 +90,8 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
           hiring_stages (
             id,
             name,
-            color
+            color,
+            order_index
           )
         `);
       
@@ -111,25 +124,35 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
           }
 
           return {
-            id: candidate?.id,
+            id: candidate?.id || '',
             pipeline_id: item.id,
             stage_id: item.stage_id,
-            full_name: candidate?.full_name,
-            email: candidate?.email,
-            phone_number: candidate?.phone_number,
-            linkedin_profile: candidate?.linkedin_profile,
-            current_company: candidate?.current_company,
-            years_of_experience: candidate?.years_of_experience,
-            salary: candidate?.salary,
+            full_name: candidate?.full_name || null,
+            email: candidate?.email || null,
+            phone_number: candidate?.phone_number || null,
+            linkedin_profile: candidate?.linkedin_profile || null,
+            current_company: candidate?.current_company || null,
+            years_of_experience: candidate?.years_of_experience || null,
+            salary: candidate?.salary || null,
             skillsets: candidate?.skillsets || [],
             past_companies: candidate?.past_companies || [],
-            general_notes: candidate?.general_notes,
+            general_notes: candidate?.general_notes || null,
             is_active: candidate?.is_active ?? true,
             is_user: isUser,
             notes: item.notes,
             created_at: item.created_at,
             updated_at: item.updated_at,
-            stage: item.hiring_stages
+            stage: item.hiring_stages,
+            applications: [{
+              id: item.id,
+              stage_id: item.stage_id,
+              applied_company: null,
+              applied_job_title: null,
+              is_active: true,
+              created_at: item.created_at,
+              updated_at: item.updated_at,
+              moved_at: item.updated_at
+            }]
           };
         })
       );
