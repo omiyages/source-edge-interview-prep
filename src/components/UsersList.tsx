@@ -1,138 +1,376 @@
-
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Plus } from "lucide-react";
-import { EnhancedUserForm } from "./EnhancedUserForm";
+import { toast } from 'sonner';
 import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { UserProfile } from "@/types/user";
-import { UserTableRow } from "./UserTableRow";
-import { useDeleteUser } from "@/hooks/useDeleteUser";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Loader2, Trash2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Profile } from '@/types/auth';
 
-export const UsersList = () => {
-  const deleteUserMutation = useDeleteUser();
-  const [showUserForm, setShowUserForm] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+interface UserTableRowProps {
+  userProfile: Profile;
+  onDelete: (userId: string) => void;
+  onRoleChange: (userId: string, newRole: string) => void;
+  isCurrentUser: boolean;
+  isAdmin: boolean;
+}
 
-  // Fetch candidates instead of profiles for the main list
-  const { data: candidates, isLoading, refetch } = useQuery({
-    queryKey: ['admin-candidates'],
+const UserTableRow: React.FC<UserTableRowProps> = ({
+  userProfile,
+  onDelete,
+  onRoleChange,
+  isCurrentUser,
+  isAdmin
+}) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [newRole, setNewRole] = useState(userProfile.role);
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(userProfile.id);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleRoleChange = async () => {
+    setIsUpdatingRole(true);
+    try {
+      await onRoleChange(userProfile.id, newRole);
+    } finally {
+      setIsUpdatingRole(false);
+    }
+  };
+
+  return (
+    <tr key={userProfile.id} className="border-b">
+      <td className="p-2">{userProfile.full_name || 'N/A'}</td>
+      <td className="p-2">{userProfile.email}</td>
+      <td className="p-2">
+        {isAdmin ? (
+          <Select value={newRole} onValueChange={(value) => setNewRole(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select a role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">User</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="candidate">Candidate</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          userProfile.role
+        )}
+      </td>
+      <td className="p-2">{userProfile.is_active ? 'Active' : 'Inactive'}</td>
+      <td className="p-2">{new Date(userProfile.created_at || '').toLocaleDateString()}</td>
+      <td className="p-2">
+        {isAdmin && (
+          <div className="flex gap-2">
+            {isCurrentUser ? (
+              <span className="text-muted-foreground">You</span>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            )}
+            {userProfile.role !== newRole && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleRoleChange}
+                disabled={isUpdatingRole}
+              >
+                {isUpdatingRole ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating
+                  </>
+                ) : (
+                  'Update Role'
+                )}
+              </Button>
+            )}
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+};
+
+const UsersList = () => {
+  const { user, isAdmin } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string>("all");
+
+  const queryClient = useQueryClient();
+
+  // Fetch all users
+  const { data: allUsers, isLoading: isUsersLoading, error: usersError } = useQuery<Profile[]>({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
+      return data || [];
+    },
+  });
+
+  // Fetch all candidates
+  const { data: candidatesData, isLoading: isCandidatesLoading, error: candidatesError } = useQuery<any[]>({
+    queryKey: ['candidates'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('candidates')
         .select('*')
         .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+
+      if (error) {
+        console.error('Error fetching candidates:', error);
+        throw error;
+      }
+      return data || [];
     },
   });
 
-  if (isLoading) {
+  // Mutation to delete a user
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error deleting user:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success('User deleted successfully.');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete user: ${error.message}`);
+    },
+  });
+
+  // Mutation to update user role
+  const updateUserRoleMutation = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string, newRole: string }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success('User role updated successfully.');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to update user role: ${error.message}`);
+    },
+  });
+
+  const handleDeleteUser = async (userId: string) => {
+    await deleteUserMutation.mutateAsync(userId);
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    await updateUserRoleMutation.mutateAsync({ userId, newRole });
+  };
+
+  // Filter users based on search and role
+  const filteredUsers = useMemo(() => {
+    if (!allUsers) return [];
+    
+    return allUsers.filter(userProfile => {
+      const matchesSearch = searchTerm === "" || 
+        userProfile.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        userProfile.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesRole = selectedRole === "all" || userProfile.role === selectedRole;
+      
+      return matchesSearch && matchesRole;
+    });
+  }, [allUsers, searchTerm, selectedRole]);
+
+  // Transform candidates to match UserProfile interface for display
+  const transformCandidateToUserProfile = (candidate: any) => ({
+    id: candidate.id,
+    email: candidate.email || '',
+    full_name: candidate.full_name || '',
+    role: 'candidate',
+    created_at: candidate.created_at,
+    updated_at: candidate.updated_at,
+    last_login_at: null,
+    total_session_time_minutes: 0,
+    is_active: candidate.is_active ?? true,
+    created_by: null,
+  });
+
+  if (isUsersLoading || isCandidatesLoading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading candidates...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading users...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (usersError || candidatesError) {
+    return (
+      <div className="text-center text-red-500">
+        Error: {usersError?.message || candidatesError?.message}
       </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            All Candidates ({candidates?.length || 0})
-          </CardTitle>
-          <Button 
-            onClick={() => setShowUserForm(true)}
-            variant="gradient"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Candidate
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {candidates && candidates.length > 0 ? (
+    <div className="space-y-6">
+      {/* Header and Filters */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Manage Users</h2>
+        <Input
+          type="search"
+          placeholder="Search users..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="user">User</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="candidate">Candidate</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Users & Candidates</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Experience</TableHead>
-                  <TableHead>Skills</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {candidates.map((candidate) => (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Name</th>
+                  <th className="text-left p-2">Email</th>
+                  <th className="text-left p-2">Role</th>
+                  <th className="text-left p-2">Status</th>
+                  <th className="text-left p-2">Created</th>
+                  <th className="text-left p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((userProfile) => (
                   <UserTableRow
-                    key={candidate.id}
-                    user={{
-                      ...candidate,
-                      role: 'candidate', // Set role as candidate for display
-                      created_at: candidate.created_at,
-                      updated_at: candidate.updated_at
-                    } as UserProfile}
-                    onDelete={deleteUserMutation.mutate}
-                    isDeleting={deleteUserMutation.isPending}
-                    onEdit={setEditingUser}
+                    key={userProfile.id}
+                    userProfile={userProfile}
+                    onDelete={() => handleDeleteUser(userProfile.id)}
+                    onRoleChange={(userId, newRole) => handleRoleChange(userId, newRole)}
+                    isCurrentUser={userProfile.id === user?.id}
+                    isAdmin={isAdmin}
                   />
                 ))}
-              </TableBody>
-            </Table>
+                {candidatesData?.map((candidate) => (
+                  <UserTableRow
+                    key={`candidate-${candidate.id}`}
+                    userProfile={transformCandidateToUserProfile(candidate)}
+                    onDelete={() => {}}
+                    onRoleChange={() => {}}
+                    isCurrentUser={false}
+                    isAdmin={isAdmin}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          <div className="text-center py-8">
-            <User className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">No candidates found</h3>
-            <p className="text-gray-500">Candidates will appear here once they are created.</p>
-          </div>
-        )}
-      </CardContent>
-
-      {/* Enhanced User Form Dialog */}
-      <Dialog open={showUserForm || !!editingUser} onOpenChange={(open) => {
-        if (!open) {
-          setShowUserForm(false);
-          setEditingUser(null);
-        }
-      }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          
+          {filteredUsers.length === 0 && (!candidatesData || candidatesData.length === 0) && (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found matching your criteria.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Dialogs and Modals */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button>Add User</Button>
+        </DialogTrigger>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {editingUser ? 'Edit Candidate' : 'Add New Candidate'}
-            </DialogTitle>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account.
+            </DialogDescription>
           </DialogHeader>
-          <EnhancedUserForm
-            user={editingUser}
-            onSuccess={() => {
-              refetch();
-              setShowUserForm(false);
-              setEditingUser(null);
-            }}
-            onCancel={() => {
-              setShowUserForm(false);
-              setEditingUser(null);
-            }}
-          />
+          {/* Add User Form Here */}
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 };
+
+export default UsersList;

@@ -2,6 +2,35 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface HiringStage {
+  id: string;
+  name: string;
+  color: string;
+  order_index: number;
+}
+
+export interface Candidate {
+  id: string;
+  pipeline_id: string;
+  stage_id: string;
+  full_name: string | null;
+  email: string | null;
+  phone_number: string | null;
+  linkedin_profile: string | null;
+  current_company: string | null;
+  years_of_experience: number | null;
+  salary: number | null;
+  skillsets: string[] | null;
+  past_companies: string[] | null;
+  general_notes: string | null;
+  is_active: boolean;
+  is_user: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  stage: HiringStage | null;
+}
+
 export const useHiringStages = () => {
   return useQuery({
     queryKey: ['hiring-stages'],
@@ -53,10 +82,6 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
           )
         `);
       
-      if (!includeInactive) {
-        query = query.eq('candidates.is_active', true);
-      }
-      
       const { data, error } = await query;
       
       if (error) {
@@ -99,7 +124,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             skillsets: candidate?.skillsets || [],
             past_companies: candidate?.past_companies || [],
             general_notes: candidate?.general_notes,
-            is_active: candidate?.is_active,
+            is_active: candidate?.is_active ?? true,
             is_user: isUser,
             notes: item.notes,
             created_at: item.created_at,
@@ -109,8 +134,13 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
         })
       );
 
-      console.log('Processed candidates:', candidatesWithUserStatus);
-      return candidatesWithUserStatus.filter(c => c.id); // Filter out any null candidates
+      // Filter based on includeInactive setting
+      const filteredCandidates = includeInactive 
+        ? candidatesWithUserStatus.filter(c => c.id)
+        : candidatesWithUserStatus.filter(c => c.id && c.is_active);
+
+      console.log('Processed candidates:', filteredCandidates);
+      return filteredCandidates;
     },
     refetchInterval: 30000, // Refetch every 30 seconds to keep user status updated
   });
