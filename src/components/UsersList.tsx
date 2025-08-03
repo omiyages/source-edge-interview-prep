@@ -253,7 +253,7 @@ const UsersList = () => {
     id: candidate.id,
     email: candidate.email || '',
     full_name: candidate.full_name || '',
-    role: 'user' as const, // Ensure this is correctly typed
+    role: 'user' as 'user' | 'admin', // Explicitly type as union
     created_at: candidate.created_at,
     updated_at: candidate.updated_at,
     last_login_at: null,
