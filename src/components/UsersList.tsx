@@ -248,18 +248,20 @@ const UsersList = () => {
   }, [allUsers, searchTerm, selectedRole]);
 
   // Transform candidates to match UserProfile interface for display
-  const transformCandidateToUserProfile = (candidate: any): Profile => ({
-    id: candidate.id,
-    email: candidate.email || '',
-    full_name: candidate.full_name || '',
-    role: 'user' as const,
-    created_at: candidate.created_at,
-    updated_at: candidate.updated_at,
-    last_login_at: null,
-    total_session_time_minutes: 0,
-    is_active: candidate.is_active ?? true,
-    created_by: null,
-  });
+  const transformCandidateToUserProfile = (candidate: any): Profile => {
+    return {
+      id: candidate.id,
+      email: candidate.email || '',
+      full_name: candidate.full_name || '',
+      role: 'user' as 'user' | 'admin',
+      created_at: candidate.created_at,
+      updated_at: candidate.updated_at,
+      last_login_at: null,
+      total_session_time_minutes: 0,
+      is_active: candidate.is_active ?? true,
+      created_by: null,
+    } as Profile;
+  };
 
   if (isUsersLoading || isCandidatesLoading) {
     return (
