@@ -1,189 +1,197 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { generateSecurePassword } from '@/utils/passwordGenerator';
-import { Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
+import { UserPlus, Eye, EyeOff } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ConvertCandidateToUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  candidate: {
-    id: string;
-    full_name: string;
-    email?: string;
-  };
-  onSuccess: () => void;
+  candidate: any;
 }
 
-export const ConvertCandidateToUserDialog = ({
+export const ConvertCandidateToUserDialog: React.FC<ConvertCandidateToUserDialogProps> = ({
   open,
   onOpenChange,
-  candidate,
-  onSuccess,
-}: ConvertCandidateToUserDialogProps) => {
-  const [email, setEmail] = useState(candidate.email || '');
+  candidate
+}) => {
+  const [email, setEmail] = useState(candidate?.email || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const handleGeneratePassword = () => {
-    const newPassword = generateSecurePassword(16);
-    setPassword(newPassword);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleConvert = async () => {
     if (!email || !password) {
-      toast.error('Email and password are required');
+      toast.error('Please provide both email and password');
       return;
     }
 
-    setLoading(true);
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
 
+    setIsLoading(true);
     try {
-      // Get current session for admin function call
+      // Call the admin user management function to create the user
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         throw new Error('No active session');
       }
 
-      // Create auth user account via admin function
-      const { data: authData, error: authError } = await supabase.functions.invoke('admin-user-management', {
+      const { data, error } = await supabase.functions.invoke('admin-user-management', {
         body: {
-          email: email,
-          fullName: candidate.full_name,
-          role: 'user'
+          method: 'CREATE_USER',
+          body: {
+            email,
+            password,
+            full_name: candidate.full_name,
+            role: 'user'
+          }
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         }
       });
 
-      if (authError) {
-        console.error('Error creating auth user:', authError);
-        toast.error('Failed to create user account: ' + authError.message);
-        return;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // Update the candidate record to include the email if it wasn't already set
+      if (!candidate.email || candidate.email !== email) {
+        const { error: updateError } = await supabase
+          .from('candidates')
+          .update({ email })
+          .eq('id', candidate.id);
+
+        if (updateError) {
+          console.error('Error updating candidate email:', updateError);
+        }
       }
 
-      if (!authData?.user?.id) {
-        throw new Error('No user ID returned from user creation');
-      }
-
-      // Update the candidate record to link to the new user
-      const { error: linkError } = await supabase
-        .from('candidates')
-        .update({ 
-          email: email,
-          is_user: true,
-          user_id: authData.user.id
-        })
-        .eq('id', candidate.id);
-
-      if (linkError) {
-        console.error('Error linking candidate to user:', linkError);
-        toast.error('Failed to link candidate to user account');
-        return;
-      }
-
-      toast.success('Candidate successfully converted to user');
-      onSuccess();
+      toast.success(`User account created successfully for ${candidate.full_name}`);
+      
+      // Refresh the kanban board data
+      queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
+      
       onOpenChange(false);
       
       // Reset form
       setEmail('');
       setPassword('');
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error converting candidate to user:', error);
-      toast.error('Failed to convert candidate to user');
+      toast.error(error.message || 'Failed to create user account');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  if (!candidate) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Convert Candidate to User</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            Convert to User
+          </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="candidate-name">Candidate Name</Label>
-            <Input
-              id="candidate-name"
-              value={candidate.full_name}
-              disabled
-              className="bg-gray-50"
-            />
-          </div>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Candidate Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div>
+                <span className="font-medium">Name:</span> {candidate.full_name}
+              </div>
+              {candidate.current_company && (
+                <div>
+                  <span className="font-medium">Company:</span> {candidate.current_company}
+                </div>
+              )}
+              {candidate.phone_number && (
+                <div>
+                  <span className="font-medium">Phone:</span> {candidate.phone_number}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          <div>
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter email address"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium">
+                Email Address *
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email address"
+                className="mt-1"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password *
+              </Label>
+              <div className="relative mt-1">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
+                  placeholder="Enter password (min 8 characters)"
+                  className="pr-10"
                   required
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-auto p-1"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGeneratePassword}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
+            <Button 
+              variant="outline" 
               onClick={() => onOpenChange(false)}
-              disabled={loading}
+              disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Converting...' : 'Convert to User'}
+            <Button 
+              onClick={handleConvert} 
+              disabled={isLoading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? 'Creating...' : 'Create User Account'}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

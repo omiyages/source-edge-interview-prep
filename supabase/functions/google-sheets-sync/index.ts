@@ -1,475 +1,277 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// JWT helper functions for service account authentication
-function base64UrlEncode(str: string): string {
-  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
-function pemToDer(pem: string): Uint8Array {
-  const pemContents = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\n/g, '')
-    .replace(/\r/g, '');
-  
-  const binaryString = atob(pemContents);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-async function createJWT(serviceAccountKey: any): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const expiry = now + 3600; // 1 hour
-
-  const header = {
-    alg: 'RS256',
-    typ: 'JWT'
-  };
-
-  const payload = {
-    iss: serviceAccountKey.client_email,
-    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: expiry,
-    iat: now
-  };
-
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
-
-  const privateKeyDer = pemToDer(serviceAccountKey.private_key);
-
-  const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
-    privateKeyDer,
-    {
-      name: 'RSASSA-PKCS1-v1_5',
-      hash: 'SHA-256'
-    },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    privateKey,
-    new TextEncoder().encode(unsignedToken)
-  );
-
-  const encodedSignature = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
-  return `${unsignedToken}.${encodedSignature}`;
-}
-
-async function getAccessToken(serviceAccountKey: any): Promise<string> {
-  const jwt = await createJWT(serviceAccountKey);
-  
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to get access token: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.access_token;
-}
-
-// Process candidates in batches to avoid memory issues
-async function processCandidateBatch(
-  rows: any[],
-  headers: string[],
-  columnMappings: Record<string, string>,
-  supabase: any,
-  userId: string,
-  defaultStage: any,
-  hiringStages: any[],
-  integrationId: string,
-  startIndex: number
-) {
-  const batchResults = [];
-  
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const candidateData: any = {
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_user: false,
-    };
-
-    let appliedCompany = null;
-    let appliedJobTitle = null;
-    let kanbanStage = null;
-    let foundName = false;
-
-    // Map columns based on columnMappings
-    headers.forEach((header: string, index: number) => {
-      const mapping = columnMappings[header];
-      const cellValue = row[index];
-      
-      if (mapping && cellValue && cellValue.trim()) {
-        switch (mapping) {
-          case 'email':
-            candidateData.email = cellValue.trim();
-            break;
-          case 'full_name':
-            candidateData.full_name = cellValue.trim();
-            foundName = true;
-            break;
-          case 'linkedin_profile':
-            candidateData.linkedin_profile = cellValue.trim();
-            break;
-          case 'current_company':
-            candidateData.current_company = cellValue.trim();
-            break;
-          case 'phone_number':
-            candidateData.phone_number = cellValue.trim();
-            break;
-          case 'years_of_experience':
-            candidateData.years_of_experience = parseInt(cellValue) || null;
-            break;
-          case 'salary':
-            candidateData.salary = parseInt(cellValue) || null;
-            break;
-          case 'skillsets':
-            candidateData.skillsets = cellValue.split(',').map((s: string) => s.trim()).filter(s => s);
-            break;
-          case 'past_companies':
-            candidateData.past_companies = cellValue.split(',').map((s: string) => s.trim()).filter(s => s);
-            break;
-          case 'general_notes':
-            candidateData.general_notes = cellValue.trim();
-            break;
-          case 'applied_company':
-            appliedCompany = cellValue.trim();
-            break;
-          case 'applied_job_title':
-            appliedJobTitle = cellValue.trim();
-            break;
-          case 'kanban_stage':
-            kanbanStage = cellValue.trim();
-            break;
-        }
-      }
-    });
-
-    // Skip if no name found
-    if (!foundName) {
-      console.log(`Skipping row ${startIndex + i + 2}: No name found`);
-      continue;
-    }
-
-    try {
-      let candidateId;
-      let isNewCandidate = false;
-
-      // Check if candidate already exists
-      let existingCandidate = null;
-      if (candidateData.email) {
-        const { data } = await supabase
-          .from('candidates')
-          .select('id')
-          .eq('email', candidateData.email)
-          .single();
-        existingCandidate = data;
-      }
-      
-      // If no match by email, try by name
-      if (!existingCandidate) {
-        const { data } = await supabase
-          .from('candidates')
-          .select('id')
-          .eq('full_name', candidateData.full_name)
-          .single();
-        existingCandidate = data;
-      }
-
-      if (existingCandidate) {
-        // Update existing candidate
-        candidateId = existingCandidate.id;
-        const { error: updateError } = await supabase
-          .from('candidates')
-          .update(candidateData)
-          .eq('id', candidateId);
-
-        if (updateError) {
-          console.error('Error updating candidate:', updateError);
-          continue;
-        }
-        console.log(`Updated existing candidate: ${candidateData.full_name}`);
-      } else {
-        // Create new candidate
-        const { data: newCandidate, error: createError } = await supabase
-          .from('candidates')
-          .insert(candidateData)
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating candidate:', createError);
-          continue;
-        }
-
-        candidateId = newCandidate.id;
-        isNewCandidate = true;
-        console.log(`Created new candidate: ${candidateData.full_name}`);
-      }
-
-      // Determine target stage
-      let targetStageId = defaultStage.id;
-      
-      if (kanbanStage) {
-        const matchingStage = hiringStages.find(stage => 
-          stage.name.toLowerCase() === kanbanStage.toLowerCase()
-        );
-        if (matchingStage) {
-          targetStageId = matchingStage.id;
-          console.log(`Using mapped stage "${matchingStage.name}" for candidate: ${candidateData.full_name}`);
-        } else {
-          console.log(`Stage "${kanbanStage}" not found, using default stage "${defaultStage.name}" for candidate: ${candidateData.full_name}`);
-        }
-      } else {
-        console.log(`No kanban stage specified, using default stage "${defaultStage.name}" for candidate: ${candidateData.full_name}`);
-      }
-
-      // Check if candidate already has an active pipeline entry
-      const { data: existingPipeline } = await supabase
-        .from('candidate_pipeline')
-        .select('id')
-        .eq('candidate_id', candidateId)
-        .eq('is_active', true)
-        .single();
-
-      if (existingPipeline) {
-        // Update existing pipeline entry
-        const { error: pipelineError } = await supabase
-          .from('candidate_pipeline')
-          .update({
-            stage_id: targetStageId,
-            applied_company: appliedCompany,
-            applied_job_title: appliedJobTitle,
-            moved_by: userId,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingPipeline.id);
-
-        if (pipelineError) {
-          console.error('Error updating pipeline:', pipelineError);
-          continue;
-        }
-        console.log(`Updated pipeline for candidate: ${candidateData.full_name}`);
-      } else {
-        // Create new pipeline entry
-        const { error: pipelineError } = await supabase
-          .from('candidate_pipeline')
-          .insert({
-            candidate_id: candidateId,
-            stage_id: targetStageId,
-            applied_company: appliedCompany,
-            applied_job_title: appliedJobTitle,
-            moved_by: userId,
-            is_active: true,
-          });
-
-        if (pipelineError) {
-          console.error('Error adding to pipeline:', pipelineError);
-          continue;
-        }
-        console.log(`Added candidate to pipeline: ${candidateData.full_name}`);
-      }
-
-      // Track the import
-      await supabase
-        .from('google_sheets_candidate_imports')
-        .upsert({
-          integration_id: integrationId,
-          candidate_id: candidateId,
-          sheet_row_number: startIndex + i + 2,
-          import_data: Object.fromEntries(
-            headers.map((header: string, index: number) => [header, row[index]])
-          ),
-        });
-
-      batchResults.push({
-        id: candidateId,
-        full_name: candidateData.full_name,
-        email: candidateData.email,
-        is_new: isNewCandidate,
-        stage: targetStageId === defaultStage.id ? defaultStage.name : hiringStages.find(s => s.id === targetStageId)?.name
-      });
-
-    } catch (error) {
-      console.error(`Error processing candidate ${candidateData.full_name}:`, error);
-      continue;
-    }
-  }
-
-  return batchResults;
+interface CandidateData {
+  full_name: string;
+  email?: string;
+  phone_number?: string;
+  linkedin_profile?: string;
+  current_company?: string;
+  years_of_experience?: number;
+  salary?: number;
+  skillsets?: string[];
+  past_companies?: string[];
+  general_notes?: string;
+  stage?: string;
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { integrationId, sheetId, range, columnMappings } = await req.json();
+    const { spreadsheetId, range } = await req.json()
     
-    console.log('Starting Google Sheets sync for integration:', integrationId);
-    
-    const serviceAccountKeyString = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
-    if (!serviceAccountKeyString) {
-      throw new Error('Google service account key not configured');
+    if (!spreadsheetId || !range) {
+      throw new Error('Missing required parameters: spreadsheetId and range')
     }
 
-    const serviceAccountKey = JSON.parse(serviceAccountKeyString);
-    
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Starting Google Sheets sync with:', { spreadsheetId, range })
 
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('Authorization header missing');
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Get Google Sheets API key
+    const apiKey = Deno.env.get('GOOGLE_SHEETS_API_KEY')
+    if (!apiKey) {
+      throw new Error('Google Sheets API key not found')
     }
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (userError || !user) {
-      throw new Error('Invalid user token');
-    }
-
-    console.log('Fetching Google Sheets data for sheet:', sheetId);
+    // Fetch data from Google Sheets
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`
+    console.log('Fetching from Google Sheets:', sheetsUrl)
     
-    const accessToken = await getAccessToken(serviceAccountKey);
-    
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
-    const response = await fetch(sheetsUrl, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-    
+    const response = await fetch(sheetsUrl)
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google Sheets API error:', response.status, errorText);
-      
-      if (response.status === 403) {
-        throw new Error('Permission denied: Make sure the service account has access to the Google Sheet');
-      } else if (response.status === 401) {
-        throw new Error('Authentication failed: Please check the service account configuration');
-      } else if (response.status === 404) {
-        throw new Error('Sheet not found: Please check that the Sheet ID is correct');
-      } else {
-        throw new Error(`Google Sheets API error (${response.status}): ${errorText}`);
-      }
+      throw new Error(`Google Sheets API error: ${response.status} ${response.statusText}`)
     }
 
-    const data = await response.json();
+    const data = await response.json()
+    const rows = data.values || []
     
-    if (!data.values || data.values.length === 0) {
-      throw new Error('No data found in the specified range');
+    if (rows.length < 2) {
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'No data found in the specified range'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      })
     }
 
-    const [headers, ...rows] = data.values;
-    console.log(`Processing ${rows.length} rows from Google Sheets`);
+    // Get header row and data rows
+    const headers = rows[0].map((h: string) => h.toLowerCase().trim())
+    const dataRows = rows.slice(1)
+    
+    console.log('Headers found:', headers)
+    console.log('Data rows count:', dataRows.length)
 
-    // Get all hiring stages
-    const { data: hiringStages } = await supabase
+    // Get all hiring stages to map stage names
+    const { data: stages } = await supabaseClient
       .from('hiring_stages')
       .select('id, name')
-      .order('stage_order', { ascending: true });
+      .order('order_index')
 
-    if (!hiringStages || hiringStages.length === 0) {
-      throw new Error('No hiring stages found. Please create hiring stages first.');
-    }
+    const stageMap = new Map(stages?.map(s => [s.name.toLowerCase(), s.id]) || [])
+    const defaultStageId = stages?.[0]?.id // Use first stage as default
 
-    // Find "Scheduled a call" stage or use first stage as fallback
-    let defaultStage = hiringStages.find(stage => 
-      stage.name.toLowerCase().includes('scheduled') && stage.name.toLowerCase().includes('call')
-    );
-    
-    if (!defaultStage) {
-      defaultStage = hiringStages[0];
-      console.log('No "Scheduled a call" stage found, using first stage as default:', defaultStage.name);
-    } else {
-      console.log('Using "Scheduled a call" as default stage:', defaultStage.name);
-    }
+    console.log('Available stages:', stages?.map(s => s.name))
 
-    // Process candidates in batches of 10 to avoid memory issues
-    const BATCH_SIZE = 10;
-    const allCandidates = [];
-    
-    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-      const batch = rows.slice(i, i + BATCH_SIZE);
-      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(rows.length / BATCH_SIZE)}`);
+    let processedCount = 0
+    let errorCount = 0
+    let defaultStageCount = 0
+    const errors: string[] = []
+
+    // Process candidates in batches
+    const batchSize = 10
+    for (let i = 0; i < dataRows.length; i += batchSize) {
+      const batch = dataRows.slice(i, i + batchSize)
       
-      const batchResults = await processCandidateBatch(
-        batch,
-        headers,
-        columnMappings,
-        supabase,
-        user.id,
-        defaultStage,
-        hiringStages,
-        integrationId,
-        i
-      );
-      
-      allCandidates.push(...batchResults);
+      for (const row of batch) {
+        try {
+          const candidateData: CandidateData = {}
+          
+          // Map spreadsheet columns to candidate fields
+          headers.forEach((header, index) => {
+            const value = row[index]?.toString()?.trim()
+            if (!value) return
+
+            switch (header) {
+              case 'name':
+              case 'full_name':
+              case 'candidate name':
+                candidateData.full_name = value
+                break
+              case 'email':
+              case 'email address':
+                candidateData.email = value
+                break
+              case 'phone':
+              case 'phone_number':
+              case 'phone number':
+                candidateData.phone_number = value
+                break
+              case 'linkedin':
+              case 'linkedin_profile':
+              case 'linkedin profile':
+                candidateData.linkedin_profile = value
+                break
+              case 'company':
+              case 'current_company':
+              case 'current company':
+                candidateData.current_company = value
+                break
+              case 'experience':
+              case 'years_of_experience':
+              case 'years of experience':
+                const exp = parseInt(value)
+                if (!isNaN(exp)) candidateData.years_of_experience = exp
+                break
+              case 'salary':
+                const sal = parseInt(value.replace(/[,$]/g, ''))
+                if (!isNaN(sal)) candidateData.salary = sal
+                break
+              case 'skills':
+              case 'skillsets':
+                candidateData.skillsets = value.split(',').map(s => s.trim()).filter(Boolean)
+                break
+              case 'past_companies':
+              case 'past companies':
+                candidateData.past_companies = value.split(',').map(s => s.trim()).filter(Boolean)
+                break
+              case 'notes':
+              case 'general_notes':
+                candidateData.general_notes = value
+                break
+              case 'stage':
+              case 'hiring_stage':
+                candidateData.stage = value
+                break
+            }
+          })
+
+          if (!candidateData.full_name) {
+            errors.push(`Row ${i + 2}: Missing candidate name`)
+            errorCount++
+            continue
+          }
+
+          // Insert or update candidate
+          const { data: candidate, error: candidateError } = await supabaseClient
+            .from('candidates')
+            .upsert({
+              full_name: candidateData.full_name,
+              email: candidateData.email || null,
+              phone_number: candidateData.phone_number,
+              linkedin_profile: candidateData.linkedin_profile,
+              current_company: candidateData.current_company,
+              years_of_experience: candidateData.years_of_experience,
+              salary: candidateData.salary,
+              skillsets: candidateData.skillsets || [],
+              past_companies: candidateData.past_companies || [],
+              general_notes: candidateData.general_notes,
+            }, {
+              onConflict: 'full_name',
+              ignoreDuplicates: false
+            })
+            .select('id')
+            .single()
+
+          if (candidateError) {
+            console.error('Candidate insert error:', candidateError)
+            errors.push(`Row ${i + 2}: Failed to insert candidate - ${candidateError.message}`)
+            errorCount++
+            continue
+          }
+
+          // Determine stage
+          let stageId = defaultStageId
+          let usedDefault = false
+
+          if (candidateData.stage) {
+            const mappedStageId = stageMap.get(candidateData.stage.toLowerCase())
+            if (mappedStageId) {
+              stageId = mappedStageId
+            } else {
+              usedDefault = true
+              defaultStageCount++
+            }
+          } else {
+            usedDefault = true
+            defaultStageCount++
+          }
+
+          // Add to pipeline if not already there
+          const { error: pipelineError } = await supabaseClient
+            .from('candidate_pipeline')
+            .upsert({
+              candidate_id: candidate.id,
+              stage_id: stageId,
+              notes: candidateData.general_notes
+            }, {
+              onConflict: 'candidate_id',
+              ignoreDuplicates: false
+            })
+
+          if (pipelineError) {
+            console.error('Pipeline insert error:', pipelineError)
+            errors.push(`Row ${i + 2}: Failed to add to pipeline - ${pipelineError.message}`)
+            errorCount++
+            continue
+          }
+
+          processedCount++
+          console.log(`Processed candidate: ${candidateData.full_name}${usedDefault ? ' (default stage)' : ''}`)
+
+        } catch (error) {
+          console.error(`Error processing row ${i + 2}:`, error)
+          errors.push(`Row ${i + 2}: ${error.message}`)
+          errorCount++
+        }
+      }
+
+      // Small delay between batches
+      await new Promise(resolve => setTimeout(resolve, 100))
     }
 
-    // Update last sync time
-    await supabase
-      .from('google_sheets_integrations')
-      .update({ last_sync_at: new Date().toISOString() })
-      .eq('id', integrationId);
+    const result = {
+      success: true,
+      message: `Successfully processed ${processedCount} candidates`,
+      details: {
+        processed: processedCount,
+        errors: errorCount,
+        defaultStageAssignments: defaultStageCount,
+        errorMessages: errors.slice(0, 10) // Limit to first 10 errors
+      }
+    }
 
-    const newCandidates = allCandidates.filter(c => c.is_new).length;
-    const updatedCandidates = allCandidates.filter(c => !c.is_new).length;
-    const defaultStageCandidates = allCandidates.filter(c => c.stage === defaultStage.name).length;
+    console.log('Sync completed:', result)
 
-    console.log(`Sync completed: ${newCandidates} new, ${updatedCandidates} updated, ${defaultStageCandidates} assigned to default stage "${defaultStage.name}"`);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        imported_count: allCandidates.length,
-        new_candidates: newCandidates,
-        updated_candidates: updatedCandidates,
-        default_stage_assignments: defaultStageCandidates,
-        default_stage_name: defaultStage.name,
-        candidates: allCandidates,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
 
   } catch (error) {
-    console.error('Error in google-sheets-sync:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    console.error('Google Sheets sync error:', error)
+    return new Response(JSON.stringify({
+      success: false,
+      message: error.message,
+      details: {
+        processed: 0,
+        errors: 1
       }
-    );
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500
+    })
   }
-});
+})

@@ -1,103 +1,180 @@
 
-import { memo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { MapPin, DollarSign, Calendar, User, Check, UserPlus } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
-import { 
-  User, 
-  Building2, 
-  Briefcase, 
-  Mail,
-  UserX
-} from 'lucide-react';
+import { CandidateDetailDialog } from './CandidateDetailDialog';
+import { ConvertCandidateToUserDialog } from './ConvertCandidateToUserDialog';
 
 interface CandidateCardProps {
   candidate: any;
   isDragging?: boolean;
-  onClick?: () => void;
-  showInactive?: boolean;
 }
 
-export const CandidateCard = memo(({ candidate, isDragging, onClick, showInactive = false }: CandidateCardProps) => {
-  const isTemporaryEmail = candidate.email?.includes('@pipeline.temp');
-  const hasRealEmail = candidate.email && !isTemporaryEmail;
+export const CandidateCard: React.FC<CandidateCardProps> = ({ 
+  candidate, 
+  isDragging = false 
+}) => {
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isSortableDragging,
+  } = useSortable({ id: candidate.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  // Check if candidate is also a user (has email that matches a profile)
+  const isUser = candidate.email && candidate.is_user;
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDetailDialog(true);
+  };
+
+  const handleConvertClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowConvertDialog(true);
+  };
 
   return (
-    <Card 
-      className={cn(
-        "cursor-pointer transition-all duration-200 hover:shadow-md",
-        isDragging && "opacity-50 rotate-3",
-        !hasRealEmail && "border-l-4 border-l-orange-400 bg-orange-50"
-      )}
-      onClick={onClick}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <Avatar className="w-10 h-10 flex-shrink-0">
-            <AvatarFallback className={cn(
-              "text-white font-medium",
-              hasRealEmail ? "bg-blue-500" : "bg-orange-500"
-            )}>
-              {hasRealEmail ? (
-                <User className="w-5 h-5" />
-              ) : (
-                <UserX className="w-5 h-5" />
-              )}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-medium text-gray-900 truncate">
-                {candidate.full_name || 'Unnamed Candidate'}
-              </h3>
-              {!hasRealEmail && (
-                <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
-                  Pipeline Only
-                </Badge>
+    <>
+      <Card
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className={cn(
+          "bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer",
+          "hover:border-blue-300 group relative",
+          (isDragging || isSortableDragging) && "opacity-50 shadow-lg rotate-2"
+        )}
+        onClick={handleCardClick}
+      >
+        {/* User indicator */}
+        {isUser && (
+          <div className="absolute -top-2 -right-2 bg-green-500 rounded-full p-1 z-10">
+            <Check className="w-3 h-3 text-white" />
+          </div>
+        )}
+        
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            {/* Header with name and convert button */}
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 truncate text-sm">
+                  {candidate.full_name}
+                </h3>
+                {candidate.email && (
+                  <p className="text-xs text-gray-500 truncate mt-1">
+                    {candidate.email}
+                  </p>
+                )}
+              </div>
+              
+              {/* Convert to user button - only show if not already a user */}
+              {!isUser && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
+                  onClick={handleConvertClick}
+                  title="Convert to User"
+                >
+                  <UserPlus className="w-4 h-4 text-blue-600" />
+                </Button>
               )}
             </div>
-            
-            {hasRealEmail && (
-              <div className="flex items-center gap-1 text-sm text-gray-600 mb-2">
-                <Mail className="w-3 h-3" />
-                <span className="truncate">{candidate.email}</span>
+
+            {/* Company and location */}
+            {candidate.current_company && (
+              <div className="flex items-center gap-1 text-xs text-gray-600">
+                <User className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">{candidate.current_company}</span>
               </div>
             )}
-            
-            <div className="space-y-1">
-              {candidate.current_company && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <Building2 className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{candidate.current_company}</span>
-                </div>
-              )}
-              
-              {candidate.applied_company && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <Briefcase className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{candidate.applied_company}</span>
-                </div>
-              )}
-              
-              {candidate.applied_job_title && (
-                <div className="text-sm text-gray-500 truncate">
-                  {candidate.applied_job_title}
-                </div>
-              )}
-            </div>
-            
+
+            {/* Experience */}
             {candidate.years_of_experience && (
-              <div className="text-xs text-gray-500 mt-2">
-                {candidate.years_of_experience} years exp.
+              <div className="flex items-center gap-1 text-xs text-gray-600">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span>{candidate.years_of_experience} years exp.</span>
+              </div>
+            )}
+
+            {/* Salary */}
+            {candidate.salary && (
+              <div className="flex items-center gap-1 text-xs text-gray-600">
+                <DollarSign className="w-3 h-3 flex-shrink-0" />
+                <span>${candidate.salary.toLocaleString()}</span>
+              </div>
+            )}
+
+            {/* Skills */}
+            {candidate.skillsets && candidate.skillsets.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {candidate.skillsets.slice(0, 2).map((skill: string, index: number) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200"
+                  >
+                    {skill}
+                  </Badge>
+                ))}
+                {candidate.skillsets.length > 2 && (
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs px-2 py-0.5 bg-gray-50 text-gray-600"
+                  >
+                    +{candidate.skillsets.length - 2}
+                  </Badge>
+                )}
+              </div>
+            )}
+
+            {/* Phone number */}
+            {candidate.phone_number && (
+              <div className="text-xs text-gray-500 truncate">
+                📱 {candidate.phone_number}
+              </div>
+            )}
+
+            {/* Notes preview */}
+            {candidate.general_notes && (
+              <div className="text-xs text-gray-500 line-clamp-2">
+                {candidate.general_notes}
               </div>
             )}
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
+        </CardContent>
+      </Card>
 
-CandidateCard.displayName = 'CandidateCard';
+      {/* Dialogs */}
+      <CandidateDetailDialog
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        candidate={candidate}
+      />
+      
+      <ConvertCandidateToUserDialog
+        open={showConvertDialog}
+        onOpenChange={setShowConvertDialog}
+        candidate={candidate}
+      />
+    </>
+  );
+};

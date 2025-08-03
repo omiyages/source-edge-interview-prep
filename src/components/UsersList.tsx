@@ -23,16 +23,17 @@ export const UsersList = () => {
   const [showUserForm, setShowUserForm] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
 
-  const { data: users, isLoading, refetch } = useQuery({
-    queryKey: ['admin-users'],
+  // Fetch candidates instead of profiles for the main list
+  const { data: candidates, isLoading, refetch } = useQuery({
+    queryKey: ['admin-candidates'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('candidates')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as UserProfile[];
+      return data;
     },
   });
 
@@ -40,7 +41,7 @@ export const UsersList = () => {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading users...</p>
+        <p className="mt-4 text-gray-600">Loading candidates...</p>
       </div>
     );
   }
@@ -51,7 +52,7 @@ export const UsersList = () => {
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
-            All Candidates ({users?.length || 0})
+            All Candidates ({candidates?.length || 0})
           </CardTitle>
           <Button 
             onClick={() => setShowUserForm(true)}
@@ -63,7 +64,7 @@ export const UsersList = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {users && users.length > 0 ? (
+        {candidates && candidates.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -73,16 +74,21 @@ export const UsersList = () => {
                   <TableHead>Company</TableHead>
                   <TableHead>Experience</TableHead>
                   <TableHead>Skills</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {candidates.map((candidate) => (
                   <UserTableRow
-                    key={user.id}
-                    user={user}
+                    key={candidate.id}
+                    user={{
+                      ...candidate,
+                      role: 'candidate', // Set role as candidate for display
+                      created_at: candidate.created_at,
+                      updated_at: candidate.updated_at
+                    } as UserProfile}
                     onDelete={deleteUserMutation.mutate}
                     isDeleting={deleteUserMutation.isPending}
                     onEdit={setEditingUser}
@@ -94,8 +100,8 @@ export const UsersList = () => {
         ) : (
           <div className="text-center py-8">
             <User className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">No users found</h3>
-            <p className="text-gray-500">Users will appear here once they are created.</p>
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">No candidates found</h3>
+            <p className="text-gray-500">Candidates will appear here once they are created.</p>
           </div>
         )}
       </CardContent>
