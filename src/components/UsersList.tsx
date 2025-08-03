@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -252,7 +253,7 @@ const UsersList = () => {
     id: candidate.id,
     email: candidate.email || '',
     full_name: candidate.full_name || '',
-    role: 'user' as const,
+    role: 'user',
     created_at: candidate.created_at,
     updated_at: candidate.updated_at,
     last_login_at: null,
