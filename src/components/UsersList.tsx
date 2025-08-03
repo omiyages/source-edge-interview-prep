@@ -252,7 +252,7 @@ const UsersList = () => {
     id: candidate.id,
     email: candidate.email || '',
     full_name: candidate.full_name || '',
-    role: 'user' as 'user' | 'admin',
+    role: 'user' as const,
     created_at: candidate.created_at,
     updated_at: candidate.updated_at,
     last_login_at: null,
