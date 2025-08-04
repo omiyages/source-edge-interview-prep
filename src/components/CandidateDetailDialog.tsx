@@ -1,6 +1,18 @@
 
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -14,8 +26,12 @@ import {
   Calendar,
   Building2,
   Star,
-  UserPlus
+  UserPlus,
+  Trash2,
+  Loader2
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { ConvertCandidateToUserDialog } from './ConvertCandidateToUserDialog';
 
 interface CandidateDetailDialogProps {
@@ -23,20 +39,62 @@ interface CandidateDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   candidate: any;
   onRefresh?: () => void;
+  onDelete?: () => void;
 }
 
 export const CandidateDetailDialog = ({ 
   open, 
   onOpenChange, 
   candidate,
-  onRefresh
+  onRefresh,
+  onDelete
 }: CandidateDetailDialogProps) => {
   const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async ({ candidateId }: { candidateId: string }) => {
+      // First remove from pipeline if exists
+      const { error: pipelineError } = await supabase
+        .from('candidate_pipeline')
+        .delete()
+        .eq('candidate_id', candidateId);
+
+      if (pipelineError) {
+        console.error('Error removing candidate from pipeline:', pipelineError);
+      }
+
+      // Then delete the candidate
+      const { error: candidateError } = await supabase
+        .from('candidates')
+        .delete()
+        .eq('id', candidateId);
+
+      if (candidateError) {
+        throw candidateError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
+      toast.success('Candidate deleted successfully');
+      onDelete?.();
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete candidate: ${error.message}`);
+    },
+  });
 
   if (!candidate) return null;
 
   const isUser = candidate.is_user || candidate.user_id;
   const hasEmail = candidate.email && !candidate.email.includes('@noemail.local');
+
+  const handleDeleteCandidate = () => {
+    deleteMutation.mutate({ candidateId: candidate.id });
+  };
 
   const handleConvertSuccess = () => {
     onRefresh?.();
@@ -48,19 +106,60 @@ export const CandidateDetailDialog = ({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              {candidate.full_name || 'Unnamed Candidate'}
-              {!isUser && (
-                <Badge variant="secondary" className="ml-2">
-                  Candidate
-                </Badge>
-              )}
-              {isUser && (
-                <Badge variant="default" className="ml-2">
-                  User
-                </Badge>
-              )}
+            <DialogTitle className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                {candidate.full_name || 'Unnamed Candidate'}
+                {!isUser && (
+                  <Badge variant="secondary" className="ml-2">
+                    Candidate
+                  </Badge>
+                )}
+                {isUser && (
+                  <Badge variant="default" className="ml-2">
+                    User
+                  </Badge>
+                )}
+              </div>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="ml-2"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Candidate</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this candidate? This action cannot be undone.
+                      This will permanently remove the candidate from the system and any pipeline data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteCandidate}
+                      disabled={deleteMutation.isPending}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {deleteMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        'Delete'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </DialogTitle>
           </DialogHeader>
 

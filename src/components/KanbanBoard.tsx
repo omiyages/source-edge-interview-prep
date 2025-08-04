@@ -3,6 +3,7 @@ import React, { useState, memo } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { KanbanColumn } from './KanbanColumn';
 import { CandidateCard } from './CandidateCard';
+import { CandidateDetailDialog } from './CandidateDetailDialog';
 import { CandidateSearchDialog } from './CandidateSearchDialog';
 import { KanbanBoardHeader } from './KanbanBoardHeader';
 import { KanbanFilters } from './KanbanFilters';
@@ -15,6 +16,8 @@ import { useKanbanFilters } from '@/hooks/useKanbanFilters';
 export const KanbanBoard = memo(() => {
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [showCandidateDetail, setShowCandidateDetail] = useState(false);
   
   const { data: stages = [] } = useHiringStages();
   const { data: candidates = [] } = useCandidatesWithPipeline(showInactive);
@@ -31,6 +34,22 @@ export const KanbanBoard = memo(() => {
   const { getCandidatesForStage } = useKanbanStageData(filteredCandidates);
   const { handleSelectCandidate } = useKanbanActions(stages);
   const { sensors, activeCandidate, handleDragStart, handleDragEnd } = useKanbanDragDrop(filteredCandidates);
+
+  const handleCandidateClick = (candidate: any) => {
+    setSelectedCandidate(candidate);
+    setShowCandidateDetail(true);
+  };
+
+  const handleCandidateDetailClose = () => {
+    setShowCandidateDetail(false);
+    setSelectedCandidate(null);
+  };
+
+  const handleCandidateDelete = () => {
+    setShowCandidateDetail(false);
+    setSelectedCandidate(null);
+    // The query will be invalidated by the delete mutation
+  };
 
   return (
     <div className="h-full">
@@ -63,6 +82,7 @@ export const KanbanBoard = memo(() => {
               color={stage.color}
               candidates={getCandidatesForStage(stage.id)}
               showInactive={showInactive}
+              onCandidateClick={handleCandidateClick}
             />
           ))}
         </div>
@@ -81,6 +101,16 @@ export const KanbanBoard = memo(() => {
         open={showSearchDialog}
         onOpenChange={setShowSearchDialog}
         onSelectCandidate={handleSelectCandidate}
+      />
+
+      <CandidateDetailDialog
+        open={showCandidateDetail}
+        onOpenChange={setShowCandidateDetail}
+        candidate={selectedCandidate}
+        onRefresh={() => {
+          // Queries will be automatically invalidated
+        }}
+        onDelete={handleCandidateDelete}
       />
     </div>
   );

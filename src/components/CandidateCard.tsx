@@ -11,12 +11,14 @@ interface CandidateCardProps {
   candidate: Candidate;
   isDragging?: boolean;
   showInactive?: boolean;
+  onClick?: () => void;
 }
 
 export const CandidateCard: React.FC<CandidateCardProps> = ({ 
   candidate, 
   isDragging = false, 
-  showInactive = false 
+  showInactive = false,
+  onClick
 }) => {
   const [showConvertDialog, setShowConvertDialog] = useState(false);
 
@@ -27,7 +29,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
   return (
     <>
-      <Card className={`w-full mb-3 hover:shadow-md transition-shadow cursor-pointer bg-card ${isDragging ? 'opacity-50' : ''}`}>
+      <Card className={`w-full mb-3 hover:shadow-md transition-shadow cursor-pointer bg-card ${isDragging ? 'opacity-50' : ''}`} onClick={onClick}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">

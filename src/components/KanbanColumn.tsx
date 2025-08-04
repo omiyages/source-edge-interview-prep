@@ -10,6 +10,7 @@ interface KanbanColumnProps {
   color: string;
   candidates: any[];
   showInactive?: boolean;
+  onCandidateClick?: (candidate: any) => void;
 }
 
 export const KanbanColumn = ({ 
@@ -17,7 +18,8 @@ export const KanbanColumn = ({
   title, 
   color, 
   candidates, 
-  showInactive = false 
+  showInactive = false,
+  onCandidateClick
 }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -56,6 +58,7 @@ export const KanbanColumn = ({
             key={candidate.applicationId || candidate.id}
             candidate={candidate}
             showInactive={showInactive}
+            onClick={() => onCandidateClick?.(candidate)}
           />
         ))}
         
