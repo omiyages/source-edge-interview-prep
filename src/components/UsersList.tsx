@@ -35,7 +35,7 @@ type UserRole = 'user' | 'admin';
 interface UserTableRowProps {
   userProfile: Profile;
   onDelete: (userId: string) => void;
-  onRoleChange: (userId: string, newRole: string) => void;
+  onRoleChange: (userId: string, newRole: UserRole) => void;
   isCurrentUser: boolean;
   isAdmin: boolean;
 }
@@ -204,7 +204,7 @@ const UsersList = () => {
 
   // Mutation to update user role
   const updateUserRoleMutation = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string, newRole: string }) => {
+    mutationFn: async ({ userId, newRole }: { userId: string, newRole: UserRole }) => {
       const { error } = await supabase
         .from('profiles')
         .update({ role: newRole })
@@ -228,7 +228,7 @@ const UsersList = () => {
     await deleteUserMutation.mutateAsync(userId);
   };
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
     await updateUserRoleMutation.mutateAsync({ userId, newRole });
   };
 
