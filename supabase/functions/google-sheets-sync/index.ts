@@ -27,13 +27,13 @@ serve(async (req) => {
   }
 
   try {
-    const { spreadsheetId, range } = await req.json()
+    const { integrationId, sheetId, range, columnMappings } = await req.json()
     
-    if (!spreadsheetId || !range) {
-      throw new Error('Missing required parameters: spreadsheetId and range')
+    if (!sheetId || !range) {
+      throw new Error('Missing required parameters: sheetId and range')
     }
 
-    console.log('Starting Google Sheets sync with:', { spreadsheetId, range })
+    console.log('Starting Google Sheets sync with:', { sheetId, range })
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -47,7 +47,7 @@ serve(async (req) => {
     }
 
     // Fetch data from Google Sheets
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`
     console.log('Fetching from Google Sheets:', sheetsUrl)
     
     const response = await fetch(sheetsUrl)
