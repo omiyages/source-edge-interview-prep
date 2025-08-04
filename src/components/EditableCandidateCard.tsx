@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Check, UserPlus, Building, Phone, Mail, X, Edit2, Save, Loader2 } from 'lucide-react';
+import { Check, UserPlus, Building, Phone, Mail } from 'lucide-react';
 import { ConvertCandidateToUserDialog } from './ConvertCandidateToUserDialog';
+import { EditableCompanyJobFields } from '@/components/ui/editable-company-job-fields';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,11 +24,6 @@ export const EditableCandidateCard: React.FC<EditableCandidateCardProps> = ({
   onClick
 }) => {
   const [showConvertDialog, setShowConvertDialog] = useState(false);
-  const [isEditingCompany, setIsEditingCompany] = useState(false);
-  const [isEditingJobTitle, setIsEditingJobTitle] = useState(false);
-  const [editCompany, setEditCompany] = useState(candidate.applied_company || '');
-  const [editJobTitle, setEditJobTitle] = useState(candidate.applied_job_title || '');
-
   const queryClient = useQueryClient();
 
   const updatePipelineMutation = useMutation({
@@ -60,24 +55,8 @@ export const EditableCandidateCard: React.FC<EditableCandidateCardProps> = ({
     // The query will be invalidated by the dialog component
   };
 
-  const handleCompanySave = () => {
-    updatePipelineMutation.mutate({ company: editCompany });
-    setIsEditingCompany(false);
-  };
-
-  const handleJobTitleSave = () => {
-    updatePipelineMutation.mutate({ jobTitle: editJobTitle });
-    setIsEditingJobTitle(false);
-  };
-
-  const handleCompanyCancel = () => {
-    setEditCompany(candidate.applied_company || '');
-    setIsEditingCompany(false);
-  };
-
-  const handleJobTitleCancel = () => {
-    setEditJobTitle(candidate.applied_job_title || '');
-    setIsEditingJobTitle(false);
+  const handlePipelineUpdate = async (updates: { company?: string; jobTitle?: string }) => {
+    return updatePipelineMutation.mutateAsync(updates);
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -153,119 +132,12 @@ export const EditableCandidateCard: React.FC<EditableCandidateCardProps> = ({
               </div>
             )}
 
-            {/* Editable Applied Company */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">Applied Company:</span>
-                {!isEditingCompany && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 edit-controls"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditingCompany(true);
-                    }}
-                  >
-                    <Edit2 className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-              
-              {isEditingCompany ? (
-                <div className="flex items-center gap-1 edit-controls">
-                  <Input
-                    value={editCompany}
-                    onChange={(e) => setEditCompany(e.target.value)}
-                    className="h-6 text-xs"
-                    placeholder="Company name"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={handleCompanySave}
-                    disabled={updatePipelineMutation.isPending}
-                  >
-                    {updatePipelineMutation.isPending ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Check className="w-3 h-3" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={handleCompanyCancel}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-xs text-foreground bg-muted px-2 py-1 rounded">
-                  {candidate.applied_company || 'Not specified'}
-                </div>
-              )}
-            </div>
-
-            {/* Editable Applied Job Title */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">Applied Role:</span>
-                {!isEditingJobTitle && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 edit-controls"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditingJobTitle(true);
-                    }}
-                  >
-                    <Edit2 className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-              
-              {isEditingJobTitle ? (
-                <div className="flex items-center gap-1 edit-controls">
-                  <Input
-                    value={editJobTitle}
-                    onChange={(e) => setEditJobTitle(e.target.value)}
-                    className="h-6 text-xs"
-                    placeholder="Job title"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={handleJobTitleSave}
-                    disabled={updatePipelineMutation.isPending}
-                  >
-                    {updatePipelineMutation.isPending ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Check className="w-3 h-3" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={handleJobTitleCancel}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-xs text-foreground bg-muted px-2 py-1 rounded">
-                  {candidate.applied_job_title || 'Not specified'}
-                </div>
-              )}
-            </div>
+            <EditableCompanyJobFields
+              appliedCompany={candidate.applied_company || ''}
+              appliedJobTitle={candidate.applied_job_title || ''}
+              onUpdate={handlePipelineUpdate}
+              isUpdating={updatePipelineMutation.isPending}
+            />
             
             {candidate.skillsets && candidate.skillsets.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">

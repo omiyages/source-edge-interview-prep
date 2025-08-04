@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { CompanySelect, JobTitleSelect } from '@/components/ui/company-job-select';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -357,21 +358,20 @@ export const EditCandidateDetailDialog = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="applied_company">Applied Company</Label>
-                <Input
-                  id="applied_company"
+                <CompanySelect
                   value={formData.applied_company}
-                  onChange={(e) => handleInputChange('applied_company', e.target.value)}
-                  placeholder="Enter company they applied to"
+                  onChange={(value) => handleInputChange('applied_company', value)}
+                  placeholder="Select company they applied to"
                 />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="applied_job_title">Applied Job Title</Label>
-                <Input
-                  id="applied_job_title"
+                <JobTitleSelect
                   value={formData.applied_job_title}
-                  onChange={(e) => handleInputChange('applied_job_title', e.target.value)}
-                  placeholder="Enter job title they applied for"
+                  onChange={(value) => handleInputChange('applied_job_title', value)}
+                  company={formData.applied_company}
+                  placeholder="Select job title they applied for"
                 />
               </div>
             </div>

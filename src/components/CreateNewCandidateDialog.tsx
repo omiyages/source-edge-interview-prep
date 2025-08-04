@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, User, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CompanySelect, JobTitleSelect } from '@/components/ui/company-job-select';
 
 interface CreateNewCandidateDialogProps {
   open: boolean;
@@ -139,23 +140,20 @@ export const CreateNewCandidateDialog = ({
 
           <div className="space-y-2">
             <Label htmlFor="applied_company">Applied Company *</Label>
-            <Input
-              id="applied_company"
+            <CompanySelect
               value={formData.applied_company}
-              onChange={(e) => handleInputChange('applied_company', e.target.value)}
-              placeholder="Enter company they applied to"
-              required
+              onChange={(value) => handleInputChange('applied_company', value)}
+              placeholder="Select company they applied to"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="applied_job_title">Applied Job Title *</Label>
-            <Input
-              id="applied_job_title"
+            <JobTitleSelect
               value={formData.applied_job_title}
-              onChange={(e) => handleInputChange('applied_job_title', e.target.value)}
-              placeholder="Enter job title they applied for"
-              required
+              onChange={(value) => handleInputChange('applied_job_title', value)}
+              company={formData.applied_company}
+              placeholder="Select job title they applied for"
             />
           </div>
 
