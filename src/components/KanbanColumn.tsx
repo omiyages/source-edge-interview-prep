@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { CandidateCard } from './CandidateCard';
+import { EditableCandidateCard } from './EditableCandidateCard';
 import { cn } from '@/lib/utils';
 
 interface KanbanColumnProps {
@@ -54,7 +54,7 @@ export const KanbanColumn = ({
         )}
       >
         {visibleCandidates.map((candidate) => (
-          <CandidateCard
+          <EditableCandidateCard
             key={candidate.applicationId || candidate.id}
             candidate={candidate}
             showInactive={showInactive}

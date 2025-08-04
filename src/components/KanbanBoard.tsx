@@ -3,7 +3,7 @@ import React, { useState, memo } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { KanbanColumn } from './KanbanColumn';
 import { CandidateCard } from './CandidateCard';
-import { CandidateDetailDialog } from './CandidateDetailDialog';
+import { EditCandidateDetailDialog } from './EditCandidateDetailDialog';
 import { CandidateSearchDialog } from './CandidateSearchDialog';
 import { KanbanBoardHeader } from './KanbanBoardHeader';
 import { KanbanFilters } from './KanbanFilters';
@@ -103,11 +103,11 @@ export const KanbanBoard = memo(() => {
         onSelectCandidate={handleSelectCandidate}
       />
 
-      <CandidateDetailDialog
+      <EditCandidateDetailDialog
         open={showCandidateDetail}
         onOpenChange={setShowCandidateDetail}
         candidate={selectedCandidate}
-        onRefresh={() => {
+        onSave={() => {
           // Queries will be automatically invalidated
         }}
         onDelete={handleCandidateDelete}
