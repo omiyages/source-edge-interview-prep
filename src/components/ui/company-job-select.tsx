@@ -39,9 +39,11 @@ export const CompanySelect = ({ value, onChange, placeholder = "Select company",
 
       if (error) throw error;
       
-      // Get unique companies
-      const uniqueCompanies = [...new Set(data.map(course => course.company))].filter(Boolean);
-      return uniqueCompanies.sort();
+      // Get unique companies and filter out empty/null values
+      const uniqueCompanies = [...new Set(data.map(course => course.company))]
+        .filter(company => company && company.trim().length > 0)
+        .sort();
+      return uniqueCompanies;
     },
   });
 
@@ -84,10 +86,10 @@ export const CompanySelect = ({ value, onChange, placeholder = "Select company",
         </SelectTrigger>
         <SelectContent>
           {isLoading ? (
-            <SelectItem value="" disabled>Loading companies...</SelectItem>
+            <SelectItem value="loading" disabled>Loading companies...</SelectItem>
           ) : (
             <>
-              {companies.map((company) => (
+              {companies.filter(company => company && company.trim()).map((company) => (
                 <SelectItem key={company} value={company}>
                   {company}
                 </SelectItem>
@@ -178,10 +180,10 @@ export const JobTitleSelect = ({ value, onChange, company, placeholder = "Select
 
       if (error) throw error;
       
-      // Get unique job titles from all attached_jobs arrays
+      // Get unique job titles from all attached_jobs arrays and filter out empty values
       const allJobTitles = data
         .flatMap(course => course.attached_jobs || [])
-        .filter(Boolean);
+        .filter(jobTitle => jobTitle && jobTitle.trim().length > 0);
       
       const uniqueJobTitles = [...new Set(allJobTitles)].sort();
       return uniqueJobTitles;
@@ -258,10 +260,10 @@ export const JobTitleSelect = ({ value, onChange, company, placeholder = "Select
         </SelectTrigger>
         <SelectContent>
           {isLoading ? (
-            <SelectItem value="" disabled>Loading job titles...</SelectItem>
+            <SelectItem value="loading" disabled>Loading job titles...</SelectItem>
           ) : (
             <>
-              {jobTitles.map((jobTitle) => (
+              {jobTitles.filter(jobTitle => jobTitle && jobTitle.trim()).map((jobTitle) => (
                 <SelectItem key={jobTitle} value={jobTitle}>
                   {jobTitle}
                 </SelectItem>
