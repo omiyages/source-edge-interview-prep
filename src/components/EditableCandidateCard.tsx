@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Check, UserPlus, Building, Phone, Mail } from 'lucide-react';
+import { Check, UserPlus, Building, Phone, Mail, X } from 'lucide-react';
 import { ConvertCandidateToUserDialog } from './ConvertCandidateToUserDialog';
 import { EditableCompanyJobFields } from '@/components/ui/editable-company-job-fields';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,13 +15,15 @@ interface EditableCandidateCardProps {
   isDragging?: boolean;
   showInactive?: boolean;
   onClick?: () => void;
+  onDelete?: (candidateId: string) => void;
 }
 
 export const EditableCandidateCard: React.FC<EditableCandidateCardProps> = ({ 
   candidate, 
   isDragging = false, 
   showInactive = false,
-  onClick
+  onClick,
+  onDelete
 }) => {
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const queryClient = useQueryClient();
@@ -96,19 +98,32 @@ export const EditableCandidateCard: React.FC<EditableCandidateCardProps> = ({
               )}
             </div>
             
-            {!candidate.is_user && (
+            <div className="flex gap-1 edit-controls">
               <Button
                 variant="outline"
                 size="sm"
-                className="ml-2 h-7 px-2 edit-controls"
+                className="h-7 px-2"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowConvertDialog(true);
+                  onDelete?.(candidate.id);
                 }}
               >
-                <UserPlus className="w-3 h-3" />
+                <X className="w-3 h-3" />
               </Button>
-            )}
+              {!candidate.is_user && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowConvertDialog(true);
+                  }}
+                >
+                  <UserPlus className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

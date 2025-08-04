@@ -11,6 +11,7 @@ interface KanbanColumnProps {
   candidates: any[];
   showInactive?: boolean;
   onCandidateClick?: (candidate: any) => void;
+  onDeleteCandidate?: (candidateId: string) => void;
 }
 
 export const KanbanColumn = ({ 
@@ -19,7 +20,8 @@ export const KanbanColumn = ({
   color, 
   candidates, 
   showInactive = false,
-  onCandidateClick
+  onCandidateClick,
+  onDeleteCandidate
 }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -59,6 +61,7 @@ export const KanbanColumn = ({
             candidate={candidate}
             showInactive={showInactive}
             onClick={() => onCandidateClick?.(candidate)}
+            onDelete={onDeleteCandidate}
           />
         ))}
         

@@ -198,7 +198,13 @@ serve(async (req) => {
           let usedDefault = false
 
           if (candidateData.stage) {
-            const mappedStageId = stageMap.get(candidateData.stage.toLowerCase())
+            // Map specific stages to "Interview 1"
+            let mappedStage = candidateData.stage.toLowerCase()
+            if (mappedStage === 'tech challenge' || mappedStage === 'hr screen') {
+              mappedStage = 'interview 1'
+            }
+            
+            const mappedStageId = stageMap.get(mappedStage)
             if (mappedStageId) {
               stageId = mappedStageId
             } else {

@@ -9,7 +9,7 @@ import { KanbanBoardHeader } from './KanbanBoardHeader';
 import { KanbanFilters } from './KanbanFilters';
 import { useHiringStages, useCandidatesWithPipeline } from '@/hooks/useKanbanData';
 import { useKanbanStageData } from '@/hooks/useKanbanStageData';
-import { useKanbanActions } from '@/hooks/useKanbanMutations';
+import { useKanbanActions, useDeleteCandidateCompletely } from '@/hooks/useKanbanMutations';
 import { useKanbanDragDrop } from '@/hooks/useKanbanDragDrop';
 import { useKanbanFilters } from '@/hooks/useKanbanFilters';
 
@@ -34,6 +34,7 @@ export const KanbanBoard = memo(() => {
   const { getCandidatesForStage } = useKanbanStageData(filteredCandidates);
   const { handleSelectCandidate } = useKanbanActions(stages);
   const { sensors, activeCandidate, handleDragStart, handleDragEnd } = useKanbanDragDrop(filteredCandidates);
+  const deleteCandidateMutation = useDeleteCandidateCompletely();
 
   const handleCandidateClick = (candidate: any) => {
     setSelectedCandidate(candidate);
@@ -49,6 +50,10 @@ export const KanbanBoard = memo(() => {
     setShowCandidateDetail(false);
     setSelectedCandidate(null);
     // The query will be invalidated by the delete mutation
+  };
+
+  const handleDeleteCandidate = (candidateId: string) => {
+    deleteCandidateMutation.mutate({ candidateId });
   };
 
   return (
@@ -83,6 +88,7 @@ export const KanbanBoard = memo(() => {
               candidates={getCandidatesForStage(stage.id)}
               showInactive={showInactive}
               onCandidateClick={handleCandidateClick}
+              onDeleteCandidate={handleDeleteCandidate}
             />
           ))}
         </div>
