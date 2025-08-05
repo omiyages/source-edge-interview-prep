@@ -183,25 +183,30 @@ export const useGoogleSheetsPreview = () => {
   }, []);
 
   const syncWithProgress = useCallback(async (integrationId: string) => {
+    console.log('🚀 Starting sync with progress tracking...', { 
+      integrationId, 
+      previewDataLength: previewData.length 
+    });
+    
     setSyncProgress({
       current: 0,
-      total: previewData.length,
+      total: previewData.length || 100, // Fallback to 100 if no preview data
       status: 'syncing',
       errors: []
     });
 
     try {
-      console.log('🚀 Starting sync with progress tracking...');
+      // Simulate progress updates with more frequent updates
+      let currentProgress = 0;
+      const totalItems = previewData.length || 100;
       
-      // Simulate progress updates (since we can't get real-time progress from edge function)
       const progressInterval = setInterval(() => {
         setSyncProgress(prev => {
-          if (prev.current < prev.total - 1) {
-            return { ...prev, current: prev.current + 1 };
-          }
-          return prev;
+          const newCurrent = Math.min(prev.current + Math.ceil(totalItems / 20), totalItems - 1);
+          console.log('Progress update:', newCurrent, '/', totalItems);
+          return { ...prev, current: newCurrent };
         });
-      }, 500); // Update every 500ms
+      }, 200); // Update every 200ms for smoother progress
 
       // Call the sync function
       const { data, error } = await supabase.functions.invoke('google-sheets-sync', {
@@ -215,7 +220,12 @@ export const useGoogleSheetsPreview = () => {
 
       clearInterval(progressInterval);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sync error:', error);
+        throw error;
+      }
+
+      console.log('Sync completed successfully:', data);
 
       setSyncProgress(prev => ({
         ...prev,
@@ -223,9 +233,9 @@ export const useGoogleSheetsPreview = () => {
         status: 'completed'
       }));
 
-      toast.success(`Successfully synced ${data.processedCount} candidates`);
+      toast.success(`Successfully synced ${data?.processedCount || 'all'} candidates`);
       
-      if (data.errors && data.errors.length > 0) {
+      if (data?.errors && data.errors.length > 0) {
         setSyncProgress(prev => ({
           ...prev,
           errors: data.errors
@@ -238,7 +248,7 @@ export const useGoogleSheetsPreview = () => {
       setSyncProgress(prev => ({
         ...prev,
         status: 'error',
-        errors: [error.message || 'Sync failed']
+        errors: [error?.message || 'Sync failed']
       }));
       throw error;
     }
