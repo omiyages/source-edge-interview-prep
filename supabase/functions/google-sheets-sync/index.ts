@@ -69,9 +69,18 @@ serve(async (req) => {
     
     // Import private key for signing
     const privateKeyPem = serviceAccount.private_key.replace(/\\n/g, '\n')
+    
+    // Remove PEM headers and footers and decode base64
+    const pemContents = privateKeyPem
+      .replace(/-----BEGIN PRIVATE KEY-----/, '')
+      .replace(/-----END PRIVATE KEY-----/, '')
+      .replace(/\s/g, '')
+    
+    const keyData = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0))
+    
     const privateKey = await crypto.subtle.importKey(
       'pkcs8',
-      new TextEncoder().encode(privateKeyPem),
+      keyData,
       { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
       false,
       ['sign']
