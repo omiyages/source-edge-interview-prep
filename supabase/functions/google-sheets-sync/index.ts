@@ -145,11 +145,12 @@ serve(async (req) => {
     }
 
     // Get header row and data rows
-    const headers = rows[0].map((h: string) => h.toLowerCase().trim())
+    const headers = rows[0] // Keep original case for mapping
     const dataRows = rows.slice(1)
     
     console.log('Headers found:', headers)
     console.log('Data rows count:', dataRows.length)
+    console.log('Column mappings:', columnMappings)
 
     // Get all hiring stages to map stage names
     const { data: stages } = await supabaseClient
@@ -196,9 +197,12 @@ serve(async (req) => {
     let errorCount = 0
     let defaultStageCount = 0
     const errors: string[] = []
+    const totalRows = dataRows.length
+
+    console.log(`Starting to process ${totalRows} rows`)
 
     // Process candidates in batches
-    const batchSize = 10
+    const batchSize = 5
     for (let i = 0; i < dataRows.length; i += batchSize) {
       const batch = dataRows.slice(i, i + batchSize)
       
@@ -211,49 +215,40 @@ serve(async (req) => {
             is_active: true // Default to active
           }
           
-          // Map spreadsheet columns to candidate fields
+          // Map spreadsheet columns to candidate fields using column mappings
           headers.forEach((header, index) => {
             const value = row[index]?.toString()?.trim()
             if (!value) return
 
-            switch (header) {
-              case 'name':
+            // Get the mapping for this header
+            const mapping = columnMappings[header]
+            if (!mapping) return
+
+            console.log(`Mapping ${header} (${mapping}): ${value}`)
+
+            switch (mapping) {
               case 'full_name':
-              case 'candidate name':
                 candidateData.full_name = value
                 break
               case 'email':
-              case 'email address':
                 candidateData.email = value
                 break
-              case 'phone':
               case 'phone_number':
-              case 'phone number':
                 candidateData.phone_number = value
                 break
-              case 'linkedin':
               case 'linkedin_profile':
-              case 'linkedin profile':
                 candidateData.linkedin_profile = value
                 break
-              case 'company':
               case 'current_company':
-              case 'current company':
                 candidateData.current_company = value
                 break
               case 'applied_company':
-              case 'applied company':
                 candidateData.applied_company = value
                 break
               case 'applied_job_title':
-              case 'applied job title':
-              case 'job_title':
-              case 'job title':
                 candidateData.applied_job_title = value
                 break
-              case 'experience':
               case 'years_of_experience':
-              case 'years of experience':
                 const exp = parseInt(value)
                 if (!isNaN(exp)) candidateData.years_of_experience = exp
                 break
@@ -261,28 +256,20 @@ serve(async (req) => {
                 const sal = parseInt(value.replace(/[,$]/g, ''))
                 if (!isNaN(sal)) candidateData.salary = sal
                 break
-              case 'skills':
               case 'skillsets':
                 candidateData.skillsets = value.split(',').map(s => s.trim()).filter(Boolean)
                 break
               case 'past_companies':
-              case 'past companies':
                 candidateData.past_companies = value.split(',').map(s => s.trim()).filter(Boolean)
                 break
-              case 'notes':
               case 'general_notes':
                 candidateData.general_notes = value
                 break
-              case 'stage':
-              case 'hiring_stage':
-                candidateData.stage = value
-                break
               case 'kanban_stage':
+              case 'stage':
                 candidateData.stage = value
                 break
-              case 'active':
               case 'is_active':
-              case 'status':
                 // Handle Yes/No for active status - Yes = Active, No = Inactive
                 const lowerValue = value.toLowerCase().trim()
                 candidateData.is_active = lowerValue === 'yes' || lowerValue === 'active' || lowerValue === 'true' || lowerValue === '1'
@@ -380,7 +367,12 @@ serve(async (req) => {
           }
 
           processedCount++
-          console.log(`Processed candidate: ${candidateData.full_name}${usedDefault ? ' (default stage)' : ''}`)
+          console.log(`✅ Processed candidate ${processedCount}/${totalRows}: ${candidateData.full_name}${usedDefault ? ' (default stage)' : ''}`)
+
+          // Log progress every 10 candidates or on last candidate
+          if (processedCount % 10 === 0 || processedCount === totalRows) {
+            console.log(`📊 Progress: ${processedCount}/${totalRows} (${Math.round(processedCount/totalRows*100)}%)`)
+          }
 
         } catch (error) {
           console.error(`Error processing row ${i + 2}:`, error)
@@ -393,21 +385,19 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 100))
     }
 
-    const result = {
+    console.log(`🎉 Sync completed: ${processedCount} processed, ${errorCount} errors, ${defaultStageCount} used default stage`)
+
+    return new Response(JSON.stringify({
       success: true,
-      message: `Successfully processed ${processedCount} candidates`,
-      details: {
-        processed: processedCount,
-        errors: errorCount,
-        defaultStageAssignments: defaultStageCount,
-        errorMessages: errors.slice(0, 10) // Limit to first 10 errors
-      }
-    }
-
-    console.log('Sync completed:', result)
-
-    return new Response(JSON.stringify(result), {
+      processedCount,
+      errorCount,
+      defaultStageCount,
+      totalRows,
+      errors: errors.slice(0, 10), // Limit error messages
+      message: `Successfully processed ${processedCount} candidates. ${defaultStageCount} candidates were assigned to the default stage due to stage mapping issues.`
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
     })
 
   } catch (error) {

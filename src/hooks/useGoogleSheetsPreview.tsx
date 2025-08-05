@@ -39,18 +39,37 @@ export const useGoogleSheetsPreview = () => {
   ) => {
     setIsLoading(true);
     try {
+      console.log('Generating preview for:', { sheetId, range, columnMappings });
+      
       // Get sample data from the Google Sheets
-      const { data: sampleData, error } = await supabase.functions.invoke('google-sheets-sample', {
-        body: { sheetId, range }
+      const { data: response, error } = await supabase.functions.invoke('google-sheets-sample', {
+        body: { sheetId, range: 'A1:Z10' }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sample data error:', error);
+        throw error;
+      }
+
+      console.log('Sample data response:', response);
+
+      if (!response?.values || response.values.length === 0) {
+        throw new Error('No data found in the specified range');
+      }
+
+      const headers = response.values[0] || [];
+      const dataRows = response.values.slice(1);
+
+      console.log('Headers found:', headers);
+      console.log('Data rows:', dataRows.length);
 
       // Get hiring stages for mapping
       const { data: stages } = await supabase
         .from('hiring_stages')
         .select('id, name')
         .order('order_index');
+
+      console.log('Available stages:', stages?.map(s => s.name));
 
       const stageMap = new Map(stages?.map(s => [s.name.toLowerCase(), s.id]) || []);
       
@@ -81,9 +100,9 @@ export const useGoogleSheetsPreview = () => {
         }
       });
 
-      const { headers, data: rows } = sampleData;
-      
-      const candidates: PreviewCandidate[] = rows.slice(1).map((row: string[], index: number) => {
+      console.log('Fuzzy stage mappings:', Array.from(fuzzyStageMap.keys()));
+
+      const candidates: PreviewCandidate[] = dataRows.map((row: string[], index: number) => {
         const candidate: PreviewCandidate = {
           name: '',
           rowNumber: index + 2,
@@ -96,6 +115,8 @@ export const useGoogleSheetsPreview = () => {
           const value = row[colIndex]?.toString()?.trim();
           
           if (!value) return;
+
+          console.log(`Mapping ${header} (${mapping}): ${value}`);
 
           switch (mapping) {
             case 'full_name':
@@ -118,18 +139,21 @@ export const useGoogleSheetsPreview = () => {
               candidate.stage = value;
               // Try to map the stage
               const lowerStage = value.toLowerCase().trim();
-              const exactMatch = stageMap.has(lowerStage) ? lowerStage : null;
+              const exactMatch = Array.from(stageMap.keys()).find(key => key === lowerStage);
               const fuzzyMatch = fuzzyStageMap.get(lowerStage) || 
                                fuzzyStageMap.get(lowerStage.replace(/\s+/g, '')) ||
                                fuzzyStageMap.get(lowerStage.replace(/\s+/g, '_'));
               
               if (exactMatch) {
                 candidate.mappedStage = stages?.find(s => s.id === stageMap.get(exactMatch))?.name;
+                console.log(`✅ Exact match for "${value}": ${candidate.mappedStage}`);
               } else if (fuzzyMatch) {
                 candidate.mappedStage = fuzzyMatch;
+                console.log(`✅ Fuzzy match for "${value}": ${candidate.mappedStage}`);
               } else {
                 candidate.mappedStage = stages?.[0]?.name || 'Default';
                 candidate.issues.push(`Stage "${value}" not found, will use default stage`);
+                console.log(`❌ No match for "${value}", using default`);
               }
               break;
             case 'is_active':
@@ -144,9 +168,11 @@ export const useGoogleSheetsPreview = () => {
           candidate.issues.push('Missing candidate name');
         }
 
+        console.log(`Processed candidate ${index + 1}:`, candidate);
         return candidate;
       });
 
+      console.log('Generated preview with', candidates.length, 'candidates');
       setPreviewData(candidates);
     } catch (error) {
       console.error('Preview generation failed:', error);
@@ -165,10 +191,29 @@ export const useGoogleSheetsPreview = () => {
     });
 
     try {
+      console.log('🚀 Starting sync with progress tracking...');
+      
+      // Simulate progress updates (since we can't get real-time progress from edge function)
+      const progressInterval = setInterval(() => {
+        setSyncProgress(prev => {
+          if (prev.current < prev.total - 1) {
+            return { ...prev, current: prev.current + 1 };
+          }
+          return prev;
+        });
+      }, 500); // Update every 500ms
+
       // Call the sync function
       const { data, error } = await supabase.functions.invoke('google-sheets-sync', {
-        body: { integrationId }
+        body: { 
+          integrationId,
+          sheetId: '', // These will be fetched from the integration
+          range: '',
+          columnMappings: {}
+        }
       });
+
+      clearInterval(progressInterval);
 
       if (error) throw error;
 
@@ -189,7 +234,7 @@ export const useGoogleSheetsPreview = () => {
 
       return data;
     } catch (error) {
-      console.error('Sync failed:', error);
+      console.error('❌ Sync failed:', error);
       setSyncProgress(prev => ({
         ...prev,
         status: 'error',
