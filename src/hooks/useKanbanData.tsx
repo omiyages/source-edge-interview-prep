@@ -86,16 +86,24 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             past_companies,
             general_notes,
             is_active
-          ),
-          hiring_stages (
-            id,
-            name,
-            color,
-            order_index
-          )
-        `);
-      
-      const { data, error } = await query;
+           ),
+           hiring_stages (
+             id,
+             name,
+             color,
+             order_index
+           ),
+           is_active,
+           applied_company,
+           applied_job_title,
+           moved_at
+         `);
+       
+       if (!includeInactive) {
+         query = query.eq('is_active', true);
+       }
+       
+       const { data, error } = await query;
       
       if (error) {
         console.error('Error fetching candidates:', error);
@@ -123,37 +131,37 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             isUser = !!profile;
           }
 
-          return {
-            id: candidate?.id || '',
-            pipeline_id: item.id,
-            stage_id: item.stage_id,
-            full_name: candidate?.full_name || null,
-            email: candidate?.email || null,
-            phone_number: candidate?.phone_number || null,
-            linkedin_profile: candidate?.linkedin_profile || null,
-            current_company: candidate?.current_company || null,
-            years_of_experience: candidate?.years_of_experience || null,
-            salary: candidate?.salary || null,
-            skillsets: candidate?.skillsets || [],
-            past_companies: candidate?.past_companies || [],
-            general_notes: candidate?.general_notes || null,
-            is_active: candidate?.is_active ?? true,
-            is_user: isUser,
-            notes: item.notes,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-            stage: item.hiring_stages,
-            applications: [{
-              id: item.id,
-              stage_id: item.stage_id,
-              applied_company: null,
-              applied_job_title: null,
-              is_active: true,
-              created_at: item.created_at,
-              updated_at: item.updated_at,
-              moved_at: item.updated_at
-            }]
-          };
+           return {
+             id: candidate?.id || '',
+             pipeline_id: item.id,
+             stage_id: item.stage_id,
+             full_name: candidate?.full_name || null,
+             email: candidate?.email || null,
+             phone_number: candidate?.phone_number || null,
+             linkedin_profile: candidate?.linkedin_profile || null,
+             current_company: candidate?.current_company || null,
+             years_of_experience: candidate?.years_of_experience || null,
+             salary: candidate?.salary || null,
+             skillsets: candidate?.skillsets || [],
+             past_companies: candidate?.past_companies || [],
+             general_notes: candidate?.general_notes || null,
+             is_active: (candidate?.is_active ?? true) && (item.is_active ?? true),
+             is_user: isUser,
+             notes: item.notes,
+             created_at: item.created_at,
+             updated_at: item.updated_at,
+             stage: item.hiring_stages,
+             applications: [{
+               id: item.id,
+               stage_id: item.stage_id,
+               applied_company: item.applied_company,
+               applied_job_title: item.applied_job_title,
+               is_active: item.is_active ?? true,
+               created_at: item.created_at,
+               updated_at: item.updated_at,
+               moved_at: item.moved_at
+             }]
+           };
         })
       );
 

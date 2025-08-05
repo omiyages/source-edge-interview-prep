@@ -247,6 +247,9 @@ serve(async (req) => {
               case 'hiring_stage':
                 candidateData.stage = value
                 break
+              case 'kanban_stage':
+                candidateData.stage = value
+                break
               case 'active':
               case 'is_active':
               case 'status':
@@ -277,6 +280,7 @@ serve(async (req) => {
               skillsets: candidateData.skillsets || [],
               past_companies: candidateData.past_companies || [],
               general_notes: candidateData.general_notes,
+              is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
             }, {
               onConflict: 'full_name',
               ignoreDuplicates: false
