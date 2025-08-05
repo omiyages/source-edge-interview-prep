@@ -145,11 +145,13 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
       // Then sync the data
       if (result?.id) {
         await syncWithProgress(result.id);
+        // Only close dialogs after successful sync
+        setTimeout(() => {
+          setShowPreviewDialog(false);
+          onOpenChange(false);
+          resetForm();
+        }, 2000); // Give time to see completion
       }
-      
-      setShowPreviewDialog(false);
-      onOpenChange(false);
-      resetForm();
     } catch (error) {
       console.error('Failed to create integration and sync:', error);
     }
@@ -337,7 +339,7 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
         onOpenChange={setShowPreviewDialog}
         candidates={previewData}
         onSync={handleSyncFromPreview}
-        isLoading={false}
+        isLoading={syncProgress?.status === 'syncing'}
         syncProgress={syncProgress}
       />
     </>
