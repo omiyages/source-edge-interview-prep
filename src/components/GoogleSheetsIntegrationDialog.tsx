@@ -30,6 +30,7 @@ const COLUMN_MAPPING_OPTIONS = [
   { value: 'general_notes', label: 'General Notes' },
   { value: 'applied_company', label: 'Applied Company' },
   { value: 'applied_job_title', label: 'Applied Job Title' },
+  { value: 'is_active', label: 'Active Status (Yes/No)' },
   { value: 'kanban_stage', label: 'Kanban Stage' },
 ];
 
