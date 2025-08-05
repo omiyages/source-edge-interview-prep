@@ -73,7 +73,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
           notes,
           created_at,
           updated_at,
-          candidates (
+          candidates!candidate_pipeline_candidate_id_fkey (
             id,
             full_name,
             email,
