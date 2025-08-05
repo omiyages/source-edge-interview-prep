@@ -158,9 +158,39 @@ serve(async (req) => {
       .order('order_index')
 
     const stageMap = new Map(stages?.map(s => [s.name.toLowerCase(), s.id]) || [])
+    
+    // Create fuzzy stage mapping for common variations
+    const fuzzyStageMap = new Map()
+    stages?.forEach(stage => {
+      const name = stage.name.toLowerCase()
+      fuzzyStageMap.set(name, stage.id)
+      fuzzyStageMap.set(name.replace(/\s+/g, ''), stage.id) // no spaces
+      fuzzyStageMap.set(name.replace(/\s+/g, '_'), stage.id) // underscores
+      fuzzyStageMap.set(name.replace(/\s+/g, '-'), stage.id) // dashes
+      
+      // Common abbreviations and variations
+      if (name.includes('interview')) {
+        const num = name.match(/\d+/)?.[0]
+        if (num) {
+          fuzzyStageMap.set(`interview${num}`, stage.id)
+          fuzzyStageMap.set(`int${num}`, stage.id)
+        }
+      }
+      if (name.includes('technical')) {
+        fuzzyStageMap.set('tech', stage.id)
+        fuzzyStageMap.set('technical', stage.id)
+      }
+      if (name.includes('hr')) {
+        fuzzyStageMap.set('hr', stage.id)
+        fuzzyStageMap.set('hr screen', stage.id)
+        fuzzyStageMap.set('hrscreen', stage.id)
+      }
+    })
+    
     const defaultStageId = stages?.[0]?.id // Use first stage as default
 
     console.log('Available stages:', stages?.map(s => s.name))
+    console.log('Fuzzy mappings created for:', Array.from(fuzzyStageMap.keys()))
 
     let processedCount = 0
     let errorCount = 0
@@ -300,18 +330,25 @@ serve(async (req) => {
           let usedDefault = false
 
           if (candidateData.stage) {
-            // Map specific stages to "Interview 1"
-            let mappedStage = candidateData.stage.toLowerCase()
-            if (mappedStage === 'tech challenge' || mappedStage === 'hr screen') {
-              mappedStage = 'interview 1'
+            // Try exact match first
+            let mappedStage = candidateData.stage.toLowerCase().trim()
+            let mappedStageId = stageMap.get(mappedStage)
+            
+            // If no exact match, try fuzzy matching
+            if (!mappedStageId) {
+              mappedStageId = fuzzyStageMap.get(mappedStage) || 
+                             fuzzyStageMap.get(mappedStage.replace(/\s+/g, '')) ||
+                             fuzzyStageMap.get(mappedStage.replace(/\s+/g, '_')) ||
+                             fuzzyStageMap.get(mappedStage.replace(/\s+/g, '-'))
             }
             
-            const mappedStageId = stageMap.get(mappedStage)
             if (mappedStageId) {
               stageId = mappedStageId
+              console.log(`Mapped "${candidateData.stage}" to stage ID: ${stageId}`)
             } else {
               usedDefault = true
               defaultStageCount++
+              console.log(`No stage mapping found for "${candidateData.stage}", using default`)
             }
           } else {
             usedDefault = true
