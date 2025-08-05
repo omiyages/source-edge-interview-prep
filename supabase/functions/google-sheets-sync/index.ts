@@ -40,17 +40,81 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get Google Sheets API key
-    const apiKey = Deno.env.get('GOOGLE_SHEETS_API_KEY')
-    if (!apiKey) {
-      throw new Error('Google Sheets API key not found')
+    // Get Google Service Account credentials
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY')
+    if (!serviceAccountKey) {
+      throw new Error('Google Service Account key not found')
     }
 
-    // Fetch data from Google Sheets
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`
+    let serviceAccount
+    try {
+      serviceAccount = JSON.parse(serviceAccountKey)
+    } catch (error) {
+      throw new Error('Invalid Google Service Account JSON')
+    }
+
+    // Create JWT for service account authentication
+    const now = Math.floor(Date.now() / 1000)
+    const jwtPayload = {
+      iss: serviceAccount.client_email,
+      scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: now + 3600,
+      iat: now
+    }
+
+    // Create JWT header and payload
+    const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+    const payload = btoa(JSON.stringify(jwtPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+    
+    // Import private key for signing
+    const privateKeyPem = serviceAccount.private_key.replace(/\\n/g, '\n')
+    const privateKey = await crypto.subtle.importKey(
+      'pkcs8',
+      new TextEncoder().encode(privateKeyPem),
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+
+    // Sign the JWT
+    const signature = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      privateKey,
+      new TextEncoder().encode(`${header}.${payload}`)
+    )
+    
+    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+    
+    const jwt = `${header}.${payload}.${signatureBase64}`
+
+    // Exchange JWT for access token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt
+      })
+    })
+
+    if (!tokenResponse.ok) {
+      throw new Error(`Failed to get access token: ${tokenResponse.status} ${tokenResponse.statusText}`)
+    }
+
+    const tokenData = await tokenResponse.json()
+    const accessToken = tokenData.access_token
+
+    // Fetch data from Google Sheets using access token
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`
     console.log('Fetching from Google Sheets:', sheetsUrl)
     
-    const response = await fetch(sheetsUrl)
+    const response = await fetch(sheetsUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
     if (!response.ok) {
       throw new Error(`Google Sheets API error: ${response.status} ${response.statusText}`)
     }
