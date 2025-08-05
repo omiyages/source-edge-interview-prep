@@ -65,7 +65,7 @@ export type Database = {
             foreignKeyName: "candidate_pipeline_candidate_id_fkey"
             columns: ["candidate_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "candidates"
             referencedColumns: ["id"]
           },
           {

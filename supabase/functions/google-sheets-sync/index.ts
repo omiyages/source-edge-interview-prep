@@ -250,9 +250,9 @@ serve(async (req) => {
               case 'active':
               case 'is_active':
               case 'status':
-                // Handle Yes/No for active status
-                const lowerValue = value.toLowerCase()
-                candidateData.is_active = lowerValue === 'yes' || lowerValue === 'true' || lowerValue === '1' || lowerValue === 'active'
+                // Handle Yes/No for active status - Yes = Active, No = Inactive
+                const lowerValue = value.toLowerCase().trim()
+                candidateData.is_active = lowerValue === 'yes' || lowerValue === 'active' || lowerValue === 'true' || lowerValue === '1'
                 break
             }
           })
