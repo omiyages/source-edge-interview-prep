@@ -19,6 +19,9 @@ interface CandidateData {
   past_companies?: string[];
   general_notes?: string;
   stage?: string;
+  is_active?: boolean;
+  applied_company?: string;
+  applied_job_title?: string;
 }
 
 serve(async (req) => {
@@ -169,9 +172,14 @@ serve(async (req) => {
     for (let i = 0; i < dataRows.length; i += batchSize) {
       const batch = dataRows.slice(i, i + batchSize)
       
-      for (const row of batch) {
+      for (let rowIndex = 0; rowIndex < batch.length; rowIndex++) {
+        const row = batch[rowIndex]
+        const actualRowNumber = i + rowIndex + 2 // +2 for header row and 1-based indexing
+        
         try {
-          const candidateData: CandidateData = {}
+          const candidateData: CandidateData = {
+            is_active: true // Default to active
+          }
           
           // Map spreadsheet columns to candidate fields
           headers.forEach((header, index) => {
@@ -203,6 +211,16 @@ serve(async (req) => {
               case 'current company':
                 candidateData.current_company = value
                 break
+              case 'applied_company':
+              case 'applied company':
+                candidateData.applied_company = value
+                break
+              case 'applied_job_title':
+              case 'applied job title':
+              case 'job_title':
+              case 'job title':
+                candidateData.applied_job_title = value
+                break
               case 'experience':
               case 'years_of_experience':
               case 'years of experience':
@@ -228,6 +246,13 @@ serve(async (req) => {
               case 'stage':
               case 'hiring_stage':
                 candidateData.stage = value
+                break
+              case 'active':
+              case 'is_active':
+              case 'status':
+                // Handle Yes/No for active status
+                const lowerValue = value.toLowerCase()
+                candidateData.is_active = lowerValue === 'yes' || lowerValue === 'true' || lowerValue === '1' || lowerValue === 'active'
                 break
             }
           })
@@ -289,15 +314,20 @@ serve(async (req) => {
             defaultStageCount++
           }
 
-          // Add to pipeline if not already there
+          // Add to pipeline with unique sheet row identifier
+          const sheetRowId = `${integrationId}_${actualRowNumber}`
           const { error: pipelineError } = await supabaseClient
             .from('candidate_pipeline')
             .upsert({
               candidate_id: candidate.id,
               stage_id: stageId,
-              notes: candidateData.general_notes
+              notes: candidateData.general_notes,
+              is_active: candidateData.is_active,
+              applied_company: candidateData.applied_company,
+              applied_job_title: candidateData.applied_job_title,
+              sheet_row_id: sheetRowId
             }, {
-              onConflict: 'candidate_id',
+              onConflict: 'sheet_row_id',
               ignoreDuplicates: false
             })
 

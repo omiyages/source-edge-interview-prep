@@ -26,6 +26,7 @@ export type Database = {
           moved_at: string
           moved_by: string | null
           notes: string | null
+          sheet_row_id: string | null
           stage_id: string
           updated_at: string | null
         }
@@ -40,6 +41,7 @@ export type Database = {
           moved_at?: string
           moved_by?: string | null
           notes?: string | null
+          sheet_row_id?: string | null
           stage_id: string
           updated_at?: string | null
         }
@@ -54,6 +56,7 @@ export type Database = {
           moved_at?: string
           moved_by?: string | null
           notes?: string | null
+          sheet_row_id?: string | null
           stage_id?: string
           updated_at?: string | null
         }
