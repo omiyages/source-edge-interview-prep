@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -209,17 +208,36 @@ async function processSync(
             continue;
           }
 
-          // Check for existing candidate by name and email (better deduplication)
-          let existingCandidateQuery = supabaseClient
-            .from('candidates')
-            .select('id')
-            .eq('full_name', candidateData.full_name);
-            
+          // FIXED: Better deduplication logic - check for exact matches first
+          let existingCandidate = null;
+          
+          // First, try to find by email if available (most reliable)
           if (candidateData.email) {
-            existingCandidateQuery = existingCandidateQuery.or(`email.eq.${candidateData.email}`);
+            const { data: candidateByEmail } = await supabaseClient
+              .from('candidates')
+              .select('id')
+              .eq('email', candidateData.email)
+              .maybeSingle();
+            
+            if (candidateByEmail) {
+              existingCandidate = candidateByEmail;
+              console.log(`📧 Found existing candidate by email: ${candidateData.email}`);
+            }
           }
           
-          const { data: existingCandidate } = await existingCandidateQuery.maybeSingle();
+          // If not found by email, try by exact name match
+          if (!existingCandidate) {
+            const { data: candidateByName } = await supabaseClient
+              .from('candidates')
+              .select('id')
+              .eq('full_name', candidateData.full_name)
+              .maybeSingle();
+              
+            if (candidateByName) {
+              existingCandidate = candidateByName;
+              console.log(`👤 Found existing candidate by name: ${candidateData.full_name}`);
+            }
+          }
 
           let candidateId: string;
           
@@ -249,6 +267,7 @@ async function processSync(
             if (!updateError) {
               candidateId = existingCandidate.id;
               progress.updated++;
+              console.log(`✅ Updated existing candidate: ${candidateData.full_name}`);
             } else {
               progress.errors++;
               progress.errorMessages.push(`Row ${actualRowNumber}: Update failed - ${updateError.message}`);
@@ -284,6 +303,7 @@ async function processSync(
             if (!createError && newCandidate) {
               candidateId = newCandidate.id;
               progress.created++;
+              console.log(`🆕 Created new candidate: ${candidateData.full_name}`);
             } else {
               progress.errors++;
               progress.errorMessages.push(`Row ${actualRowNumber}: Create failed - ${createError?.message || 'Unknown error'}`);
