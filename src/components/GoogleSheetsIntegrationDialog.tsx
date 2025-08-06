@@ -132,6 +132,8 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
 
   const handleSyncFromPreview = async () => {
     try {
+      console.log('🚀 Starting sync process...');
+      
       // First create the integration
       const integrationData = {
         sheet_id: sheetId,
@@ -140,20 +142,24 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
         column_mappings: columnMappings
       };
 
+      console.log('Creating integration with data:', integrationData);
       const result = await createIntegration.mutateAsync(integrationData);
       
-      // Then sync the data
+      // Then sync the data with the integration ID and current form data
       if (result?.id) {
-        await syncWithProgress(result.id);
-        // Only close dialogs after successful sync
-        setTimeout(() => {
-          setShowPreviewDialog(false);
-          onOpenChange(false);
-          resetForm();
-        }, 2000); // Give time to see completion
+        console.log('Integration created, starting sync with ID:', result.id);
+        await syncWithProgress(result.id, {
+          sheetId,
+          range,
+          columnMappings
+        });
+        
+        // Keep dialogs open until sync is complete
+        // The syncWithProgress hook will handle closing via completion status
       }
     } catch (error) {
       console.error('Failed to create integration and sync:', error);
+      // Error will be handled by the hook's error handling
     }
   };
 
@@ -336,10 +342,23 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
       
       <GoogleSheetsPreviewDialog
         open={showPreviewDialog}
-        onOpenChange={setShowPreviewDialog}
+        onOpenChange={(open) => {
+          // Only allow closing if sync is not in progress
+          if (!open && syncProgress?.status === 'syncing') {
+            return; // Prevent closing during sync
+          }
+          setShowPreviewDialog(open);
+          if (!open && syncProgress?.status === 'completed') {
+            // Close parent dialog and reset after successful sync
+            setTimeout(() => {
+              onOpenChange(false);
+              resetForm();
+            }, 500);
+          }
+        }}
         candidates={previewData}
         onSync={handleSyncFromPreview}
-        isLoading={syncProgress?.status === 'syncing'}
+        isLoading={createIntegration.isPending}
         syncProgress={syncProgress}
       />
     </>

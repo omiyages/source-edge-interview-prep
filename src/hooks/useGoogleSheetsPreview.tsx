@@ -184,40 +184,64 @@ export const useGoogleSheetsPreview = () => {
     }
   }, []);
 
-  const syncWithProgress = useCallback(async (integrationId: string) => {
+  const syncWithProgress = useCallback(async (integrationId: string, syncData?: {
+    sheetId: string;
+    range: string;
+    columnMappings: Record<string, string>;
+  }) => {
     console.log('🚀 Starting sync with progress tracking...', { 
       integrationId, 
-      previewDataLength: previewData.length 
+      previewDataLength: previewData.length,
+      syncData 
     });
     
+    // Set initial progress state
     setSyncProgress({
       current: 0,
-      total: previewData.length || 100, // Fallback to 100 if no preview data
+      total: previewData.length || 100,
       status: 'syncing',
-      errors: []
+      errors: [],
+      createdCount: 0,
+      updatedCount: 0
     });
 
+    // Force a small delay to ensure the UI updates
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
-      // Simulate progress updates with more frequent updates
-      let currentProgress = 0;
+      // Start progress simulation - slower updates to be more visible
       const totalItems = previewData.length || 100;
+      let progressStep = 0;
       
       const progressInterval = setInterval(() => {
+        progressStep++;
         setSyncProgress(prev => {
-          const newCurrent = Math.min(prev.current + Math.ceil(totalItems / 20), totalItems - 1);
+          if (prev.status !== 'syncing') return prev;
+          
+          const increment = Math.ceil(totalItems / 15); // 15 steps total
+          const newCurrent = Math.min(prev.current + increment, totalItems - 5); // Leave some room for completion
           console.log('Progress update:', newCurrent, '/', totalItems);
           return { ...prev, current: newCurrent };
         });
-      }, 200); // Update every 200ms for smoother progress
+      }, 400); // Update every 400ms for more visible progress
 
-      // Call the sync function
+      // Call the sync function with proper data
+      const requestBody = syncData ? {
+        integrationId,
+        sheetId: syncData.sheetId,
+        range: syncData.range,
+        columnMappings: syncData.columnMappings
+      } : {
+        integrationId,
+        sheetId: '',
+        range: '',
+        columnMappings: {}
+      };
+
+      console.log('Calling sync function with:', requestBody);
+
       const { data, error } = await supabase.functions.invoke('google-sheets-sync', {
-        body: { 
-          integrationId,
-          sheetId: '', // These will be fetched from the integration
-          range: '',
-          columnMappings: {}
-        }
+        body: requestBody
       });
 
       clearInterval(progressInterval);
