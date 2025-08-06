@@ -53,7 +53,9 @@ async function processSync(
     }
 
     const headers = rows[0];
-    const dataRows = rows.slice(1);
+    const dataRows = rows.slice(1).filter((row: any[]) => 
+      row && row.some(cell => cell && cell.toString().trim())
+    );
     const totalRows = dataRows.length;
 
     console.log(`📊 Processing ${totalRows} rows with ${headers.length} columns`);
@@ -114,9 +116,8 @@ async function processSync(
     });
 
     // Process rows sequentially to avoid overwhelming the database
-    // but with smaller batches for better progress updates
-    const batchSize = 10;
-    const maxProcessingTime = 5 * 60 * 1000; // 5 minutes max processing time
+    const batchSize = 5;
+    const maxProcessingTime = 4 * 60 * 1000; // 4 minutes max processing time
     const startTime = Date.now();
 
     for (let i = 0; i < dataRows.length; i += batchSize) {
@@ -359,7 +360,7 @@ async function processSync(
       console.log(`✅ Batch completed: ${progress.processed}/${totalRows} processed (${progress.created} created, ${progress.updated} updated, ${progress.errors} errors)`);
 
       // Small delay between batches to prevent overwhelming the database
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
     // Mark as completed
@@ -483,24 +484,49 @@ serve(async (req) => {
     })
 
     if (!tokenResponse.ok) {
-      throw new Error(`Failed to get access token: ${tokenResponse.status}`)
+      const errorText = await tokenResponse.text();
+      console.error('❌ Token response error:', errorText);
+      throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`)
     }
 
     const tokenData = await tokenResponse.json()
     const accessToken = tokenData.access_token
 
-    // Fetch Google Sheets data with expanded range to get all data
-    const expandedRange = range.includes('!') ? range : `${range}1:${range}1000`;
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${expandedRange}`
+    // Normalize range - ensure it's properly formatted
+    let normalizedRange = range;
+    if (range === 'A:Z') {
+      normalizedRange = 'A1:Z1000';
+    } else if (!range.includes(':')) {
+      normalizedRange = `${range}1:${range}1000`;
+    } else if (!range.match(/\d/)) {
+      // If range doesn't contain numbers, add them
+      const parts = range.split(':');
+      normalizedRange = `${parts[0]}1:${parts[1]}1000`;
+    }
+
+    // Fetch Google Sheets data
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(normalizedRange)}`;
+    console.log('📡 Fetching from URL:', sheetsUrl);
+    
     const response = await fetch(sheetsUrl, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
+      headers: { 
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
     })
     
     if (!response.ok) {
-      throw new Error(`Google Sheets API error: ${response.status} ${response.statusText}`)
+      const errorText = await response.text();
+      console.error('❌ Sheets API response error:', errorText);
+      throw new Error(`Google Sheets API error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
+    console.log('📊 Sheets API response:', {
+      hasValues: !!data.values,
+      totalRows: data.values?.length || 0,
+      range: data.range
+    });
     
     // Filter out empty rows
     const filteredValues = data.values?.filter((row: any[]) => 
@@ -509,7 +535,7 @@ serve(async (req) => {
 
     const totalRows = Math.max(0, filteredValues.length - 1); // Subtract header row
 
-    console.log(`📊 Fetched ${filteredValues.length} total rows, ${totalRows} data rows`);
+    console.log(`📊 Filtered data: ${filteredValues.length} total rows, ${totalRows} data rows`);
 
     // Start background processing with filtered data
     EdgeRuntime.waitUntil(
