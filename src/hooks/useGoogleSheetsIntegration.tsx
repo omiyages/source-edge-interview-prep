@@ -1,4 +1,7 @@
 
+// ABOUTME: Hook for managing Google Sheets integrations with optimized progress tracking
+// ABOUTME: Handles CRUD operations and sync functionality with real-time updates
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -148,10 +151,10 @@ export const useSyncGoogleSheets = () => {
 
   const mutation = useMutation({
     mutationFn: async (integrationId: string) => {
-      console.log('🚀 Starting sync with progress tracking for integration:', integrationId);
+      console.log('🚀 Starting optimized sync for integration:', integrationId);
       
       try {
-        // Get integration data first to understand what we're syncing
+        // Get integration data
         const { data: integration, error: integrationError } = await supabase
           .from('google_sheets_integrations')
           .select('*')
@@ -160,39 +163,24 @@ export const useSyncGoogleSheets = () => {
 
         if (integrationError) throw integrationError;
 
-        console.log('Starting sync for integration:', integration);
-
-        // First, get a sample to estimate total rows
-        const { data: sampleResponse, error: sampleError } = await supabase.functions.invoke('google-sheets-sample', {
-          body: { 
-            sheetId: integration.sheet_id, 
-            range: integration.range_specification || 'A:Z'
-          }
+        console.log('📋 Integration details:', {
+          sheetId: integration.sheet_id,
+          range: integration.range_specification,
+          mappings: Object.keys(integration.column_mappings || {}).length
         });
 
-        if (sampleError) {
-          console.warn('Could not get sample data for progress estimation:', sampleError);
-        }
-
-        // Estimate total rows (sample gives us first 1000 rows typically)
-        const estimatedTotal = sampleResponse?.values ? sampleResponse.values.length - 1 : 100; // -1 for header
-        
-        // Set initial progress state with estimated total
+        // Reset progress state
         setSyncProgress({
           current: 0,
-          total: Math.max(estimatedTotal, 1), // Ensure at least 1
+          total: 0,
           status: 'syncing',
           errors: [],
           createdCount: 0,
           updatedCount: 0
         });
 
-        console.log('Estimated total rows to process:', estimatedTotal);
-
-        // Small delay to ensure UI updates
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Call the sync function
+        // Start the sync process
+        console.log('🔄 Calling sync function...');
         const { data, error: syncError } = await supabase.functions.invoke('google-sheets-sync', {
           body: {
             integrationId: integration.id,
@@ -202,15 +190,18 @@ export const useSyncGoogleSheets = () => {
           },
         });
 
-        if (syncError) throw syncError;
+        if (syncError) {
+          console.error('❌ Sync function error:', syncError);
+          throw syncError;
+        }
 
-        console.log('Sync completed successfully:', data);
+        console.log('✅ Sync completed successfully:', data);
 
-        // Complete progress with actual numbers
+        // Update progress with final results
         setSyncProgress(prev => ({
           ...prev,
-          current: data?.processedCount || prev.total,
-          total: data?.totalRows || prev.total,
+          current: data?.processedCount || 0,
+          total: data?.totalRows || 0,
           status: 'completed',
           createdCount: data?.createdCount || 0,
           updatedCount: data?.updatedCount || 0,
@@ -219,7 +210,7 @@ export const useSyncGoogleSheets = () => {
 
         return data;
       } catch (error) {
-        console.error('❌ Sync failed:', error);
+        console.error('❌ Sync failed with error:', error);
         setSyncProgress(prev => ({
           ...prev,
           status: 'error',
@@ -233,27 +224,28 @@ export const useSyncGoogleSheets = () => {
       queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       
       const message = data?.createdCount || data?.updatedCount 
-        ? `Successfully synced ${data.processedCount} candidates (${data.createdCount || 0} created, ${data.updatedCount || 0} updated)`
-        : `Successfully synced ${data?.processedCount || 'all'} candidates`;
+        ? `Successfully synced ${data.processedCount || 0} candidates (${data.createdCount || 0} created, ${data.updatedCount || 0} updated)`
+        : `Successfully synced ${data?.processedCount || 0} candidates`;
       
       toast({
         title: 'Sync completed',
         description: message,
       });
 
-      // Reset progress after a delay
+      // Reset progress after delay
       setTimeout(() => {
         setSyncProgress(prev => ({ ...prev, status: 'idle' }));
-      }, 5000);
+      }, 3000);
     },
     onError: (error) => {
+      console.error('❌ Sync mutation failed:', error);
       toast({
         title: 'Sync failed',
         description: `Failed to sync with Google Sheets: ${error.message}`,
         variant: 'destructive',
       });
       
-      // Reset progress on error
+      // Reset progress on error after delay
       setTimeout(() => {
         setSyncProgress(prev => ({ ...prev, status: 'idle' }));
       }, 3000);

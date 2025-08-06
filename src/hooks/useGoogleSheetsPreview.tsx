@@ -1,4 +1,7 @@
 
+// ABOUTME: Hook for generating Google Sheets preview data and managing sync progress
+// ABOUTME: Handles data preview generation with stage mapping and validation
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -42,19 +45,22 @@ export const useGoogleSheetsPreview = () => {
   ) => {
     setIsLoading(true);
     try {
-      console.log('Generating preview for:', { sheetId, range, columnMappings });
+      console.log('🔍 Generating preview for:', { sheetId, range, totalMappings: Object.keys(columnMappings).length });
       
-      // Get sample data from the Google Sheets
+      // Get sample data from Google Sheets (first 50 rows for preview)
       const { data: response, error } = await supabase.functions.invoke('google-sheets-sample', {
-        body: { sheetId, range: 'A1:Z50' } // Get more rows for preview
+        body: { sheetId, range: 'A1:Z50' }
       });
 
       if (error) {
-        console.error('Sample data error:', error);
+        console.error('❌ Sample data error:', error);
         throw error;
       }
 
-      console.log('Sample data response:', response);
+      console.log('📊 Sample data response:', {
+        hasValues: !!response?.values,
+        totalRows: response?.values?.length || 0
+      });
 
       if (!response?.values || response.values.length === 0) {
         throw new Error('No data found in the specified range');
@@ -63,8 +69,11 @@ export const useGoogleSheetsPreview = () => {
       const headers = response.values[0] || [];
       const dataRows = response.values.slice(1);
 
-      console.log('Headers found:', headers);
-      console.log('Data rows:', dataRows.length);
+      console.log('📋 Preview data summary:', {
+        headers: headers.length,
+        dataRows: dataRows.length,
+        mappedFields: Object.keys(columnMappings).length
+      });
 
       // Get hiring stages for mapping
       const { data: stages } = await supabase
@@ -72,11 +81,9 @@ export const useGoogleSheetsPreview = () => {
         .select('id, name')
         .order('order_index');
 
-      console.log('Available stages:', stages?.map(s => s.name));
-
       const stageMap = new Map(stages?.map(s => [s.name.toLowerCase(), s.id]) || []);
       
-      // Create fuzzy stage mapping
+      // Create comprehensive fuzzy stage mapping
       const fuzzyStageMap = new Map();
       stages?.forEach(stage => {
         const name = stage.name.toLowerCase();
@@ -85,6 +92,7 @@ export const useGoogleSheetsPreview = () => {
         fuzzyStageMap.set(name.replace(/\s+/g, '_'), stage.name);
         fuzzyStageMap.set(name.replace(/\s+/g, '-'), stage.name);
         
+        // Add common variations
         if (name.includes('interview')) {
           const num = name.match(/\d+/)?.[0];
           if (num) {
@@ -103,7 +111,10 @@ export const useGoogleSheetsPreview = () => {
         }
       });
 
-      console.log('Fuzzy stage mappings:', Array.from(fuzzyStageMap.keys()));
+      console.log('🎯 Stage mapping setup:', {
+        totalStages: stages?.length || 0,
+        fuzzyMappings: fuzzyStageMap.size
+      });
 
       const candidates: PreviewCandidate[] = dataRows.map((row: string[], index: number) => {
         const candidate: PreviewCandidate = {
@@ -112,14 +123,12 @@ export const useGoogleSheetsPreview = () => {
           issues: []
         };
 
-        // Map each column according to the mappings
+        // Process each column based on mappings
         headers.forEach((header: string, colIndex: number) => {
           const mapping = columnMappings[header];
           const value = row[colIndex]?.toString()?.trim();
           
-          if (!value) return;
-
-          console.log(`Mapping ${header} (${mapping}): ${value}`);
+          if (!value || !mapping) return;
 
           switch (mapping) {
             case 'full_name':
@@ -127,6 +136,10 @@ export const useGoogleSheetsPreview = () => {
               break;
             case 'email':
               candidate.email = value;
+              // Basic email validation
+              if (value && !value.includes('@')) {
+                candidate.issues.push('Invalid email format');
+              }
               break;
             case 'current_company':
               candidate.company = value;
@@ -149,14 +162,11 @@ export const useGoogleSheetsPreview = () => {
               
               if (exactMatch) {
                 candidate.mappedStage = stages?.find(s => s.id === stageMap.get(exactMatch))?.name;
-                console.log(`✅ Exact match for "${value}": ${candidate.mappedStage}`);
               } else if (fuzzyMatch) {
                 candidate.mappedStage = fuzzyMatch;
-                console.log(`✅ Fuzzy match for "${value}": ${candidate.mappedStage}`);
               } else {
                 candidate.mappedStage = stages?.[0]?.name || 'Default';
-                candidate.issues.push(`Stage "${value}" not found, will use default stage`);
-                console.log(`❌ No match for "${value}", using default`);
+                candidate.issues.push(`Stage "${value}" not recognized, will use default stage`);
               }
               break;
             case 'is_active':
@@ -168,18 +178,22 @@ export const useGoogleSheetsPreview = () => {
 
         // Validate required fields
         if (!candidate.name) {
-          candidate.issues.push('Missing candidate name');
+          candidate.issues.push('Missing candidate name - row will be skipped');
         }
 
-        console.log(`Processed candidate ${index + 1}:`, candidate);
         return candidate;
       });
 
-      console.log('Generated preview with', candidates.length, 'candidates');
+      console.log('✅ Preview generated:', {
+        totalCandidates: candidates.length,
+        validCandidates: candidates.filter(c => c.issues.length === 0).length,
+        candidatesWithIssues: candidates.filter(c => c.issues.length > 0).length
+      });
+
       setPreviewData(candidates);
     } catch (error) {
-      console.error('Preview generation failed:', error);
-      toast.error('Failed to generate preview');
+      console.error('❌ Preview generation failed:', error);
+      toast.error(`Failed to generate preview: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -190,43 +204,24 @@ export const useGoogleSheetsPreview = () => {
     range: string;
     columnMappings: Record<string, string>;
   }) => {
-    console.log('🚀 Starting sync with progress tracking...', { 
+    console.log('🚀 Starting sync with progress tracking:', { 
       integrationId, 
       previewDataLength: previewData.length,
-      syncData 
+      hasCustomSyncData: !!syncData 
     });
     
-    // Set initial progress state with preview data length or estimated total
-    const estimatedTotal = previewData.length > 0 ? previewData.length : 100;
+    // Initialize progress state
     setSyncProgress({
       current: 0,
-      total: estimatedTotal,
+      total: previewData.length > 0 ? previewData.length : 100,
       status: 'syncing',
       errors: [],
       createdCount: 0,
       updatedCount: 0
     });
 
-    // Force a small delay to ensure the UI updates
-    await new Promise(resolve => setTimeout(resolve, 100));
-
     try {
-      // Start a progress simulation that updates more frequently for large datasets
-      let simulatedProgress = 0;
-      const progressInterval = setInterval(() => {
-        setSyncProgress(prev => {
-          if (prev.status !== 'syncing') return prev;
-          
-          // Increment progress more smoothly for large datasets
-          const increment = Math.max(1, Math.ceil(prev.total / 50)); // 50 steps for smoother progress
-          simulatedProgress = Math.min(simulatedProgress + increment, prev.total - Math.ceil(prev.total * 0.1)); // Leave 10% for completion
-          
-          console.log('Progress simulation update:', simulatedProgress, '/', prev.total);
-          return { ...prev, current: simulatedProgress };
-        });
-      }, 200); // Update every 200ms for smoother progress
-
-      // Call the sync function with proper data
+      // Prepare request data
       const requestBody = syncData ? {
         integrationId,
         sheetId: syncData.sheetId,
@@ -239,22 +234,29 @@ export const useGoogleSheetsPreview = () => {
         columnMappings: {}
       };
 
-      console.log('Calling sync function with:', requestBody);
+      console.log('📤 Calling sync function with data:', {
+        integrationId: requestBody.integrationId,
+        hasSheetId: !!requestBody.sheetId,
+        mappingCount: Object.keys(requestBody.columnMappings).length
+      });
 
       const { data, error } = await supabase.functions.invoke('google-sheets-sync', {
         body: requestBody
       });
 
-      clearInterval(progressInterval);
-
       if (error) {
-        console.error('Sync error:', error);
+        console.error('❌ Sync function error:', error);
         throw error;
       }
 
-      console.log('Sync completed successfully:', data);
+      console.log('✅ Sync completed successfully:', {
+        processedCount: data?.processedCount || 0,
+        createdCount: data?.createdCount || 0,
+        updatedCount: data?.updatedCount || 0,
+        errorCount: data?.errorCount || 0
+      });
 
-      // Complete progress with actual results
+      // Update progress with final results
       setSyncProgress(prev => ({
         ...prev,
         current: data?.processedCount || prev.total,
@@ -279,6 +281,7 @@ export const useGoogleSheetsPreview = () => {
         status: 'error',
         errors: [error?.message || 'Sync failed']
       }));
+      toast.error(`Sync failed: ${error.message}`);
       throw error;
     }
   }, [previewData]);
