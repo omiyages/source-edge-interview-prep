@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -45,7 +46,7 @@ export const useGoogleSheetsPreview = () => {
       
       // Get sample data from the Google Sheets
       const { data: response, error } = await supabase.functions.invoke('google-sheets-sample', {
-        body: { sheetId, range: 'A1:Z10' }
+        body: { sheetId, range: 'A1:Z50' } // Get more rows for preview
       });
 
       if (error) {
@@ -195,10 +196,11 @@ export const useGoogleSheetsPreview = () => {
       syncData 
     });
     
-    // Set initial progress state
+    // Set initial progress state with preview data length or estimated total
+    const estimatedTotal = previewData.length > 0 ? previewData.length : 100;
     setSyncProgress({
       current: 0,
-      total: previewData.length || 100,
+      total: estimatedTotal,
       status: 'syncing',
       errors: [],
       createdCount: 0,
@@ -209,21 +211,20 @@ export const useGoogleSheetsPreview = () => {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-      // Start progress simulation - slower updates to be more visible
-      const totalItems = previewData.length || 100;
-      let progressStep = 0;
-      
+      // Start a progress simulation that updates more frequently for large datasets
+      let simulatedProgress = 0;
       const progressInterval = setInterval(() => {
-        progressStep++;
         setSyncProgress(prev => {
           if (prev.status !== 'syncing') return prev;
           
-          const increment = Math.ceil(totalItems / 15); // 15 steps total
-          const newCurrent = Math.min(prev.current + increment, totalItems - 5); // Leave some room for completion
-          console.log('Progress update:', newCurrent, '/', totalItems);
-          return { ...prev, current: newCurrent };
+          // Increment progress more smoothly for large datasets
+          const increment = Math.max(1, Math.ceil(prev.total / 50)); // 50 steps for smoother progress
+          simulatedProgress = Math.min(simulatedProgress + increment, prev.total - Math.ceil(prev.total * 0.1)); // Leave 10% for completion
+          
+          console.log('Progress simulation update:', simulatedProgress, '/', prev.total);
+          return { ...prev, current: simulatedProgress };
         });
-      }, 400); // Update every 400ms for more visible progress
+      }, 200); // Update every 200ms for smoother progress
 
       // Call the sync function with proper data
       const requestBody = syncData ? {
@@ -253,12 +254,15 @@ export const useGoogleSheetsPreview = () => {
 
       console.log('Sync completed successfully:', data);
 
+      // Complete progress with actual results
       setSyncProgress(prev => ({
         ...prev,
-        current: prev.total,
+        current: data?.processedCount || prev.total,
+        total: data?.totalRows || prev.total,
         status: 'completed',
         createdCount: data?.createdCount || 0,
-        updatedCount: data?.updatedCount || 0
+        updatedCount: data?.updatedCount || 0,
+        errors: data?.errors || []
       }));
 
       const message = data?.createdCount || data?.updatedCount 
@@ -267,13 +271,6 @@ export const useGoogleSheetsPreview = () => {
       
       toast.success(message);
       
-      if (data?.errors && data.errors.length > 0) {
-        setSyncProgress(prev => ({
-          ...prev,
-          errors: data.errors
-        }));
-      }
-
       return data;
     } catch (error) {
       console.error('❌ Sync failed:', error);

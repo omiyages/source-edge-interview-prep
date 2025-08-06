@@ -118,7 +118,7 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json()
     const accessToken = tokenData.access_token
 
-    // Fetch data from Google Sheets using access token
+    // Fetch data from Google Sheets using access token - get ALL data, not just limited range
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`
     console.log('Fetching from Google Sheets:', sheetsUrl)
     
@@ -149,7 +149,7 @@ serve(async (req) => {
     const dataRows = rows.slice(1)
     
     console.log('Headers found:', headers)
-    console.log('Data rows count:', dataRows.length)
+    console.log('Total data rows found:', dataRows.length)
     console.log('Column mappings:', columnMappings)
 
     // Get all hiring stages to map stage names
@@ -201,12 +201,14 @@ serve(async (req) => {
     const errors: string[] = []
     const totalRows = dataRows.length
 
-    console.log(`Starting to process ${totalRows} rows`)
+    console.log(`🚀 Starting to process ${totalRows} rows`)
 
-    // Process candidates in batches
-    const batchSize = 5
+    // Process candidates in smaller batches for better performance
+    const batchSize = 10
     for (let i = 0; i < dataRows.length; i += batchSize) {
       const batch = dataRows.slice(i, i + batchSize)
+      
+      console.log(`📦 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(totalRows/batchSize)} (rows ${i + 2} to ${Math.min(i + batchSize + 1, totalRows + 1)})`)
       
       for (let rowIndex = 0; rowIndex < batch.length; rowIndex++) {
         const row = batch[rowIndex]
@@ -214,6 +216,7 @@ serve(async (req) => {
         
         try {
           const candidateData: CandidateData = {
+            full_name: '', // Will be set based on mapping
             is_active: true // Default to active
           }
           
@@ -225,8 +228,6 @@ serve(async (req) => {
             // Get the mapping for this header
             const mapping = columnMappings[header]
             if (!mapping) return
-
-            console.log(`Mapping ${header} (${mapping}): ${value}`)
 
             switch (mapping) {
               case 'full_name':
@@ -272,7 +273,6 @@ serve(async (req) => {
                 candidateData.stage = value
                 break
               case 'is_active':
-                // Handle Yes/No for active status - Yes = Active, No = Inactive
                 const lowerValue = value.toLowerCase().trim()
                 candidateData.is_active = lowerValue === 'yes' || lowerValue === 'active' || lowerValue === 'true' || lowerValue === '1'
                 break
@@ -285,8 +285,11 @@ serve(async (req) => {
             continue
           }
 
-          // First, check if candidate exists by name only (due to unique constraint)
-          console.log(`Checking for existing candidate with name: "${candidateData.full_name}"`)
+          let candidateId: string
+          let isUpdate = false
+
+          // First, check if candidate exists by name
+          console.log(`🔍 Checking for existing candidate: "${candidateData.full_name}"`)
           const { data: existingCandidate, error: lookupError } = await supabaseClient
             .from('candidates')
             .select('id')
@@ -300,14 +303,11 @@ serve(async (req) => {
             continue
           }
 
-          let candidateId: string
-          let isUpdate = false
-
           if (existingCandidate) {
             // Update existing candidate
             isUpdate = true
             candidateId = existingCandidate.id
-            console.log(`Found existing candidate with ID: ${candidateId}`)
+            console.log(`📝 Found existing candidate with ID: ${candidateId}`)
             
             const { error: updateError } = await supabaseClient
               .from('candidates')
@@ -334,10 +334,10 @@ serve(async (req) => {
             }
 
             updatedCount++
-            console.log(`📝 Updated existing candidate: ${candidateData.full_name}`)
+            console.log(`✅ Updated candidate: ${candidateData.full_name}`)
           } else {
-            // Create new candidate with error handling for constraint violation
-            console.log(`No existing candidate found, creating new one: "${candidateData.full_name}"`)
+            // Create new candidate with robust error handling
+            console.log(`✨ Creating new candidate: "${candidateData.full_name}"`)
             
             try {
               const { data: newCandidate, error: candidateError } = await supabaseClient
@@ -359,20 +359,22 @@ serve(async (req) => {
                 .single()
 
               if (candidateError) {
-                // If it's a duplicate key error, try to find the existing candidate
+                // If it's a duplicate key error due to race condition, handle gracefully
                 if (candidateError.code === '23505') {
-                  console.log(`Duplicate key error for "${candidateData.full_name}", attempting to find existing candidate`)
-                  const { data: retryCandidate } = await supabaseClient
+                  console.log(`🔄 Duplicate detected for "${candidateData.full_name}", attempting to find and update existing candidate`)
+                  
+                  // Try to find the existing candidate again
+                  const { data: retryCandidate, error: retryError } = await supabaseClient
                     .from('candidates')
                     .select('id')
                     .eq('full_name', candidateData.full_name)
                     .single()
                   
-                  if (retryCandidate) {
+                  if (!retryError && retryCandidate) {
                     candidateId = retryCandidate.id
                     isUpdate = true
                     updatedCount++
-                    console.log(`🔄 Found existing candidate after duplicate error: ${candidateData.full_name}`)
+                    console.log(`✅ Found and will update existing candidate: ${candidateData.full_name}`)
                   } else {
                     throw candidateError
                   }
@@ -382,10 +384,10 @@ serve(async (req) => {
               } else {
                 candidateId = newCandidate.id
                 createdCount++
-                console.log(`✨ Created new candidate: ${candidateData.full_name}`)
+                console.log(`✅ Created new candidate: ${candidateData.full_name}`)
               }
             } catch (error) {
-              console.error('Candidate insert error:', error)
+              console.error('Candidate creation error:', error)
               errors.push(`Row ${actualRowNumber}: Failed to create candidate - ${error.message}`)
               errorCount++
               continue
@@ -411,18 +413,18 @@ serve(async (req) => {
             
             if (mappedStageId) {
               stageId = mappedStageId
-              console.log(`Mapped "${candidateData.stage}" to stage ID: ${stageId}`)
+              console.log(`🎯 Mapped "${candidateData.stage}" to stage ID: ${stageId}`)
             } else {
               usedDefault = true
               defaultStageCount++
-              console.log(`No stage mapping found for "${candidateData.stage}", using default`)
+              console.log(`⚠️ No stage mapping found for "${candidateData.stage}", using default`)
             }
           } else {
             usedDefault = true
             defaultStageCount++
           }
 
-          // Now handle the pipeline entry - check if this specific combination exists
+          // Handle the pipeline entry - check if this specific combination exists
           const { data: existingPipeline } = await supabaseClient
             .from('candidate_pipeline')
             .select('id, stage_id, is_active')
@@ -478,25 +480,26 @@ serve(async (req) => {
           }
 
           processedCount++
-          console.log(`✅ Processed candidate ${processedCount}/${totalRows}: ${candidateData.full_name} (${isUpdate ? 'updated' : 'created'})${usedDefault ? ' (default stage)' : ''}`)
-
-          // Log progress every 5 candidates or on last candidate
-          if (processedCount % 5 === 0 || processedCount === totalRows) {
+          
+          // Log progress more frequently for large datasets
+          if (processedCount % 10 === 0 || processedCount === totalRows) {
             console.log(`📊 Progress: ${processedCount}/${totalRows} (${Math.round(processedCount/totalRows*100)}%) - Created: ${createdCount}, Updated: ${updatedCount}`)
           }
 
         } catch (error) {
-          console.error(`Error processing row ${actualRowNumber}:`, error)
+          console.error(`❌ Error processing row ${actualRowNumber}:`, error)
           errors.push(`Row ${actualRowNumber}: ${error.message}`)
           errorCount++
         }
       }
 
-      // Small delay between batches
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Small delay between batches to prevent overwhelming the database
+      if (i + batchSize < totalRows) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
     }
 
-    console.log(`🎉 Sync completed: ${processedCount} processed (${createdCount} created, ${updatedCount} updated), ${errorCount} errors, ${defaultStageCount} used default stage`)
+    console.log(`🎉 Sync completed: ${processedCount}/${totalRows} processed (${createdCount} created, ${updatedCount} updated), ${errorCount} errors, ${defaultStageCount} used default stage`)
 
     return new Response(JSON.stringify({
       success: true,
@@ -506,15 +509,15 @@ serve(async (req) => {
       errorCount,
       defaultStageCount,
       totalRows,
-      errors: errors.slice(0, 10), // Limit error messages
-      message: `Successfully processed ${processedCount} candidates (${createdCount} created, ${updatedCount} updated). ${defaultStageCount} candidates were assigned to the default stage due to stage mapping issues.`
+      errors: errors.slice(0, 20), // Show more error messages for debugging
+      message: `Successfully processed ${processedCount} of ${totalRows} candidates (${createdCount} created, ${updatedCount} updated). ${defaultStageCount} candidates were assigned to the default stage due to stage mapping issues.`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200
     })
 
   } catch (error) {
-    console.error('Google Sheets sync error:', error)
+    console.error('❌ Google Sheets sync error:', error)
     return new Response(JSON.stringify({
       success: false,
       message: error.message,
