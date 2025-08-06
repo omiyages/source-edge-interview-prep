@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, ExternalLink, Edit } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { RefreshCw, ExternalLink, Edit, CheckCircle, XCircle } from 'lucide-react';
 import { useSyncGoogleSheets } from '@/hooks/useGoogleSheetsIntegration';
 import { EditColumnMappingDialog } from './EditColumnMappingDialog';
 
@@ -28,6 +29,7 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
   const syncMutation = useSyncGoogleSheets();
 
   const handleSync = () => {
+    console.log('Sync button clicked for integration:', integration.id);
     syncMutation.mutate(integration.id);
   };
 
@@ -97,6 +99,51 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
                 {formatLastSync(integration.last_sync_at)}
               </p>
             </div>
+
+            {/* Progress Bar */}
+            {syncMutation.syncProgress && syncMutation.syncProgress.status !== 'idle' && (
+              <div className="space-y-3 p-4 bg-muted rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    {syncMutation.syncProgress.status === 'syncing' && 'Syncing candidates...'}
+                    {syncMutation.syncProgress.status === 'completed' && (
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        Sync completed!
+                      </div>
+                    )}
+                    {syncMutation.syncProgress.status === 'error' && (
+                      <div className="flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-red-500" />
+                        Sync failed
+                      </div>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {syncMutation.syncProgress.current} / {syncMutation.syncProgress.total}
+                    {syncMutation.syncProgress.status === 'completed' && syncMutation.syncProgress.createdCount !== undefined && (
+                      <span className="ml-2 text-green-600">
+                        ({syncMutation.syncProgress.createdCount} created, {syncMutation.syncProgress.updatedCount} updated)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <Progress 
+                  value={(syncMutation.syncProgress.current / syncMutation.syncProgress.total) * 100} 
+                  className="w-full" 
+                />
+                {syncMutation.syncProgress.errors.length > 0 && (
+                  <div className="max-h-32 overflow-y-auto">
+                    {syncMutation.syncProgress.errors.map((error, index) => (
+                      <div key={index} className="text-sm text-red-600 flex items-center gap-2">
+                        <XCircle className="w-3 h-3" />
+                        {error}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2 pt-2">
               <Button
