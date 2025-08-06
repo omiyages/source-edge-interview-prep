@@ -285,22 +285,11 @@ serve(async (req) => {
             continue
           }
 
-          // Check if candidate already exists with same name, applied company, and job title
+          // First, check if candidate exists by name only (due to unique constraint)
           const { data: existingCandidate } = await supabaseClient
             .from('candidates')
-            .select(`
-              id, 
-              candidate_pipeline!inner(
-                id, 
-                applied_company, 
-                applied_job_title, 
-                stage_id, 
-                is_active
-              )
-            `)
+            .select('id')
             .eq('full_name', candidateData.full_name)
-            .eq('candidate_pipeline.applied_company', candidateData.applied_company || '')
-            .eq('candidate_pipeline.applied_job_title', candidateData.applied_job_title || '')
             .maybeSingle()
 
           let candidateId: string
@@ -399,11 +388,18 @@ serve(async (req) => {
             defaultStageCount++
           }
 
-          // Handle pipeline entry
-          if (existingCandidate) {
+          // Now handle the pipeline entry - check if this specific combination exists
+          const { data: existingPipeline } = await supabaseClient
+            .from('candidate_pipeline')
+            .select('id, stage_id, is_active')
+            .eq('candidate_id', candidateId)
+            .eq('applied_company', candidateData.applied_company || '')
+            .eq('applied_job_title', candidateData.applied_job_title || '')
+            .maybeSingle()
+
+          if (existingPipeline) {
             // Update pipeline if stage or active status changed
-            const pipelineEntry = existingCandidate.candidate_pipeline[0]
-            if (pipelineEntry.stage_id !== stageId || pipelineEntry.is_active !== (candidateData.is_active !== undefined ? candidateData.is_active : true)) {
+            if (existingPipeline.stage_id !== stageId || existingPipeline.is_active !== (candidateData.is_active !== undefined ? candidateData.is_active : true)) {
               const { error: pipelineUpdateError } = await supabaseClient
                 .from('candidate_pipeline')
                 .update({
@@ -413,7 +409,7 @@ serve(async (req) => {
                   updated_at: new Date().toISOString(),
                   moved_at: new Date().toISOString()
                 })
-                .eq('id', pipelineEntry.id)
+                .eq('id', existingPipeline.id)
 
               if (pipelineUpdateError) {
                 console.error('Pipeline update error:', pipelineUpdateError)
@@ -421,6 +417,9 @@ serve(async (req) => {
                 errorCount++
                 continue
               }
+              console.log(`📝 Updated pipeline for: ${candidateData.full_name}`)
+            } else {
+              console.log(`✅ Pipeline unchanged for: ${candidateData.full_name}`)
             }
           } else {
             // Create new pipeline entry
@@ -441,6 +440,7 @@ serve(async (req) => {
               errorCount++
               continue
             }
+            console.log(`✨ Created new pipeline for: ${candidateData.full_name}`)
           }
 
           processedCount++
