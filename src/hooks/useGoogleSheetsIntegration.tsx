@@ -1,17 +1,18 @@
 
-// ABOUTME: Hook for managing Google Sheets integrations with optimized progress tracking
-// ABOUTME: Handles CRUD operations and sync functionality with real-time updates
+// ABOUTME: Hook for managing Google Sheets integrations with real-time progress tracking
+// ABOUTME: Handles CRUD operations and sync functionality with background processing support
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface SyncProgress {
-  current: number;
+  processed: number;
   total: number;
-  status: 'idle' | 'syncing' | 'completed' | 'error';
-  errors: string[];
+  status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
+  errors: number;
+  errorMessages: string[];
   createdCount?: number;
   updatedCount?: number;
 }
@@ -141,17 +142,113 @@ export const useSyncGoogleSheets = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
-    current: 0,
+    processed: 0,
     total: 0,
     status: 'idle',
-    errors: [],
+    errors: 0,
+    errorMessages: [],
     createdCount: 0,
     updatedCount: 0
   });
+  
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const currentIntegrationIdRef = useRef<string | null>(null);
+
+  // Function to poll progress
+  const pollProgress = async (integrationId: string) => {
+    try {
+      console.log('🔍 Polling progress for integration:', integrationId);
+      
+      const { data, error } = await supabase.functions.invoke('google-sheets-sync', {
+        body: {
+          integrationId,
+          action: 'check_progress'
+        },
+      });
+
+      if (error) {
+        console.error('❌ Progress polling error:', error);
+        return;
+      }
+
+      if (data?.success && data?.progress) {
+        const progress = data.progress;
+        console.log('📊 Progress update:', progress);
+        
+        setSyncProgress(prev => ({
+          processed: progress.processed,
+          total: progress.total,
+          status: progress.status === 'idle' ? prev.status : progress.status,
+          errors: progress.errors,
+          errorMessages: progress.errorMessages || [],
+          createdCount: progress.created,
+          updatedCount: progress.updated
+        }));
+
+        // Stop polling if completed or error
+        if (progress.status === 'completed' || progress.status === 'error') {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          
+          if (progress.status === 'completed') {
+            toast({
+              title: 'Sync completed',
+              description: `Successfully processed ${progress.processed} candidates (${progress.created || 0} created, ${progress.updated || 0} updated)`,
+            });
+            
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
+            queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+          } else if (progress.status === 'error') {
+            toast({
+              title: 'Sync failed',
+              description: progress.errorMessages?.[0] || 'Sync encountered errors',
+              variant: 'destructive',
+            });
+          }
+          
+          // Reset status after delay
+          setTimeout(() => {
+            setSyncProgress(prev => ({ ...prev, status: 'idle' }));
+          }, 3000);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Progress polling failed:', error);
+    }
+  };
+
+  // Start polling function
+  const startPolling = (integrationId: string) => {
+    currentIntegrationIdRef.current = integrationId;
+    
+    // Clear any existing polling
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
+    
+    // Start polling every 2 seconds
+    pollIntervalRef.current = setInterval(() => {
+      if (currentIntegrationIdRef.current) {
+        pollProgress(currentIntegrationIdRef.current);
+      }
+    }, 2000);
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   const mutation = useMutation({
     mutationFn: async (integrationId: string) => {
-      console.log('🚀 Starting optimized sync for integration:', integrationId);
+      console.log('🚀 Starting sync for integration:', integrationId);
       
       try {
         // Get integration data
@@ -171,10 +268,11 @@ export const useSyncGoogleSheets = () => {
 
         // Reset progress state
         setSyncProgress({
-          current: 0,
+          processed: 0,
           total: 0,
-          status: 'syncing',
-          errors: [],
+          status: 'starting',
+          errors: 0,
+          errorMessages: [],
           createdCount: 0,
           updatedCount: 0
         });
@@ -195,53 +293,35 @@ export const useSyncGoogleSheets = () => {
           throw syncError;
         }
 
-        console.log('✅ Sync completed successfully:', data);
+        console.log('✅ Sync started successfully:', data);
 
-        // Update progress with final results
+        // Update initial progress
         setSyncProgress(prev => ({
           ...prev,
-          current: data?.processedCount || 0,
           total: data?.totalRows || 0,
-          status: 'completed',
-          createdCount: data?.createdCount || 0,
-          updatedCount: data?.updatedCount || 0,
-          errors: data?.errors || []
+          status: 'processing'
         }));
 
+        // Start polling for progress updates
+        startPolling(integration.id);
+
         return data;
+        
       } catch (error) {
         console.error('❌ Sync failed with error:', error);
         setSyncProgress(prev => ({
           ...prev,
           status: 'error',
-          errors: [error?.message || 'Sync failed']
+          errorMessages: [error?.message || 'Sync failed']
         }));
         throw error;
       }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
-      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
-      
-      const message = data?.createdCount || data?.updatedCount 
-        ? `Successfully synced ${data.processedCount || 0} candidates (${data.createdCount || 0} created, ${data.updatedCount || 0} updated)`
-        : `Successfully synced ${data?.processedCount || 0} candidates`;
-      
-      toast({
-        title: 'Sync completed',
-        description: message,
-      });
-
-      // Reset progress after delay
-      setTimeout(() => {
-        setSyncProgress(prev => ({ ...prev, status: 'idle' }));
-      }, 3000);
     },
     onError: (error) => {
       console.error('❌ Sync mutation failed:', error);
       toast({
         title: 'Sync failed',
-        description: `Failed to sync with Google Sheets: ${error.message}`,
+        description: `Failed to start sync: ${error.message}`,
         variant: 'destructive',
       });
       

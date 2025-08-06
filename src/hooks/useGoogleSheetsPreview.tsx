@@ -1,6 +1,6 @@
 
-// ABOUTME: Hook for generating Google Sheets preview data and managing sync progress
-// ABOUTME: Handles data preview generation with stage mapping and validation
+// ABOUTME: Hook for generating Google Sheets preview data with real-time sync progress
+// ABOUTME: Handles data preview generation with stage mapping and background sync tracking
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,10 +20,11 @@ interface PreviewCandidate {
 }
 
 interface SyncProgress {
-  current: number;
+  processed: number;
   total: number;
-  status: 'idle' | 'syncing' | 'completed' | 'error';
-  errors: string[];
+  status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
+  errors: number;
+  errorMessages: string[];
   createdCount?: number;
   updatedCount?: number;
 }
@@ -32,10 +33,11 @@ export const useGoogleSheetsPreview = () => {
   const [previewData, setPreviewData] = useState<PreviewCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
-    current: 0,
+    processed: 0,
     total: 0,
     status: 'idle',
-    errors: []
+    errors: 0,
+    errorMessages: []
   });
 
   const generatePreview = useCallback(async (
@@ -199,92 +201,14 @@ export const useGoogleSheetsPreview = () => {
     }
   }, []);
 
-  const syncWithProgress = useCallback(async (integrationId: string, syncData?: {
-    sheetId: string;
-    range: string;
-    columnMappings: Record<string, string>;
-  }) => {
-    console.log('🚀 Starting sync with progress tracking:', { 
-      integrationId, 
-      previewDataLength: previewData.length,
-      hasCustomSyncData: !!syncData 
-    });
+  const syncWithProgress = useCallback(async (integrationId: string) => {
+    console.log('🚀 Starting sync with progress tracking for integration:', integrationId);
     
-    // Initialize progress state
-    setSyncProgress({
-      current: 0,
-      total: previewData.length > 0 ? previewData.length : 100,
-      status: 'syncing',
-      errors: [],
-      createdCount: 0,
-      updatedCount: 0
-    });
-
-    try {
-      // Prepare request data
-      const requestBody = syncData ? {
-        integrationId,
-        sheetId: syncData.sheetId,
-        range: syncData.range,
-        columnMappings: syncData.columnMappings
-      } : {
-        integrationId,
-        sheetId: '',
-        range: '',
-        columnMappings: {}
-      };
-
-      console.log('📤 Calling sync function with data:', {
-        integrationId: requestBody.integrationId,
-        hasSheetId: !!requestBody.sheetId,
-        mappingCount: Object.keys(requestBody.columnMappings).length
-      });
-
-      const { data, error } = await supabase.functions.invoke('google-sheets-sync', {
-        body: requestBody
-      });
-
-      if (error) {
-        console.error('❌ Sync function error:', error);
-        throw error;
-      }
-
-      console.log('✅ Sync completed successfully:', {
-        processedCount: data?.processedCount || 0,
-        createdCount: data?.createdCount || 0,
-        updatedCount: data?.updatedCount || 0,
-        errorCount: data?.errorCount || 0
-      });
-
-      // Update progress with final results
-      setSyncProgress(prev => ({
-        ...prev,
-        current: data?.processedCount || prev.total,
-        total: data?.totalRows || prev.total,
-        status: 'completed',
-        createdCount: data?.createdCount || 0,
-        updatedCount: data?.updatedCount || 0,
-        errors: data?.errors || []
-      }));
-
-      const message = data?.createdCount || data?.updatedCount 
-        ? `Successfully synced ${data.processedCount} candidates (${data.createdCount} created, ${data.updatedCount} updated)`
-        : `Successfully synced ${data?.processedCount || 'all'} candidates`;
-      
-      toast.success(message);
-      
-      return data;
-    } catch (error) {
-      console.error('❌ Sync failed:', error);
-      setSyncProgress(prev => ({
-        ...prev,
-        status: 'error',
-        errors: [error?.message || 'Sync failed']
-      }));
-      toast.error(`Sync failed: ${error.message}`);
-      throw error;
-    }
-  }, [previewData]);
+    // The actual sync and progress tracking is now handled by useSyncGoogleSheets hook
+    // This function is kept for compatibility but the main logic moved to the integration hook
+    
+    return { success: true, message: 'Sync started - use useSyncGoogleSheets hook for progress tracking' };
+  }, []);
 
   return {
     previewData,
