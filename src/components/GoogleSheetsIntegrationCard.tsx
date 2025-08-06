@@ -105,7 +105,7 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
               <div className="space-y-3 p-4 bg-muted rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">
-                    {syncMutation.syncProgress.status === 'syncing' && 'Syncing candidates...'}
+                    {syncMutation.syncProgress.status === 'processing' && 'Syncing candidates...'}
                     {syncMutation.syncProgress.status === 'completed' && (
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500" />

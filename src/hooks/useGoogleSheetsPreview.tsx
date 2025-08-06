@@ -20,11 +20,10 @@ interface PreviewCandidate {
 }
 
 interface SyncProgress {
-  processed: number;
+  current: number;
   total: number;
   status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
-  errors: number;
-  errorMessages: string[];
+  errors: string[];
   createdCount?: number;
   updatedCount?: number;
 }
@@ -33,11 +32,10 @@ export const useGoogleSheetsPreview = () => {
   const [previewData, setPreviewData] = useState<PreviewCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
-    processed: 0,
+    current: 0,
     total: 0,
     status: 'idle',
-    errors: 0,
-    errorMessages: []
+    errors: []
   });
 
   const generatePreview = useCallback(async (

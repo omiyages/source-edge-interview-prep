@@ -1,18 +1,16 @@
-
 // ABOUTME: Hook for managing Google Sheets integrations with real-time progress tracking
 // ABOUTME: Handles CRUD operations and sync functionality with background processing support
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useRef } from 'react';
 
 interface SyncProgress {
-  processed: number;
+  current: number;
   total: number;
   status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
-  errors: number;
-  errorMessages: string[];
+  errors: string[];
   createdCount?: number;
   updatedCount?: number;
 }
@@ -142,11 +140,10 @@ export const useSyncGoogleSheets = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
-    processed: 0,
+    current: 0,
     total: 0,
     status: 'idle',
-    errors: 0,
-    errorMessages: [],
+    errors: [],
     createdCount: 0,
     updatedCount: 0
   });
@@ -176,13 +173,12 @@ export const useSyncGoogleSheets = () => {
         console.log('📊 Progress update:', progress);
         
         setSyncProgress(prev => ({
-          processed: progress.processed,
-          total: progress.total,
+          current: progress.processed || progress.current || 0,
+          total: progress.total || 0,
           status: progress.status === 'idle' ? prev.status : progress.status,
-          errors: progress.errors,
-          errorMessages: progress.errorMessages || [],
-          createdCount: progress.created,
-          updatedCount: progress.updated
+          errors: progress.errorMessages || progress.errors || [],
+          createdCount: progress.created || progress.createdCount || 0,
+          updatedCount: progress.updated || progress.updatedCount || 0
         }));
 
         // Stop polling if completed or error
@@ -195,7 +191,7 @@ export const useSyncGoogleSheets = () => {
           if (progress.status === 'completed') {
             toast({
               title: 'Sync completed',
-              description: `Successfully processed ${progress.processed} candidates (${progress.created || 0} created, ${progress.updated || 0} updated)`,
+              description: `Successfully processed ${progress.processed || progress.current || 0} candidates (${progress.created || progress.createdCount || 0} created, ${progress.updated || progress.updatedCount || 0} updated)`,
             });
             
             // Invalidate queries to refresh data
@@ -204,7 +200,7 @@ export const useSyncGoogleSheets = () => {
           } else if (progress.status === 'error') {
             toast({
               title: 'Sync failed',
-              description: progress.errorMessages?.[0] || 'Sync encountered errors',
+              description: progress.errorMessages?.[0] || progress.errors?.[0] || 'Sync encountered errors',
               variant: 'destructive',
             });
           }
@@ -268,11 +264,10 @@ export const useSyncGoogleSheets = () => {
 
         // Reset progress state
         setSyncProgress({
-          processed: 0,
+          current: 0,
           total: 0,
           status: 'starting',
-          errors: 0,
-          errorMessages: [],
+          errors: [],
           createdCount: 0,
           updatedCount: 0
         });
@@ -312,7 +307,7 @@ export const useSyncGoogleSheets = () => {
         setSyncProgress(prev => ({
           ...prev,
           status: 'error',
-          errorMessages: [error?.message || 'Sync failed']
+          errors: [error?.message || 'Sync failed']
         }));
         throw error;
       }

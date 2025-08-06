@@ -145,14 +145,10 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
       console.log('Creating integration with data:', integrationData);
       const result = await createIntegration.mutateAsync(integrationData);
       
-      // Then sync the data with the integration ID and current form data
+      // Then sync the data with just the integration ID
       if (result?.id) {
         console.log('Integration created, starting sync with ID:', result.id);
-        await syncWithProgress(result.id, {
-          sheetId,
-          range,
-          columnMappings
-        });
+        await syncWithProgress(result.id);
         
         // Keep dialogs open until sync is complete
         // The syncWithProgress hook will handle closing via completion status
@@ -344,7 +340,7 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
         open={showPreviewDialog}
         onOpenChange={(open) => {
           // Only allow closing if sync is not in progress
-          if (!open && syncProgress?.status === 'syncing') {
+          if (!open && syncProgress?.status === 'processing') {
             return; // Prevent closing during sync
           }
           setShowPreviewDialog(open);
@@ -359,7 +355,14 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
         candidates={previewData}
         onSync={handleSyncFromPreview}
         isLoading={createIntegration.isPending}
-        syncProgress={syncProgress}
+        syncProgress={{
+          current: syncProgress.current,
+          total: syncProgress.total,
+          status: syncProgress.status === 'processing' ? 'syncing' : syncProgress.status,
+          errors: syncProgress.errors,
+          createdCount: syncProgress.createdCount,
+          updatedCount: syncProgress.updatedCount
+        }}
       />
     </>
   );
