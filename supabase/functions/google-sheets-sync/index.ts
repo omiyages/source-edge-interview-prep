@@ -194,6 +194,8 @@ serve(async (req) => {
     console.log('Fuzzy mappings created for:', Array.from(fuzzyStageMap.keys()))
 
     let processedCount = 0
+    let createdCount = 0
+    let updatedCount = 0
     let errorCount = 0
     let defaultStageCount = 0
     const errors: string[] = []
@@ -278,38 +280,93 @@ serve(async (req) => {
           })
 
           if (!candidateData.full_name) {
-            errors.push(`Row ${i + 2}: Missing candidate name`)
+            errors.push(`Row ${actualRowNumber}: Missing candidate name`)
             errorCount++
             continue
           }
 
-          // Insert or update candidate
-          const { data: candidate, error: candidateError } = await supabaseClient
+          // Check if candidate already exists with same name, applied company, and job title
+          const { data: existingCandidate } = await supabaseClient
             .from('candidates')
-            .upsert({
-              full_name: candidateData.full_name,
-              email: candidateData.email || null,
-              phone_number: candidateData.phone_number,
-              linkedin_profile: candidateData.linkedin_profile,
-              current_company: candidateData.current_company,
-              years_of_experience: candidateData.years_of_experience,
-              salary: candidateData.salary,
-              skillsets: candidateData.skillsets || [],
-              past_companies: candidateData.past_companies || [],
-              general_notes: candidateData.general_notes,
-              is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
-            }, {
-              onConflict: 'full_name',
-              ignoreDuplicates: false
-            })
-            .select('id')
-            .single()
+            .select(`
+              id, 
+              candidate_pipeline!inner(
+                id, 
+                applied_company, 
+                applied_job_title, 
+                stage_id, 
+                is_active
+              )
+            `)
+            .eq('full_name', candidateData.full_name)
+            .eq('candidate_pipeline.applied_company', candidateData.applied_company || '')
+            .eq('candidate_pipeline.applied_job_title', candidateData.applied_job_title || '')
+            .maybeSingle()
 
-          if (candidateError) {
-            console.error('Candidate insert error:', candidateError)
-            errors.push(`Row ${i + 2}: Failed to insert candidate - ${candidateError.message}`)
-            errorCount++
-            continue
+          let candidateId: string
+          let isUpdate = false
+
+          if (existingCandidate) {
+            // Update existing candidate
+            isUpdate = true
+            candidateId = existingCandidate.id
+            
+            const { error: updateError } = await supabaseClient
+              .from('candidates')
+              .update({
+                email: candidateData.email || null,
+                phone_number: candidateData.phone_number,
+                linkedin_profile: candidateData.linkedin_profile,
+                current_company: candidateData.current_company,
+                years_of_experience: candidateData.years_of_experience,
+                salary: candidateData.salary,
+                skillsets: candidateData.skillsets || [],
+                past_companies: candidateData.past_companies || [],
+                general_notes: candidateData.general_notes,
+                is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', candidateId)
+
+            if (updateError) {
+              console.error('Candidate update error:', updateError)
+              errors.push(`Row ${actualRowNumber}: Failed to update candidate - ${updateError.message}`)
+              errorCount++
+              continue
+            }
+
+            updatedCount++
+            console.log(`📝 Updated existing candidate: ${candidateData.full_name}`)
+          } else {
+            // Create new candidate
+            const { data: newCandidate, error: candidateError } = await supabaseClient
+              .from('candidates')
+              .insert({
+                full_name: candidateData.full_name,
+                email: candidateData.email || null,
+                phone_number: candidateData.phone_number,
+                linkedin_profile: candidateData.linkedin_profile,
+                current_company: candidateData.current_company,
+                years_of_experience: candidateData.years_of_experience,
+                salary: candidateData.salary,
+                skillsets: candidateData.skillsets || [],
+                past_companies: candidateData.past_companies || [],
+                general_notes: candidateData.general_notes,
+                is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
+              })
+              .select('id')
+              .single()
+
+            if (candidateError) {
+              console.error('Candidate insert error:', candidateError)
+              errors.push(`Row ${actualRowNumber}: Failed to create candidate - ${candidateError.message}`)
+              errorCount++
+              continue
+            }
+
+            candidateId = newCandidate.id
+            createdCount++
+            console.log(`✨ Created new candidate: ${candidateData.full_name}`)
           }
 
           // Determine stage
@@ -342,41 +399,61 @@ serve(async (req) => {
             defaultStageCount++
           }
 
-          // Add to pipeline with unique sheet row identifier
-          const sheetRowId = `${integrationId}_${actualRowNumber}`
-          const { error: pipelineError } = await supabaseClient
-            .from('candidate_pipeline')
-            .upsert({
-              candidate_id: candidate.id,
-              stage_id: stageId,
-              notes: candidateData.general_notes,
-              is_active: candidateData.is_active,
-              applied_company: candidateData.applied_company,
-              applied_job_title: candidateData.applied_job_title,
-              sheet_row_id: sheetRowId
-            }, {
-              onConflict: 'sheet_row_id',
-              ignoreDuplicates: false
-            })
+          // Handle pipeline entry
+          if (existingCandidate) {
+            // Update pipeline if stage or active status changed
+            const pipelineEntry = existingCandidate.candidate_pipeline[0]
+            if (pipelineEntry.stage_id !== stageId || pipelineEntry.is_active !== (candidateData.is_active !== undefined ? candidateData.is_active : true)) {
+              const { error: pipelineUpdateError } = await supabaseClient
+                .from('candidate_pipeline')
+                .update({
+                  stage_id: stageId,
+                  is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
+                  notes: candidateData.general_notes,
+                  updated_at: new Date().toISOString(),
+                  moved_at: new Date().toISOString()
+                })
+                .eq('id', pipelineEntry.id)
 
-          if (pipelineError) {
-            console.error('Pipeline insert error:', pipelineError)
-            errors.push(`Row ${i + 2}: Failed to add to pipeline - ${pipelineError.message}`)
-            errorCount++
-            continue
+              if (pipelineUpdateError) {
+                console.error('Pipeline update error:', pipelineUpdateError)
+                errors.push(`Row ${actualRowNumber}: Failed to update pipeline - ${pipelineUpdateError.message}`)
+                errorCount++
+                continue
+              }
+            }
+          } else {
+            // Create new pipeline entry
+            const { error: pipelineError } = await supabaseClient
+              .from('candidate_pipeline')
+              .insert({
+                candidate_id: candidateId,
+                stage_id: stageId,
+                notes: candidateData.general_notes,
+                is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
+                applied_company: candidateData.applied_company,
+                applied_job_title: candidateData.applied_job_title
+              })
+
+            if (pipelineError) {
+              console.error('Pipeline insert error:', pipelineError)
+              errors.push(`Row ${actualRowNumber}: Failed to create pipeline - ${pipelineError.message}`)
+              errorCount++
+              continue
+            }
           }
 
           processedCount++
-          console.log(`✅ Processed candidate ${processedCount}/${totalRows}: ${candidateData.full_name}${usedDefault ? ' (default stage)' : ''}`)
+          console.log(`✅ Processed candidate ${processedCount}/${totalRows}: ${candidateData.full_name} (${isUpdate ? 'updated' : 'created'})${usedDefault ? ' (default stage)' : ''}`)
 
-          // Log progress every 10 candidates or on last candidate
-          if (processedCount % 10 === 0 || processedCount === totalRows) {
-            console.log(`📊 Progress: ${processedCount}/${totalRows} (${Math.round(processedCount/totalRows*100)}%)`)
+          // Log progress every 5 candidates or on last candidate
+          if (processedCount % 5 === 0 || processedCount === totalRows) {
+            console.log(`📊 Progress: ${processedCount}/${totalRows} (${Math.round(processedCount/totalRows*100)}%) - Created: ${createdCount}, Updated: ${updatedCount}`)
           }
 
         } catch (error) {
-          console.error(`Error processing row ${i + 2}:`, error)
-          errors.push(`Row ${i + 2}: ${error.message}`)
+          console.error(`Error processing row ${actualRowNumber}:`, error)
+          errors.push(`Row ${actualRowNumber}: ${error.message}`)
           errorCount++
         }
       }
@@ -385,16 +462,18 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 100))
     }
 
-    console.log(`🎉 Sync completed: ${processedCount} processed, ${errorCount} errors, ${defaultStageCount} used default stage`)
+    console.log(`🎉 Sync completed: ${processedCount} processed (${createdCount} created, ${updatedCount} updated), ${errorCount} errors, ${defaultStageCount} used default stage`)
 
     return new Response(JSON.stringify({
       success: true,
       processedCount,
+      createdCount,
+      updatedCount,
       errorCount,
       defaultStageCount,
       totalRows,
       errors: errors.slice(0, 10), // Limit error messages
-      message: `Successfully processed ${processedCount} candidates. ${defaultStageCount} candidates were assigned to the default stage due to stage mapping issues.`
+      message: `Successfully processed ${processedCount} candidates (${createdCount} created, ${updatedCount} updated). ${defaultStageCount} candidates were assigned to the default stage due to stage mapping issues.`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200

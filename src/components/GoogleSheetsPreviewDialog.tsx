@@ -29,6 +29,8 @@ interface GoogleSheetsPreviewDialogProps {
     total: number;
     status: 'idle' | 'syncing' | 'completed' | 'error';
     errors: string[];
+    createdCount?: number;
+    updatedCount?: number;
   };
 }
 
@@ -71,6 +73,11 @@ export const GoogleSheetsPreviewDialog: React.FC<GoogleSheetsPreviewDialogProps>
               </span>
               <span className="text-sm text-muted-foreground">
                 {syncProgress.current} / {syncProgress.total}
+                {syncProgress.status === 'completed' && syncProgress.createdCount !== undefined && (
+                  <span className="ml-2 text-green-600">
+                    ({syncProgress.createdCount} created, {syncProgress.updatedCount} updated)
+                  </span>
+                )}
               </span>
             </div>
             <Progress value={progressPercentage} className="w-full" />

@@ -20,6 +20,8 @@ interface SyncProgress {
   total: number;
   status: 'idle' | 'syncing' | 'completed' | 'error';
   errors: string[];
+  createdCount?: number;
+  updatedCount?: number;
 }
 
 export const useGoogleSheetsPreview = () => {
@@ -230,10 +232,16 @@ export const useGoogleSheetsPreview = () => {
       setSyncProgress(prev => ({
         ...prev,
         current: prev.total,
-        status: 'completed'
+        status: 'completed',
+        createdCount: data?.createdCount || 0,
+        updatedCount: data?.updatedCount || 0
       }));
 
-      toast.success(`Successfully synced ${data?.processedCount || 'all'} candidates`);
+      const message = data?.createdCount || data?.updatedCount 
+        ? `Successfully synced ${data.processedCount} candidates (${data.createdCount} created, ${data.updatedCount} updated)`
+        : `Successfully synced ${data?.processedCount || 'all'} candidates`;
+      
+      toast.success(message);
       
       if (data?.errors && data.errors.length > 0) {
         setSyncProgress(prev => ({
