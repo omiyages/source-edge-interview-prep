@@ -286,11 +286,19 @@ serve(async (req) => {
           }
 
           // First, check if candidate exists by name only (due to unique constraint)
-          const { data: existingCandidate } = await supabaseClient
+          console.log(`Checking for existing candidate with name: "${candidateData.full_name}"`)
+          const { data: existingCandidate, error: lookupError } = await supabaseClient
             .from('candidates')
             .select('id')
             .eq('full_name', candidateData.full_name)
             .maybeSingle()
+
+          if (lookupError) {
+            console.error('Error looking up candidate:', lookupError)
+            errors.push(`Row ${actualRowNumber}: Failed to lookup candidate - ${lookupError.message}`)
+            errorCount++
+            continue
+          }
 
           let candidateId: string
           let isUpdate = false
@@ -299,6 +307,7 @@ serve(async (req) => {
             // Update existing candidate
             isUpdate = true
             candidateId = existingCandidate.id
+            console.log(`Found existing candidate with ID: ${candidateId}`)
             
             const { error: updateError } = await supabaseClient
               .from('candidates')
@@ -327,35 +336,60 @@ serve(async (req) => {
             updatedCount++
             console.log(`📝 Updated existing candidate: ${candidateData.full_name}`)
           } else {
-            // Create new candidate
-            const { data: newCandidate, error: candidateError } = await supabaseClient
-              .from('candidates')
-              .insert({
-                full_name: candidateData.full_name,
-                email: candidateData.email || null,
-                phone_number: candidateData.phone_number,
-                linkedin_profile: candidateData.linkedin_profile,
-                current_company: candidateData.current_company,
-                years_of_experience: candidateData.years_of_experience,
-                salary: candidateData.salary,
-                skillsets: candidateData.skillsets || [],
-                past_companies: candidateData.past_companies || [],
-                general_notes: candidateData.general_notes,
-                is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
-              })
-              .select('id')
-              .single()
+            // Create new candidate with error handling for constraint violation
+            console.log(`No existing candidate found, creating new one: "${candidateData.full_name}"`)
+            
+            try {
+              const { data: newCandidate, error: candidateError } = await supabaseClient
+                .from('candidates')
+                .insert({
+                  full_name: candidateData.full_name,
+                  email: candidateData.email || null,
+                  phone_number: candidateData.phone_number,
+                  linkedin_profile: candidateData.linkedin_profile,
+                  current_company: candidateData.current_company,
+                  years_of_experience: candidateData.years_of_experience,
+                  salary: candidateData.salary,
+                  skillsets: candidateData.skillsets || [],
+                  past_companies: candidateData.past_companies || [],
+                  general_notes: candidateData.general_notes,
+                  is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
+                })
+                .select('id')
+                .single()
 
-            if (candidateError) {
-              console.error('Candidate insert error:', candidateError)
-              errors.push(`Row ${actualRowNumber}: Failed to create candidate - ${candidateError.message}`)
+              if (candidateError) {
+                // If it's a duplicate key error, try to find the existing candidate
+                if (candidateError.code === '23505') {
+                  console.log(`Duplicate key error for "${candidateData.full_name}", attempting to find existing candidate`)
+                  const { data: retryCandidate } = await supabaseClient
+                    .from('candidates')
+                    .select('id')
+                    .eq('full_name', candidateData.full_name)
+                    .single()
+                  
+                  if (retryCandidate) {
+                    candidateId = retryCandidate.id
+                    isUpdate = true
+                    updatedCount++
+                    console.log(`🔄 Found existing candidate after duplicate error: ${candidateData.full_name}`)
+                  } else {
+                    throw candidateError
+                  }
+                } else {
+                  throw candidateError
+                }
+              } else {
+                candidateId = newCandidate.id
+                createdCount++
+                console.log(`✨ Created new candidate: ${candidateData.full_name}`)
+              }
+            } catch (error) {
+              console.error('Candidate insert error:', error)
+              errors.push(`Row ${actualRowNumber}: Failed to create candidate - ${error.message}`)
               errorCount++
               continue
             }
-
-            candidateId = newCandidate.id
-            createdCount++
-            console.log(`✨ Created new candidate: ${candidateData.full_name}`)
           }
 
           // Determine stage
