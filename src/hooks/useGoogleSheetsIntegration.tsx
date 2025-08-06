@@ -1,3 +1,4 @@
+
 // ABOUTME: Hook for managing Google Sheets integrations with real-time progress tracking
 // ABOUTME: Handles CRUD operations and sync functionality with background processing support
 
@@ -151,7 +152,7 @@ export const useSyncGoogleSheets = () => {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const currentIntegrationIdRef = useRef<string | null>(null);
 
-  // Function to poll progress
+  // Function to poll progress with better error handling
   const pollProgress = async (integrationId: string) => {
     try {
       console.log('🔍 Polling progress for integration:', integrationId);
@@ -172,9 +173,13 @@ export const useSyncGoogleSheets = () => {
         const progress = data.progress;
         console.log('📊 Progress update:', progress);
         
+        // Ensure we have valid numbers for current and total
+        const current = Math.max(0, progress.processed || progress.current || 0);
+        const total = Math.max(current, progress.total || 0);
+        
         setSyncProgress(prev => ({
-          current: progress.processed || progress.current || 0,
-          total: progress.total || 0,
+          current: current,
+          total: total,
           status: progress.status === 'idle' ? prev.status : progress.status,
           errors: progress.errorMessages || progress.errors || [],
           createdCount: progress.created || progress.createdCount || 0,
@@ -191,8 +196,16 @@ export const useSyncGoogleSheets = () => {
           if (progress.status === 'completed') {
             toast({
               title: 'Sync completed',
-              description: `Successfully processed ${progress.processed || progress.current || 0} candidates (${progress.created || progress.createdCount || 0} created, ${progress.updated || progress.updatedCount || 0} updated)`,
+              description: `Successfully processed ${current} candidates (${progress.created || progress.createdCount || 0} created, ${progress.updated || progress.updatedCount || 0} updated)`,
             });
+            
+            // Update the integration's last_sync_at timestamp
+            if (currentIntegrationIdRef.current) {
+              await supabase
+                .from('google_sheets_integrations')
+                .update({ last_sync_at: new Date().toISOString() })
+                .eq('id', currentIntegrationIdRef.current);
+            }
             
             // Invalidate queries to refresh data
             queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
@@ -216,7 +229,7 @@ export const useSyncGoogleSheets = () => {
     }
   };
 
-  // Start polling function
+  // Start polling function with more aggressive polling
   const startPolling = (integrationId: string) => {
     currentIntegrationIdRef.current = integrationId;
     
@@ -225,12 +238,15 @@ export const useSyncGoogleSheets = () => {
       clearInterval(pollIntervalRef.current);
     }
     
-    // Start polling every 2 seconds
+    // Start polling every 1 second for more responsive updates
     pollIntervalRef.current = setInterval(() => {
       if (currentIntegrationIdRef.current) {
         pollProgress(currentIntegrationIdRef.current);
       }
-    }, 2000);
+    }, 1000);
+    
+    // Also poll immediately
+    pollProgress(integrationId);
   };
 
   // Cleanup polling on unmount
@@ -262,7 +278,7 @@ export const useSyncGoogleSheets = () => {
           mappings: Object.keys(integration.column_mappings || {}).length
         });
 
-        // Reset progress state
+        // Reset progress state with better initial values
         setSyncProgress({
           current: 0,
           total: 0,
@@ -290,10 +306,11 @@ export const useSyncGoogleSheets = () => {
 
         console.log('✅ Sync started successfully:', data);
 
-        // Update initial progress
+        // Update initial progress with actual total from the response
+        const totalRows = Math.max(1, (data?.totalRows || 0));
         setSyncProgress(prev => ({
           ...prev,
-          total: data?.totalRows || 0,
+          total: totalRows,
           status: 'processing'
         }));
 

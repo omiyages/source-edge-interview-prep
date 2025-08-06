@@ -37,7 +37,7 @@ interface SyncProgress {
 // Store progress in memory for this function instance
 const progressStore = new Map<string, SyncProgress>();
 
-// Background sync processor with timeout management
+// Background sync processor with improved error handling and progress tracking
 async function processSync(
   integrationId: string,
   supabaseClient: any,
@@ -58,7 +58,7 @@ async function processSync(
 
     console.log(`📊 Processing ${totalRows} rows with ${headers.length} columns`);
 
-    // Initialize progress
+    // Initialize progress with correct values
     const progress: SyncProgress = {
       processed: 0,
       total: totalRows,
@@ -70,7 +70,7 @@ async function processSync(
     };
     progressStore.set(integrationId, progress);
 
-    // Pre-load hiring stages
+    // Pre-load hiring stages for better performance
     const { data: stages } = await supabaseClient
       .from('hiring_stages')
       .select('id, name')
@@ -84,13 +84,39 @@ async function processSync(
       fuzzyStageMap.set(name, stage.id);
       fuzzyStageMap.set(name.replace(/\s+/g, ''), stage.id);
       fuzzyStageMap.set(name.replace(/\s+/g, '_'), stage.id);
+      fuzzyStageMap.set(name.replace(/\s+/g, '-'), stage.id);
+      
+      // Add common variations
+      if (name.includes('interview')) {
+        const num = name.match(/\d+/)?.[0];
+        if (num) {
+          fuzzyStageMap.set(`interview${num}`, stage.id);
+          fuzzyStageMap.set(`int${num}`, stage.id);
+        }
+      }
+      if (name.includes('technical')) {
+        fuzzyStageMap.set('tech', stage.id);
+        fuzzyStageMap.set('technical', stage.id);
+      }
+      if (name.includes('hr')) {
+        fuzzyStageMap.set('hr', stage.id);
+        fuzzyStageMap.set('hr screen', stage.id);
+        fuzzyStageMap.set('hrscreen', stage.id);
+      }
     });
     
     const defaultStageId = stages?.[0]?.id;
 
-    // Process in larger batches with timeout checks
-    const batchSize = 25; // Increased batch size for better performance
-    const maxProcessingTime = 4 * 60 * 1000; // 4 minutes max processing time
+    console.log('🎯 Stage mapping setup:', {
+      totalStages: stages?.length || 0,
+      fuzzyMappings: fuzzyStageMap.size,
+      defaultStageId
+    });
+
+    // Process rows sequentially to avoid overwhelming the database
+    // but with smaller batches for better progress updates
+    const batchSize = 10;
+    const maxProcessingTime = 5 * 60 * 1000; // 5 minutes max processing time
     const startTime = Date.now();
 
     for (let i = 0; i < dataRows.length; i += batchSize) {
@@ -98,7 +124,7 @@ async function processSync(
       if (Date.now() - startTime > maxProcessingTime) {
         console.log('⏰ Approaching timeout, stopping processing');
         progress.status = 'error';
-        progress.errorMessages.push('Processing stopped due to timeout. Please try with smaller batches.');
+        progress.errorMessages.push('Processing stopped due to timeout. Please try with smaller datasets.');
         progressStore.set(integrationId, progress);
         break;
       }
@@ -106,17 +132,18 @@ async function processSync(
       const batch = dataRows.slice(i, i + batchSize);
       console.log(`📦 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(totalRows/batchSize)} (rows ${i + 2} to ${Math.min(i + batchSize + 1, totalRows + 1)})`);
 
-      // Process batch with Promise.all for parallel processing
-      const batchPromises = batch.map(async (row, batchIndex) => {
+      // Process each row in the batch
+      for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
+        const row = batch[batchIndex];
         const actualRowNumber = i + batchIndex + 2;
         
         try {
           const candidateData: CandidateData = { full_name: '', is_active: true };
           
-          // Map data from row
-          headers.forEach((header, index) => {
+          // Map data from row - improved data extraction
+          headers.forEach((header: string, index: number) => {
             const value = row[index]?.toString()?.trim();
-            if (!value) return;
+            if (!value || value === '' || value === 'undefined' || value === 'null') return;
 
             const mapping = columnMappings[header];
             if (!mapping) return;
@@ -126,7 +153,9 @@ async function processSync(
                 candidateData.full_name = value;
                 break;
               case 'email':
-                candidateData.email = value;
+                if (value.includes('@')) {
+                  candidateData.email = value.toLowerCase();
+                }
                 break;
               case 'phone_number':
                 candidateData.phone_number = value;
@@ -144,18 +173,18 @@ async function processSync(
                 candidateData.applied_job_title = value;
                 break;
               case 'years_of_experience':
-                const exp = parseInt(value);
-                if (!isNaN(exp)) candidateData.years_of_experience = exp;
+                const exp = parseInt(value.toString().replace(/[^0-9]/g, ''));
+                if (!isNaN(exp) && exp >= 0) candidateData.years_of_experience = exp;
                 break;
               case 'salary':
-                const sal = parseInt(value.replace(/[,$]/g, ''));
-                if (!isNaN(sal)) candidateData.salary = sal;
+                const sal = parseInt(value.toString().replace(/[,$\s]/g, ''));
+                if (!isNaN(sal) && sal > 0) candidateData.salary = sal;
                 break;
               case 'skillsets':
-                candidateData.skillsets = value.split(',').map(s => s.trim()).filter(Boolean);
+                candidateData.skillsets = value.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
                 break;
               case 'past_companies':
-                candidateData.past_companies = value.split(',').map(s => s.trim()).filter(Boolean);
+                candidateData.past_companies = value.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
                 break;
               case 'general_notes':
                 candidateData.general_notes = value;
@@ -166,43 +195,54 @@ async function processSync(
                 break;
               case 'is_active':
                 const lowerValue = value.toLowerCase().trim();
-                candidateData.is_active = lowerValue === 'yes' || lowerValue === 'active' || lowerValue === 'true' || lowerValue === '1';
+                candidateData.is_active = ['yes', 'active', 'true', '1', 'y'].includes(lowerValue);
                 break;
             }
           });
 
-          if (!candidateData.full_name) {
+          // Skip rows without names
+          if (!candidateData.full_name || candidateData.full_name.length < 2) {
             progress.errors++;
-            progress.errorMessages.push(`Row ${actualRowNumber}: Missing candidate name`);
-            return;
+            progress.errorMessages.push(`Row ${actualRowNumber}: Missing or invalid candidate name - skipped`);
+            progress.processed++;
+            continue;
           }
 
-          // Check for existing candidate
-          const { data: existingCandidate } = await supabaseClient
+          // Check for existing candidate by name and email (better deduplication)
+          let existingCandidateQuery = supabaseClient
             .from('candidates')
             .select('id')
-            .eq('full_name', candidateData.full_name)
-            .maybeSingle();
+            .eq('full_name', candidateData.full_name);
+            
+          if (candidateData.email) {
+            existingCandidateQuery = existingCandidateQuery.or(`email.eq.${candidateData.email}`);
+          }
+          
+          const { data: existingCandidate } = await existingCandidateQuery.maybeSingle();
 
           let candidateId: string;
           
           if (existingCandidate) {
-            // Update existing
+            // Update existing candidate
+            const updateData: any = {
+              updated_at: new Date().toISOString()
+            };
+            
+            // Only update fields that have values
+            if (candidateData.email) updateData.email = candidateData.email;
+            if (candidateData.phone_number) updateData.phone_number = candidateData.phone_number;
+            if (candidateData.linkedin_profile) updateData.linkedin_profile = candidateData.linkedin_profile;
+            if (candidateData.current_company) updateData.current_company = candidateData.current_company;
+            if (candidateData.years_of_experience !== undefined) updateData.years_of_experience = candidateData.years_of_experience;
+            if (candidateData.salary !== undefined) updateData.salary = candidateData.salary;
+            if (candidateData.skillsets && candidateData.skillsets.length > 0) updateData.skillsets = candidateData.skillsets;
+            if (candidateData.past_companies && candidateData.past_companies.length > 0) updateData.past_companies = candidateData.past_companies;
+            if (candidateData.general_notes) updateData.general_notes = candidateData.general_notes;
+            if (candidateData.is_active !== undefined) updateData.is_active = candidateData.is_active;
+
             const { error: updateError } = await supabaseClient
               .from('candidates')
-              .update({
-                email: candidateData.email || null,
-                phone_number: candidateData.phone_number,
-                linkedin_profile: candidateData.linkedin_profile,
-                current_company: candidateData.current_company,
-                years_of_experience: candidateData.years_of_experience,
-                salary: candidateData.salary,
-                skillsets: candidateData.skillsets || [],
-                past_companies: candidateData.past_companies || [],
-                general_notes: candidateData.general_notes,
-                is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
-                updated_at: new Date().toISOString()
-              })
+              .update(updateData)
               .eq('id', existingCandidate.id);
 
             if (!updateError) {
@@ -211,25 +251,32 @@ async function processSync(
             } else {
               progress.errors++;
               progress.errorMessages.push(`Row ${actualRowNumber}: Update failed - ${updateError.message}`);
-              return;
+              progress.processed++;
+              continue;
             }
           } else {
-            // Create new
+            // Create new candidate
+            const insertData: any = {
+              full_name: candidateData.full_name,
+              is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            
+            // Only include fields that have values
+            if (candidateData.email) insertData.email = candidateData.email;
+            if (candidateData.phone_number) insertData.phone_number = candidateData.phone_number;
+            if (candidateData.linkedin_profile) insertData.linkedin_profile = candidateData.linkedin_profile;
+            if (candidateData.current_company) insertData.current_company = candidateData.current_company;
+            if (candidateData.years_of_experience !== undefined) insertData.years_of_experience = candidateData.years_of_experience;
+            if (candidateData.salary !== undefined) insertData.salary = candidateData.salary;
+            if (candidateData.skillsets && candidateData.skillsets.length > 0) insertData.skillsets = candidateData.skillsets;
+            if (candidateData.past_companies && candidateData.past_companies.length > 0) insertData.past_companies = candidateData.past_companies;
+            if (candidateData.general_notes) insertData.general_notes = candidateData.general_notes;
+
             const { data: newCandidate, error: createError } = await supabaseClient
               .from('candidates')
-              .insert({
-                full_name: candidateData.full_name,
-                email: candidateData.email || null,
-                phone_number: candidateData.phone_number,
-                linkedin_profile: candidateData.linkedin_profile,
-                current_company: candidateData.current_company,
-                years_of_experience: candidateData.years_of_experience,
-                salary: candidateData.salary,
-                skillsets: candidateData.skillsets || [],
-                past_companies: candidateData.past_companies || [],
-                general_notes: candidateData.general_notes,
-                is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
-              })
+              .insert(insertData)
               .select('id')
               .single();
 
@@ -239,24 +286,34 @@ async function processSync(
             } else {
               progress.errors++;
               progress.errorMessages.push(`Row ${actualRowNumber}: Create failed - ${createError?.message || 'Unknown error'}`);
-              return;
+              progress.processed++;
+              continue;
             }
           }
 
-          // Handle stage mapping and pipeline
+          // Handle stage mapping and pipeline with better error handling
           let stageId = defaultStageId;
           if (candidateData.stage) {
             const mappedStage = candidateData.stage.toLowerCase().trim();
-            stageId = stageMap.get(mappedStage) || fuzzyStageMap.get(mappedStage) || defaultStageId;
+            stageId = stageMap.get(mappedStage) || 
+                     fuzzyStageMap.get(mappedStage) || 
+                     fuzzyStageMap.get(mappedStage.replace(/\s+/g, '')) ||
+                     fuzzyStageMap.get(mappedStage.replace(/\s+/g, '_')) ||
+                     defaultStageId;
           }
 
-          // Handle pipeline entry
+          // Handle pipeline entry with better conflict resolution
+          const pipelineData = {
+            applied_company: candidateData.applied_company || 'Unknown Company',
+            applied_job_title: candidateData.applied_job_title || 'Unknown Position'
+          };
+
           const { data: existingPipeline } = await supabaseClient
             .from('candidate_pipeline')
             .select('id')
             .eq('candidate_id', candidateId)
-            .eq('applied_company', candidateData.applied_company || '')
-            .eq('applied_job_title', candidateData.applied_job_title || '')
+            .eq('applied_company', pipelineData.applied_company)
+            .eq('applied_job_title', pipelineData.applied_job_title)
             .maybeSingle();
 
           if (existingPipeline) {
@@ -278,29 +335,31 @@ async function processSync(
                 stage_id: stageId,
                 notes: candidateData.general_notes,
                 is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
-                applied_company: candidateData.applied_company,
-                applied_job_title: candidateData.applied_job_title
+                applied_company: pipelineData.applied_company,
+                applied_job_title: pipelineData.applied_job_title,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                moved_at: new Date().toISOString()
               });
           }
 
           progress.processed++;
 
         } catch (error) {
+          console.error(`❌ Row ${actualRowNumber} processing error:`, error);
           progress.errors++;
           progress.errorMessages.push(`Row ${actualRowNumber}: ${error.message}`);
+          progress.processed++;
         }
-      });
+        
+        // Update progress after each row for more frequent updates
+        progressStore.set(integrationId, { ...progress });
+      }
 
-      // Wait for batch to complete
-      await Promise.all(batchPromises);
-      
-      // Update progress after each batch
-      progressStore.set(integrationId, { ...progress });
-      
       console.log(`✅ Batch completed: ${progress.processed}/${totalRows} processed (${progress.created} created, ${progress.updated} updated, ${progress.errors} errors)`);
 
-      // Small delay between batches
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Small delay between batches to prevent overwhelming the database
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // Mark as completed
@@ -321,7 +380,7 @@ async function processSync(
       errorMessages: []
     };
     progress.status = 'error';
-    progress.errorMessages.push(error.message);
+    progress.errorMessages.push(`Sync failed: ${error.message}`);
     progressStore.set(integrationId, progress);
   }
 }
@@ -430,8 +489,9 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json()
     const accessToken = tokenData.access_token
 
-    // Fetch Google Sheets data
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`
+    // Fetch Google Sheets data with expanded range to get all data
+    const expandedRange = range.includes('!') ? range : `${range}1:${range}1000`;
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${expandedRange}`
     const response = await fetch(sheetsUrl, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     })
@@ -441,17 +501,26 @@ serve(async (req) => {
     }
 
     const data = await response.json()
+    
+    // Filter out empty rows
+    const filteredValues = data.values?.filter((row: any[]) => 
+      row && row.some(cell => cell && cell.toString().trim())
+    ) || [];
 
-    // Start background processing
+    const totalRows = Math.max(0, filteredValues.length - 1); // Subtract header row
+
+    console.log(`📊 Fetched ${filteredValues.length} total rows, ${totalRows} data rows`);
+
+    // Start background processing with filtered data
     EdgeRuntime.waitUntil(
-      processSync(integrationId, supabaseClient, data, columnMappings || {})
+      processSync(integrationId, supabaseClient, { values: filteredValues }, columnMappings || {})
     )
 
-    // Return immediate response
+    // Return immediate response with correct total
     return new Response(JSON.stringify({
       success: true,
       message: 'Sync started successfully',
-      totalRows: (data.values?.length || 1) - 1,
+      totalRows: totalRows,
       backgroundProcessing: true
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
