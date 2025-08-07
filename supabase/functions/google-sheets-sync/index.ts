@@ -1,4 +1,5 @@
 
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -23,6 +24,21 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Parse request body only once
+  let requestBody;
+  try {
+    requestBody = await req.json();
+  } catch (error) {
+    console.error('❌ Failed to parse request body:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Invalid request body'
+    }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const supabase = createClient(
       'https://satshobhbkjptsbmfsia.supabase.co',
@@ -30,7 +46,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { integrationId, sheetId, range, columnMappings, action } = await req.json();
+    const { integrationId, sheetId, range, columnMappings, action } = requestBody;
 
     // Handle progress check requests
     if (action === 'check_progress') {
@@ -93,6 +109,8 @@ serve(async (req) => {
     
     const sheetsResponse = await fetch(sheetsUrl);
     if (!sheetsResponse.ok) {
+      const errorText = await sheetsResponse.text();
+      console.error('❌ Google Sheets API error:', sheetsResponse.status, errorText);
       throw new Error(`Google Sheets API error: ${sheetsResponse.statusText}`);
     }
 
@@ -270,7 +288,7 @@ serve(async (req) => {
               console.log(`✅ Created new candidate: ${candidateData.full_name}`);
             }
 
-            // CRITICAL: Ensure pipeline entry exists for ALL candidates
+            // CRITICAL: Ensure pipeline entry exists for ALL candidates (both new and updated)
             console.log(`🔄 Processing pipeline for candidate ${candidateData.full_name} (ID: ${candidateId})`);
             
             // Check for existing pipeline entries
@@ -281,17 +299,19 @@ serve(async (req) => {
 
             if (pipelineSearchError) {
               console.error('❌ Error searching pipeline:', pipelineSearchError);
+              const currentProgress = progressState.get(integrationId)!;
+              currentProgress.errors.push(`Pipeline search failed for ${candidateData.full_name}: ${pipelineSearchError.message}`);
+              progressState.set(integrationId, currentProgress);
               continue;
             }
 
             console.log(`📋 Found ${existingPipeline?.length || 0} existing pipeline entries for ${candidateData.full_name}`);
 
             if (existingPipeline && existingPipeline.length > 0) {
-              // Update existing pipeline entry
+              // Update existing pipeline entry to ensure it's active
               const pipelineEntry = existingPipeline[0];
-              console.log(`✅ Found matching pipeline entry for ${candidateData.full_name}`);
+              console.log(`✅ Found existing pipeline entry for ${candidateData.full_name}`);
               
-              // Update the pipeline entry to ensure it's active and in the right stage
               const { error: pipelineUpdateError } = await supabase
                 .from('candidate_pipeline')
                 .update({
@@ -302,12 +322,15 @@ serve(async (req) => {
 
               if (pipelineUpdateError) {
                 console.error('❌ Error updating pipeline entry:', pipelineUpdateError);
+                const currentProgress = progressState.get(integrationId)!;
+                currentProgress.errors.push(`Failed to update pipeline for ${candidateData.full_name}: ${pipelineUpdateError.message}`);
+                progressState.set(integrationId, currentProgress);
               } else {
                 console.log(`✅ Updated pipeline entry for ${candidateData.full_name}`);
               }
             } else {
               // Create new pipeline entry - this is crucial for Kanban visibility
-              console.log(`➕ Creating pipeline entry for ${candidateData.full_name}`);
+              console.log(`➕ Creating new pipeline entry for ${candidateData.full_name}`);
               
               const { error: pipelineInsertError } = await supabase
                 .from('candidate_pipeline')
@@ -315,7 +338,7 @@ serve(async (req) => {
                   candidate_id: candidateId,
                   stage_id: firstStageId,
                   is_active: true,
-                  applied_company: null,
+                  applied_company: candidateData.current_company || null,
                   applied_job_title: null,
                   notes: `Synced from Google Sheets on ${new Date().toISOString()}`
                 });
@@ -326,7 +349,7 @@ serve(async (req) => {
                 currentProgress.errors.push(`Failed to create pipeline for ${candidateData.full_name}: ${pipelineInsertError.message}`);
                 progressState.set(integrationId, currentProgress);
               } else {
-                console.log(`✅ Created pipeline entry for ${candidateData.full_name}`);
+                console.log(`✅ Created new pipeline entry for ${candidateData.full_name}`);
               }
             }
 
@@ -388,15 +411,12 @@ serve(async (req) => {
     console.error('🚨 Sync failed:', error);
     
     // Update progress state on error
-    if (req.method === 'POST') {
-      const body = await req.json();
-      const integrationId = body.integrationId;
-      if (integrationId && progressState.has(integrationId)) {
-        const progress = progressState.get(integrationId)!;
-        progress.status = 'error';
-        progress.errors.push(error.message);
-        progressState.set(integrationId, progress);
-      }
+    const integrationId = requestBody?.integrationId;
+    if (integrationId && progressState.has(integrationId)) {
+      const progress = progressState.get(integrationId)!;
+      progress.status = 'error';
+      progress.errors.push(error.message);
+      progressState.set(integrationId, progress);
     }
 
     return new Response(JSON.stringify({
