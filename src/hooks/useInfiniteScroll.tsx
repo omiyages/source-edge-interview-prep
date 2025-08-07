@@ -1,3 +1,7 @@
+
+// ABOUTME: Custom hook for implementing infinite scroll functionality with intersection observer
+// ABOUTME: Provides target ref setter, fetching state management, and cleanup for scroll-based pagination
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseInfiniteScrollOptions {
@@ -6,11 +10,9 @@ interface UseInfiniteScrollOptions {
   isLoading?: boolean;
 }
 
-export const useInfiniteScroll = ({
-  threshold = 100,
-  hasNextPage = true,
-  isLoading = false,
-}: UseInfiniteScrollOptions = {}) => {
+export const useInfiniteScroll = (options: UseInfiniteScrollOptions = {}) => {
+  const { threshold = 100, hasNextPage = true, isLoading = false } = options;
+  
   const [isFetching, setIsFetching] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const elementRef = useRef<HTMLDivElement | null>(null);
