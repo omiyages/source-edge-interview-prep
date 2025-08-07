@@ -1,4 +1,7 @@
 
+// ABOUTME: Admin dashboard page that provides comprehensive management interface for administrators
+// ABOUTME: Includes candidate pipeline, user management, analytics, security monitoring, and integrations
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,11 +11,21 @@ import { DataVisualization } from '@/components/DataVisualization';
 import { SecurityMonitor } from '@/components/SecurityMonitor';
 import { GoogleSheetsIntegrationSection } from '@/components/GoogleSheetsIntegrationSection';
 import UsersList from '@/components/UsersList';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 const AdminDashboard = () => {
+  console.log('🏠 AdminDashboard: Component rendering started');
+  
   const { user, isAdmin } = useAuth();
+  
+  console.log('🏠 AdminDashboard: Auth state:', { 
+    hasUser: !!user, 
+    userEmail: user?.email, 
+    isAdmin 
+  });
 
   if (!isAdmin) {
+    console.log('🚫 AdminDashboard: Access denied - not admin');
     return (
       <div className="p-6">
         <div className="text-center">
@@ -23,52 +36,66 @@ const AdminDashboard = () => {
     );
   }
 
+  console.log('✅ AdminDashboard: Rendering admin dashboard content');
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <div className="text-sm text-gray-500">
-          Welcome back, {user?.email}
+    <ErrorBoundary>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div className="text-sm text-gray-500">
+            Welcome back, {user?.email}
+          </div>
         </div>
+
+        <Tabs defaultValue="pipeline" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pipeline" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Candidate Pipeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ErrorBoundary>
+                  <KanbanBoard />
+                </ErrorBoundary>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <ErrorBoundary>
+              <UsersList />
+            </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <ErrorBoundary>
+              <DataVisualization />
+            </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <ErrorBoundary>
+              <SecurityMonitor />
+            </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent value="integrations" className="space-y-6">
+            <ErrorBoundary>
+              <GoogleSheetsIntegrationSection />
+            </ErrorBoundary>
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <Tabs defaultValue="pipeline" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pipeline" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Candidate Pipeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <KanbanBoard />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="users" className="space-y-6">
-          <UsersList />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6">
-          <DataVisualization />
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6">
-          <SecurityMonitor />
-        </TabsContent>
-
-        <TabsContent value="integrations" className="space-y-6">
-          <GoogleSheetsIntegrationSection />
-        </TabsContent>
-      </Tabs>
-    </div>
+    </ErrorBoundary>
   );
 };
 
