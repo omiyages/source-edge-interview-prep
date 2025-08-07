@@ -208,7 +208,7 @@ async function processSync(
             continue;
           }
 
-          // FIXED: Better deduplication logic - check for exact matches first
+          // IMPROVED: Better deduplication logic - check for exact matches first
           let existingCandidate = null;
           
           // First, try to find by email if available (most reliable)
@@ -240,6 +240,7 @@ async function processSync(
           }
 
           let candidateId: string;
+          let isNewCandidate = false;
           
           if (existingCandidate) {
             // Update existing candidate
@@ -302,6 +303,7 @@ async function processSync(
 
             if (!createError && newCandidate) {
               candidateId = newCandidate.id;
+              isNewCandidate = true;
               progress.created++;
               console.log(`🆕 Created new candidate: ${candidateData.full_name}`);
             } else {
@@ -312,7 +314,7 @@ async function processSync(
             }
           }
 
-          // Handle stage mapping and pipeline with better error handling
+          // CRITICAL FIX: Always ensure pipeline entry exists
           let stageId = defaultStageId;
           if (candidateData.stage) {
             const mappedStage = candidateData.stage.toLowerCase().trim();
@@ -323,33 +325,68 @@ async function processSync(
                      defaultStageId;
           }
 
-          // Handle pipeline entry with better conflict resolution
+          // Handle pipeline entry - ALWAYS ensure candidate appears in pipeline
           const pipelineData = {
             applied_company: candidateData.applied_company || 'Unknown Company',
             applied_job_title: candidateData.applied_job_title || 'Unknown Position'
           };
 
-          const { data: existingPipeline } = await supabaseClient
-            .from('candidate_pipeline')
-            .select('id')
-            .eq('candidate_id', candidateId)
-            .eq('applied_company', pipelineData.applied_company)
-            .eq('applied_job_title', pipelineData.applied_job_title)
-            .maybeSingle();
+          console.log(`🔄 Processing pipeline for candidate ${candidateData.full_name} (ID: ${candidateId})`);
 
-          if (existingPipeline) {
-            await supabaseClient
+          // Check if pipeline entry exists for this candidate
+          const { data: existingPipelines } = await supabaseClient
+            .from('candidate_pipeline')
+            .select('id, applied_company, applied_job_title')
+            .eq('candidate_id', candidateId);
+
+          console.log(`📋 Found ${existingPipelines?.length || 0} existing pipeline entries for ${candidateData.full_name}`);
+
+          let pipelineEntryExists = false;
+          let pipelineIdToUpdate = null;
+
+          // Look for matching pipeline entry
+          if (existingPipelines && existingPipelines.length > 0) {
+            const matchingPipeline = existingPipelines.find(p => 
+              p.applied_company === pipelineData.applied_company && 
+              p.applied_job_title === pipelineData.applied_job_title
+            );
+            
+            if (matchingPipeline) {
+              pipelineEntryExists = true;
+              pipelineIdToUpdate = matchingPipeline.id;
+              console.log(`✅ Found matching pipeline entry for ${candidateData.full_name}`);
+            } else {
+              // Use the first pipeline entry if no exact match
+              pipelineIdToUpdate = existingPipelines[0].id;
+              console.log(`🔄 Will update first pipeline entry for ${candidateData.full_name}`);
+            }
+          }
+
+          if (pipelineIdToUpdate) {
+            // Update existing pipeline entry
+            const { error: pipelineUpdateError } = await supabaseClient
               .from('candidate_pipeline')
               .update({
                 stage_id: stageId,
                 is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
                 notes: candidateData.general_notes,
+                applied_company: pipelineData.applied_company,
+                applied_job_title: pipelineData.applied_job_title,
                 updated_at: new Date().toISOString(),
                 moved_at: new Date().toISOString()
               })
-              .eq('id', existingPipeline.id);
+              .eq('id', pipelineIdToUpdate);
+
+            if (pipelineUpdateError) {
+              console.error(`❌ Failed to update pipeline for ${candidateData.full_name}:`, pipelineUpdateError);
+              progress.errors++;
+              progress.errorMessages.push(`Row ${actualRowNumber}: Pipeline update failed - ${pipelineUpdateError.message}`);
+            } else {
+              console.log(`✅ Updated pipeline entry for ${candidateData.full_name}`);
+            }
           } else {
-            await supabaseClient
+            // Create new pipeline entry
+            const { error: pipelineCreateError } = await supabaseClient
               .from('candidate_pipeline')
               .insert({
                 candidate_id: candidateId,
@@ -362,6 +399,14 @@ async function processSync(
                 updated_at: new Date().toISOString(),
                 moved_at: new Date().toISOString()
               });
+
+            if (pipelineCreateError) {
+              console.error(`❌ Failed to create pipeline for ${candidateData.full_name}:`, pipelineCreateError);
+              progress.errors++;
+              progress.errorMessages.push(`Row ${actualRowNumber}: Pipeline creation failed - ${pipelineCreateError.message}`);
+            } else {
+              console.log(`🆕 Created pipeline entry for ${candidateData.full_name}`);
+            }
           }
 
           progress.processed++;
