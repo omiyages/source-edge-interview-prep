@@ -1,4 +1,7 @@
 
+// ABOUTME: Hooks for fetching and managing Kanban board data including stages and candidates
+// ABOUTME: Provides real-time data with automatic user status checking and pipeline management
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -173,6 +176,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
       console.log('Processed candidates:', filteredCandidates);
       return filteredCandidates;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds to keep user status updated
+    refetchInterval: 10000, // Refetch every 10 seconds for better real-time updates
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 };

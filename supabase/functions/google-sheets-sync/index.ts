@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -6,626 +7,405 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface CandidateData {
-  full_name: string;
-  email?: string;
-  phone_number?: string;
-  linkedin_profile?: string;
-  current_company?: string;
-  years_of_experience?: number;
-  salary?: number;
-  skillsets?: string[];
-  past_companies?: string[];
-  general_notes?: string;
-  stage?: string;
-  is_active?: boolean;
-  applied_company?: string;
-  applied_job_title?: string;
-}
-
-interface SyncProgress {
-  processed: number;
+// Global progress tracking with more detailed state
+const progressState = new Map<string, {
   total: number;
+  processed: number;
   created: number;
   updated: number;
-  errors: number;
-  status: 'processing' | 'completed' | 'error';
-  errorMessages: string[];
-}
-
-// Store progress in memory for this function instance
-const progressStore = new Map<string, SyncProgress>();
-
-// Background sync processor with improved error handling and progress tracking
-async function processSync(
-  integrationId: string,
-  supabaseClient: any,
-  sheetData: any,
-  columnMappings: Record<string, string>
-) {
-  console.log('🚀 Starting background sync processing');
-  
-  try {
-    const { values: rows } = sheetData;
-    if (!rows || rows.length < 2) {
-      throw new Error('No data found in the sheet');
-    }
-
-    const headers = rows[0];
-    const dataRows = rows.slice(1).filter((row: any[]) => 
-      row && row.some(cell => cell && cell.toString().trim())
-    );
-    const totalRows = dataRows.length;
-
-    console.log(`📊 Processing ${totalRows} rows with ${headers.length} columns`);
-
-    // Initialize progress with correct values
-    const progress: SyncProgress = {
-      processed: 0,
-      total: totalRows,
-      created: 0,
-      updated: 0,
-      errors: 0,
-      status: 'processing',
-      errorMessages: []
-    };
-    progressStore.set(integrationId, progress);
-
-    // Pre-load hiring stages for better performance
-    const { data: stages } = await supabaseClient
-      .from('hiring_stages')
-      .select('id, name')
-      .order('order_index');
-
-    const stageMap = new Map(stages?.map(s => [s.name.toLowerCase(), s.id]) || []);
-    const fuzzyStageMap = new Map();
-    
-    stages?.forEach(stage => {
-      const name = stage.name.toLowerCase();
-      fuzzyStageMap.set(name, stage.id);
-      fuzzyStageMap.set(name.replace(/\s+/g, ''), stage.id);
-      fuzzyStageMap.set(name.replace(/\s+/g, '_'), stage.id);
-      fuzzyStageMap.set(name.replace(/\s+/g, '-'), stage.id);
-      
-      // Add common variations
-      if (name.includes('interview')) {
-        const num = name.match(/\d+/)?.[0];
-        if (num) {
-          fuzzyStageMap.set(`interview${num}`, stage.id);
-          fuzzyStageMap.set(`int${num}`, stage.id);
-        }
-      }
-      if (name.includes('technical')) {
-        fuzzyStageMap.set('tech', stage.id);
-        fuzzyStageMap.set('technical', stage.id);
-      }
-      if (name.includes('hr')) {
-        fuzzyStageMap.set('hr', stage.id);
-        fuzzyStageMap.set('hr screen', stage.id);
-        fuzzyStageMap.set('hrscreen', stage.id);
-      }
-    });
-    
-    const defaultStageId = stages?.[0]?.id;
-
-    console.log('🎯 Stage mapping setup:', {
-      totalStages: stages?.length || 0,
-      fuzzyMappings: fuzzyStageMap.size,
-      defaultStageId
-    });
-
-    // Process rows sequentially to avoid overwhelming the database
-    const batchSize = 5;
-    const maxProcessingTime = 4 * 60 * 1000; // 4 minutes max processing time
-    const startTime = Date.now();
-
-    for (let i = 0; i < dataRows.length; i += batchSize) {
-      // Check if we're approaching timeout
-      if (Date.now() - startTime > maxProcessingTime) {
-        console.log('⏰ Approaching timeout, stopping processing');
-        progress.status = 'error';
-        progress.errorMessages.push('Processing stopped due to timeout. Please try with smaller datasets.');
-        progressStore.set(integrationId, progress);
-        break;
-      }
-
-      const batch = dataRows.slice(i, i + batchSize);
-      console.log(`📦 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(totalRows/batchSize)} (rows ${i + 2} to ${Math.min(i + batchSize + 1, totalRows + 1)})`);
-
-      // Process each row in the batch
-      for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
-        const row = batch[batchIndex];
-        const actualRowNumber = i + batchIndex + 2;
-        
-        try {
-          const candidateData: CandidateData = { full_name: '', is_active: true };
-          
-          // Map data from row - improved data extraction
-          headers.forEach((header: string, index: number) => {
-            const value = row[index]?.toString()?.trim();
-            if (!value || value === '' || value === 'undefined' || value === 'null') return;
-
-            const mapping = columnMappings[header];
-            if (!mapping) return;
-
-            switch (mapping) {
-              case 'full_name':
-                candidateData.full_name = value;
-                break;
-              case 'email':
-                if (value.includes('@')) {
-                  candidateData.email = value.toLowerCase();
-                }
-                break;
-              case 'phone_number':
-                candidateData.phone_number = value;
-                break;
-              case 'linkedin_profile':
-                candidateData.linkedin_profile = value;
-                break;
-              case 'current_company':
-                candidateData.current_company = value;
-                break;
-              case 'applied_company':
-                candidateData.applied_company = value;
-                break;
-              case 'applied_job_title':
-                candidateData.applied_job_title = value;
-                break;
-              case 'years_of_experience':
-                const exp = parseInt(value.toString().replace(/[^0-9]/g, ''));
-                if (!isNaN(exp) && exp >= 0) candidateData.years_of_experience = exp;
-                break;
-              case 'salary':
-                const sal = parseInt(value.toString().replace(/[,$\s]/g, ''));
-                if (!isNaN(sal) && sal > 0) candidateData.salary = sal;
-                break;
-              case 'skillsets':
-                candidateData.skillsets = value.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
-                break;
-              case 'past_companies':
-                candidateData.past_companies = value.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
-                break;
-              case 'general_notes':
-                candidateData.general_notes = value;
-                break;
-              case 'kanban_stage':
-              case 'stage':
-                candidateData.stage = value;
-                break;
-              case 'is_active':
-                const lowerValue = value.toLowerCase().trim();
-                candidateData.is_active = ['yes', 'active', 'true', '1', 'y'].includes(lowerValue);
-                break;
-            }
-          });
-
-          // Skip rows without names
-          if (!candidateData.full_name || candidateData.full_name.length < 2) {
-            progress.errors++;
-            progress.errorMessages.push(`Row ${actualRowNumber}: Missing or invalid candidate name - skipped`);
-            progress.processed++;
-            continue;
-          }
-
-          // IMPROVED: Better deduplication logic - check for exact matches first
-          let existingCandidate = null;
-          
-          // First, try to find by email if available (most reliable)
-          if (candidateData.email) {
-            const { data: candidateByEmail } = await supabaseClient
-              .from('candidates')
-              .select('id')
-              .eq('email', candidateData.email)
-              .maybeSingle();
-            
-            if (candidateByEmail) {
-              existingCandidate = candidateByEmail;
-              console.log(`📧 Found existing candidate by email: ${candidateData.email}`);
-            }
-          }
-          
-          // If not found by email, try by exact name match
-          if (!existingCandidate) {
-            const { data: candidateByName } = await supabaseClient
-              .from('candidates')
-              .select('id')
-              .eq('full_name', candidateData.full_name)
-              .maybeSingle();
-              
-            if (candidateByName) {
-              existingCandidate = candidateByName;
-              console.log(`👤 Found existing candidate by name: ${candidateData.full_name}`);
-            }
-          }
-
-          let candidateId: string;
-          let isNewCandidate = false;
-          
-          if (existingCandidate) {
-            // Update existing candidate
-            const updateData: any = {
-              updated_at: new Date().toISOString()
-            };
-            
-            // Only update fields that have values
-            if (candidateData.email) updateData.email = candidateData.email;
-            if (candidateData.phone_number) updateData.phone_number = candidateData.phone_number;
-            if (candidateData.linkedin_profile) updateData.linkedin_profile = candidateData.linkedin_profile;
-            if (candidateData.current_company) updateData.current_company = candidateData.current_company;
-            if (candidateData.years_of_experience !== undefined) updateData.years_of_experience = candidateData.years_of_experience;
-            if (candidateData.salary !== undefined) updateData.salary = candidateData.salary;
-            if (candidateData.skillsets && candidateData.skillsets.length > 0) updateData.skillsets = candidateData.skillsets;
-            if (candidateData.past_companies && candidateData.past_companies.length > 0) updateData.past_companies = candidateData.past_companies;
-            if (candidateData.general_notes) updateData.general_notes = candidateData.general_notes;
-            if (candidateData.is_active !== undefined) updateData.is_active = candidateData.is_active;
-
-            const { error: updateError } = await supabaseClient
-              .from('candidates')
-              .update(updateData)
-              .eq('id', existingCandidate.id);
-
-            if (!updateError) {
-              candidateId = existingCandidate.id;
-              progress.updated++;
-              console.log(`✅ Updated existing candidate: ${candidateData.full_name}`);
-            } else {
-              progress.errors++;
-              progress.errorMessages.push(`Row ${actualRowNumber}: Update failed - ${updateError.message}`);
-              progress.processed++;
-              continue;
-            }
-          } else {
-            // Create new candidate
-            const insertData: any = {
-              full_name: candidateData.full_name,
-              is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-            
-            // Only include fields that have values
-            if (candidateData.email) insertData.email = candidateData.email;
-            if (candidateData.phone_number) insertData.phone_number = candidateData.phone_number;
-            if (candidateData.linkedin_profile) insertData.linkedin_profile = candidateData.linkedin_profile;
-            if (candidateData.current_company) insertData.current_company = candidateData.current_company;
-            if (candidateData.years_of_experience !== undefined) insertData.years_of_experience = candidateData.years_of_experience;
-            if (candidateData.salary !== undefined) insertData.salary = candidateData.salary;
-            if (candidateData.skillsets && candidateData.skillsets.length > 0) insertData.skillsets = candidateData.skillsets;
-            if (candidateData.past_companies && candidateData.past_companies.length > 0) insertData.past_companies = candidateData.past_companies;
-            if (candidateData.general_notes) insertData.general_notes = candidateData.general_notes;
-
-            const { data: newCandidate, error: createError } = await supabaseClient
-              .from('candidates')
-              .insert(insertData)
-              .select('id')
-              .single();
-
-            if (!createError && newCandidate) {
-              candidateId = newCandidate.id;
-              isNewCandidate = true;
-              progress.created++;
-              console.log(`🆕 Created new candidate: ${candidateData.full_name}`);
-            } else {
-              progress.errors++;
-              progress.errorMessages.push(`Row ${actualRowNumber}: Create failed - ${createError?.message || 'Unknown error'}`);
-              progress.processed++;
-              continue;
-            }
-          }
-
-          // CRITICAL FIX: Always ensure pipeline entry exists
-          let stageId = defaultStageId;
-          if (candidateData.stage) {
-            const mappedStage = candidateData.stage.toLowerCase().trim();
-            stageId = stageMap.get(mappedStage) || 
-                     fuzzyStageMap.get(mappedStage) || 
-                     fuzzyStageMap.get(mappedStage.replace(/\s+/g, '')) ||
-                     fuzzyStageMap.get(mappedStage.replace(/\s+/g, '_')) ||
-                     defaultStageId;
-          }
-
-          // Handle pipeline entry - ALWAYS ensure candidate appears in pipeline
-          const pipelineData = {
-            applied_company: candidateData.applied_company || 'Unknown Company',
-            applied_job_title: candidateData.applied_job_title || 'Unknown Position'
-          };
-
-          console.log(`🔄 Processing pipeline for candidate ${candidateData.full_name} (ID: ${candidateId})`);
-
-          // Check if pipeline entry exists for this candidate
-          const { data: existingPipelines } = await supabaseClient
-            .from('candidate_pipeline')
-            .select('id, applied_company, applied_job_title')
-            .eq('candidate_id', candidateId);
-
-          console.log(`📋 Found ${existingPipelines?.length || 0} existing pipeline entries for ${candidateData.full_name}`);
-
-          let pipelineEntryExists = false;
-          let pipelineIdToUpdate = null;
-
-          // Look for matching pipeline entry
-          if (existingPipelines && existingPipelines.length > 0) {
-            const matchingPipeline = existingPipelines.find(p => 
-              p.applied_company === pipelineData.applied_company && 
-              p.applied_job_title === pipelineData.applied_job_title
-            );
-            
-            if (matchingPipeline) {
-              pipelineEntryExists = true;
-              pipelineIdToUpdate = matchingPipeline.id;
-              console.log(`✅ Found matching pipeline entry for ${candidateData.full_name}`);
-            } else {
-              // Use the first pipeline entry if no exact match
-              pipelineIdToUpdate = existingPipelines[0].id;
-              console.log(`🔄 Will update first pipeline entry for ${candidateData.full_name}`);
-            }
-          }
-
-          if (pipelineIdToUpdate) {
-            // Update existing pipeline entry
-            const { error: pipelineUpdateError } = await supabaseClient
-              .from('candidate_pipeline')
-              .update({
-                stage_id: stageId,
-                is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
-                notes: candidateData.general_notes,
-                applied_company: pipelineData.applied_company,
-                applied_job_title: pipelineData.applied_job_title,
-                updated_at: new Date().toISOString(),
-                moved_at: new Date().toISOString()
-              })
-              .eq('id', pipelineIdToUpdate);
-
-            if (pipelineUpdateError) {
-              console.error(`❌ Failed to update pipeline for ${candidateData.full_name}:`, pipelineUpdateError);
-              progress.errors++;
-              progress.errorMessages.push(`Row ${actualRowNumber}: Pipeline update failed - ${pipelineUpdateError.message}`);
-            } else {
-              console.log(`✅ Updated pipeline entry for ${candidateData.full_name}`);
-            }
-          } else {
-            // Create new pipeline entry
-            const { error: pipelineCreateError } = await supabaseClient
-              .from('candidate_pipeline')
-              .insert({
-                candidate_id: candidateId,
-                stage_id: stageId,
-                notes: candidateData.general_notes,
-                is_active: candidateData.is_active !== undefined ? candidateData.is_active : true,
-                applied_company: pipelineData.applied_company,
-                applied_job_title: pipelineData.applied_job_title,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                moved_at: new Date().toISOString()
-              });
-
-            if (pipelineCreateError) {
-              console.error(`❌ Failed to create pipeline for ${candidateData.full_name}:`, pipelineCreateError);
-              progress.errors++;
-              progress.errorMessages.push(`Row ${actualRowNumber}: Pipeline creation failed - ${pipelineCreateError.message}`);
-            } else {
-              console.log(`🆕 Created pipeline entry for ${candidateData.full_name}`);
-            }
-          }
-
-          progress.processed++;
-
-        } catch (error) {
-          console.error(`❌ Row ${actualRowNumber} processing error:`, error);
-          progress.errors++;
-          progress.errorMessages.push(`Row ${actualRowNumber}: ${error.message}`);
-          progress.processed++;
-        }
-        
-        // Update progress after each row for more frequent updates
-        progressStore.set(integrationId, { ...progress });
-      }
-
-      console.log(`✅ Batch completed: ${progress.processed}/${totalRows} processed (${progress.created} created, ${progress.updated} updated, ${progress.errors} errors)`);
-
-      // Small delay between batches to prevent overwhelming the database
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-
-    // Mark as completed
-    progress.status = 'completed';
-    progressStore.set(integrationId, progress);
-
-    console.log(`🎉 Sync completed: ${progress.processed}/${totalRows} processed, ${progress.created} created, ${progress.updated} updated, ${progress.errors} errors`);
-
-  } catch (error) {
-    console.error('❌ Background sync error:', error);
-    const progress = progressStore.get(integrationId) || {
-      processed: 0,
-      total: 0,
-      created: 0,
-      updated: 0,
-      errors: 1,
-      status: 'error' as const,
-      errorMessages: []
-    };
-    progress.status = 'error';
-    progress.errorMessages.push(`Sync failed: ${error.message}`);
-    progressStore.set(integrationId, progress);
-  }
-}
+  errors: string[];
+  status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
+  startTime: number;
+}>();
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { integrationId, sheetId, range, columnMappings, action } = await req.json()
+    const supabase = createClient(
+      'https://satshobhbkjptsbmfsia.supabase.co',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
+    );
+
+    const { integrationId, sheetId, range, columnMappings, action } = await req.json();
 
     // Handle progress check requests
     if (action === 'check_progress') {
-      const progress = progressStore.get(integrationId);
+      const progress = progressState.get(integrationId);
+      if (!progress) {
+        return new Response(JSON.stringify({
+          success: true,
+          progress: {
+            total: 0,
+            processed: 0,
+            created: 0,
+            updated: 0,
+            errors: [],
+            status: 'idle'
+          }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       return new Response(JSON.stringify({
         success: true,
-        progress: progress || {
-          processed: 0,
-          total: 0,
-          created: 0,
-          updated: 0,
-          errors: 0,
-          status: 'idle',
-          errorMessages: []
+        progress: {
+          total: progress.total,
+          processed: progress.processed,
+          current: progress.processed,
+          created: progress.created,
+          updated: progress.updated,
+          errors: progress.errors,
+          errorMessages: progress.errors,
+          status: progress.status
         }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
       });
     }
 
-    // Handle sync start requests
-    if (!sheetId || !range) {
-      throw new Error('Missing required parameters: sheetId and range')
-    }
+    console.log('🚀 Starting Google Sheets sync for integration:', integrationId);
+    console.log('📊 Sheet ID:', sheetId, 'Range:', range);
 
-    console.log('🚀 Starting Google Sheets sync:', { sheetId, range, integrationId })
-
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // Get Google Service Account credentials and fetch data
-    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY')
-    if (!serviceAccountKey) {
-      throw new Error('Google Service Account key not found')
-    }
-
-    const serviceAccount = JSON.parse(serviceAccountKey)
-
-    // Create JWT for authentication
-    const now = Math.floor(Date.now() / 1000)
-    const jwtPayload = {
-      iss: serviceAccount.client_email,
-      scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
-      aud: 'https://oauth2.googleapis.com/token',
-      exp: now + 3600,
-      iat: now
-    }
-
-    const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
-    const payload = btoa(JSON.stringify(jwtPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
-    
-    const privateKeyPem = serviceAccount.private_key.replace(/\\n/g, '\n')
-    const pemContents = privateKeyPem
-      .replace(/-----BEGIN PRIVATE KEY-----/, '')
-      .replace(/-----END PRIVATE KEY-----/, '')
-      .replace(/\s/g, '')
-    
-    const keyData = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0))
-    const privateKey = await crypto.subtle.importKey(
-      'pkcs8',
-      keyData,
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false,
-      ['sign']
-    )
-
-    const signature = await crypto.subtle.sign(
-      'RSASSA-PKCS1-v1_5',
-      privateKey,
-      new TextEncoder().encode(`${header}.${payload}`)
-    )
-    
-    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
-    
-    const jwt = `${header}.${payload}.${signatureBase64}`
-
-    // Get access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt
-      })
-    })
-
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('❌ Token response error:', errorText);
-      throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`)
-    }
-
-    const tokenData = await tokenResponse.json()
-    const accessToken = tokenData.access_token
-
-    // Normalize range - ensure it's properly formatted
-    let normalizedRange = range;
-    if (range === 'A:Z') {
-      normalizedRange = 'A1:Z1000';
-    } else if (!range.includes(':')) {
-      normalizedRange = `${range}1:${range}1000`;
-    } else if (!range.match(/\d/)) {
-      // If range doesn't contain numbers, add them
-      const parts = range.split(':');
-      normalizedRange = `${parts[0]}1:${parts[1]}1000`;
-    }
-
-    // Fetch Google Sheets data
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(normalizedRange)}`;
-    console.log('📡 Fetching from URL:', sheetsUrl);
-    
-    const response = await fetch(sheetsUrl, {
-      headers: { 
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json'
-      }
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Sheets API response error:', errorText);
-      throw new Error(`Google Sheets API error: ${response.status} - ${errorText}`)
-    }
-
-    const data = await response.json()
-    console.log('📊 Sheets API response:', {
-      hasValues: !!data.values,
-      totalRows: data.values?.length || 0,
-      range: data.range
+    // Initialize progress with better state management
+    progressState.set(integrationId, {
+      total: 0,
+      processed: 0,
+      created: 0,
+      updated: 0,
+      errors: [],
+      status: 'starting',
+      startTime: Date.now()
     });
+
+    // Fetch data from Google Sheets
+    const apiKey = Deno.env.get('GOOGLE_SHEETS_API_KEY');
+    if (!apiKey) {
+      throw new Error('Google Sheets API key not configured');
+    }
+
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+    console.log('📡 Fetching from Google Sheets...');
     
-    // Filter out empty rows
-    const filteredValues = data.values?.filter((row: any[]) => 
-      row && row.some(cell => cell && cell.toString().trim())
-    ) || [];
+    const sheetsResponse = await fetch(sheetsUrl);
+    if (!sheetsResponse.ok) {
+      throw new Error(`Google Sheets API error: ${sheetsResponse.statusText}`);
+    }
 
-    const totalRows = Math.max(0, filteredValues.length - 1); // Subtract header row
+    const sheetsData = await sheetsResponse.json();
+    const rows = sheetsData.values || [];
+    
+    if (rows.length === 0) {
+      console.log('📊 No data found in the sheet');
+      progressState.set(integrationId, {
+        ...progressState.get(integrationId)!,
+        status: 'completed'
+      });
+      
+      return new Response(JSON.stringify({
+        success: true,
+        totalRows: 0,
+        processed: 0,
+        created: 0,
+        updated: 0,
+        message: 'No data found in the sheet'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    console.log(`📊 Filtered data: ${filteredValues.length} total rows, ${totalRows} data rows`);
+    // Get the first hiring stage for pipeline entries
+    console.log('🔍 Getting first hiring stage...');
+    const { data: stages, error: stagesError } = await supabase
+      .from('hiring_stages')
+      .select('id')
+      .order('order_index')
+      .limit(1);
+    
+    if (stagesError || !stages || stages.length === 0) {
+      throw new Error('No hiring stages found. Please create hiring stages first.');
+    }
+    
+    const firstStageId = stages[0].id;
+    console.log('📌 Using first stage ID:', firstStageId);
 
-    // Start background processing with filtered data
-    EdgeRuntime.waitUntil(
-      processSync(integrationId, supabaseClient, { values: filteredValues }, columnMappings || {})
-    )
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+    
+    // Update total count with actual data
+    const progress = progressState.get(integrationId)!;
+    progress.total = dataRows.length;
+    progress.status = 'processing';
+    progressState.set(integrationId, progress);
 
-    // Return immediate response with correct total
+    console.log(`📊 Processing ${dataRows.length} rows with headers:`, headers);
+
+    const BATCH_SIZE = 5;
+    let totalProcessed = 0;
+    let totalCreated = 0;
+    let totalUpdated = 0;
+
+    // Process in batches with better progress tracking
+    for (let i = 0; i < dataRows.length; i += BATCH_SIZE) {
+      const batch = dataRows.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(dataRows.length / BATCH_SIZE);
+      
+      console.log(`📦 Processing batch ${batchNumber}/${totalBatches} (rows ${i + 2} to ${Math.min(i + BATCH_SIZE + 1, dataRows.length + 1)})`);
+
+      try {
+        for (const row of batch) {
+          try {
+            // Map row data using column mappings with better fallbacks
+            const candidateData: any = {
+              full_name: null,
+              email: null,
+              phone_number: null,
+              linkedin_profile: null,
+              current_company: null,
+              years_of_experience: null,
+              salary: null,
+              skillsets: [],
+              past_companies: [],
+              general_notes: null,
+              is_active: true
+            };
+
+            // Apply column mappings with better data processing
+            Object.entries(columnMappings || {}).forEach(([field, columnIndex]) => {
+              const index = parseInt(columnIndex as string);
+              if (index >= 0 && index < row.length && row[index]) {
+                const value = row[index].toString().trim();
+                
+                if (value) {
+                  switch (field) {
+                    case 'skillsets':
+                    case 'past_companies':
+                      // Handle array fields by splitting on common delimiters
+                      candidateData[field] = value.split(/[,;|\n]/).map(item => item.trim()).filter(item => item);
+                      break;
+                    case 'years_of_experience':
+                      // Extract numeric value from experience strings
+                      const numMatch = value.match(/(\d+)/);
+                      candidateData[field] = numMatch ? parseInt(numMatch[1]) : null;
+                      break;
+                    case 'salary':
+                      // Extract numeric value from salary strings
+                      const salaryMatch = value.replace(/[$,]/g, '').match(/(\d+)/);
+                      candidateData[field] = salaryMatch ? parseInt(salaryMatch[1]) : null;
+                      break;
+                    case 'email':
+                      // Validate email format
+                      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                      candidateData[field] = emailRegex.test(value) ? value : `${value.replace(/[^a-zA-Z0-9]/g, '')}@noemail.local`;
+                      break;
+                    default:
+                      candidateData[field] = value;
+                  }
+                }
+              }
+            });
+
+            // Skip rows without essential data
+            if (!candidateData.full_name) {
+              console.log('⚠️ Skipping row without name');
+              continue;
+            }
+
+            console.log(`🔄 Processing candidate: ${candidateData.full_name}`);
+
+            // Check if candidate exists by name first
+            const { data: existingCandidates, error: searchError } = await supabase
+              .from('candidates')
+              .select('id, full_name, email')
+              .eq('full_name', candidateData.full_name);
+
+            if (searchError) {
+              console.error('❌ Error searching for candidate:', searchError);
+              continue;
+            }
+
+            let candidateId;
+            let wasCreated = false;
+
+            if (existingCandidates && existingCandidates.length > 0) {
+              // Update existing candidate
+              candidateId = existingCandidates[0].id;
+              console.log(`👤 Found existing candidate by name: ${candidateData.full_name}`);
+              
+              const { error: updateError } = await supabase
+                .from('candidates')
+                .update(candidateData)
+                .eq('id', candidateId);
+
+              if (updateError) {
+                console.error('❌ Error updating candidate:', updateError);
+                continue;
+              }
+              
+              console.log(`✅ Updated existing candidate: ${candidateData.full_name}`);
+              totalUpdated++;
+            } else {
+              // Create new candidate
+              console.log(`➕ Creating new candidate: ${candidateData.full_name}`);
+              
+              const { data: newCandidate, error: insertError } = await supabase
+                .from('candidates')
+                .insert(candidateData)
+                .select('id')
+                .single();
+
+              if (insertError) {
+                console.error('❌ Error creating candidate:', insertError);
+                continue;
+              }
+
+              candidateId = newCandidate.id;
+              wasCreated = true;
+              totalCreated++;
+              console.log(`✅ Created new candidate: ${candidateData.full_name}`);
+            }
+
+            // CRITICAL: Ensure pipeline entry exists for ALL candidates
+            console.log(`🔄 Processing pipeline for candidate ${candidateData.full_name} (ID: ${candidateId})`);
+            
+            // Check for existing pipeline entries
+            const { data: existingPipeline, error: pipelineSearchError } = await supabase
+              .from('candidate_pipeline')
+              .select('id, stage_id, applied_company, applied_job_title, is_active')
+              .eq('candidate_id', candidateId);
+
+            if (pipelineSearchError) {
+              console.error('❌ Error searching pipeline:', pipelineSearchError);
+              continue;
+            }
+
+            console.log(`📋 Found ${existingPipeline?.length || 0} existing pipeline entries for ${candidateData.full_name}`);
+
+            if (existingPipeline && existingPipeline.length > 0) {
+              // Update existing pipeline entry
+              const pipelineEntry = existingPipeline[0];
+              console.log(`✅ Found matching pipeline entry for ${candidateData.full_name}`);
+              
+              // Update the pipeline entry to ensure it's active and in the right stage
+              const { error: pipelineUpdateError } = await supabase
+                .from('candidate_pipeline')
+                .update({
+                  is_active: true,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', pipelineEntry.id);
+
+              if (pipelineUpdateError) {
+                console.error('❌ Error updating pipeline entry:', pipelineUpdateError);
+              } else {
+                console.log(`✅ Updated pipeline entry for ${candidateData.full_name}`);
+              }
+            } else {
+              // Create new pipeline entry - this is crucial for Kanban visibility
+              console.log(`➕ Creating pipeline entry for ${candidateData.full_name}`);
+              
+              const { error: pipelineInsertError } = await supabase
+                .from('candidate_pipeline')
+                .insert({
+                  candidate_id: candidateId,
+                  stage_id: firstStageId,
+                  is_active: true,
+                  applied_company: null,
+                  applied_job_title: null,
+                  notes: `Synced from Google Sheets on ${new Date().toISOString()}`
+                });
+
+              if (pipelineInsertError) {
+                console.error('❌ Error creating pipeline entry:', pipelineInsertError);
+                const currentProgress = progressState.get(integrationId)!;
+                currentProgress.errors.push(`Failed to create pipeline for ${candidateData.full_name}: ${pipelineInsertError.message}`);
+                progressState.set(integrationId, currentProgress);
+              } else {
+                console.log(`✅ Created pipeline entry for ${candidateData.full_name}`);
+              }
+            }
+
+            totalProcessed++;
+            
+            // Update progress more frequently for better UI feedback
+            const currentProgress = progressState.get(integrationId)!;
+            currentProgress.processed = totalProcessed;
+            currentProgress.created = totalCreated;
+            currentProgress.updated = totalUpdated;
+            progressState.set(integrationId, currentProgress);
+
+          } catch (rowError) {
+            console.error('❌ Error processing row:', rowError);
+            const currentProgress = progressState.get(integrationId)!;
+            currentProgress.errors.push(`Row processing error: ${rowError.message}`);
+            progressState.set(integrationId, currentProgress);
+          }
+        }
+
+        console.log(`✅ Batch completed: ${totalProcessed}/${dataRows.length} processed (${totalCreated} created, ${totalUpdated} updated, ${progressState.get(integrationId)?.errors.length || 0} errors)`);
+        
+        // Small delay between batches to prevent overwhelming the database
+        if (i + BATCH_SIZE < dataRows.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+      } catch (batchError) {
+        console.error(`❌ Batch ${batchNumber} failed:`, batchError);
+        const currentProgress = progressState.get(integrationId)!;
+        currentProgress.errors.push(`Batch ${batchNumber} failed: ${batchError.message}`);
+        progressState.set(integrationId, currentProgress);
+      }
+    }
+
+    // Mark as completed
+    const finalProgress = progressState.get(integrationId)!;
+    finalProgress.status = 'completed';
+    finalProgress.processed = totalProcessed;
+    finalProgress.created = totalCreated;
+    finalProgress.updated = totalUpdated;
+    progressState.set(integrationId, finalProgress);
+
+    console.log(`🎉 Sync completed! Processed: ${totalProcessed}, Created: ${totalCreated}, Updated: ${totalUpdated}, Errors: ${finalProgress.errors.length}`);
+
     return new Response(JSON.stringify({
       success: true,
-      message: 'Sync started successfully',
-      totalRows: totalRows,
-      backgroundProcessing: true
+      totalRows: dataRows.length,
+      processed: totalProcessed,
+      created: totalCreated,
+      updated: totalUpdated,
+      errors: finalProgress.errors,
+      message: `Successfully synced ${totalProcessed} candidates (${totalCreated} created, ${totalUpdated} updated)`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200
-    })
+    });
 
   } catch (error) {
-    console.error('❌ Google Sheets sync error:', error)
+    console.error('🚨 Sync failed:', error);
+    
+    // Update progress state on error
+    if (req.method === 'POST') {
+      const body = await req.json();
+      const integrationId = body.integrationId;
+      if (integrationId && progressState.has(integrationId)) {
+        const progress = progressState.get(integrationId)!;
+        progress.status = 'error';
+        progress.errors.push(error.message);
+        progressState.set(integrationId, progress);
+      }
+    }
+
     return new Response(JSON.stringify({
       success: false,
-      message: error.message
+      error: error.message,
+      details: error.stack
     }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500
-    })
+    });
   }
-})
+});
