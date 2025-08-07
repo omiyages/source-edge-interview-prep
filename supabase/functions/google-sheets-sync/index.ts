@@ -1,5 +1,4 @@
 
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -18,6 +17,92 @@ const progressState = new Map<string, {
   status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
   startTime: number;
 }>();
+
+// JWT helper functions for service account authentication
+function base64UrlEncode(str: string): string {
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function pemToDer(pem: string): Uint8Array {
+  const pemContents = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\n/g, '')
+    .replace(/\r/g, '');
+  
+  const binaryString = atob(pemContents);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function createJWT(serviceAccountKey: any): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const expiry = now + 3600; // 1 hour
+
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT'
+  };
+
+  const payload = {
+    iss: serviceAccountKey.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: expiry,
+    iat: now
+  };
+
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+
+  const privateKeyDer = pemToDer(serviceAccountKey.private_key);
+
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    privateKeyDer,
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256'
+    },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    privateKey,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  const encodedSignature = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
+  return `${unsignedToken}.${encodedSignature}`;
+}
+
+async function getAccessToken(serviceAccountKey: any): Promise<string> {
+  const jwt = await createJWT(serviceAccountKey);
+  
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get access token: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -98,20 +183,42 @@ serve(async (req) => {
       startTime: Date.now()
     });
 
-    // Fetch data from Google Sheets
-    const apiKey = Deno.env.get('GOOGLE_SHEETS_API_KEY');
-    if (!apiKey) {
-      throw new Error('Google Sheets API key not configured');
+    // Get service account key for authentication
+    const serviceAccountKeyString = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
+    if (!serviceAccountKeyString) {
+      throw new Error('Google service account key not configured');
     }
 
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+    const serviceAccountKey = JSON.parse(serviceAccountKeyString);
+    
+    // Get access token using service account
+    const accessToken = await getAccessToken(serviceAccountKey);
+
+    // Construct the range with sheet name if provided
+    const fullRange = range || 'A:Z';
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(fullRange)}`;
+    
     console.log('📡 Fetching from Google Sheets...');
     
-    const sheetsResponse = await fetch(sheetsUrl);
+    const sheetsResponse = await fetch(sheetsUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+    
     if (!sheetsResponse.ok) {
       const errorText = await sheetsResponse.text();
       console.error('❌ Google Sheets API error:', sheetsResponse.status, errorText);
-      throw new Error(`Google Sheets API error: ${sheetsResponse.statusText}`);
+      
+      if (sheetsResponse.status === 403) {
+        throw new Error('Permission denied: Make sure the service account has access to the Google Sheet');
+      } else if (sheetsResponse.status === 401) {
+        throw new Error('Authentication failed: Please check the service account configuration');
+      } else if (sheetsResponse.status === 404) {
+        throw new Error('Sheet not found: Please check that the Sheet ID is correct');
+      } else {
+        throw new Error(`Google Sheets API error (${sheetsResponse.status}): ${errorText}`);
+      }
     }
 
     const sheetsData = await sheetsResponse.json();
