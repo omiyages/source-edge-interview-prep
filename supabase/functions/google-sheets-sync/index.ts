@@ -170,8 +170,6 @@ serve(async (req) => {
     }
 
     console.log('🚀 Starting Google Sheets sync for integration:', integrationId);
-    console.log('📊 Sheet ID:', sheetId, 'Range:', range);
-    console.log('🗂️ Column mappings:', JSON.stringify(columnMappings, null, 2));
 
     // Initialize progress with better state management
     progressState.set(integrationId, {
@@ -245,7 +243,6 @@ serve(async (req) => {
     }
 
     // Get the first hiring stage for pipeline entries
-    console.log('🔍 Getting first hiring stage...');
     const { data: stages, error: stagesError } = await supabase
       .from('hiring_stages')
       .select('id')
@@ -257,7 +254,6 @@ serve(async (req) => {
     }
     
     const firstStageId = stages[0].id;
-    console.log('📌 Using first stage ID:', firstStageId);
 
     const headers = rows[0];
     const dataRows = rows.slice(1);
@@ -268,10 +264,9 @@ serve(async (req) => {
     progress.status = 'processing';
     progressState.set(integrationId, progress);
 
-    console.log(`📊 Processing ${dataRows.length} rows with headers:`, headers);
-    console.log('🔍 Available column mappings:', Object.keys(columnMappings || {}));
+    console.log(`📊 Processing ${dataRows.length} rows`);
 
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 10;
     let totalProcessed = 0;
     let totalCreated = 0;
     let totalUpdated = 0;
@@ -279,245 +274,194 @@ serve(async (req) => {
     // Process in batches with better progress tracking
     for (let i = 0; i < dataRows.length; i += BATCH_SIZE) {
       const batch = dataRows.slice(i, i + BATCH_SIZE);
-      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(dataRows.length / BATCH_SIZE);
       
-      console.log(`📦 Processing batch ${batchNumber}/${totalBatches} (rows ${i + 2} to ${Math.min(i + BATCH_SIZE + 1, dataRows.length + 1)})`);
+      for (const row of batch) {
+        try {
+          // Map row data using column mappings
+          const candidateData: any = {
+            full_name: null,
+            email: null,
+            phone_number: null,
+            linkedin_profile: null,
+            current_company: null,
+            years_of_experience: null,
+            salary: null,
+            skillsets: [],
+            past_companies: [],
+            general_notes: null,
+            is_active: true
+          };
 
-      try {
-        for (const row of batch) {
-          try {
-            console.log(`🔍 Processing row with ${row.length} columns:`, row.slice(0, 3), '...');
+          // Store pipeline-specific data separately
+          let appliedCompany = null;
+          let appliedJobTitle = null;
+
+          // Apply column mappings
+          Object.entries(columnMappings || {}).forEach(([header, fieldName]) => {
+            const columnIndex = headers.findIndex(h => h === header);
             
-            // Map row data using column mappings with better fallbacks
-            const candidateData: any = {
-              full_name: null,
-              email: null,
-              phone_number: null,
-              linkedin_profile: null,
-              current_company: null,
-              years_of_experience: null,
-              salary: null,
-              skillsets: [],
-              past_companies: [],
-              general_notes: null,
-              is_active: true
+            if (columnIndex >= 0 && columnIndex < row.length && row[columnIndex]) {
+              const value = row[columnIndex].toString().trim();
+              
+              if (value) {
+                switch (fieldName) {
+                  case 'full_name':
+                    candidateData[fieldName] = value;
+                    break;
+                  case 'skillsets':
+                  case 'past_companies':
+                    candidateData[fieldName] = value.split(/[,;|\n]/).map(item => item.trim()).filter(item => item);
+                    break;
+                  case 'years_of_experience':
+                    const numMatch = value.match(/(\d+)/);
+                    candidateData[fieldName] = numMatch ? parseInt(numMatch[1]) : null;
+                    break;
+                  case 'salary':
+                    const salaryMatch = value.replace(/[$,]/g, '').match(/(\d+)/);
+                    candidateData[fieldName] = salaryMatch ? parseInt(salaryMatch[1]) : null;
+                    break;
+                  case 'email':
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    candidateData[fieldName] = emailRegex.test(value) ? value : `${value.replace(/[^a-zA-Z0-9]/g, '')}@noemail.local`;
+                    break;
+                  case 'applied_company':
+                    appliedCompany = value;
+                    break;
+                  case 'applied_job_title':
+                    appliedJobTitle = value;
+                    break;
+                  default:
+                    // Only set if it's a valid candidate field
+                    if (fieldName in candidateData) {
+                      candidateData[fieldName] = value;
+                    }
+                }
+              }
+            }
+          });
+
+          // Skip rows without essential data
+          if (!candidateData.full_name) {
+            continue;
+          }
+
+          let candidateId;
+          let wasCreated = false;
+
+          // Check if candidate exists by name first
+          const { data: existingCandidates, error: searchError } = await supabase
+            .from('candidates')
+            .select('id, full_name, email')
+            .eq('full_name', candidateData.full_name);
+
+          if (searchError) {
+            console.error('❌ Error searching for candidate:', searchError);
+            continue;
+          }
+
+          if (existingCandidates && existingCandidates.length > 0) {
+            // Update existing candidate
+            candidateId = existingCandidates[0].id;
+            
+            const { error: updateError } = await supabase
+              .from('candidates')
+              .update(candidateData)
+              .eq('id', candidateId);
+
+            if (updateError) {
+              console.error('❌ Error updating candidate:', updateError);
+              continue;
+            }
+            
+            totalUpdated++;
+          } else {
+            // Create new candidate
+            const { data: newCandidate, error: insertError } = await supabase
+              .from('candidates')
+              .insert(candidateData)
+              .select('id')
+              .single();
+
+            if (insertError) {
+              console.error('❌ Error creating candidate:', insertError);
+              continue;
+            }
+
+            candidateId = newCandidate.id;
+            wasCreated = true;
+            totalCreated++;
+          }
+
+          // Handle pipeline entry
+          const { data: existingPipeline, error: pipelineSearchError } = await supabase
+            .from('candidate_pipeline')
+            .select('id, stage_id, applied_company, applied_job_title, is_active')
+            .eq('candidate_id', candidateId);
+
+          if (pipelineSearchError) {
+            console.error('❌ Error searching pipeline:', pipelineSearchError);
+            continue;
+          }
+
+          if (existingPipeline && existingPipeline.length > 0) {
+            // Update existing pipeline entry
+            const pipelineEntry = existingPipeline[0];
+            
+            const pipelineUpdateData: any = {
+              is_active: true,
+              updated_at: new Date().toISOString()
             };
 
-            // Apply column mappings with detailed debugging
-            console.log('🗂️ Applying column mappings...');
-            let foundName = false;
-            
-            Object.entries(columnMappings || {}).forEach(([header, fieldName]) => {
-              const columnIndex = headers.findIndex(h => h === header);
-              console.log(`📋 Mapping header "${header}" (index: ${columnIndex}) to field "${fieldName}"`);
-              
-              if (columnIndex >= 0 && columnIndex < row.length && row[columnIndex]) {
-                const value = row[columnIndex].toString().trim();
-                
-                if (value) {
-                  console.log(`✅ Found value "${value}" for field "${fieldName}"`);
-                  
-                  switch (fieldName) {
-                    case 'full_name':
-                      candidateData[fieldName] = value;
-                      foundName = true;
-                      console.log(`👤 Found name: ${value}`);
-                      break;
-                    case 'skillsets':
-                    case 'past_companies':
-                      // Handle array fields by splitting on common delimiters
-                      candidateData[fieldName] = value.split(/[,;|\n]/).map(item => item.trim()).filter(item => item);
-                      break;
-                    case 'years_of_experience':
-                      // Extract numeric value from experience strings
-                      const numMatch = value.match(/(\d+)/);
-                      candidateData[fieldName] = numMatch ? parseInt(numMatch[1]) : null;
-                      break;
-                    case 'salary':
-                      // Extract numeric value from salary strings
-                      const salaryMatch = value.replace(/[$,]/g, '').match(/(\d+)/);
-                      candidateData[fieldName] = salaryMatch ? parseInt(salaryMatch[1]) : null;
-                      break;
-                    case 'email':
-                      // Validate email format
-                      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                      candidateData[fieldName] = emailRegex.test(value) ? value : `${value.replace(/[^a-zA-Z0-9]/g, '')}@noemail.local`;
-                      break;
-                    default:
-                      candidateData[fieldName] = value;
-                  }
-                } else {
-                  console.log(`⚠️ Empty value for header "${header}" at column ${columnIndex}`);
-                }
-              } else {
-                console.log(`❌ Header "${header}" not found in sheet headers or column is empty`);
-              }
-            });
+            // Only update applied_company and applied_job_title if we have new values
+            if (appliedCompany !== null) pipelineUpdateData.applied_company = appliedCompany;
+            if (appliedJobTitle !== null) pipelineUpdateData.applied_job_title = appliedJobTitle;
 
-            console.log('📋 Final candidate data:', {
-              full_name: candidateData.full_name,
-              email: candidateData.email,
-              foundName: foundName
-            });
-
-            // Skip rows without essential data
-            if (!candidateData.full_name) {
-              console.log('⚠️ Skipping row without name - no name found after mapping');
-              console.log('🔍 Available headers:', headers);
-              console.log('🔍 Column mappings:', columnMappings);
-              console.log('🔍 Row data:', row);
-              continue;
-            }
-
-            console.log(`🔄 Processing candidate: ${candidateData.full_name}`);
-
-            // Check if candidate exists by name first
-            const { data: existingCandidates, error: searchError } = await supabase
-              .from('candidates')
-              .select('id, full_name, email')
-              .eq('full_name', candidateData.full_name);
-
-            if (searchError) {
-              console.error('❌ Error searching for candidate:', searchError);
-              continue;
-            }
-
-            let candidateId;
-            let wasCreated = false;
-
-            if (existingCandidates && existingCandidates.length > 0) {
-              // Update existing candidate
-              candidateId = existingCandidates[0].id;
-              console.log(`👤 Found existing candidate by name: ${candidateData.full_name}`);
-              
-              const { error: updateError } = await supabase
-                .from('candidates')
-                .update(candidateData)
-                .eq('id', candidateId);
-
-              if (updateError) {
-                console.error('❌ Error updating candidate:', updateError);
-                continue;
-              }
-              
-              console.log(`✅ Updated existing candidate: ${candidateData.full_name}`);
-              totalUpdated++;
-            } else {
-              // Create new candidate
-              console.log(`➕ Creating new candidate: ${candidateData.full_name}`);
-              
-              const { data: newCandidate, error: insertError } = await supabase
-                .from('candidates')
-                .insert(candidateData)
-                .select('id')
-                .single();
-
-              if (insertError) {
-                console.error('❌ Error creating candidate:', insertError);
-                continue;
-              }
-
-              candidateId = newCandidate.id;
-              wasCreated = true;
-              totalCreated++;
-              console.log(`✅ Created new candidate: ${candidateData.full_name}`);
-            }
-
-            // CRITICAL: Ensure pipeline entry exists for ALL candidates (both new and updated)
-            console.log(`🔄 Processing pipeline for candidate ${candidateData.full_name} (ID: ${candidateId})`);
-            
-            // Check for existing pipeline entries
-            const { data: existingPipeline, error: pipelineSearchError } = await supabase
+            const { error: pipelineUpdateError } = await supabase
               .from('candidate_pipeline')
-              .select('id, stage_id, applied_company, applied_job_title, is_active')
-              .eq('candidate_id', candidateId);
+              .update(pipelineUpdateData)
+              .eq('id', pipelineEntry.id);
 
-            if (pipelineSearchError) {
-              console.error('❌ Error searching pipeline:', pipelineSearchError);
-              const currentProgress = progressState.get(integrationId)!;
-              currentProgress.errors.push(`Pipeline search failed for ${candidateData.full_name}: ${pipelineSearchError.message}`);
-              progressState.set(integrationId, currentProgress);
-              continue;
+            if (pipelineUpdateError) {
+              console.error('❌ Error updating pipeline entry:', pipelineUpdateError);
             }
+          } else {
+            // Create new pipeline entry
+            const { error: pipelineInsertError } = await supabase
+              .from('candidate_pipeline')
+              .insert({
+                candidate_id: candidateId,
+                stage_id: firstStageId,
+                is_active: true,
+                applied_company: appliedCompany || candidateData.current_company,
+                applied_job_title: appliedJobTitle,
+                notes: `Synced from Google Sheets on ${new Date().toISOString()}`
+              });
 
-            console.log(`📋 Found ${existingPipeline?.length || 0} existing pipeline entries for ${candidateData.full_name}`);
-
-            if (existingPipeline && existingPipeline.length > 0) {
-              // Update existing pipeline entry to ensure it's active
-              const pipelineEntry = existingPipeline[0];
-              console.log(`✅ Found existing pipeline entry for ${candidateData.full_name}`);
-              
-              const { error: pipelineUpdateError } = await supabase
-                .from('candidate_pipeline')
-                .update({
-                  is_active: true,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('id', pipelineEntry.id);
-
-              if (pipelineUpdateError) {
-                console.error('❌ Error updating pipeline entry:', pipelineUpdateError);
-                const currentProgress = progressState.get(integrationId)!;
-                currentProgress.errors.push(`Failed to update pipeline for ${candidateData.full_name}: ${pipelineUpdateError.message}`);
-                progressState.set(integrationId, currentProgress);
-              } else {
-                console.log(`✅ Updated pipeline entry for ${candidateData.full_name}`);
-              }
-            } else {
-              // Create new pipeline entry - this is crucial for Kanban visibility
-              console.log(`➕ Creating new pipeline entry for ${candidateData.full_name}`);
-              
-              const { error: pipelineInsertError } = await supabase
-                .from('candidate_pipeline')
-                .insert({
-                  candidate_id: candidateId,
-                  stage_id: firstStageId,
-                  is_active: true,
-                  applied_company: candidateData.current_company || null,
-                  applied_job_title: null,
-                  notes: `Synced from Google Sheets on ${new Date().toISOString()}`
-                });
-
-              if (pipelineInsertError) {
-                console.error('❌ Error creating pipeline entry:', pipelineInsertError);
-                const currentProgress = progressState.get(integrationId)!;
-                currentProgress.errors.push(`Failed to create pipeline for ${candidateData.full_name}: ${pipelineInsertError.message}`);
-                progressState.set(integrationId, currentProgress);
-              } else {
-                console.log(`✅ Created new pipeline entry for ${candidateData.full_name}`);
-              }
+            if (pipelineInsertError) {
+              console.error('❌ Error creating pipeline entry:', pipelineInsertError);
             }
-
-            totalProcessed++;
-            
-            // Update progress more frequently for better UI feedback
-            const currentProgress = progressState.get(integrationId)!;
-            currentProgress.processed = totalProcessed;
-            currentProgress.created = totalCreated;
-            currentProgress.updated = totalUpdated;
-            progressState.set(integrationId, currentProgress);
-
-          } catch (rowError) {
-            console.error('❌ Error processing row:', rowError);
-            const currentProgress = progressState.get(integrationId)!;
-            currentProgress.errors.push(`Row processing error: ${rowError.message}`);
-            progressState.set(integrationId, currentProgress);
           }
-        }
 
-        console.log(`✅ Batch completed: ${totalProcessed}/${dataRows.length} processed (${totalCreated} created, ${totalUpdated} updated, ${progressState.get(integrationId)?.errors.length || 0} errors)`);
-        
-        // Small delay between batches to prevent overwhelming the database
-        if (i + BATCH_SIZE < dataRows.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
+          totalProcessed++;
+          
+          // Update progress
+          const currentProgress = progressState.get(integrationId)!;
+          currentProgress.processed = totalProcessed;
+          currentProgress.created = totalCreated;
+          currentProgress.updated = totalUpdated;
+          progressState.set(integrationId, currentProgress);
 
-      } catch (batchError) {
-        console.error(`❌ Batch ${batchNumber} failed:`, batchError);
-        const currentProgress = progressState.get(integrationId)!;
-        currentProgress.errors.push(`Batch ${batchNumber} failed: ${batchError.message}`);
-        progressState.set(integrationId, currentProgress);
+        } catch (rowError) {
+          console.error('❌ Error processing row:', rowError);
+          const currentProgress = progressState.get(integrationId)!;
+          currentProgress.errors.push(`Row processing error: ${rowError.message}`);
+          progressState.set(integrationId, currentProgress);
+        }
+      }
+
+      // Small delay between batches to prevent overwhelming the database
+      if (i + BATCH_SIZE < dataRows.length) {
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
     }
 
@@ -529,7 +473,7 @@ serve(async (req) => {
     finalProgress.updated = totalUpdated;
     progressState.set(integrationId, finalProgress);
 
-    console.log(`🎉 Sync completed! Processed: ${totalProcessed}, Created: ${totalCreated}, Updated: ${totalUpdated}, Errors: ${finalProgress.errors.length}`);
+    console.log(`🎉 Sync completed! Processed: ${totalProcessed}, Created: ${totalCreated}, Updated: ${totalUpdated}`);
 
     return new Response(JSON.stringify({
       success: true,
