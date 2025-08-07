@@ -171,6 +171,7 @@ serve(async (req) => {
 
     console.log('🚀 Starting Google Sheets sync for integration:', integrationId);
     console.log('📊 Sheet ID:', sheetId, 'Range:', range);
+    console.log('🗂️ Column mappings:', JSON.stringify(columnMappings, null, 2));
 
     // Initialize progress with better state management
     progressState.set(integrationId, {
@@ -268,6 +269,7 @@ serve(async (req) => {
     progressState.set(integrationId, progress);
 
     console.log(`📊 Processing ${dataRows.length} rows with headers:`, headers);
+    console.log('🔍 Available column mappings:', Object.keys(columnMappings || {}));
 
     const BATCH_SIZE = 5;
     let totalProcessed = 0;
@@ -285,6 +287,8 @@ serve(async (req) => {
       try {
         for (const row of batch) {
           try {
+            console.log(`🔍 Processing row with ${row.length} columns:`, row.slice(0, 3), '...');
+            
             // Map row data using column mappings with better fallbacks
             const candidateData: any = {
               full_name: null,
@@ -300,44 +304,69 @@ serve(async (req) => {
               is_active: true
             };
 
-            // Apply column mappings with better data processing
-            Object.entries(columnMappings || {}).forEach(([field, columnIndex]) => {
-              const index = parseInt(columnIndex as string);
-              if (index >= 0 && index < row.length && row[index]) {
-                const value = row[index].toString().trim();
+            // Apply column mappings with detailed debugging
+            console.log('🗂️ Applying column mappings...');
+            let foundName = false;
+            
+            Object.entries(columnMappings || {}).forEach(([header, fieldName]) => {
+              const columnIndex = headers.findIndex(h => h === header);
+              console.log(`📋 Mapping header "${header}" (index: ${columnIndex}) to field "${fieldName}"`);
+              
+              if (columnIndex >= 0 && columnIndex < row.length && row[columnIndex]) {
+                const value = row[columnIndex].toString().trim();
                 
                 if (value) {
-                  switch (field) {
+                  console.log(`✅ Found value "${value}" for field "${fieldName}"`);
+                  
+                  switch (fieldName) {
+                    case 'full_name':
+                      candidateData[fieldName] = value;
+                      foundName = true;
+                      console.log(`👤 Found name: ${value}`);
+                      break;
                     case 'skillsets':
                     case 'past_companies':
                       // Handle array fields by splitting on common delimiters
-                      candidateData[field] = value.split(/[,;|\n]/).map(item => item.trim()).filter(item => item);
+                      candidateData[fieldName] = value.split(/[,;|\n]/).map(item => item.trim()).filter(item => item);
                       break;
                     case 'years_of_experience':
                       // Extract numeric value from experience strings
                       const numMatch = value.match(/(\d+)/);
-                      candidateData[field] = numMatch ? parseInt(numMatch[1]) : null;
+                      candidateData[fieldName] = numMatch ? parseInt(numMatch[1]) : null;
                       break;
                     case 'salary':
                       // Extract numeric value from salary strings
                       const salaryMatch = value.replace(/[$,]/g, '').match(/(\d+)/);
-                      candidateData[field] = salaryMatch ? parseInt(salaryMatch[1]) : null;
+                      candidateData[fieldName] = salaryMatch ? parseInt(salaryMatch[1]) : null;
                       break;
                     case 'email':
                       // Validate email format
                       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                      candidateData[field] = emailRegex.test(value) ? value : `${value.replace(/[^a-zA-Z0-9]/g, '')}@noemail.local`;
+                      candidateData[fieldName] = emailRegex.test(value) ? value : `${value.replace(/[^a-zA-Z0-9]/g, '')}@noemail.local`;
                       break;
                     default:
-                      candidateData[field] = value;
+                      candidateData[fieldName] = value;
                   }
+                } else {
+                  console.log(`⚠️ Empty value for header "${header}" at column ${columnIndex}`);
                 }
+              } else {
+                console.log(`❌ Header "${header}" not found in sheet headers or column is empty`);
               }
+            });
+
+            console.log('📋 Final candidate data:', {
+              full_name: candidateData.full_name,
+              email: candidateData.email,
+              foundName: foundName
             });
 
             // Skip rows without essential data
             if (!candidateData.full_name) {
-              console.log('⚠️ Skipping row without name');
+              console.log('⚠️ Skipping row without name - no name found after mapping');
+              console.log('🔍 Available headers:', headers);
+              console.log('🔍 Column mappings:', columnMappings);
+              console.log('🔍 Row data:', row);
               continue;
             }
 
