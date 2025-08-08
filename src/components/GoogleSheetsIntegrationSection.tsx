@@ -2,49 +2,64 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, FileSpreadsheet } from 'lucide-react';
+import { Plus, Sheet } from 'lucide-react';
 import { GoogleSheetsIntegrationDialog } from './GoogleSheetsIntegrationDialog';
 import { GoogleSheetsIntegrationCard } from './GoogleSheetsIntegrationCard';
-import { useGoogleSheetsIntegrations } from '@/hooks/useGoogleSheetsIntegration';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { GoogleSheetsPreviewDialog } from './GoogleSheetsPreviewDialog';
+import { EditColumnMappingDialog } from './EditColumnMappingDialog';
+import { useGoogleSheetsIntegrations, useSyncGoogleSheets } from '@/hooks/useGoogleSheetsIntegration';
+import { useGoogleSheetsPreview } from '@/hooks/useGoogleSheetsPreview';
 
 export const GoogleSheetsIntegrationSection: React.FC = () => {
-  const [showDialog, setShowDialog] = useState(false);
-  const { data: integrations, isLoading, error } = useGoogleSheetsIntegrations();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [showEditMappingDialog, setShowEditMappingDialog] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
+
+  const { data: integrations, isLoading } = useGoogleSheetsIntegrations();
+  const syncMutation = useSyncGoogleSheets();
+  const { 
+    previewData, 
+    rawSheetData,
+    isLoading: isPreviewLoading, 
+    generatePreview 
+  } = useGoogleSheetsPreview();
+
+  const handlePreview = async (integration: any) => {
+    setSelectedIntegration(integration);
+    await generatePreview(
+      integration.sheet_id,
+      integration.range_specification || 'A:Z',
+      integration.column_mappings || {}
+    );
+    setShowPreviewDialog(true);
+  };
+
+  const handleSync = () => {
+    if (selectedIntegration) {
+      syncMutation.mutate(selectedIntegration.id);
+    }
+  };
+
+  const handleEditMapping = (integration: any) => {
+    setSelectedIntegration(integration);
+    setShowEditMappingDialog(true);
+  };
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5" />
+            <Sheet className="w-5 h-5" />
             Google Sheets Integration
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5" />
-            Google Sheets Integration
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertDescription>
-              Failed to load Google Sheets integrations: {error.message}
-            </AlertDescription>
-          </Alert>
         </CardContent>
       </Card>
     );
@@ -54,47 +69,64 @@ export const GoogleSheetsIntegrationSection: React.FC = () => {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5" />
-              Google Sheets Integration
-            </CardTitle>
-            <Button onClick={() => setShowDialog(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Integration
-            </Button>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Sheet className="w-5 h-5" />
+            Google Sheets Integration
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {integrations && integrations.length > 0 ? (
-            <div className="grid gap-4">
-              {integrations.map((integration) => (
+          <div className="space-y-4">
+            {integrations && integrations.length > 0 ? (
+              integrations.map((integration) => (
                 <GoogleSheetsIntegrationCard
                   key={integration.id}
                   integration={integration}
+                  onPreview={() => handlePreview(integration)}
+                  onEditMapping={() => handleEditMapping(integration)}
+                  syncProgress={syncMutation.syncProgress}
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <FileSpreadsheet className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Google Sheets Connected</h3>
-              <p className="text-muted-foreground mb-4">
-                Connect your Google Sheets to import candidates automatically
+              ))
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No Google Sheets integrations configured yet.
               </p>
-              <Button onClick={() => setShowDialog(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Connect First Sheet
-              </Button>
-            </div>
-          )}
+            )}
+            
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className="w-full"
+              variant="outline"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Google Sheets Integration
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
       <GoogleSheetsIntegrationDialog
-        open={showDialog}
-        onOpenChange={setShowDialog}
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
       />
+
+      <GoogleSheetsPreviewDialog
+        open={showPreviewDialog}
+        onOpenChange={setShowPreviewDialog}
+        candidates={previewData}
+        rawSheetData={rawSheetData}
+        columnMappings={selectedIntegration?.column_mappings}
+        onSync={handleSync}
+        isLoading={isPreviewLoading}
+        syncProgress={syncMutation.syncProgress}
+      />
+
+      {selectedIntegration && (
+        <EditColumnMappingDialog
+          open={showEditMappingDialog}
+          onOpenChange={setShowEditMappingDialog}
+          integration={selectedIntegration}
+        />
+      )}
     </>
   );
 };

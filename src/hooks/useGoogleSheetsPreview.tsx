@@ -30,6 +30,7 @@ interface SyncProgress {
 
 export const useGoogleSheetsPreview = () => {
   const [previewData, setPreviewData] = useState<PreviewCandidate[]>([]);
+  const [rawSheetData, setRawSheetData] = useState<string[][]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
     current: 0,
@@ -66,8 +67,11 @@ export const useGoogleSheetsPreview = () => {
         throw new Error('No data found in the specified range');
       }
 
-      const headers = response.values[0] || [];
-      const dataRows = response.values.slice(1);
+      const rawData = response.values;
+      setRawSheetData(rawData); // Store raw data for the preview dialog
+
+      const headers = rawData[0] || [];
+      const dataRows = rawData.slice(1);
 
       console.log('📋 Preview data summary:', {
         headers: headers.length,
@@ -108,6 +112,13 @@ export const useGoogleSheetsPreview = () => {
           fuzzyStageMap.set('hr', stage.name);
           fuzzyStageMap.set('hr screen', stage.name);
           fuzzyStageMap.set('hrscreen', stage.name);
+        }
+        
+        // Special handling for "Booked" stage - map both "Booked" and "NO SHOW"
+        if (name === 'booked') {
+          fuzzyStageMap.set('no show', stage.name);
+          fuzzyStageMap.set('noshow', stage.name);
+          fuzzyStageMap.set('no_show', stage.name);
         }
       });
 
@@ -210,6 +221,7 @@ export const useGoogleSheetsPreview = () => {
 
   return {
     previewData,
+    rawSheetData,
     isLoading,
     syncProgress,
     generatePreview,
