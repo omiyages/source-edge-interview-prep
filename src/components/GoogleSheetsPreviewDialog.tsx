@@ -1,278 +1,302 @@
 
+// ABOUTME: Dialog component for previewing Google Sheets data before sync
+// ABOUTME: Shows both processed candidates and raw sheet data with sync functionality
+
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle, XCircle, AlertTriangle, Table, Users } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Eye, 
+  RefreshCw, 
+  Users, 
+  FileSpreadsheet,
+  Loader2,
+  CheckCircle,
+  AlertTriangle 
+} from 'lucide-react';
 
-interface PreviewCandidate {
-  name: string;
-  email?: string;
-  company?: string;
-  appliedCompany?: string;
-  appliedJobTitle?: string;
-  stage?: string;
-  mappedStage?: string;
-  isActive?: boolean;
-  rowNumber: number;
-  issues: string[];
+interface SyncProgress {
+  current: number;
+  total: number;
+  status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
+  errors: string[];
+  createdCount?: number;
+  updatedCount?: number;
 }
 
 interface GoogleSheetsPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  candidates: PreviewCandidate[];
-  onSync: () => void;
-  isLoading: boolean;
-  syncProgress?: {
-    current: number;
-    total: number;
-    status: 'idle' | 'syncing' | 'completed' | 'error';
-    errors: string[];
-    createdCount?: number;
-    updatedCount?: number;
-  };
+  candidates?: any[];
   rawSheetData?: string[][];
   columnMappings?: Record<string, string>;
+  onSync?: () => void;
+  isLoading?: boolean;
+  syncProgress?: SyncProgress;
 }
 
 export const GoogleSheetsPreviewDialog: React.FC<GoogleSheetsPreviewDialogProps> = ({
   open,
   onOpenChange,
-  candidates,
+  candidates = [],
+  rawSheetData = [],
+  columnMappings = {},
   onSync,
-  isLoading,
-  syncProgress,
-  rawSheetData,
-  columnMappings
+  isLoading = false,
+  syncProgress
 }) => {
-  const [activeTab, setActiveTab] = useState('processed');
+  const [activeTab, setActiveTab] = useState('candidates');
 
-  const getStageVariant = (original?: string, mapped?: string) => {
-    if (!original) return 'destructive';
-    if (mapped && mapped !== original) return 'secondary';
-    return 'default';
+  const handleSync = () => {
+    if (onSync) {
+      onSync();
+    }
   };
 
-  const getStatusIcon = (issues: string[]) => {
-    if (issues.length === 0) return <CheckCircle className="w-4 h-4 text-green-500" />;
-    if (issues.some(issue => issue.includes('Missing'))) return <XCircle className="w-4 h-4 text-red-500" />;
-    return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+  const getProgressPercentage = () => {
+    if (!syncProgress || syncProgress.total === 0) return 0;
+    return Math.round((syncProgress.current / syncProgress.total) * 100);
   };
 
-  const progressPercentage = syncProgress ? (syncProgress.current / syncProgress.total) * 100 : 0;
-
-  const headers = rawSheetData && rawSheetData.length > 0 ? rawSheetData[0] : [];
-  const dataRows = rawSheetData && rawSheetData.length > 1 ? rawSheetData.slice(1, 11) : []; // Show first 10 rows
+  const isActiveSync = syncProgress && (
+    syncProgress.status === 'starting' || 
+    syncProgress.status === 'processing'
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Import Preview - {candidates.length} Candidates</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="w-5 h-5" />
+            Google Sheets Preview
+          </DialogTitle>
         </DialogHeader>
 
-        {syncProgress && syncProgress.status !== 'idle' && (
-          <div className="space-y-3 p-4 bg-muted rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">
-                {syncProgress.status === 'syncing' && 'Syncing candidates...'}
-                {syncProgress.status === 'completed' && 'Sync completed!'}
-                {syncProgress.status === 'error' && 'Sync failed'}
+        <div className="flex-1 overflow-hidden">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Loading sheet data...</span>
+              </div>
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="candidates" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Processed Candidates ({candidates.length})
+                </TabsTrigger>
+                <TabsTrigger value="raw" className="flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Raw Sheet Data ({rawSheetData.length} rows)
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="candidates" className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="space-y-4">
+                    {candidates.length > 0 ? (
+                      candidates.map((candidate, index) => (
+                        <div key={index} className="border rounded-lg p-4">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div>
+                              <span className="text-sm font-medium">Name:</span>
+                              <p className="text-sm">{candidate.full_name || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Email:</span>
+                              <p className="text-sm">{candidate.email || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Company:</span>
+                              <p className="text-sm">{candidate.current_company || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">LinkedIn:</span>
+                              <p className="text-sm">{candidate.linkedin_profile || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Stage:</span>
+                              <Badge variant="outline">{candidate.kanban_stage || 'New'}</Badge>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Status:</span>
+                              <Badge variant={candidate.is_active ? "default" : "secondary"}>
+                                {candidate.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No candidates processed yet. Check your column mappings.
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="raw" className="flex-1 overflow-hidden">
+                <div className="space-y-4 h-full flex flex-col">
+                  {Object.keys(columnMappings).length > 0 && (
+                    <div className="bg-muted rounded-lg p-4">
+                      <h4 className="font-medium mb-2">Column Mappings:</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                        {Object.entries(columnMappings).map(([column, field]) => (
+                          <div key={column} className="flex items-center gap-2">
+                            <span className="font-mono bg-background px-2 py-1 rounded">
+                              {column}
+                            </span>
+                            <span>→</span>
+                            <span>{field}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <ScrollArea className="flex-1">
+                    {rawSheetData.length > 0 ? (
+                      <div className="space-y-2">
+                        {rawSheetData.slice(0, 50).map((row, rowIndex) => (
+                          <div key={rowIndex} className="border rounded-lg p-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="outline" className="text-xs">
+                                Row {rowIndex + 1}
+                              </Badge>
+                            </div>
+                            <div className="grid gap-2 text-sm">
+                              {row.map((cell, cellIndex) => {
+                                const isHeader = rowIndex === 0;
+                                const columnName = rawSheetData[0]?.[cellIndex] || `Column ${cellIndex + 1}`;
+                                const mappedField = columnMappings[columnName];
+                                
+                                return (
+                                  <div key={cellIndex} className="flex items-start gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`font-mono text-xs px-2 py-1 rounded ${
+                                          isHeader ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                                        }`}>
+                                          {columnName}
+                                        </span>
+                                        {mappedField && !isHeader && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            → {mappedField}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className={`mt-1 break-words ${
+                                        isHeader ? 'font-medium' : 'text-muted-foreground'
+                                      }`}>
+                                        {cell || '(empty)'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                        {rawSheetData.length > 50 && (
+                          <div className="text-center py-4 text-muted-foreground text-sm">
+                            ... and {rawSheetData.length - 50} more rows
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No raw sheet data available
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
+
+        {/* Sync Progress */}
+        {isActiveSync && syncProgress && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>
+                {syncProgress.status === 'starting' ? 'Initializing sync...' : 'Syncing progress'}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span>
                 {syncProgress.current} / {syncProgress.total}
-                {syncProgress.status === 'completed' && syncProgress.createdCount !== undefined && (
-                  <span className="ml-2 text-green-600">
-                    ({syncProgress.createdCount} created, {syncProgress.updatedCount} updated)
-                  </span>
-                )}
+                {syncProgress.total > 0 && ` (${getProgressPercentage()}%)`}
               </span>
             </div>
-            <Progress value={progressPercentage} className="w-full" />
-            {syncProgress.errors.length > 0 && (
-              <div className="max-h-32 overflow-y-auto">
-                {syncProgress.errors.map((error, index) => (
-                  <div key={index} className="text-sm text-red-600 flex items-center gap-2">
-                    <XCircle className="w-3 h-3" />
-                    {error}
-                  </div>
-                ))}
+            <Progress value={getProgressPercentage()} className="w-full" />
+            {syncProgress.createdCount !== undefined && syncProgress.updatedCount !== undefined && (
+              <div className="flex gap-4 text-xs text-muted-foreground">
+                <span>Created: {syncProgress.createdCount}</span>
+                <span>Updated: {syncProgress.updatedCount}</span>
               </div>
             )}
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="processed" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Processed Data ({candidates.length})
-            </TabsTrigger>
-            <TabsTrigger value="raw" className="flex items-center gap-2">
-              <Table className="w-4 h-4" />
-              Raw Sheet Data ({dataRows.length + 1})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="processed" className="flex-1 overflow-y-auto">
-            <div className="grid gap-2">
-              {candidates.map((candidate, index) => (
-                <div key={index} className="border rounded-lg p-3 hover:bg-muted/50">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(candidate.issues)}
-                      <div>
-                        <h4 className="font-medium">{candidate.name || `Row ${candidate.rowNumber}`}</h4>
-                        {candidate.email && (
-                          <p className="text-sm text-muted-foreground">{candidate.email}</p>
-                        )}
-                      </div>
-                    </div>
-                    <Badge variant={candidate.isActive !== false ? 'default' : 'secondary'}>
-                      {candidate.isActive !== false ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Current Company:</span>
-                      <p className="truncate">{candidate.company || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Applied Company:</span>
-                      <p className="truncate">{candidate.appliedCompany || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Applied Role:</span>
-                      <p className="truncate">{candidate.appliedJobTitle || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Stage:</span>
-                      <div className="flex items-center gap-1">
-                        <Badge variant={getStageVariant(candidate.stage, candidate.mappedStage)}>
-                          {candidate.mappedStage || candidate.stage || 'Default'}
-                        </Badge>
-                        {candidate.stage && candidate.mappedStage && candidate.stage !== candidate.mappedStage && (
-                          <span className="text-xs text-muted-foreground">
-                            (mapped from "{candidate.stage}")
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {candidate.issues.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {candidate.issues.map((issue, issueIndex) => (
-                        <div key={issueIndex} className="text-xs text-red-600 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          {issue}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+        {/* Success/Error Messages */}
+        {syncProgress?.status === 'completed' && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-3">
+            <div className="flex items-center gap-2 text-green-800 text-sm font-medium">
+              <CheckCircle className="w-4 h-4" />
+              Sync Completed Successfully
             </div>
-          </TabsContent>
-
-          <TabsContent value="raw" className="flex-1 overflow-auto">
-            {rawSheetData && rawSheetData.length > 0 ? (
-              <div className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  <p>Showing raw data from your Google Sheet (first 10 rows):</p>
-                </div>
-                
-                <div className="border rounded-lg overflow-auto">
-                  <table className="w-full border-collapse text-sm">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="border p-2 text-left font-medium">#</th>
-                        {headers.map((header, index) => (
-                          <th key={index} className="border p-2 text-left font-medium min-w-[120px]">
-                            <div className="space-y-1">
-                              <div>{header}</div>
-                              {columnMappings?.[header] && (
-                                <Badge variant="outline" className="text-xs">
-                                  → {columnMappings[header]}
-                                </Badge>
-                              )}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dataRows.map((row, rowIndex) => (
-                        <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-muted/20'}>
-                          <td className="border p-2 text-muted-foreground">{rowIndex + 2}</td>
-                          {headers.map((header, colIndex) => {
-                            const cellValue = row[colIndex] || '';
-                            const mapping = columnMappings?.[header];
-                            const isImportant = mapping === 'full_name' || mapping === 'email';
-                            const isEmpty = !cellValue || cellValue.trim() === '';
-                            
-                            return (
-                              <td 
-                                key={colIndex} 
-                                className={`border p-2 ${
-                                  isImportant && isEmpty ? 'bg-red-50 text-red-700' : ''
-                                } ${isImportant ? 'font-medium' : ''}`}
-                              >
-                                {cellValue || (
-                                  <span className="text-gray-400 italic">empty</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {rawSheetData.length > 11 && (
-                  <div className="text-sm text-muted-foreground text-center p-2">
-                    ... and {rawSheetData.length - 11} more rows
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Table className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No raw sheet data available</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        <div className="flex justify-between pt-4 border-t">
-          <div className="text-sm text-muted-foreground">
-            {candidates.filter(c => c.issues.length === 0).length} valid candidates, {' '}
-            {candidates.filter(c => c.issues.length > 0).length} with issues
+            <div className="text-green-700 text-xs">
+              Processed {syncProgress.current} rows: {syncProgress.createdCount} created, {syncProgress.updatedCount} updated
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
+        )}
+
+        {syncProgress?.status === 'error' && syncProgress.errors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <div className="flex items-center gap-2 text-red-800 text-sm font-medium mb-1">
+              <AlertTriangle className="w-4 h-4" />
+              Sync Errors
+            </div>
+            {syncProgress.errors.slice(0, 3).map((error, index) => (
+              <p key={index} className="text-red-700 text-xs">{error}</p>
+            ))}
+            {syncProgress.errors.length > 3 && (
+              <p className="text-red-600 text-xs">...and {syncProgress.errors.length - 3} more errors</p>
+            )}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+          {onSync && (
             <Button 
-              onClick={onSync} 
-              disabled={isLoading || syncProgress?.status === 'syncing'}
+              onClick={handleSync} 
+              disabled={isActiveSync || isLoading}
+              className="flex items-center gap-2"
             >
-              {isLoading || syncProgress?.status === 'syncing' ? (
+              {isActiveSync ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Syncing...
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {syncProgress?.status === 'starting' ? 'Starting...' : 'Syncing...'}
                 </>
               ) : (
-                'Start Sync'
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  Sync Now
+                </>
               )}
             </Button>
-          </div>
-        </div>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
