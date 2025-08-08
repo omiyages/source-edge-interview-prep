@@ -2,7 +2,7 @@
 // ABOUTME: This component displays Google Sheets integration cards with sync functionality
 // ABOUTME: Shows sync progress, status badges, and integration details
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -41,15 +41,25 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
   const [showEditDialog, setShowEditDialog] = useState(false);
   const { mutate: syncSheets, isPending: isSyncing, syncProgress } = useSyncGoogleSheets();
 
+  // Force re-render when progress changes
+  useEffect(() => {
+    console.log('🎨 Card re-rendering with progress:', syncProgress);
+  }, [syncProgress]);
+
   const handleSync = () => {
+    console.log('🎯 Starting sync for integration:', integration.id);
     syncSheets(integration.id);
   };
 
   const getStatusBadge = () => {
-    if (isSyncing || syncProgress.status === 'processing' || syncProgress.status === 'starting') {
+    const isActiveSync = isSyncing || 
+      syncProgress.status === 'processing' || 
+      syncProgress.status === 'starting';
+
+    if (isActiveSync) {
       return <Badge variant="secondary" className="flex items-center gap-1">
         <Loader2 className="w-3 h-3 animate-spin" />
-        Syncing...
+        {syncProgress.status === 'starting' ? 'Starting...' : 'Syncing...'}
       </Badge>;
     }
     
@@ -74,8 +84,14 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
 
   const getProgressPercentage = () => {
     if (syncProgress.total === 0) return 0;
-    return Math.round((syncProgress.current / syncProgress.total) * 100);
+    const percentage = Math.round((syncProgress.current / syncProgress.total) * 100);
+    console.log('📊 Progress percentage:', percentage, 'from', syncProgress.current, '/', syncProgress.total);
+    return percentage;
   };
+
+  const isActiveSync = isSyncing || 
+    syncProgress.status === 'processing' || 
+    syncProgress.status === 'starting';
 
   return (
     <>
@@ -108,11 +124,16 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
 
         <CardContent className="space-y-4">
           {/* Sync Progress */}
-          {(isSyncing || syncProgress.status === 'processing' || syncProgress.status === 'starting') && (
+          {isActiveSync && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Syncing progress</span>
-                <span>{syncProgress.current} / {syncProgress.total}</span>
+                <span>
+                  {syncProgress.status === 'starting' ? 'Initializing sync...' : 'Syncing progress'}
+                </span>
+                <span>
+                  {syncProgress.current} / {syncProgress.total}
+                  {syncProgress.total > 0 && ` (${getProgressPercentage()}%)`}
+                </span>
               </div>
               <Progress value={getProgressPercentage()} className="w-full" />
               {syncProgress.createdCount !== undefined && syncProgress.updatedCount !== undefined && (
@@ -121,6 +142,19 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
                   <span>Updated: {syncProgress.updatedCount}</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Success Summary */}
+          {syncProgress.status === 'completed' && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-3">
+              <div className="flex items-center gap-2 text-green-800 text-sm font-medium mb-1">
+                <CheckCircle className="w-4 h-4" />
+                Sync Completed Successfully
+              </div>
+              <div className="text-green-700 text-xs">
+                Processed {syncProgress.current} rows: {syncProgress.createdCount} created, {syncProgress.updatedCount} updated
+              </div>
             </div>
           )}
 
@@ -166,13 +200,13 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
           <div className="flex gap-2 pt-2">
             <Button 
               onClick={handleSync}
-              disabled={isSyncing || syncProgress.status === 'processing' || syncProgress.status === 'starting'}
+              disabled={isActiveSync}
               className="flex-1"
             >
-              {isSyncing || syncProgress.status === 'processing' || syncProgress.status === 'starting' ? (
+              {isActiveSync ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Syncing...
+                  {syncProgress.status === 'starting' ? 'Starting...' : 'Syncing...'}
                 </>
               ) : (
                 <>

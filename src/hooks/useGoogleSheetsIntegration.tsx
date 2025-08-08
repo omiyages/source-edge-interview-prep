@@ -5,7 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface SyncProgress {
   current: number;
@@ -151,9 +151,14 @@ export const useSyncGoogleSheets = () => {
   
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const currentIntegrationIdRef = useRef<string | null>(null);
+  const isPollingRef = useRef(false);
 
-  // Function to poll progress with better error handling
-  const pollProgress = async (integrationId: string) => {
+  // Enhanced polling function with better error handling and state management
+  const pollProgress = useCallback(async (integrationId: string) => {
+    if (!integrationId || !isPollingRef.current) {
+      return;
+    }
+
     try {
       console.log('🔍 Polling progress for integration:', integrationId);
       
@@ -171,23 +176,33 @@ export const useSyncGoogleSheets = () => {
 
       if (data?.success && data?.progress) {
         const progress = data.progress;
-        console.log('📊 Progress update:', progress);
+        console.log('📊 Progress update received:', progress);
         
         // Ensure we have valid numbers for current and total
         const current = Math.max(0, progress.processed || progress.current || 0);
         const total = Math.max(current, progress.total || 0);
+        const created = progress.created || progress.createdCount || 0;
+        const updated = progress.updated || progress.updatedCount || 0;
         
-        setSyncProgress(prev => ({
-          current: current,
-          total: total,
-          status: progress.status === 'idle' ? prev.status : progress.status,
-          errors: progress.errorMessages || progress.errors || [],
-          createdCount: progress.created || progress.createdCount || 0,
-          updatedCount: progress.updated || progress.updatedCount || 0
-        }));
+        setSyncProgress(prev => {
+          const newProgress = {
+            current: current,
+            total: total,
+            status: progress.status === 'idle' ? prev.status : progress.status,
+            errors: progress.errorMessages || progress.errors || [],
+            createdCount: created,
+            updatedCount: updated
+          };
+          
+          console.log('🔄 Updating sync progress state:', newProgress);
+          return newProgress;
+        });
 
         // Stop polling if completed or error
         if (progress.status === 'completed' || progress.status === 'error') {
+          console.log('🛑 Stopping polling, status:', progress.status);
+          isPollingRef.current = false;
+          
           if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
             pollIntervalRef.current = null;
@@ -196,7 +211,7 @@ export const useSyncGoogleSheets = () => {
           if (progress.status === 'completed') {
             toast({
               title: 'Sync completed',
-              description: `Successfully processed ${current} candidates (${progress.created || progress.createdCount || 0} created, ${progress.updated || progress.updatedCount || 0} updated)`,
+              description: `Successfully processed ${current} candidates (${created} created, ${updated} updated)`,
             });
             
             // Update the integration's last_sync_at timestamp
@@ -227,31 +242,35 @@ export const useSyncGoogleSheets = () => {
     } catch (error) {
       console.error('❌ Progress polling failed:', error);
     }
-  };
+  }, [toast, queryClient]);
 
   // Start polling function with more responsive polling
-  const startPolling = (integrationId: string) => {
+  const startPolling = useCallback((integrationId: string) => {
+    console.log('▶️ Starting polling for integration:', integrationId);
     currentIntegrationIdRef.current = integrationId;
+    isPollingRef.current = true;
     
     // Clear any existing polling
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
     }
     
-    // Start polling every 500ms for more responsive updates
+    // Poll immediately first
+    pollProgress(integrationId);
+    
+    // Start polling every 1000ms for responsive updates
     pollIntervalRef.current = setInterval(() => {
-      if (currentIntegrationIdRef.current) {
+      if (currentIntegrationIdRef.current && isPollingRef.current) {
         pollProgress(currentIntegrationIdRef.current);
       }
-    }, 500);
-    
-    // Also poll immediately
-    pollProgress(integrationId);
-  };
+    }, 1000);
+  }, [pollProgress]);
 
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
+      console.log('🧹 Cleaning up polling');
+      isPollingRef.current = false;
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
@@ -314,13 +333,14 @@ export const useSyncGoogleSheets = () => {
           status: 'processing'
         }));
 
-        // Start polling for progress updates
+        // Start polling for progress updates immediately
         startPolling(integration.id);
 
         return data;
         
       } catch (error) {
         console.error('❌ Sync failed with error:', error);
+        isPollingRef.current = false;
         setSyncProgress(prev => ({
           ...prev,
           status: 'error',
@@ -331,6 +351,7 @@ export const useSyncGoogleSheets = () => {
     },
     onError: (error) => {
       console.error('❌ Sync mutation failed:', error);
+      isPollingRef.current = false;
       toast({
         title: 'Sync failed',
         description: `Failed to start sync: ${error.message}`,
