@@ -209,7 +209,7 @@ export const useSyncGoogleSheets = () => {
             
             // Invalidate queries to refresh data
             queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
-            queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
+            queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
           } else if (progress.status === 'error') {
             toast({
               title: 'Sync failed',
@@ -229,7 +229,7 @@ export const useSyncGoogleSheets = () => {
     }
   };
 
-  // Start polling function with more aggressive polling
+  // Start polling function with more responsive polling
   const startPolling = (integrationId: string) => {
     currentIntegrationIdRef.current = integrationId;
     
@@ -238,12 +238,12 @@ export const useSyncGoogleSheets = () => {
       clearInterval(pollIntervalRef.current);
     }
     
-    // Start polling every 1 second for more responsive updates
+    // Start polling every 500ms for more responsive updates
     pollIntervalRef.current = setInterval(() => {
       if (currentIntegrationIdRef.current) {
         pollProgress(currentIntegrationIdRef.current);
       }
-    }, 1000);
+    }, 500);
     
     // Also poll immediately
     pollProgress(integrationId);

@@ -242,16 +242,26 @@ serve(async (req) => {
       });
     }
 
-    // Get the first hiring stage for pipeline entries
+    // Get the hiring stages for stage mapping
     const { data: stages, error: stagesError } = await supabase
       .from('hiring_stages')
-      .select('id')
-      .order('order_index')
-      .limit(1);
+      .select('id, name')
+      .order('order_index');
     
     if (stagesError || !stages || stages.length === 0) {
       throw new Error('No hiring stages found. Please create hiring stages first.');
     }
+
+    // Create stage mapping for better matching
+    const stageMap = new Map<string, string>();
+    stages.forEach(stage => {
+      const name = stage.name.toLowerCase();
+      stageMap.set(name, stage.id);
+      // Add common variations
+      stageMap.set(name.replace(/\s+/g, ''), stage.id);
+      stageMap.set(name.replace(/\s+/g, '_'), stage.id);
+      stageMap.set(name.replace(/\s+/g, '-'), stage.id);
+    });
     
     const firstStageId = stages[0].id;
 
@@ -264,9 +274,9 @@ serve(async (req) => {
     progress.status = 'processing';
     progressState.set(integrationId, progress);
 
-    console.log(`📊 Processing ${dataRows.length} rows`);
+    console.log(`📊 Processing ${dataRows.length} rows with ${Object.keys(columnMappings || {}).length} column mappings`);
 
-    const BATCH_SIZE = 10;
+    const BATCH_SIZE = 20;
     let totalProcessed = 0;
     let totalCreated = 0;
     let totalUpdated = 0;
@@ -295,6 +305,7 @@ serve(async (req) => {
           // Store pipeline-specific data separately
           let appliedCompany = null;
           let appliedJobTitle = null;
+          let kanbanStage = null;
 
           // Apply column mappings
           Object.entries(columnMappings || {}).forEach(([header, fieldName]) => {
@@ -330,6 +341,14 @@ serve(async (req) => {
                   case 'applied_job_title':
                     appliedJobTitle = value;
                     break;
+                  case 'kanban_stage':
+                  case 'stage':
+                    kanbanStage = value;
+                    break;
+                  case 'is_active':
+                    const lowerValue = value.toLowerCase().trim();
+                    candidateData[fieldName] = lowerValue === 'yes' || lowerValue === 'active' || lowerValue === 'true' || lowerValue === '1';
+                    break;
                   default:
                     // Only set if it's a valid candidate field
                     if (fieldName in candidateData) {
@@ -342,6 +361,7 @@ serve(async (req) => {
 
           // Skip rows without essential data
           if (!candidateData.full_name) {
+            console.log(`⚠️ Skipping row without name: ${JSON.stringify(row.slice(0, 3))}`);
             continue;
           }
 
@@ -392,6 +412,20 @@ serve(async (req) => {
             totalCreated++;
           }
 
+          // Determine the stage ID for pipeline
+          let stageId = firstStageId; // Default to first stage
+          if (kanbanStage) {
+            const normalizedStage = kanbanStage.toLowerCase().trim();
+            const mappedStageId = stageMap.get(normalizedStage) || 
+                                stageMap.get(normalizedStage.replace(/\s+/g, '')) ||
+                                stageMap.get(normalizedStage.replace(/\s+/g, '_'));
+            if (mappedStageId) {
+              stageId = mappedStageId;
+            } else {
+              console.log(`⚠️ Stage "${kanbanStage}" not found, using default stage`);
+            }
+          }
+
           // Handle pipeline entry
           const { data: existingPipeline, error: pipelineSearchError } = await supabase
             .from('candidate_pipeline')
@@ -409,6 +443,7 @@ serve(async (req) => {
             
             const pipelineUpdateData: any = {
               is_active: true,
+              stage_id: stageId,
               updated_at: new Date().toISOString()
             };
 
@@ -430,7 +465,7 @@ serve(async (req) => {
               .from('candidate_pipeline')
               .insert({
                 candidate_id: candidateId,
-                stage_id: firstStageId,
+                stage_id: stageId,
                 is_active: true,
                 applied_company: appliedCompany || candidateData.current_company,
                 applied_job_title: appliedJobTitle,
@@ -444,7 +479,7 @@ serve(async (req) => {
 
           totalProcessed++;
           
-          // Update progress
+          // Update progress more frequently
           const currentProgress = progressState.get(integrationId)!;
           currentProgress.processed = totalProcessed;
           currentProgress.created = totalCreated;
@@ -459,9 +494,9 @@ serve(async (req) => {
         }
       }
 
-      // Small delay between batches to prevent overwhelming the database
+      // Small delay between batches
       if (i + BATCH_SIZE < dataRows.length) {
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 25));
       }
     }
 
