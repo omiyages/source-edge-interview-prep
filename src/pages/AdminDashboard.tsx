@@ -10,6 +10,7 @@ import { KanbanBoard } from '@/components/KanbanBoard';
 import { DataVisualization } from '@/components/DataVisualization';
 import { GoogleSheetsIntegrationSection } from '@/components/GoogleSheetsIntegrationSection';
 import UsersList from '@/components/UsersList';
+import { AdminQuestionList } from '@/components/AdminQuestionList';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 const AdminDashboard = () => {
@@ -85,10 +86,12 @@ const AdminDashboard = () => {
           <TabsContent value="pending-questions" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Question Management - Pending Questions</CardTitle>
+                <CardTitle>Pending Questions</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Question management functionality will be available here.</p>
+                <ErrorBoundary>
+                  <AdminQuestionList statusFilter="pending" />
+                </ErrorBoundary>
               </CardContent>
             </Card>
           </TabsContent>
@@ -96,10 +99,12 @@ const AdminDashboard = () => {
           <TabsContent value="all-questions" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Question Management - All Questions</CardTitle>
+                <CardTitle>All Questions</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">All questions management functionality will be available here.</p>
+                <ErrorBoundary>
+                  <AdminQuestionList statusFilter="all" />
+                </ErrorBoundary>
               </CardContent>
             </Card>
           </TabsContent>
