@@ -15,11 +15,22 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  Edit
 } from 'lucide-react';
 import { GoogleSheetsIntegrationDialog } from './GoogleSheetsIntegrationDialog';
 import { useSyncGoogleSheets } from '@/hooks/useGoogleSheetsIntegration';
 import { formatDistanceToNow } from 'date-fns';
+
+interface SyncProgress {
+  current: number;
+  total: number;
+  status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
+  errors: string[];
+  createdCount?: number;
+  updatedCount?: number;
+}
 
 interface GoogleSheetsIntegrationCardProps {
   integration: {
@@ -33,13 +44,19 @@ interface GoogleSheetsIntegrationCardProps {
     created_at: string;
     updated_at: string;
   };
+  onPreview?: () => void;
+  onEditMapping?: () => void;
+  syncProgress: SyncProgress;
 }
 
 export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardProps> = ({
-  integration
+  integration,
+  onPreview,
+  onEditMapping,
+  syncProgress
 }) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const { mutate: syncSheets, isPending: isSyncing, syncProgress } = useSyncGoogleSheets();
+  const { mutate: syncSheets, isPending: isSyncing } = useSyncGoogleSheets();
 
   // Force re-render when progress changes
   useEffect(() => {
@@ -215,6 +232,18 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
                 </>
               )}
             </Button>
+            {onPreview && (
+              <Button variant="outline" onClick={onPreview}>
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
+              </Button>
+            )}
+            {onEditMapping && (
+              <Button variant="outline" onClick={onEditMapping}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
