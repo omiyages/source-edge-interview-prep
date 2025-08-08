@@ -1,4 +1,5 @@
 
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -276,7 +277,7 @@ serve(async (req) => {
 
     console.log('📂 Available stages:', stages.map(s => ({ id: s.id, name: s.name })));
 
-    // Create comprehensive stage mapping
+    // Create comprehensive stage mapping with special handling for "NO SHOW" -> "Booked"
     const stageMap = new Map<string, string>();
     stages.forEach(stage => {
       const name = stage.name.toLowerCase().trim();
@@ -287,6 +288,16 @@ serve(async (req) => {
       stageMap.set(name.replace(/\s+/g, '-'), stage.id);
       stageMap.set(name.replace(/[^a-z0-9]/g, ''), stage.id);
     });
+    
+    // Special mapping: "NO SHOW" should be mapped to "Booked" stage
+    const bookedStage = stages.find(s => s.name.toLowerCase() === 'booked');
+    if (bookedStage) {
+      stageMap.set('no show', bookedStage.id);
+      stageMap.set('noshow', bookedStage.id);
+      stageMap.set('no_show', bookedStage.id);
+      stageMap.set('no-show', bookedStage.id);
+      console.log('🎯 Special mapping: "NO SHOW" will be mapped to "Booked" stage');
+    }
     
     const firstStageId = stages[0].id;
     console.log('🎯 Default stage ID:', firstStageId);
@@ -622,3 +633,4 @@ serve(async (req) => {
     });
   }
 });
+
