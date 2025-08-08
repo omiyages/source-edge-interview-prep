@@ -6,12 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Search, Mail, Building2, ExternalLink, Plus, UserPlus } from 'lucide-react';
+import { Search, Mail, Building2, ExternalLink, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { CreateNewCandidateDialog } from './CreateNewCandidateDialog';
 
 interface Candidate {
   id: string;
@@ -39,7 +38,6 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
   const [appliedJobTitle, setAppliedJobTitle] = useState('');
   const [newJobTitle, setNewJobTitle] = useState('');
   const [showNewJobInput, setShowNewJobInput] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -204,17 +202,7 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Add Candidate to Pipeline</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Create New Candidate
-            </Button>
-          </DialogTitle>
+          <DialogTitle>Add Candidate to Pipeline</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -395,14 +383,6 @@ export const CandidateSearchDialog: React.FC<CandidateSearchDialogProps> = ({
           </div>
         </div>
       </DialogContent>
-      
-      <CreateNewCandidateDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onCandidateCreated={() => {
-          onOpenChange(false);
-        }}
-      />
     </Dialog>
   );
 };

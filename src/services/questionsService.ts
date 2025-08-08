@@ -8,7 +8,6 @@ export interface InterviewQuestion {
   role: string;
   interview_stage: string;
   category: string;
-  status: string;
   approved_at: string | null;
   approved_by: string | null;
   additional_context: string | null;

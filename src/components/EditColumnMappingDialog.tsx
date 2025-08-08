@@ -10,7 +10,7 @@ import { useUpdateGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegra
 import { useHiringStages } from '@/hooks/useKanbanData';
 import { useGoogleSheetsSample } from '@/hooks/useGoogleSheetsSample';
 import { ColumnMappingPreview } from './ColumnMappingPreview';
-import { InfoIcon, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { InfoIcon, Eye, EyeOff } from 'lucide-react';
 
 interface GoogleSheetsIntegration {
   id: string;
@@ -35,7 +35,6 @@ interface ColumnMappingItem {
 }
 
 const COLUMN_MAPPING_OPTIONS = [
-  { value: 'none', label: 'Select a field...' },
   { value: 'email', label: 'Email' },
   { value: 'full_name', label: 'Full Name' },
   { value: 'linkedin_profile', label: 'LinkedIn Profile' },
@@ -48,7 +47,6 @@ const COLUMN_MAPPING_OPTIONS = [
   { value: 'general_notes', label: 'General Notes' },
   { value: 'applied_company', label: 'Applied Company' },
   { value: 'applied_job_title', label: 'Applied Job Title' },
-  { value: 'is_active', label: 'Active Status (Yes/No)' },
   { value: 'kanban_stage', label: 'Kanban Stage' },
 ];
 
@@ -66,11 +64,8 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   const { data: hiringStages } = useHiringStages();
   const { sampleData, isLoading: isLoadingSample, fetchSampleData } = useGoogleSheetsSample();
 
-  // Initialize form data when dialog opens
   useEffect(() => {
     if (integration && open) {
-      console.log('🔄 Initializing edit dialog with integration:', integration);
-      
       setSheetName(integration.sheet_name || '');
       setRange(integration.range_specification || 'A:Z');
       
@@ -80,68 +75,18 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
         columnName,
         fieldMapping,
       }));
-      
-      console.log('📋 Setting column mappings:', mappingItems);
       setColumnMappings(mappingItems);
-      
-      // Automatically fetch sample data when dialog opens
-      if (integration.sheet_id) {
-        console.log('🔍 Auto-fetching sample data...');
-        fetchSampleData(integration.sheet_id, integration.sheet_name, 'A1:Z20');
-      }
     }
-  }, [integration, open, fetchSampleData]);
-
-  // Update mappings when sample data is fetched
-  useEffect(() => {
-    if (sampleData && sampleData.length > 0 && open) {
-      const headers = sampleData[0] || [];
-      console.log('📊 Sample data headers received:', headers);
-      
-      // If we don't have any mappings yet, create them from headers
-      if (columnMappings.length === 0) {
-        const newMappingItems = headers.map((header, index) => ({
-          id: `header-${index}`,
-          columnName: header,
-          fieldMapping: 'none', // Use 'none' instead of empty string
-        }));
-        console.log('✨ Creating new mappings from headers:', newMappingItems);
-        setColumnMappings(newMappingItems);
-      } else {
-        // Add any new columns from sample data that aren't in existing mappings
-        const existingColumnNames = columnMappings.map(item => item.columnName);
-        const newColumnsNeeded = headers.filter(header => !existingColumnNames.includes(header));
-        
-        if (newColumnsNeeded.length > 0) {
-          const newMappingItems = newColumnsNeeded.map((header, index) => ({
-            id: `new-${Date.now()}-${index}`,
-            columnName: header,
-            fieldMapping: 'none', // Use 'none' instead of empty string
-          }));
-          console.log('➕ Adding new columns to existing mappings:', newMappingItems);
-          setColumnMappings(prev => [...prev, ...newMappingItems]);
-        }
-      }
-    }
-  }, [sampleData, open]);
-
-  const handleRefreshSampleData = () => {
-    if (integration.sheet_id) {
-      console.log('🔄 Manually refreshing sample data...');
-      fetchSampleData(integration.sheet_id, sheetName || integration.sheet_name, 'A1:Z20');
-    }
-  };
+  }, [integration, open]);
 
   const handleSubmit = () => {
     // Convert ColumnMappingItem[] back to Record<string, string>
     const mappingsRecord = columnMappings.reduce((acc, item) => {
-      if (item.columnName.trim() && item.fieldMapping && item.fieldMapping !== 'none') {
+      if (item.columnName.trim()) {
         acc[item.columnName] = item.fieldMapping;
       }
       return acc;
     }, {} as Record<string, string>);
-
-    console.log('💾 Saving integration with mappings:', mappingsRecord);
 
     updateIntegration.mutate({
       id: integration.id,
@@ -155,7 +100,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
 
   const handlePreviewToggle = () => {
     if (!showPreview && integration.sheet_id) {
-      handleRefreshSampleData();
+      fetchSampleData(integration.sheet_id, sheetName, 'A1:Z10');
     }
     setShowPreview(!showPreview);
   };
@@ -172,7 +117,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
     const newItem: ColumnMappingItem = {
       id: `new-${Date.now()}-${Math.random()}`,
       columnName: newColumnName,
-      fieldMapping: 'none',
+      fieldMapping: '',
     };
     
     setColumnMappings(prev => [...prev, newItem]);
@@ -206,7 +151,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
 
   // Convert ColumnMappingItem[] to Record<string, string> for preview
   const columnMappingsRecord = columnMappings.reduce((acc, item) => {
-    if (item.columnName.trim() && item.fieldMapping !== 'none') {
+    if (item.columnName.trim()) {
       acc[item.columnName] = item.fieldMapping;
     }
     return acc;
@@ -244,47 +189,28 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label>Column Mappings ({columnMappings.length})</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefreshSampleData}
-                  disabled={!integration.sheet_id || isLoadingSample}
-                >
-                  {isLoadingSample ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Refresh Data
-                    </>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePreviewToggle}
-                  disabled={!integration.sheet_id}
-                >
-                  {showPreview ? (
-                    <>
-                      <EyeOff className="w-4 h-4 mr-2" />
-                      Hide Preview
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-4 h-4 mr-2" />
-                      Show Preview
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Label>Column Mappings</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewToggle}
+                disabled={!integration.sheet_id || isLoadingSample}
+              >
+                {isLoadingSample ? (
+                  'Loading...'
+                ) : showPreview ? (
+                  <>
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    Hide Preview
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Show Preview
+                  </>
+                )}
+              </Button>
             </div>
             
             <p className="text-sm text-muted-foreground mb-2">
@@ -295,14 +221,14 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
               <Alert className="mb-4">
                 <InfoIcon className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Kanban Stage Mapping:</strong> Use the exact stage names from your hiring pipeline. Available stages: {hiringStages?.map(stage => stage.name).join(', ')}. Both "Booked" and "NO SHOW" entries will be mapped to "Booked" stage.
+                  <strong>Kanban Stage Mapping:</strong> Use the exact stage names from your hiring pipeline. Available stages: {hiringStages?.map(stage => stage.name).join(', ')}
                 </AlertDescription>
               </Alert>
             )}
             
             <div className="space-y-2">
               {columnMappings.map((item) => (
-                <div key={item.id} className="flex items-center gap-2 p-2 border rounded">
+                <div key={item.id} className="flex items-center gap-2">
                   <Input
                     value={item.columnName}
                     onChange={(e) => updateColumnName(item.id, e.target.value)}
@@ -346,7 +272,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
             </div>
           </div>
 
-          {showPreview && sampleData && sampleData.length > 0 && (
+          {showPreview && (
             <ColumnMappingPreview
               sampleData={sampleData}
               columnMappings={columnMappingsRecord}

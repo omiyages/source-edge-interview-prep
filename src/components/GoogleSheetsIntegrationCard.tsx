@@ -1,173 +1,138 @@
 
-// ABOUTME: Card component for displaying Google Sheets integration with sync functionality
-// ABOUTME: Handles direct sync initiation and shows results for approval
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Sheet, 
-  RefreshCw, 
-  Edit, 
-  Loader2,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { RefreshCw, ExternalLink, Edit } from 'lucide-react';
+import { useSyncGoogleSheets } from '@/hooks/useGoogleSheetsIntegration';
+import { EditColumnMappingDialog } from './EditColumnMappingDialog';
 
-interface SyncProgress {
-  current: number;
-  total: number;
-  status: 'idle' | 'starting' | 'processing' | 'completed' | 'error';
-  errors: string[];
-  createdCount?: number;
-  updatedCount?: number;
+interface GoogleSheetsIntegration {
+  id: string;
+  sheet_id: string;
+  sheet_name: string | null;
+  range_specification: string;
+  column_mappings: Record<string, string>;
+  last_sync_at: string | null;
+  is_active: boolean;
 }
 
 interface GoogleSheetsIntegrationCardProps {
-  integration: any;
-  onSync: (integration: any) => void;
-  onEditMapping: (integration: any) => void;
-  syncProgress?: SyncProgress;
+  integration: GoogleSheetsIntegration;
 }
 
 export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardProps> = ({
   integration,
-  onSync,
-  onEditMapping,
-  syncProgress
 }) => {
-  const getProgressPercentage = () => {
-    if (!syncProgress || syncProgress.total === 0) return 0;
-    return Math.round((syncProgress.current / syncProgress.total) * 100);
-  };
-
-  const isActiveSync = syncProgress && (
-    syncProgress.status === 'starting' || 
-    syncProgress.status === 'processing'
-  );
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const syncMutation = useSyncGoogleSheets();
 
   const handleSync = () => {
-    onSync(integration);
+    syncMutation.mutate(integration.id);
   };
 
-  // Debug logging for progress
-  console.log('Progress data:', {
-    current: syncProgress?.current,
-    total: syncProgress?.total,
-    percentage: getProgressPercentage(),
-    status: syncProgress?.status
-  });
+  const formatLastSync = (lastSync: string | null) => {
+    if (!lastSync) return 'Never';
+    return new Date(lastSync).toLocaleString();
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sheet className="w-5 h-5" />
-            <span>{integration.sheet_name || 'Unnamed Sheet'}</span>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">
+              {integration.sheet_name || 'Google Sheet'}
+            </CardTitle>
+            <Badge variant={integration.is_active ? 'default' : 'secondary'}>
+              {integration.is_active ? 'Active' : 'Inactive'}
+            </Badge>
           </div>
-          <Badge variant="outline">
-            {Object.keys(integration.column_mappings || {}).length} mappings
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="text-sm text-muted-foreground space-y-1">
-            <p><strong>Sheet ID:</strong> {integration.sheet_id}</p>
-            <p><strong>Range:</strong> {integration.range_specification}</p>
-            {integration.last_sync_at && (
-              <p><strong>Last sync:</strong> {formatDistanceToNow(new Date(integration.last_sync_at), { addSuffix: true })}</p>
-            )}
-          </div>
-
-          {/* Sync Progress */}
-          {isActiveSync && syncProgress && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>
-                  {syncProgress.status === 'starting' ? 'Initializing sync...' : 'Syncing progress'}
-                </span>
-                <span>
-                  {syncProgress.current || 0} / {syncProgress.total || 0}
-                  {syncProgress.total > 0 && ` (${getProgressPercentage()}%)`}
-                </span>
-              </div>
-              <Progress 
-                value={getProgressPercentage()} 
-                className="w-full" 
-                max={100}
-              />
-              {(syncProgress.createdCount !== undefined || syncProgress.updatedCount !== undefined) && (
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>Created: {syncProgress.createdCount || 0}</span>
-                  <span>Updated: {syncProgress.updatedCount || 0}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Success/Error Messages */}
-          {syncProgress?.status === 'completed' && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3">
-              <div className="flex items-center gap-2 text-green-800 text-sm font-medium">
-                <CheckCircle className="w-4 h-4" />
-                Sync Completed - Ready for Review
-              </div>
-              <div className="text-green-700 text-xs">
-                Processed {syncProgress.current} rows: {syncProgress.createdCount || 0} created, {syncProgress.updatedCount || 0} updated
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium">Sheet ID:</p>
+              <div className="flex items-center gap-2">
+                <code className="text-xs bg-muted px-2 py-1 rounded">
+                  {integration.sheet_id}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    window.open(`https://docs.google.com/spreadsheets/d/${integration.sheet_id}/edit`, '_blank');
+                  }}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-          )}
 
-          {syncProgress?.status === 'error' && syncProgress.errors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <div className="flex items-center gap-2 text-red-800 text-sm font-medium mb-1">
-                <Clock className="w-4 h-4" />
-                Sync Errors
-              </div>
-              {syncProgress.errors.slice(0, 2).map((error, index) => (
-                <p key={index} className="text-red-700 text-xs">{error}</p>
-              ))}
-              {syncProgress.errors.length > 2 && (
-                <p className="text-red-600 text-xs">...and {syncProgress.errors.length - 2} more errors</p>
-              )}
+            <div>
+              <p className="text-sm font-medium">Range:</p>
+              <p className="text-sm text-muted-foreground">{integration.range_specification}</p>
             </div>
-          )}
 
-          <div className="flex gap-2">
-            <Button
-              onClick={handleSync}
-              disabled={isActiveSync}
-              className="flex-1"
-            >
-              {isActiveSync ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {syncProgress?.status === 'starting' ? 'Starting...' : 'Syncing...'}
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Sync Now
-                </>
-              )}
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={() => onEditMapping(integration)}
-              disabled={isActiveSync}
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Mapping
-            </Button>
+            <div>
+              <p className="text-sm font-medium">Column Mappings:</p>
+              <div className="text-sm text-muted-foreground">
+                {Object.keys(integration.column_mappings).length > 0 ? (
+                  <div className="grid grid-cols-2 gap-1 mt-1">
+                    {Object.entries(integration.column_mappings).map(([column, field]) => (
+                      <div key={column} className="text-xs">
+                        <span className="font-mono">{column}</span> → <span>{field}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  'No mappings configured'
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium">Last Sync:</p>
+              <p className="text-sm text-muted-foreground">
+                {formatLastSync(integration.last_sync_at)}
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={handleSync}
+                disabled={syncMutation.isPending}
+                className="flex-1"
+              >
+                {syncMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Sync Now
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowEditDialog(true)}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <EditColumnMappingDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        integration={integration}
+      />
+    </>
   );
 };

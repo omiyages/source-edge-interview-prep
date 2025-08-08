@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { EditableCandidateCard } from './EditableCandidateCard';
+import { CandidateCard } from './CandidateCard';
 import { cn } from '@/lib/utils';
 
 interface KanbanColumnProps {
@@ -10,8 +10,6 @@ interface KanbanColumnProps {
   color: string;
   candidates: any[];
   showInactive?: boolean;
-  onCandidateClick?: (candidate: any) => void;
-  onDeleteCandidate?: (candidateId: string) => void;
 }
 
 export const KanbanColumn = ({ 
@@ -19,9 +17,7 @@ export const KanbanColumn = ({
   title, 
   color, 
   candidates, 
-  showInactive = false,
-  onCandidateClick,
-  onDeleteCandidate
+  showInactive = false 
 }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -56,12 +52,10 @@ export const KanbanColumn = ({
         )}
       >
         {visibleCandidates.map((candidate) => (
-          <EditableCandidateCard
+          <CandidateCard
             key={candidate.applicationId || candidate.id}
             candidate={candidate}
             showInactive={showInactive}
-            onClick={() => onCandidateClick?.(candidate)}
-            onDelete={onDeleteCandidate}
           />
         ))}
         

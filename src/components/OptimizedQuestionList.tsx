@@ -1,7 +1,4 @@
 
-// ABOUTME: This component renders an optimized list of interview questions with infinite scroll support
-// ABOUTME: It handles pagination, loading states, and provides admin functionality for editing/deleting questions
-
 import { memo, useMemo, useEffect } from "react";
 import QuestionCard from "./QuestionCard";
 import { SkeletonCard } from "./SkeletonCard";
@@ -25,7 +22,7 @@ interface OptimizedQuestionListProps {
 
 const SKELETON_COUNT = 6;
 
-const OptimizedQuestionListComponent = ({ 
+export const OptimizedQuestionList = memo(({ 
   questions, 
   loading, 
   isAdmin, 
@@ -103,7 +100,6 @@ const OptimizedQuestionListComponent = ({
       )}
     </ErrorBoundary>
   );
-};
+});
 
-export const OptimizedQuestionList = memo(OptimizedQuestionListComponent);
 OptimizedQuestionList.displayName = "OptimizedQuestionList";

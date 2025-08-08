@@ -1,7 +1,4 @@
 
-// ABOUTME: Hook for managing Kanban board mutations with optimistic updates
-// ABOUTME: Handles candidate movement, deletion, and pipeline operations with real-time UI feedback
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -25,7 +22,7 @@ export const useMoveCandidateMutation = () => {
       console.log('✅ Candidate moved successfully');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate moved successfully');
     },
@@ -62,7 +59,7 @@ export const useAddCandidateToStageMutation = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate moved to stage successfully');
     },
@@ -103,35 +100,14 @@ export const useDeleteCandidateCompletely = () => {
       
       console.log('✅ Candidate deleted completely');
     },
-    onMutate: async ({ candidateId }) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: ['candidates-pipeline'] });
-
-      // Snapshot the previous value
-      const previousCandidates = queryClient.getQueryData(['candidates-pipeline']);
-
-      // Optimistically remove the candidate from the cache
-      queryClient.setQueryData(['candidates-pipeline'], (old: any) => {
-        if (!old) return [];
-        return old.filter((candidate: any) => candidate.id !== candidateId);
-      });
-
-      // Return a context object with the snapshotted value
-      return { previousCandidates };
-    },
-    onError: (err, { candidateId }, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousCandidates) {
-        queryClient.setQueryData(['candidates-pipeline'], context.previousCandidates);
-      }
-      toast.error('Failed to delete candidate');
-      console.error('❌ Failed to delete candidate:', err);
-    },
     onSuccess: () => {
-      // Invalidate and refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate deleted completely');
+    },
+    onError: (error) => {
+      console.error('❌ Failed to delete candidate:', error);
+      toast.error('Failed to delete candidate');
     },
   });
 };
@@ -155,7 +131,7 @@ export const useAddCandidateToPipelineMutation = () => {
         const { data: stages, error: stagesError } = await supabase
           .from('hiring_stages')
           .select('id')
-          .order('order_index')
+          .order('stage_order')
           .limit(1);
         
         if (stagesError || !stages || stages.length === 0) {
@@ -187,7 +163,7 @@ export const useAddCandidateToPipelineMutation = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['candidates-with-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
       toast.success('Candidate added to pipeline');
     },

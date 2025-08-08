@@ -1,93 +1,50 @@
 
-// ABOUTME: Section component for managing Google Sheets integrations
-// ABOUTME: Handles sync workflow with preview and approval system
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Sheet } from 'lucide-react';
+import { Plus, FileSpreadsheet } from 'lucide-react';
 import { GoogleSheetsIntegrationDialog } from './GoogleSheetsIntegrationDialog';
 import { GoogleSheetsIntegrationCard } from './GoogleSheetsIntegrationCard';
-import { SyncResultsPreviewDialog } from './SyncResultsPreviewDialog';
-import { EditColumnMappingDialog } from './EditColumnMappingDialog';
-import { useGoogleSheetsIntegrations, useSyncGoogleSheets } from '@/hooks/useGoogleSheetsIntegration';
-import { useSyncResults } from '@/hooks/useSyncResults';
-import { toast } from 'sonner';
+import { useGoogleSheetsIntegrations } from '@/hooks/useGoogleSheetsIntegration';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const GoogleSheetsIntegrationSection: React.FC = () => {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditMappingDialog, setShowEditMappingDialog] = useState(false);
-  const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
-
-  const { data: integrations, isLoading } = useGoogleSheetsIntegrations();
-  const syncMutation = useSyncGoogleSheets();
-  const { 
-    syncResults, 
-    isApproving, 
-    fetchSyncResults, 
-    approveSyncResults, 
-    rejectSyncResults 
-  } = useSyncResults();
-
-  const handleSync = async (integration: any) => {
-    console.log('🚀 Starting sync for integration:', integration.id);
-    setSelectedIntegration(integration);
-    
-    try {
-      await syncMutation.mutateAsync(integration.id);
-    } catch (error) {
-      console.error('❌ Sync failed:', error);
-      toast.error(`Sync failed: ${error.message}`);
-    }
-  };
-
-  // Fetch sync results when sync completes successfully
-  useEffect(() => {
-    const checkSyncResults = async () => {
-      if (syncMutation.syncProgress?.status === 'completed' && selectedIntegration && !syncResults) {
-        console.log('✅ Sync completed, fetching sync results');
-        await fetchSyncResults(selectedIntegration.id);
-      }
-    };
-
-    checkSyncResults();
-  }, [syncMutation.syncProgress, selectedIntegration, syncResults, fetchSyncResults]);
-
-  const handleApprove = async () => {
-    if (!selectedIntegration) return;
-    
-    try {
-      await approveSyncResults(selectedIntegration.id);
-      setSelectedIntegration(null);
-    } catch (error) {
-      console.error('❌ Failed to approve sync results:', error);
-    }
-  };
-
-  const handleReject = () => {
-    rejectSyncResults();
-    setSelectedIntegration(null);
-  };
-
-  const handleEditMapping = (integration: any) => {
-    setSelectedIntegration(integration);
-    setShowEditMappingDialog(true);
-  };
+  const [showDialog, setShowDialog] = useState(false);
+  const { data: integrations, isLoading, error } = useGoogleSheetsIntegrations();
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sheet className="w-5 h-5" />
+            <FileSpreadsheet className="w-5 h-5" />
             Google Sheets Integration
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5" />
+            Google Sheets Integration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertDescription>
+              Failed to load Google Sheets integrations: {error.message}
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -97,62 +54,47 @@ export const GoogleSheetsIntegrationSection: React.FC = () => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sheet className="w-5 h-5" />
-            Google Sheets Integration
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5" />
+              Google Sheets Integration
+            </CardTitle>
+            <Button onClick={() => setShowDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Integration
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {integrations && integrations.length > 0 ? (
-              integrations.map((integration) => (
+          {integrations && integrations.length > 0 ? (
+            <div className="grid gap-4">
+              {integrations.map((integration) => (
                 <GoogleSheetsIntegrationCard
                   key={integration.id}
                   integration={integration}
-                  onSync={handleSync}
-                  onEditMapping={handleEditMapping}
-                  syncProgress={syncMutation.syncProgress}
                 />
-              ))
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                No Google Sheets integrations configured yet.
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileSpreadsheet className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Google Sheets Connected</h3>
+              <p className="text-muted-foreground mb-4">
+                Connect your Google Sheets to import candidates automatically
               </p>
-            )}
-            
-            <Button
-              onClick={() => setShowCreateDialog(true)}
-              className="w-full"
-              variant="outline"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Google Sheets Integration
-            </Button>
-          </div>
+              <Button onClick={() => setShowDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Connect First Sheet
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <GoogleSheetsIntegrationDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
+        open={showDialog}
+        onOpenChange={setShowDialog}
       />
-
-      <SyncResultsPreviewDialog
-        open={!!syncResults}
-        onOpenChange={(open) => !open && handleReject()}
-        syncResults={syncResults}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        isApproving={isApproving}
-      />
-
-      {selectedIntegration && (
-        <EditColumnMappingDialog
-          open={showEditMappingDialog}
-          onOpenChange={setShowEditMappingDialog}
-          integration={selectedIntegration}
-        />
-      )}
     </>
   );
 };

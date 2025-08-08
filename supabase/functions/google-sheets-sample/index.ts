@@ -7,29 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Simple in-memory rate limiting
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_REQUESTS = 10; // 10 requests per minute per IP
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-
-function checkRateLimit(clientIp: string): boolean {
-  const now = Date.now();
-  const clientData = rateLimitMap.get(clientIp);
-  
-  if (!clientData || now > clientData.resetTime) {
-    // First request or window expired, reset
-    rateLimitMap.set(clientIp, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-  
-  if (clientData.count >= RATE_LIMIT_REQUESTS) {
-    return false; // Rate limit exceeded
-  }
-  
-  clientData.count++;
-  return true;
-}
-
 // JWT helper functions for service account authentication
 function base64UrlEncode(str: string): string {
   return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -122,21 +99,6 @@ serve(async (req) => {
   }
 
   try {
-    // Get client IP for rate limiting
-    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    
-    // Check rate limit
-    if (!checkRateLimit(clientIp)) {
-      console.log(`🚫 Rate limit exceeded for IP: ${clientIp}`);
-      return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded. Please wait before making more requests.' }),
-        {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
     const { sheetId, sheetName, range } = await req.json();
     
     const serviceAccountKeyString = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
@@ -146,7 +108,7 @@ serve(async (req) => {
 
     const serviceAccountKey = JSON.parse(serviceAccountKeyString);
     
-    console.log('📊 Fetching sample data from Google Sheets:', sheetId, sheetName, range);
+    console.log('Fetching sample data from Google Sheets:', sheetId, sheetName, range);
     
     const accessToken = await getAccessToken(serviceAccountKey);
     
@@ -162,7 +124,7 @@ serve(async (req) => {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('📊 Google Sheets API error:', response.status, errorText);
+      console.error('Google Sheets API error:', response.status, errorText);
       
       if (response.status === 403) {
         throw new Error('Permission denied: Make sure the service account has access to the Google Sheet');
@@ -170,8 +132,6 @@ serve(async (req) => {
         throw new Error('Authentication failed: Please check the service account configuration');
       } else if (response.status === 404) {
         throw new Error('Sheet not found: Please check that the Sheet ID is correct');
-      } else if (response.status === 429) {
-        throw new Error('Google API rate limit exceeded. Please wait a moment and try again.');
       } else {
         throw new Error(`Google Sheets API error (${response.status}): ${errorText}`);
       }
@@ -180,21 +140,19 @@ serve(async (req) => {
     const data = await response.json();
     
     if (!data.values || data.values.length === 0) {
-      console.log('📭 No data found in the specified range');
       return new Response(
         JSON.stringify({ values: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('✅ Sample data fetched successfully:', data.values.length, 'rows');
     return new Response(
       JSON.stringify({ values: data.values }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Error in google-sheets-sample:', error);
+    console.error('Error in google-sheets-sample:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
