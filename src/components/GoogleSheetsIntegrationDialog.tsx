@@ -56,6 +56,7 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
   
   const { 
     previewData, 
+    rawSheetData,
     isLoading: isPreviewLoading, 
     syncProgress, 
     generatePreview, 
@@ -172,15 +173,6 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
     setColumnMappings(newMappings);
     setSampleColumns(sampleColumns.filter(col => col !== column));
   };
-
-  const transformedSyncProgress = syncProgress ? {
-    current: syncProgress.current,
-    total: syncProgress.total,
-    status: syncProgress.status === 'starting' || syncProgress.status === 'processing' ? 'syncing' as const : syncProgress.status,
-    errors: syncProgress.errors,
-    createdCount: syncProgress.createdCount,
-    updatedCount: syncProgress.updatedCount
-  } : undefined;
 
   return (
     <>
@@ -349,11 +341,11 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
         open={showPreviewDialog}
         onOpenChange={(open) => {
           // Only allow closing if sync is not in progress
-          if (!open && transformedSyncProgress?.status === 'syncing') {
+          if (!open && syncProgress && (syncProgress.status === 'starting' || syncProgress.status === 'processing')) {
             return; // Prevent closing during sync
           }
           setShowPreviewDialog(open);
-          if (!open && transformedSyncProgress?.status === 'completed') {
+          if (!open && syncProgress?.status === 'completed') {
             // Close parent dialog and reset after successful sync
             setTimeout(() => {
               onOpenChange(false);
@@ -362,9 +354,11 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
           }
         }}
         candidates={previewData}
+        rawSheetData={rawSheetData}
+        columnMappings={columnMappings}
         onSync={handleSyncFromPreview}
         isLoading={createIntegration.isPending}
-        syncProgress={transformedSyncProgress}
+        syncProgress={syncProgress}
       />
     </>
   );
