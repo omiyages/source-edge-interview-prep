@@ -14,7 +14,7 @@ import { useHiringStages } from '@/hooks/useKanbanData';
 import { ColumnMappingPreview } from './ColumnMappingPreview';
 
 const CANDIDATE_FIELDS = [
-  { value: '', label: 'Select a field...' },
+  { value: 'none', label: 'Select a field...' },
   { value: 'full_name', label: 'Full Name' },
   { value: 'email', label: 'Email' },
   { value: 'phone_number', label: 'Phone Number' },
@@ -81,10 +81,12 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
       headers.forEach((header: string) => {
         const normalizedHeader = header.toLowerCase().replace(/\s+/g, '_');
         const matchingField = CANDIDATE_FIELDS.find(field => 
-          field.value === normalizedHeader || 
-          field.label.toLowerCase().replace(/\s+/g, '_') === normalizedHeader
+          field.value !== 'none' && (
+            field.value === normalizedHeader || 
+            field.label.toLowerCase().replace(/\s+/g, '_') === normalizedHeader
+          )
         );
-        if (matchingField && matchingField.value) {
+        if (matchingField && matchingField.value !== 'none') {
           autoMappings[header] = matchingField.value;
         }
       });
@@ -97,11 +99,16 @@ export const GoogleSheetsIntegrationDialog: React.FC<GoogleSheetsIntegrationDial
       return;
     }
 
+    // Filter out 'none' values when creating the integration
+    const filteredMappings = Object.fromEntries(
+      Object.entries(columnMappings).filter(([, value]) => value !== 'none')
+    );
+
     createIntegration.mutate({
       sheet_id: sheetId,
       sheet_name: sheetName || null,
       range_specification: range,
-      column_mappings: columnMappings,
+      column_mappings: filteredMappings,
     });
 
     onOpenChange(false);

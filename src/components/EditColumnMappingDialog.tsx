@@ -35,7 +35,7 @@ interface ColumnMappingItem {
 }
 
 const COLUMN_MAPPING_OPTIONS = [
-  { value: '', label: 'Select a field...' },
+  { value: 'none', label: 'Select a field...' },
   { value: 'email', label: 'Email' },
   { value: 'full_name', label: 'Full Name' },
   { value: 'linkedin_profile', label: 'LinkedIn Profile' },
@@ -103,7 +103,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
         const newMappingItems = headers.map((header, index) => ({
           id: `header-${index}`,
           columnName: header,
-          fieldMapping: '', // Empty by default
+          fieldMapping: 'none', // Use 'none' instead of empty string
         }));
         console.log('✨ Creating new mappings from headers:', newMappingItems);
         setColumnMappings(newMappingItems);
@@ -116,7 +116,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
           const newMappingItems = newColumnsNeeded.map((header, index) => ({
             id: `new-${Date.now()}-${index}`,
             columnName: header,
-            fieldMapping: '', // Empty by default
+            fieldMapping: 'none', // Use 'none' instead of empty string
           }));
           console.log('➕ Adding new columns to existing mappings:', newMappingItems);
           setColumnMappings(prev => [...prev, ...newMappingItems]);
@@ -135,7 +135,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   const handleSubmit = () => {
     // Convert ColumnMappingItem[] back to Record<string, string>
     const mappingsRecord = columnMappings.reduce((acc, item) => {
-      if (item.columnName.trim() && item.fieldMapping) {
+      if (item.columnName.trim() && item.fieldMapping && item.fieldMapping !== 'none') {
         acc[item.columnName] = item.fieldMapping;
       }
       return acc;
@@ -172,7 +172,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
     const newItem: ColumnMappingItem = {
       id: `new-${Date.now()}-${Math.random()}`,
       columnName: newColumnName,
-      fieldMapping: '',
+      fieldMapping: 'none',
     };
     
     setColumnMappings(prev => [...prev, newItem]);
@@ -206,7 +206,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
 
   // Convert ColumnMappingItem[] to Record<string, string> for preview
   const columnMappingsRecord = columnMappings.reduce((acc, item) => {
-    if (item.columnName.trim()) {
+    if (item.columnName.trim() && item.fieldMapping !== 'none') {
       acc[item.columnName] = item.fieldMapping;
     }
     return acc;
