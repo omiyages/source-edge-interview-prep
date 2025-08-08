@@ -1,4 +1,7 @@
 
+// ABOUTME: This component displays Google Sheets integration cards with sync functionality
+// ABOUTME: Shows sync progress, status badges, and integration details
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { 
   FileSpreadsheet, 
-  Sync, 
+  RefreshCw, 
   Settings, 
   Calendar,
   Loader2,
@@ -173,7 +176,7 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
                 </>
               ) : (
                 <>
-                  <Sync className="w-4 h-4 mr-2" />
+                  <RefreshCw className="w-4 h-4 mr-2" />
                   Sync Now
                 </>
               )}
