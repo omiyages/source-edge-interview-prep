@@ -474,7 +474,7 @@ serve(async (req) => {
             console.log(`✅ Created candidate: ${candidateData.full_name} (ID: ${candidateId})`);
           }
 
-          // Handle pipeline entry
+          // Handle pipeline entry - ALWAYS ensure candidate is in pipeline
           let stageId = firstStageId;
           if (kanbanStage) {
             const normalizedStage = kanbanStage.toLowerCase().trim();
@@ -503,8 +503,16 @@ serve(async (req) => {
           }
 
           if (existingPipeline && existingPipeline.length > 0) {
-            // Update existing pipeline entry
-            const pipelineEntry = existingPipeline[0];
+            // Find active pipeline entry or reactivate the first one
+            let activePipelineEntry = existingPipeline.find(entry => entry.is_active);
+            
+            if (!activePipelineEntry) {
+              // No active entry found, reactivate the first one
+              activePipelineEntry = existingPipeline[0];
+              console.log(`🔄 Reactivating pipeline entry for previously deleted candidate: ${candidateData.full_name}`);
+            } else {
+              console.log(`🔄 Updating existing active pipeline entry for candidate: ${candidateData.full_name}`);
+            }
             
             const pipelineUpdateData: any = {
               is_active: true,
@@ -514,18 +522,16 @@ serve(async (req) => {
 
             if (appliedCompany !== null) pipelineUpdateData.applied_company = appliedCompany;
             if (appliedJobTitle !== null) pipelineUpdateData.applied_job_title = appliedJobTitle;
-
-            console.log(`🔄 Updating pipeline for candidate: ${candidateData.full_name}`);
             
             const { error: pipelineUpdateError } = await supabase
               .from('candidate_pipeline')
               .update(pipelineUpdateData)
-              .eq('id', pipelineEntry.id);
+              .eq('id', activePipelineEntry.id);
 
             if (pipelineUpdateError) {
               console.error(`❌ Error updating pipeline entry for row ${actualRowIndex}:`, pipelineUpdateError);
             } else {
-              console.log(`✅ Updated pipeline for: ${candidateData.full_name}`);
+              console.log(`✅ Updated/Reactivated pipeline for: ${candidateData.full_name}`);
             }
           } else {
             // Create new pipeline entry
