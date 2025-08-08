@@ -35,6 +35,7 @@ interface ColumnMappingItem {
 }
 
 const COLUMN_MAPPING_OPTIONS = [
+  { value: '', label: 'Select a field...' },
   { value: 'email', label: 'Email' },
   { value: 'full_name', label: 'Full Name' },
   { value: 'linkedin_profile', label: 'LinkedIn Profile' },
@@ -60,6 +61,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
   const [range, setRange] = useState('A:Z');
   const [columnMappings, setColumnMappings] = useState<ColumnMappingItem[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [sampleColumns, setSampleColumns] = useState<string[]>([]);
 
   const updateIntegration = useUpdateGoogleSheetsIntegration();
   const { data: hiringStages } = useHiringStages();
@@ -77,13 +79,38 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
         fieldMapping,
       }));
       setColumnMappings(mappingItems);
+      
+      // If we have mappings but no sample data, fetch sample data
+      if (mappingItems.length > 0 && sampleColumns.length === 0) {
+        fetchSampleData(integration.sheet_id, integration.sheet_name, 'A1:Z10');
+      }
     }
   }, [integration, open]);
+
+  useEffect(() => {
+    if (sampleData && sampleData.length > 0) {
+      const headers = sampleData[0] || [];
+      setSampleColumns(headers);
+      
+      // If we have existing mappings but need to add columns from sample data
+      const existingColumnNames = columnMappings.map(item => item.columnName);
+      const newColumnsNeeded = headers.filter(header => !existingColumnNames.includes(header));
+      
+      if (newColumnsNeeded.length > 0 && columnMappings.length > 0) {
+        const newMappingItems = newColumnsNeeded.map((header, index) => ({
+          id: `new-${Date.now()}-${index}`,
+          columnName: header,
+          fieldMapping: '', // Empty by default
+        }));
+        setColumnMappings(prev => [...prev, ...newMappingItems]);
+      }
+    }
+  }, [sampleData]);
 
   const handleSubmit = () => {
     // Convert ColumnMappingItem[] back to Record<string, string>
     const mappingsRecord = columnMappings.reduce((acc, item) => {
-      if (item.columnName.trim()) {
+      if (item.columnName.trim() && item.fieldMapping) {
         acc[item.columnName] = item.fieldMapping;
       }
       return acc;
@@ -222,7 +249,7 @@ export const EditColumnMappingDialog: React.FC<EditColumnMappingDialogProps> = (
               <Alert className="mb-4">
                 <InfoIcon className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Kanban Stage Mapping:</strong> Use the exact stage names from your hiring pipeline. Available stages: {hiringStages?.map(stage => stage.name).join(', ')}
+                  <strong>Kanban Stage Mapping:</strong> Use the exact stage names from your hiring pipeline. Available stages: {hiringStages?.map(stage => stage.name).join(', ')}. Special note: "NO SHOW" entries will be automatically mapped to "Booked" stage.
                 </AlertDescription>
               </Alert>
             )}

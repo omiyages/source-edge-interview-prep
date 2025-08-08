@@ -344,7 +344,7 @@ serve(async (req) => {
             skillsets: [],
             past_companies: [],
             general_notes: null,
-            is_active: true
+            is_active: true // Default to active for all candidates
           };
 
           // Store pipeline-specific data separately
@@ -395,8 +395,8 @@ serve(async (req) => {
                     kanbanStage = value;
                     break;
                   case 'is_active':
-                    const lowerValue = value.toLowerCase().trim();
-                    candidateData[fieldName] = lowerValue === 'yes' || lowerValue === 'active' || lowerValue === 'true' || lowerValue === '1';
+                    // Always set candidates as active in the database, regardless of sheet value
+                    candidateData[fieldName] = true;
                     break;
                   default:
                     if (fieldName in candidateData) {
@@ -414,7 +414,8 @@ serve(async (req) => {
             name: candidateData.full_name, 
             email: candidateData.email,
             company: candidateData.current_company || appliedCompany,
-            stage: kanbanStage
+            stage: kanbanStage,
+            is_active: candidateData.is_active
           });
 
           // Skip rows without essential data
@@ -485,7 +486,7 @@ serve(async (req) => {
             console.log(`✅ Created candidate: ${candidateData.full_name} (ID: ${candidateId})`);
           }
 
-          // Handle pipeline entry - ALWAYS ensure candidate is in pipeline
+          // Handle pipeline entry - ALWAYS ensure candidate is in pipeline and set as ACTIVE
           let stageId = firstStageId;
           if (kanbanStage) {
             const normalizedStage = kanbanStage.toLowerCase().trim();
@@ -526,7 +527,7 @@ serve(async (req) => {
             }
             
             const pipelineUpdateData: any = {
-              is_active: true,
+              is_active: true, // Always set pipeline entry as active
               stage_id: stageId,
               updated_at: new Date().toISOString()
             };
@@ -553,7 +554,7 @@ serve(async (req) => {
               .insert({
                 candidate_id: candidateId,
                 stage_id: stageId,
-                is_active: true,
+                is_active: true, // Always set new pipeline entries as active
                 applied_company: appliedCompany || candidateData.current_company,
                 applied_job_title: appliedJobTitle,
                 notes: `Synced from Google Sheets on ${new Date().toISOString()}`
@@ -633,4 +634,3 @@ serve(async (req) => {
     });
   }
 });
-
