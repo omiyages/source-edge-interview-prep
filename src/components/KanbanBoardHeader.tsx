@@ -3,10 +3,22 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plus, FileSpreadsheet } from 'lucide-react';
+import { Plus, FileSpreadsheet, RotateCcw } from 'lucide-react';
 import { GoogleSheetsIntegrationSection } from './GoogleSheetsIntegrationSection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 import { useState } from 'react';
+import { useResetCandidates } from '@/hooks/useResetCandidates';
 
 interface KanbanBoardHeaderProps {
   onAddCandidate: () => void;
@@ -20,6 +32,11 @@ export const KanbanBoardHeader: React.FC<KanbanBoardHeaderProps> = ({
   onToggleInactive,
 }) => {
   const [showSheetsDialog, setShowSheetsDialog] = useState(false);
+  const resetCandidatesMutation = useResetCandidates();
+
+  const handleReset = () => {
+    resetCandidatesMutation.mutate();
+  };
 
   return (
     <div className="mb-6">
@@ -49,6 +66,34 @@ export const KanbanBoardHeader: React.FC<KanbanBoardHeaderProps> = ({
               <GoogleSheetsIntegrationSection />
             </DialogContent>
           </Dialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset Database
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset All Candidate Data</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete ALL candidates, pipeline entries, and import records from the database. 
+                  This action cannot be undone. Are you sure you want to proceed?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleReset}
+                  disabled={resetCandidatesMutation.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {resetCandidatesMutation.isPending ? 'Resetting...' : 'Reset Database'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           
           <Button onClick={onAddCandidate}>
             <Plus className="w-4 h-4 mr-2" />
