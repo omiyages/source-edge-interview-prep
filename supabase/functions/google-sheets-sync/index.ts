@@ -1,11 +1,33 @@
 
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Simple in-memory rate limiting for Google Sheets API
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_REQUESTS = 5; // 5 requests per minute per integration to be safe
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+
+function checkRateLimit(integrationId: string): boolean {
+  const now = Date.now();
+  const clientData = rateLimitMap.get(integrationId);
+  
+  if (!clientData || now > clientData.resetTime) {
+    // First request or window expired, reset
+    rateLimitMap.set(integrationId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (clientData.count >= RATE_LIMIT_REQUESTS) {
+    return false; // Rate limit exceeded
+  }
+  
+  clientData.count++;
+  return true;
 }
 
 // Global progress tracking with more detailed state
@@ -122,6 +144,11 @@ function updateProgress(integrationId: string, updates: Partial<typeof progressS
   }
 }
 
+// Helper function to wait/delay execution
+async function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -187,6 +214,21 @@ serve(async (req) => {
       });
     }
 
+    // Check rate limit for this integration
+    if (!checkRateLimit(integrationId)) {
+      console.log(`🚫 Rate limit exceeded for integration: ${integrationId}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Rate limit exceeded. Please wait before syncing again. This helps prevent hitting Google API limits.' 
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     console.log('🚀 Starting Google Sheets sync for integration:', integrationId);
     console.log('📋 Sync parameters:', { sheetId, range, mappingsCount: Object.keys(columnMappings || {}).length });
 
@@ -209,13 +251,21 @@ serve(async (req) => {
     }
 
     const serviceAccountKey = JSON.parse(serviceAccountKeyString);
+    
+    // Add delay before getting access token to avoid rate limits
+    console.log('⏳ Waiting to prevent rate limits...');
+    await delay(2000); // 2 second delay
+    
     const accessToken = await getAccessToken(serviceAccountKey);
 
-    // Fetch Google Sheets data
+    // Fetch Google Sheets data with rate limiting protection
     const fullRange = range || 'A:Z';
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(fullRange)}`;
     
     console.log('📡 Fetching from Google Sheets URL:', sheetsUrl);
+    
+    // Add another delay before the API call
+    await delay(1000);
     
     const sheetsResponse = await fetch(sheetsUrl, {
       headers: {
@@ -228,13 +278,21 @@ serve(async (req) => {
       console.error('❌ Google Sheets API error:', sheetsResponse.status, errorText);
       
       let errorMessage = `Google Sheets API error (${sheetsResponse.status})`;
-      if (sheetsResponse.status === 403) {
+      if (sheetsResponse.status === 429) {
+        errorMessage = 'Google API rate limit exceeded. Please wait a few minutes before trying again. This is normal when making multiple requests quickly.';
+      } else if (sheetsResponse.status === 403) {
         errorMessage = 'Permission denied: Make sure the service account has access to the Google Sheet';
       } else if (sheetsResponse.status === 401) {
         errorMessage = 'Authentication failed: Please check the service account configuration';
       } else if (sheetsResponse.status === 404) {
         errorMessage = 'Sheet not found: Please check that the Sheet ID is correct';
       }
+      
+      // Update progress with error
+      updateProgress(integrationId, {
+        status: 'error',
+        errors: [errorMessage]
+      });
       
       throw new Error(errorMessage);
     }
@@ -319,12 +377,17 @@ serve(async (req) => {
     let totalUpdated = 0;
     let totalSkipped = 0;
 
-    const BATCH_SIZE = 10; // Reduced batch size for better error tracking
+    const BATCH_SIZE = 5; // Reduced batch size further for better rate limiting
 
-    // Process in smaller batches
+    // Process in smaller batches with delays
     for (let i = 0; i < dataRows.length; i += BATCH_SIZE) {
       const batch = dataRows.slice(i, i + BATCH_SIZE);
       console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1} (rows ${i + 1}-${Math.min(i + BATCH_SIZE, dataRows.length)})`);
+      
+      // Add delay between batches to prevent overwhelming the database
+      if (i > 0) {
+        await delay(500); // 500ms delay between batches
+      }
       
       for (const [rowIndex, row] of batch.entries()) {
         const actualRowIndex = i + rowIndex + 2; // +2 because we skip header and array is 0-indexed
@@ -582,11 +645,6 @@ serve(async (req) => {
             errors: [...(progressState.get(integrationId)?.errors || []), `Row ${actualRowIndex}: ${rowError.message}`]
           });
         }
-      }
-
-      // Small delay between batches
-      if (i + BATCH_SIZE < dataRows.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
