@@ -53,6 +53,14 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
     onSync(integration);
   };
 
+  // Debug logging for progress
+  console.log('Progress data:', {
+    current: syncProgress?.current,
+    total: syncProgress?.total,
+    percentage: getProgressPercentage(),
+    status: syncProgress?.status
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -84,15 +92,19 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
                   {syncProgress.status === 'starting' ? 'Initializing sync...' : 'Syncing progress'}
                 </span>
                 <span>
-                  {syncProgress.current} / {syncProgress.total}
+                  {syncProgress.current || 0} / {syncProgress.total || 0}
                   {syncProgress.total > 0 && ` (${getProgressPercentage()}%)`}
                 </span>
               </div>
-              <Progress value={getProgressPercentage()} className="w-full" />
-              {syncProgress.createdCount !== undefined && syncProgress.updatedCount !== undefined && (
+              <Progress 
+                value={getProgressPercentage()} 
+                className="w-full" 
+                max={100}
+              />
+              {(syncProgress.createdCount !== undefined || syncProgress.updatedCount !== undefined) && (
                 <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>Created: {syncProgress.createdCount}</span>
-                  <span>Updated: {syncProgress.updatedCount}</span>
+                  <span>Created: {syncProgress.createdCount || 0}</span>
+                  <span>Updated: {syncProgress.updatedCount || 0}</span>
                 </div>
               )}
             </div>
@@ -106,7 +118,7 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
                 Sync Completed - Ready for Review
               </div>
               <div className="text-green-700 text-xs">
-                Processed {syncProgress.current} rows: {syncProgress.createdCount} created, {syncProgress.updatedCount} updated
+                Processed {syncProgress.current} rows: {syncProgress.createdCount || 0} created, {syncProgress.updatedCount || 0} updated
               </div>
             </div>
           )}

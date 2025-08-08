@@ -1,6 +1,6 @@
 
 // ABOUTME: Admin dashboard page that provides comprehensive management interface for administrators
-// ABOUTME: Includes candidate pipeline, user management, analytics, security monitoring, and integrations
+// ABOUTME: Includes candidate pipeline, user management, analytics, and integrations
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { DataVisualization } from '@/components/DataVisualization';
-import { SecurityMonitor } from '@/components/SecurityMonitor';
 import { GoogleSheetsIntegrationSection } from '@/components/GoogleSheetsIntegrationSection';
 import UsersList from '@/components/UsersList';
+import { QuestionManager } from '@/components/QuestionManager';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 const AdminDashboard = () => {
@@ -49,12 +49,13 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="pipeline" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
+            <TabsTrigger value="pending-questions">Pending Questions</TabsTrigger>
+            <TabsTrigger value="all-questions">All Questions</TabsTrigger>
+            <TabsTrigger value="course-assignment">Course Assignment</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pipeline" className="space-y-6">
@@ -82,13 +83,19 @@ const AdminDashboard = () => {
             </ErrorBoundary>
           </TabsContent>
 
-          <TabsContent value="security" className="space-y-6">
+          <TabsContent value="pending-questions" className="space-y-6">
             <ErrorBoundary>
-              <SecurityMonitor />
+              <QuestionManager initialFilter="pending" />
             </ErrorBoundary>
           </TabsContent>
 
-          <TabsContent value="integrations" className="space-y-6">
+          <TabsContent value="all-questions" className="space-y-6">
+            <ErrorBoundary>
+              <QuestionManager initialFilter="all" />
+            </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent value="course-assignment" className="space-y-6">
             <ErrorBoundary>
               <GoogleSheetsIntegrationSection />
             </ErrorBoundary>
