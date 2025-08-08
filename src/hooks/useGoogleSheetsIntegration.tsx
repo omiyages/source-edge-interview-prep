@@ -1,6 +1,6 @@
 
-// ABOUTME: Hook for managing Google Sheets integrations with real-time progress tracking
-// ABOUTME: Handles CRUD operations and sync functionality with background processing support
+// ABOUTME: Hook for managing Google Sheets integrations with sync functionality
+// ABOUTME: Handles CRUD operations and direct sync workflow without preview
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -153,7 +153,6 @@ export const useSyncGoogleSheets = () => {
   const currentIntegrationIdRef = useRef<string | null>(null);
   const isPollingRef = useRef(false);
 
-  // Enhanced polling function with better error handling and state management
   const pollProgress = useCallback(async (integrationId: string) => {
     if (!integrationId || !isPollingRef.current) {
       return;
@@ -178,7 +177,6 @@ export const useSyncGoogleSheets = () => {
         const progress = data.progress;
         console.log('📊 Progress update received:', progress);
         
-        // Ensure we have valid numbers for current and total
         const current = Math.max(0, progress.processed || progress.current || 0);
         const total = Math.max(current, progress.total || 0);
         const created = progress.created || progress.createdCount || 0;
@@ -198,7 +196,6 @@ export const useSyncGoogleSheets = () => {
           return newProgress;
         });
 
-        // Stop polling if completed or error
         if (progress.status === 'completed' || progress.status === 'error') {
           console.log('🛑 Stopping polling, status:', progress.status);
           isPollingRef.current = false;
@@ -209,11 +206,6 @@ export const useSyncGoogleSheets = () => {
           }
           
           if (progress.status === 'completed') {
-            toast({
-              title: 'Sync completed',
-              description: `Successfully processed ${current} candidates (${created} created, ${updated} updated)`,
-            });
-            
             // Update the integration's last_sync_at timestamp
             if (currentIntegrationIdRef.current) {
               await supabase
@@ -222,7 +214,6 @@ export const useSyncGoogleSheets = () => {
                 .eq('id', currentIntegrationIdRef.current);
             }
             
-            // Invalidate queries to refresh data
             queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
             queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
           } else if (progress.status === 'error') {
@@ -233,7 +224,6 @@ export const useSyncGoogleSheets = () => {
             });
           }
           
-          // Reset status after delay
           setTimeout(() => {
             setSyncProgress(prev => ({ ...prev, status: 'idle' }));
           }, 3000);
@@ -244,21 +234,17 @@ export const useSyncGoogleSheets = () => {
     }
   }, [toast, queryClient]);
 
-  // Start polling function with more responsive polling
   const startPolling = useCallback((integrationId: string) => {
     console.log('▶️ Starting polling for integration:', integrationId);
     currentIntegrationIdRef.current = integrationId;
     isPollingRef.current = true;
     
-    // Clear any existing polling
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
     }
     
-    // Poll immediately first
     pollProgress(integrationId);
     
-    // Start polling every 1000ms for responsive updates
     pollIntervalRef.current = setInterval(() => {
       if (currentIntegrationIdRef.current && isPollingRef.current) {
         pollProgress(currentIntegrationIdRef.current);
@@ -266,7 +252,6 @@ export const useSyncGoogleSheets = () => {
     }, 1000);
   }, [pollProgress]);
 
-  // Cleanup polling on unmount
   useEffect(() => {
     return () => {
       console.log('🧹 Cleaning up polling');
@@ -282,7 +267,6 @@ export const useSyncGoogleSheets = () => {
       console.log('🚀 Starting sync for integration:', integrationId);
       
       try {
-        // Get integration data
         const { data: integration, error: integrationError } = await supabase
           .from('google_sheets_integrations')
           .select('*')
@@ -297,7 +281,6 @@ export const useSyncGoogleSheets = () => {
           mappings: Object.keys(integration.column_mappings || {}).length
         });
 
-        // Reset progress state with better initial values
         setSyncProgress({
           current: 0,
           total: 0,
@@ -307,7 +290,6 @@ export const useSyncGoogleSheets = () => {
           updatedCount: 0
         });
 
-        // Start the sync process
         console.log('🔄 Calling sync function...');
         const { data, error: syncError } = await supabase.functions.invoke('google-sheets-sync', {
           body: {
@@ -325,7 +307,6 @@ export const useSyncGoogleSheets = () => {
 
         console.log('✅ Sync started successfully:', data);
 
-        // Update initial progress with actual total from the response
         const totalRows = Math.max(1, (data?.totalRows || 0));
         setSyncProgress(prev => ({
           ...prev,
@@ -333,9 +314,7 @@ export const useSyncGoogleSheets = () => {
           status: 'processing'
         }));
 
-        // Start polling for progress updates immediately
         startPolling(integration.id);
-
         return data;
         
       } catch (error) {
@@ -358,7 +337,6 @@ export const useSyncGoogleSheets = () => {
         variant: 'destructive',
       });
       
-      // Reset progress on error after delay
       setTimeout(() => {
         setSyncProgress(prev => ({ ...prev, status: 'idle' }));
       }, 3000);
