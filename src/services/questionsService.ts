@@ -1,4 +1,7 @@
 
+// ABOUTME: Service for fetching and managing interview questions from the database
+// ABOUTME: Handles question retrieval with admin/user filtering and pagination support
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface InterviewQuestion {
@@ -19,13 +22,14 @@ export interface InterviewQuestion {
   source_url: string | null;
   source_website: string | null;
   scraped_at: string | null;
+  status: string;
 }
 
 export const fetchQuestions = async (isAdmin: boolean = false, page?: number, limit?: number): Promise<InterviewQuestion[]> => {
   try {
     let query = supabase
       .from('interview_questions')
-      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at')
+      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status')
       .order('created_at', { ascending: false });
 
     // Only filter out pending questions for non-admin users
