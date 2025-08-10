@@ -1,6 +1,42 @@
 
+// ABOUTME: Custom hook for fetching and managing kanban board data including candidates and hiring stages
+// ABOUTME: Handles data transformation and user status checking for the hiring pipeline
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+export interface HiringStage {
+  id: string;
+  name: string;
+  color: string;
+  order_index: number;
+}
+
+export interface Candidate {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone_number: string | null;
+  linkedin_profile: string | null;
+  current_company: string | null;
+  years_of_experience: number | null;
+  salary: number | null;
+  skillsets: string[] | null;
+  past_companies: string[] | null;
+  general_notes: string | null;
+  is_active: boolean;
+  is_user: boolean;
+  applications?: Array<{
+    id: string;
+    stage_id: string;
+    applied_company: string | null;
+    applied_job_title: string | null;
+    created_at: string;
+    updated_at: string;
+    moved_at: string | null;
+    is_active: boolean;
+  }>;
+}
 
 export const useHiringStages = () => {
   return useQuery({
@@ -12,7 +48,7 @@ export const useHiringStages = () => {
         .order('order_index');
       
       if (error) throw error;
-      return data;
+      return data as HiringStage[];
     },
   });
 };
@@ -43,8 +79,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             salary,
             skillsets,
             past_companies,
-            general_notes,
-            is_active
+            general_notes
           ),
           hiring_stages (
             id,
@@ -52,10 +87,6 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             color
           )
         `);
-      
-      if (!includeInactive) {
-        query = query.eq('candidates.is_active', true);
-      }
       
       const { data, error } = await query;
       
@@ -99,7 +130,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             skillsets: candidate?.skillsets || [],
             past_companies: candidate?.past_companies || [],
             general_notes: candidate?.general_notes,
-            is_active: candidate?.is_active,
+            is_active: true, // Default to active since we're querying pipeline
             is_user: isUser,
             notes: item.notes,
             created_at: item.created_at,

@@ -1,4 +1,7 @@
 
+// ABOUTME: Column component for the kanban board that displays candidates in a specific hiring stage
+// ABOUTME: Handles drag and drop functionality for moving candidates between stages
+
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { CandidateCard } from './CandidateCard';
@@ -9,24 +12,20 @@ interface KanbanColumnProps {
   title: string;
   color: string;
   candidates: any[];
-  showInactive?: boolean;
 }
 
 export const KanbanColumn = ({ 
   id, 
   title, 
   color, 
-  candidates, 
-  showInactive = false 
+  candidates
 }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
   });
 
-  // Filter candidates based on showInactive flag
-  const visibleCandidates = showInactive 
-    ? candidates 
-    : candidates.filter(candidate => candidate.is_active !== false);
+  // Filter active candidates only
+  const visibleCandidates = candidates.filter(candidate => candidate.is_active !== false);
 
   return (
     <div className="flex flex-col min-w-[300px] max-w-[300px]">
@@ -55,7 +54,6 @@ export const KanbanColumn = ({
           <CandidateCard
             key={candidate.applicationId || candidate.id}
             candidate={candidate}
-            showInactive={showInactive}
           />
         ))}
         

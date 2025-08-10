@@ -1,4 +1,7 @@
 
+// ABOUTME: Card component for displaying candidate information in the kanban board
+// ABOUTME: Handles drag and drop functionality and candidate detail dialogs
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
