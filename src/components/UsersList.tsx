@@ -93,7 +93,7 @@ export const UsersList = () => {
                       updated_at: candidate.updated_at,
                       last_login_at: null, // Add missing properties with defaults
                       total_session_time_minutes: null,
-                      is_active: candidate.is_active ?? true
+                      is_active: candidate.is_active ?? true // Use candidate's is_active or default to true
                     } as UserProfile}
                     onDelete={deleteUserMutation.mutate}
                     isDeleting={deleteUserMutation.isPending}

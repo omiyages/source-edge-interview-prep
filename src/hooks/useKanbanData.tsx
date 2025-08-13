@@ -45,16 +45,16 @@ export const useHiringStages = () => {
       const { data, error } = await supabase
         .from('hiring_stages')
         .select('*')
-        .order('order_index');
+        .order('stage_order');
       
       if (error) throw error;
       
-      // Map the database fields to our interface, using stage_order as fallback for order_index
+      // Map the database fields to our interface, using stage_order as order_index
       return data.map(stage => ({
         id: stage.id,
         name: stage.name,
         color: stage.color,
-        order_index: stage.order_index || stage.stage_order || 0
+        order_index: stage.stage_order // Use stage_order from database
       })) as HiringStage[];
     },
   });
