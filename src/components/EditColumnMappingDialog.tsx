@@ -88,16 +88,16 @@ export const EditColumnMappingDialog = ({ open, onOpenChange, integration, onSav
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-xl font-semibold">Edit Column Mappings</DialogTitle>
-          <p className="text-sm text-muted-foreground mt-2">
+      <DialogContent className="w-[90vw] max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl h-[80vh] max-h-[600px] p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+          <DialogTitle className="text-lg font-semibold">Edit Column Mappings</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">
             Map your Google Sheets columns to candidate fields. Select "Unmapped" to leave a field empty.
           </p>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4 py-2">
+        <ScrollArea className="flex-1 px-6 py-4">
+          <div className="space-y-4">
             {candidateFields.map(field => (
               <div key={field} className="space-y-2">
                 <Label htmlFor={field} className="text-sm font-medium capitalize">
@@ -110,7 +110,7 @@ export const EditColumnMappingDialog = ({ open, onOpenChange, integration, onSav
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a column" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
                     <SelectItem value="unmapped" className="text-muted-foreground italic">
                       Unmapped
                     </SelectItem>
@@ -126,7 +126,7 @@ export const EditColumnMappingDialog = ({ open, onOpenChange, integration, onSav
           </div>
         </ScrollArea>
         
-        <div className="flex justify-end gap-3 pt-4 border-t flex-shrink-0">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t flex-shrink-0 bg-gray-50">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
