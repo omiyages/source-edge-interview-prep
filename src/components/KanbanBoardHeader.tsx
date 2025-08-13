@@ -3,10 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plus, FileSpreadsheet } from 'lucide-react';
-import { GoogleSheetsIntegrationSection } from './GoogleSheetsIntegrationSection';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { Plus } from 'lucide-react';
 
 interface KanbanBoardHeaderProps {
   onAddCandidate: () => void;
@@ -19,8 +16,6 @@ export const KanbanBoardHeader: React.FC<KanbanBoardHeaderProps> = ({
   showInactive,
   onToggleInactive,
 }) => {
-  const [showSheetsDialog, setShowSheetsDialog] = useState(false);
-
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between">
@@ -34,21 +29,6 @@ export const KanbanBoardHeader: React.FC<KanbanBoardHeaderProps> = ({
             />
             <Label htmlFor="show-inactive">Show Inactive</Label>
           </div>
-          
-          <Dialog open={showSheetsDialog} onOpenChange={setShowSheetsDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Google Sheets
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Google Sheets Integration</DialogTitle>
-              </DialogHeader>
-              <GoogleSheetsIntegrationSection />
-            </DialogContent>
-          </Dialog>
           
           <Button onClick={onAddCandidate}>
             <Plus className="w-4 h-4 mr-2" />
