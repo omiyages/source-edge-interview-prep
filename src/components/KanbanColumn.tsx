@@ -12,20 +12,24 @@ interface KanbanColumnProps {
   title: string;
   color: string;
   candidates: any[];
+  showInactive?: boolean;
 }
 
 export const KanbanColumn = ({ 
   id, 
   title, 
   color, 
-  candidates
+  candidates,
+  showInactive = false
 }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
   });
 
-  // Filter active candidates only
-  const visibleCandidates = candidates.filter(candidate => candidate.is_active !== false);
+  // Filter candidates based on showInactive toggle
+  const visibleCandidates = showInactive 
+    ? candidates 
+    : candidates.filter(candidate => candidate.is_active !== false);
 
   return (
     <div className="flex flex-col min-w-[300px] max-w-[300px]">

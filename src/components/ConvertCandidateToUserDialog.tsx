@@ -1,194 +1,141 @@
 
+// ABOUTME: Dialog component for converting candidates to users in the system
+// ABOUTME: Handles the conversion process and user creation workflow
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface ConvertCandidateToUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   candidate: any;
+  onSuccess?: () => void;
 }
 
 export const ConvertCandidateToUserDialog: React.FC<ConvertCandidateToUserDialogProps> = ({
   open,
   onOpenChange,
-  candidate
+  candidate,
+  onSuccess
 }) => {
-  const [email, setEmail] = useState(candidate?.email || '');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState(candidate?.email || '');
+  const [fullName, setFullName] = useState(candidate?.full_name || '');
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const handleConvert = async () => {
-    if (!email || !password) {
-      toast.error('Please provide both email and password');
-      return;
-    }
-
-    if (password.length < 8) {
-      toast.error('Password must be at least 8 characters long');
+    if (!email || !fullName) {
+      toast({
+        title: 'Error',
+        description: 'Please provide both email and full name',
+        variant: 'destructive',
+      });
       return;
     }
 
     setIsLoading(true);
     try {
-      // Call the admin user management function to create the user
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('No active session');
+      // Create a user profile directly
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          email: email,
+          full_name: fullName,
+          current_company: candidate.current_company,
+          linkedin_profile: candidate.linkedin_profile,
+          phone_number: candidate.phone_number,
+          years_of_experience: candidate.years_of_experience,
+          salary: candidate.salary,
+          skillsets: candidate.skillsets,
+          past_companies: candidate.past_companies,
+          general_notes: candidate.general_notes,
+          role: 'user',
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
       }
 
-      const { data, error } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          method: 'CREATE_USER',
-          body: {
-            email,
-            password,
-            full_name: candidate.full_name,
-            role: 'user'
-          }
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        }
+      // Update candidate to mark as user
+      await supabase
+        .from('candidates')
+        .update({ 
+          is_user: true,
+          user_id: data.id 
+        })
+        .eq('id', candidate.id);
+
+      toast({
+        title: 'Success',
+        description: 'Candidate has been converted to a user successfully',
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      // Update the candidate record to include the email if it wasn't already set
-      if (!candidate.email || candidate.email !== email) {
-        const { error: updateError } = await supabase
-          .from('candidates')
-          .update({ email })
-          .eq('id', candidate.id);
-
-        if (updateError) {
-          console.error('Error updating candidate email:', updateError);
-        }
-      }
-
-      toast.success(`User account created successfully for ${candidate.full_name}`);
-      
-      // Refresh the kanban board data
       queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
-      
+      onSuccess?.();
       onOpenChange(false);
-      
-      // Reset form
-      setEmail('');
-      setPassword('');
     } catch (error: any) {
-      console.error('Error converting candidate to user:', error);
-      toast.error(error.message || 'Failed to create user account');
+      console.error('Error converting candidate:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to convert candidate to user',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!candidate) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5" />
-            Convert to User
-          </DialogTitle>
+          <DialogTitle>Convert to User</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Candidate Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div>
-                <span className="font-medium">Name:</span> {candidate.full_name}
-              </div>
-              {candidate.current_company && (
-                <div>
-                  <span className="font-medium">Company:</span> {candidate.current_company}
-                </div>
-              )}
-              {candidate.phone_number && (
-                <div>
-                  <span className="font-medium">Phone:</span> {candidate.phone_number}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="email" className="text-sm font-medium">
-                Email Address *
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email address"
-                className="mt-1"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="password" className="text-sm font-medium">
-                Password *
-              </Label>
-              <div className="relative mt-1">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password (min 8 characters)"
-                  className="pr-10"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email address"
+            />
           </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              variant="outline" 
+          
+          <div>
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Enter full name"
+            />
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleConvert} 
+            <Button
+              onClick={handleConvert}
               disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
             >
-              {isLoading ? 'Creating...' : 'Create User Account'}
+              {isLoading ? 'Converting...' : 'Convert to User'}
             </Button>
           </div>
         </div>

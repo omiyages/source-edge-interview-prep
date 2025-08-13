@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, DollarSign, Calendar, User, Check, UserPlus } from 'lucide-react';
+import { MapPin, DollarSign, Calendar, User, Check, UserPlus, Circle } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
@@ -62,13 +62,22 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
         className={cn(
           "bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer",
           "hover:border-blue-300 group relative",
-          (isDragging || isSortableDragging) && "opacity-50 shadow-lg rotate-2"
+          (isDragging || isSortableDragging) && "opacity-50 shadow-lg rotate-2",
+          !candidate.is_active && "opacity-60 border-gray-300 bg-gray-50"
         )}
         onClick={handleCardClick}
       >
+        {/* Live status indicator */}
+        <div className="absolute -top-2 -left-2 flex items-center gap-1">
+          <div className={cn(
+            "w-3 h-3 rounded-full border-2 border-white",
+            candidate.is_active ? "bg-green-500" : "bg-gray-400"
+          )} />
+        </div>
+
         {/* User indicator */}
         {isUser && (
-          <div className="absolute -top-2 -right-2 bg-green-500 rounded-full p-1 z-10">
+          <div className="absolute -top-2 -right-2 bg-blue-500 rounded-full p-1 z-10">
             <Check className="w-3 h-3 text-white" />
           </div>
         )}
@@ -78,9 +87,25 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             {/* Header with name and convert button */}
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 truncate text-sm">
-                  {candidate.full_name}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className={cn(
+                    "font-semibold truncate text-sm",
+                    candidate.is_active ? "text-gray-900" : "text-gray-600"
+                  )}>
+                    {candidate.full_name}
+                  </h3>
+                  <Badge 
+                    variant={candidate.is_active ? "default" : "secondary"}
+                    className={cn(
+                      "text-xs px-2 py-0.5",
+                      candidate.is_active 
+                        ? "bg-green-50 text-green-700 border-green-200" 
+                        : "bg-gray-50 text-gray-600 border-gray-200"
+                    )}
+                  >
+                    {candidate.is_active ? "Live" : "Inactive"}
+                  </Badge>
+                </div>
                 {candidate.email && (
                   <p className="text-xs text-gray-500 truncate mt-1">
                     {candidate.email}
@@ -177,6 +202,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
         open={showConvertDialog}
         onOpenChange={setShowConvertDialog}
         candidate={candidate}
+        onSuccess={() => {
+          setShowConvertDialog(false);
+          // You can add any additional logic here if needed
+        }}
       />
     </>
   );

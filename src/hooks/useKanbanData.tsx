@@ -48,7 +48,14 @@ export const useHiringStages = () => {
         .order('order_index');
       
       if (error) throw error;
-      return data as HiringStage[];
+      
+      // Map the database fields to our interface
+      return data.map(stage => ({
+        id: stage.id,
+        name: stage.name,
+        color: stage.color,
+        order_index: stage.order_index || stage.stage_order || 0
+      })) as HiringStage[];
     },
   });
 };
@@ -68,6 +75,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
           notes,
           created_at,
           updated_at,
+          is_active,
           candidates (
             id,
             full_name,
@@ -79,7 +87,8 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             salary,
             skillsets,
             past_companies,
-            general_notes
+            general_notes,
+            is_active
           ),
           hiring_stages (
             id,
@@ -130,7 +139,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             skillsets: candidate?.skillsets || [],
             past_companies: candidate?.past_companies || [],
             general_notes: candidate?.general_notes,
-            is_active: true, // Default to active since we're querying pipeline
+            is_active: item.is_active && candidate?.is_active, // Both pipeline and candidate must be active
             is_user: isUser,
             notes: item.notes,
             created_at: item.created_at,
