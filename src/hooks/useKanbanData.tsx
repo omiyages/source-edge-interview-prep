@@ -88,7 +88,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             skillsets,
             past_companies,
             general_notes,
-            is_active
+            is_user
           ),
           hiring_stages (
             id,
@@ -112,10 +112,10 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
       const candidatesWithUserStatus = await Promise.all(
         data.map(async (item) => {
           const candidate = item.candidates;
-          let isUser = false;
+          let isUser = candidate?.is_user || false;
           
-          // Check if candidate has an email and exists as a user
-          if (candidate?.email) {
+          // Check if candidate has an email and exists as a user (if not already marked)
+          if (!isUser && candidate?.email) {
             const { data: profile } = await supabase
               .from('profiles')
               .select('id')
@@ -139,7 +139,7 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             skillsets: candidate?.skillsets || [],
             past_companies: candidate?.past_companies || [],
             general_notes: candidate?.general_notes || null,
-            is_active: item.is_active && (candidate?.is_active ?? true), // Both pipeline and candidate must be active
+            is_active: item.is_active, // Use pipeline is_active status
             is_user: isUser,
             notes: item.notes,
             created_at: item.created_at,

@@ -44,7 +44,7 @@ export const useToggleCandidateStatus = () => {
     mutationFn: async ({ candidateId, isActive }: { candidateId: string; isActive: boolean }) => {
       console.log('🔄 Toggling candidate status:', { candidateId, isActive });
       
-      // Update both candidate and pipeline records
+      // Update candidate record if it has is_active column (nullable)
       const { error: candidateError } = await supabase
         .from('candidates')
         .update({ is_active: isActive })
@@ -55,6 +55,7 @@ export const useToggleCandidateStatus = () => {
         throw candidateError;
       }
 
+      // Update pipeline records
       const { error: pipelineError } = await supabase
         .from('candidate_pipeline')
         .update({ is_active: isActive })
