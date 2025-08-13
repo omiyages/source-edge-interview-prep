@@ -9,6 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, ExternalLink, Edit, Sheet, Calendar, Settings } from 'lucide-react';
 import { useSyncGoogleSheets } from '@/hooks/useGoogleSheetsIntegration';
 import { EditColumnMappingDialog } from './EditColumnMappingDialog';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface GoogleSheetsIntegration {
   id: string;
@@ -29,9 +32,27 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
 }) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const syncMutation = useSyncGoogleSheets();
+  const queryClient = useQueryClient();
 
   const handleSync = () => {
     syncMutation.mutate(integration.id);
+  };
+
+  const handleSaveMappings = async (mappings: Record<string, string>) => {
+    try {
+      const { error } = await supabase
+        .from('google_sheets_integrations')
+        .update({ column_mappings: mappings })
+        .eq('id', integration.id);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
+      toast.success('Column mappings updated successfully');
+    } catch (error: any) {
+      console.error('Error updating column mappings:', error);
+      toast.error('Failed to update column mappings');
+    }
   };
 
   const formatLastSync = (lastSync: string | null) => {
@@ -178,6 +199,7 @@ export const GoogleSheetsIntegrationCard: React.FC<GoogleSheetsIntegrationCardPr
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         integration={integration}
+        onSave={handleSaveMappings}
       />
     </>
   );

@@ -1,4 +1,7 @@
 
+// ABOUTME: Component for displaying and managing the list of all candidates
+// ABOUTME: Provides CRUD operations and table view for candidate management
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,7 +90,10 @@ export const UsersList = () => {
                       ...candidate,
                       role: 'candidate', // Set role as candidate for display
                       created_at: candidate.created_at,
-                      updated_at: candidate.updated_at
+                      updated_at: candidate.updated_at,
+                      last_login_at: null, // Add missing properties with defaults
+                      total_session_time_minutes: null,
+                      is_active: candidate.is_active ?? true
                     } as UserProfile}
                     onDelete={deleteUserMutation.mutate}
                     isDeleting={deleteUserMutation.isPending}

@@ -1,4 +1,7 @@
 
+// ABOUTME: Custom hooks for managing candidate active/inactive status in the pipeline
+// ABOUTME: Handles toggling candidate visibility and status updates
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
