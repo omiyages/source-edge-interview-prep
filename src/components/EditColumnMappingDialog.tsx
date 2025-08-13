@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EditColumnMappingDialogProps {
   open: boolean;
@@ -87,42 +88,58 @@ export const EditColumnMappingDialog = ({ open, onOpenChange, integration, onSav
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Column Mappings</DialogTitle>
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="text-xl font-semibold">Edit Column Mappings</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            Map your Google Sheets columns to candidate fields. Select "Unmapped" to leave a field empty.
+          </p>
         </DialogHeader>
         
-        <div className="space-y-4">
-          {candidateFields.map(field => (
-            <div key={field}>
-              <Label htmlFor={field}>{field}</Label>
-              <Select onValueChange={(value) => handleMappingChange(field, value)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a column" defaultValue={mappings[field] || ""}/>
-                </SelectTrigger>
-                <SelectContent>
-                  {availableColumns.map(column => (
-                    <SelectItem key={column} value={column}>{column}</SelectItem>
-                  ))}
-                  <SelectItem value="unmapped">Unmapped</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ))}
-          
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-            >
-              Save Mappings
-            </Button>
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-4 py-2">
+            {candidateFields.map(field => (
+              <div key={field} className="space-y-2">
+                <Label htmlFor={field} className="text-sm font-medium capitalize">
+                  {field.replace(/_/g, ' ')}
+                </Label>
+                <Select 
+                  value={mappings[field] || "unmapped"} 
+                  onValueChange={(value) => handleMappingChange(field, value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a column" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unmapped" className="text-muted-foreground italic">
+                      Unmapped
+                    </SelectItem>
+                    {availableColumns.map(column => (
+                      <SelectItem key={column} value={column}>
+                        Column {column}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
           </div>
+        </ScrollArea>
+        
+        <div className="flex justify-end gap-3 pt-4 border-t flex-shrink-0">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="min-w-[80px]"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            className="min-w-[80px]"
+          >
+            Save Mappings
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
