@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,7 +38,7 @@ export const DataVisualization = () => {
         .from('candidate_pipeline')
         .select(`
           *,
-          profiles!candidate_pipeline_candidate_id_fkey(email, full_name, current_company, skillsets)
+          candidates!candidate_pipeline_candidate_id_fkey(email, full_name, current_company, skillsets)
         `);
       
       if (error) {
@@ -125,8 +126,8 @@ export const DataVisualization = () => {
     const skillMap = new Map();
     
     pipelineData.forEach(app => {
-      if (app.profiles?.skillsets) {
-        app.profiles.skillsets.forEach((skill: string) => {
+      if (app.candidates?.skillsets) {
+        app.candidates.skillsets.forEach((skill: string) => {
           skillMap.set(skill, (skillMap.get(skill) || 0) + 1);
         });
       }
@@ -140,7 +141,7 @@ export const DataVisualization = () => {
 
   const japaneseFluentCandidates = React.useMemo(() => {
     const fluent = pipelineData.filter(app => 
-      app.profiles?.skillsets?.some((skill: string) => 
+      app.candidates?.skillsets?.some((skill: string) => 
         skill.toLowerCase().includes('japanese') || 
         skill.toLowerCase().includes('日本語')
       )

@@ -76,7 +76,9 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
           created_at,
           updated_at,
           is_active,
-          candidates (
+          applied_company,
+          applied_job_title,
+          candidates!candidate_pipeline_candidate_id_fkey (
             id,
             full_name,
             email,
@@ -144,6 +146,8 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
             notes: item.notes,
             created_at: item.created_at,
             updated_at: item.updated_at,
+            applied_company: item.applied_company,
+            applied_job_title: item.applied_job_title,
             stage: item.hiring_stages
           };
         })
