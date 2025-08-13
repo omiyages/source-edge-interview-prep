@@ -1,67 +1,28 @@
 
-// ABOUTME: Custom hooks for managing candidate active/inactive status in the pipeline
-// ABOUTME: Handles toggling candidate visibility and status updates
+// ABOUTME: Hook for toggling candidate active/inactive status in the pipeline
+// ABOUTME: Handles updating both candidates and candidate_pipeline tables
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
-export const useMakeCandidateInactive = () => {
+export const useCandidateInactive = () => {
   const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ applicationId }: { applicationId: string }) => {
-      console.log('🔄 Making candidate inactive:', { applicationId });
-      
-      const { error } = await supabase
-        .from('candidate_pipeline')
-        .update({ is_active: false })
-        .eq('id', applicationId);
+  const { toast } = useToast();
 
-      if (error) {
-        console.error('❌ Error making candidate inactive:', error);
-        throw error;
-      }
-      
-      console.log('✅ Candidate made inactive successfully');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
-      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
-      toast.success('Candidate marked as inactive');
-    },
-    onError: (error) => {
-      console.error('❌ Failed to make candidate inactive:', error);
-      toast.error('Failed to mark candidate as inactive');
-    },
-  });
-};
-
-export const useToggleCandidateStatus = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
+  const toggleCandidateStatus = useMutation({
     mutationFn: async ({ candidateId, isActive }: { candidateId: string; isActive: boolean }) => {
       console.log('🔄 Toggling candidate status:', { candidateId, isActive });
       
-      // Update candidate record - use raw SQL to avoid TypeScript issues with is_active
-      const { error: candidateError } = await supabase.rpc('update_candidate_status', {
-        candidate_id: candidateId,
-        new_status: isActive
-      });
+      // Update candidate record - use type assertion to handle is_active
+      const { error: candidateError } = await supabase
+        .from('candidates')
+        .update({ is_active: isActive } as any)
+        .eq('id', candidateId);
 
       if (candidateError) {
         console.error('❌ Error updating candidate status:', candidateError);
-        // Fallback to direct update if RPC doesn't exist
-        const { error: fallbackError } = await supabase
-          .from('candidates')
-          .update({ is_active: isActive } as any)
-          .eq('id', candidateId);
-        
-        if (fallbackError) {
-          console.error('❌ Fallback error updating candidate status:', fallbackError);
-          throw fallbackError;
-        }
+        throw candidateError;
       }
 
       // Update pipeline records
@@ -74,17 +35,34 @@ export const useToggleCandidateStatus = () => {
         console.error('❌ Error updating pipeline status:', pipelineError);
         throw pipelineError;
       }
+
+      console.log('✅ Successfully updated candidate status');
+      return { candidateId, isActive };
+    },
+    onSuccess: ({ candidateId, isActive }) => {
+      console.log('🎉 Mutation successful, invalidating queries');
       
-      console.log('✅ Candidate status toggled successfully');
-    },
-    onSuccess: (_, { isActive }) => {
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
-      queryClient.invalidateQueries({ queryKey: ['hiring-stages'] });
-      toast.success(`Candidate marked as ${isActive ? 'active' : 'inactive'}`);
+      queryClient.invalidateQueries({ queryKey: ['kanban-data'] });
+      
+      toast({
+        title: "Success",
+        description: `Candidate ${isActive ? 'activated' : 'deactivated'} successfully`,
+      });
     },
-    onError: (error) => {
-      console.error('❌ Failed to toggle candidate status:', error);
-      toast.error('Failed to update candidate status');
+    onError: (error: any) => {
+      console.error('❌ Mutation failed:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update candidate status",
+        variant: "destructive",
+      });
     },
   });
+
+  return {
+    toggleCandidateStatus: toggleCandidateStatus.mutate,
+    isLoading: toggleCandidateStatus.isPending,
+  };
 };

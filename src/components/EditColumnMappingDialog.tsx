@@ -1,3 +1,4 @@
+
 // ABOUTME: Dialog component for editing Google Sheets column mappings
 // ABOUTME: Allows users to map spreadsheet columns to candidate fields including live status
 
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditColumnMappingDialogProps {
   open: boolean;
@@ -103,7 +104,7 @@ export const EditColumnMappingDialog = ({ open, onOpenChange, integration, onSav
                   {availableColumns.map(column => (
                     <SelectItem key={column} value={column}>{column}</SelectItem>
                   ))}
-                  <SelectItem value="">Unmapped</SelectItem>
+                  <SelectItem value="unmapped">Unmapped</SelectItem>
                 </SelectContent>
               </Select>
             </div>
