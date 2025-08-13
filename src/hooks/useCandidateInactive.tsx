@@ -44,15 +44,24 @@ export const useToggleCandidateStatus = () => {
     mutationFn: async ({ candidateId, isActive }: { candidateId: string; isActive: boolean }) => {
       console.log('🔄 Toggling candidate status:', { candidateId, isActive });
       
-      // Update candidate record if it has is_active column (nullable)
-      const { error: candidateError } = await supabase
-        .from('candidates')
-        .update({ is_active: isActive })
-        .eq('id', candidateId);
+      // Update candidate record - use raw SQL to avoid TypeScript issues with is_active
+      const { error: candidateError } = await supabase.rpc('update_candidate_status', {
+        candidate_id: candidateId,
+        new_status: isActive
+      });
 
       if (candidateError) {
         console.error('❌ Error updating candidate status:', candidateError);
-        throw candidateError;
+        // Fallback to direct update if RPC doesn't exist
+        const { error: fallbackError } = await supabase
+          .from('candidates')
+          .update({ is_active: isActive } as any)
+          .eq('id', candidateId);
+        
+        if (fallbackError) {
+          console.error('❌ Fallback error updating candidate status:', fallbackError);
+          throw fallbackError;
+        }
       }
 
       // Update pipeline records

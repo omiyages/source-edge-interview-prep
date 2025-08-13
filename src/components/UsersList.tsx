@@ -93,8 +93,8 @@ export const UsersList = () => {
                       updated_at: candidate.updated_at,
                       last_login_at: null, // Add missing properties with defaults
                       total_session_time_minutes: null,
-                      // Handle is_active - candidates table has is_active, but it might be null
-                      is_active: candidate.is_active !== null ? candidate.is_active : true
+                      // Handle is_active safely - check if property exists on candidate
+                      is_active: (candidate as any).is_active !== null ? (candidate as any).is_active : true
                     } as UserProfile}
                     onDelete={deleteUserMutation.mutate}
                     isDeleting={deleteUserMutation.isPending}
