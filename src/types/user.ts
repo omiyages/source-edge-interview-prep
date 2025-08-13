@@ -16,4 +16,8 @@ export interface UserProfile {
   notes?: string[] | null;
   phone_number?: string | null;
   salary?: number | null;
+  // Add optional properties for backward compatibility
+  updated_at?: string;
+  is_user?: boolean;
+  general_notes?: string | null;
 }

@@ -42,10 +42,11 @@ export const ConvertCandidateToUserDialog: React.FC<ConvertCandidateToUserDialog
 
     setIsLoading(true);
     try {
-      // Create a user profile directly
+      // Create a user profile directly - let the database generate the ID
       const { data, error } = await supabase
         .from('profiles')
         .insert({
+          id: crypto.randomUUID(), // Generate a new UUID for the profile
           email: email,
           full_name: fullName,
           current_company: candidate.current_company,

@@ -49,7 +49,7 @@ export const useHiringStages = () => {
       
       if (error) throw error;
       
-      // Map the database fields to our interface
+      // Map the database fields to our interface, using stage_order as fallback for order_index
       return data.map(stage => ({
         id: stage.id,
         name: stage.name,
@@ -126,20 +126,20 @@ export const useCandidatesWithPipeline = (includeInactive: boolean = false) => {
           }
 
           return {
-            id: candidate?.id,
+            id: candidate?.id || '',
             pipeline_id: item.id,
             stage_id: item.stage_id,
-            full_name: candidate?.full_name,
-            email: candidate?.email,
-            phone_number: candidate?.phone_number,
-            linkedin_profile: candidate?.linkedin_profile,
-            current_company: candidate?.current_company,
-            years_of_experience: candidate?.years_of_experience,
-            salary: candidate?.salary,
+            full_name: candidate?.full_name || '',
+            email: candidate?.email || null,
+            phone_number: candidate?.phone_number || null,
+            linkedin_profile: candidate?.linkedin_profile || null,
+            current_company: candidate?.current_company || null,
+            years_of_experience: candidate?.years_of_experience || null,
+            salary: candidate?.salary || null,
             skillsets: candidate?.skillsets || [],
             past_companies: candidate?.past_companies || [],
-            general_notes: candidate?.general_notes,
-            is_active: item.is_active && candidate?.is_active, // Both pipeline and candidate must be active
+            general_notes: candidate?.general_notes || null,
+            is_active: item.is_active && (candidate?.is_active ?? true), // Both pipeline and candidate must be active
             is_user: isUser,
             notes: item.notes,
             created_at: item.created_at,
