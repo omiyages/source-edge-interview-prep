@@ -84,6 +84,10 @@ export const EditColumnMappingDialog = ({ open, onOpenChange, integration, onSav
     "skillsets",
     "past_companies",
     "general_notes",
+    "applied_company",
+    "applied_job_title",
+    "kanban_stage",
+    "is_active"
   ];
 
   return (
