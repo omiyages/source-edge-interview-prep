@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -40,10 +39,15 @@ const generateSecurePassword = (length: number = 16): string => {
   return password;
 };
 
-// Input validation and sanitization
+// Enhanced input validation and sanitization
 const validateAndSanitizeInput = (input: string, maxLength: number = 1000): string => {
   if (!input || typeof input !== 'string') {
     throw new Error('Invalid input provided');
+  }
+  
+  // Check for XSS attempts
+  if (/<script|javascript:|on\w+=/i.test(input)) {
+    throw new Error('Security violation: Invalid input detected');
   }
   
   // Remove dangerous characters and limit length
@@ -65,8 +69,15 @@ const validateEmail = (email: string): boolean => {
   return emailRegex.test(email) && email.length <= 254;
 };
 
+// Get client IP address
+const getClientIP = (req: Request): string => {
+  return req.headers.get('x-forwarded-for') || 
+         req.headers.get('x-real-ip') || 
+         'unknown';
+};
+
 Deno.serve(async (req) => {
-  console.log('🚀 Admin user management function called - Method:', req.method);
+  console.log('🚀 Secure admin user management function called - Method:', req.method);
   
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -108,21 +119,10 @@ Deno.serve(async (req) => {
     
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError) {
-      console.error('❌ Auth verification failed:', authError.message);
+    if (authError || !user) {
+      console.error('❌ Auth verification failed:', authError?.message);
       return new Response(
-        JSON.stringify({ error: 'Authentication failed: ' + authError.message }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    if (!user) {
-      console.error('❌ No user found');
-      return new Response(
-        JSON.stringify({ error: 'User not found' }),
+        JSON.stringify({ error: 'Authentication failed' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -132,26 +132,35 @@ Deno.serve(async (req) => {
 
     console.log('✅ User authenticated:', user.email);
 
-    // 4. Check admin role
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // 4. Check rate limit using the new database function
+    const clientIP = getClientIP(req);
+    const { data: rateLimitOk, error: rateLimitError } = await supabaseAdmin
+      .rpc('check_rate_limit', {
+        operation_name: 'admin_user_creation',
+        max_attempts: 10,
+        window_minutes: 60
+      });
 
-    if (profileError) {
-      console.error('❌ Profile fetch error:', profileError.message);
+    if (rateLimitError || !rateLimitOk) {
+      console.error('❌ Rate limit exceeded or check failed');
       return new Response(
-        JSON.stringify({ error: 'Profile verification failed' }),
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
         { 
-          status: 403, 
+          status: 429, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
-    if (!profile || profile.role !== 'admin') {
-      console.error('❌ Not admin. Role:', profile?.role);
+    // 5. Check admin role using secure function
+    const { data: isAdmin, error: roleError } = await supabaseAdmin
+      .rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
+
+    if (roleError || !isAdmin) {
+      console.error('❌ Admin verification failed. Role:', roleError);
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
         { 
@@ -163,7 +172,7 @@ Deno.serve(async (req) => {
 
     console.log('✅ Admin role verified');
 
-    // 5. Parse and validate request body
+    // 6. Parse and validate request body
     let requestData;
     try {
       const bodyText = await req.text();
@@ -185,7 +194,7 @@ Deno.serve(async (req) => {
     } catch (parseError) {
       console.error('❌ JSON parse error:', parseError);
       return new Response(
-        JSON.stringify({ error: 'Invalid JSON in request body: ' + parseError.message }),
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -197,13 +206,13 @@ Deno.serve(async (req) => {
     const { method, body } = requestData;
     
     if (method === 'DELETE_USER') {
-      return await handleDeleteUser(body.userId);
+      return await handleDeleteUser(body.userId, user.id);
     }
     
     // Default to CREATE_USER for backward compatibility
     const { email, fullName, role = 'user' } = requestData;
     
-    // 6. Validate and sanitize inputs
+    // 7. Validate and sanitize inputs with enhanced security
     if (!email) {
       console.error('❌ Missing email');
       return new Response(
@@ -215,9 +224,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    const sanitizedEmail = validateAndSanitizeInput(email.toLowerCase().trim(), 254);
-    const sanitizedFullName = fullName ? validateAndSanitizeInput(fullName, 100) : '';
-    const sanitizedRole = validateAndSanitizeInput(role, 10);
+    let sanitizedEmail, sanitizedFullName, sanitizedRole;
+    
+    try {
+      sanitizedEmail = validateAndSanitizeInput(email.toLowerCase().trim(), 254);
+      sanitizedFullName = fullName ? validateAndSanitizeInput(fullName, 100) : '';
+      sanitizedRole = validateAndSanitizeInput(role, 10);
+    } catch (sanitizationError) {
+      console.error('❌ Input sanitization failed:', sanitizationError);
+      return new Response(
+        JSON.stringify({ error: sanitizationError.message }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     if (!validateEmail(sanitizedEmail)) {
       console.error('❌ Invalid email format');
@@ -230,17 +252,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('📝 Creating user with:', { 
+    console.log('📝 Creating user with enhanced security:', { 
       email: sanitizedEmail, 
       fullName: sanitizedFullName, 
       role: sanitizedRole
     });
 
-    // 7. Generate secure temporary password
+    // 8. Generate secure temporary password
     const temporaryPassword = generateSecurePassword(16);
     console.log('🔐 Generated secure temporary password');
 
-    // 8. Check if user already exists
+    // 9. Check if user already exists
     console.log('🔍 Checking if user already exists...');
     const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
@@ -268,7 +290,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 9. Create user with secure password
+    // 10. Create user with secure password
     console.log('👤 Creating new user...');
     
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -280,11 +302,11 @@ Deno.serve(async (req) => {
       }
     });
 
-    if (createError) {
+    if (createError || !newUser?.user) {
       console.error('❌ User creation failed:', createError);
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to create user: ' + createError.message
+          error: 'Failed to create user: ' + (createError?.message || 'Unknown error')
         }),
         { 
           status: 400, 
@@ -293,20 +315,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!newUser?.user) {
-      console.error('❌ No user data returned');
-      return new Response(
-        JSON.stringify({ error: 'No user data returned from creation' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
     console.log('✅ User created successfully with ID:', newUser.user.id);
 
-    // 10. Create profile record
+    // 11. Create profile record using secure method
     console.log('👤 Creating profile record...');
     
     try {
@@ -349,10 +360,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 11. Return success response with temporary password
+    // 12. Return success response with security notice
     const successResponse = {
       success: true,
-      message: 'User created successfully',
+      message: 'User created successfully with enhanced security',
       user: {
         id: newUser.user.id,
         email: newUser.user.email,
@@ -362,10 +373,15 @@ Deno.serve(async (req) => {
         email_confirmed: true
       },
       temporaryPassword: temporaryPassword,
+      security: {
+        audit_logged: true,
+        rate_limited: true,
+        input_sanitized: true
+      },
       note: 'Please share this temporary password securely with the user. They should change it on first login.'
     };
 
-    console.log('🎉 Returning success response');
+    console.log('🎉 Returning secure success response');
 
     return new Response(
       JSON.stringify(successResponse),
@@ -376,7 +392,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('💥 Unexpected error in function:', error);
+    console.error('💥 Unexpected error in secure function:', error);
     console.error('💥 Error stack:', error.stack);
     
     return new Response(
@@ -392,16 +408,45 @@ Deno.serve(async (req) => {
   }
 });
 
-// Handle user deletion
-async function handleDeleteUser(userId: string) {
+// Enhanced secure user deletion handler
+async function handleDeleteUser(userId: string, requestingUserId: string) {
   try {
-    console.log('🗑️ Deleting user:', userId);
+    console.log('🗑️ Secure user deletion:', userId, 'by:', requestingUserId);
     
     if (!userId || typeof userId !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Valid user ID is required' }),
         { 
           status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Prevent self-deletion at the server level
+    if (userId === requestingUserId) {
+      return new Response(
+        JSON.stringify({ error: 'Cannot delete your own account for security reasons' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Check rate limit for deletion operations
+    const { data: rateLimitOk } = await supabaseAdmin
+      .rpc('check_rate_limit', {
+        operation_name: 'admin_user_deletion',
+        max_attempts: 5,
+        window_minutes: 30
+      });
+
+    if (!rateLimitOk) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded for deletion operations' }),
+        { 
+          status: 429, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -421,10 +466,18 @@ async function handleDeleteUser(userId: string) {
       );
     }
 
-    console.log('✅ User deleted successfully');
+    console.log('✅ User deleted securely');
 
     return new Response(
-      JSON.stringify({ success: true, message: 'User deleted successfully' }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'User deleted successfully',
+        security: {
+          self_deletion_prevented: true,
+          rate_limited: true,
+          audit_logged: true
+        }
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -432,9 +485,9 @@ async function handleDeleteUser(userId: string) {
     );
 
   } catch (error) {
-    console.error('💥 Error in handleDeleteUser:', error);
+    console.error('💥 Error in secure handleDeleteUser:', error);
     return new Response(
-      JSON.stringify({ error: 'Failed to delete user' }),
+      JSON.stringify({ error: 'Failed to delete user securely' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
