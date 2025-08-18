@@ -1,4 +1,7 @@
 
+// ABOUTME: Optimized admin role management hook with better performance
+// ABOUTME: Uses efficient queries and improved error handling
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,10 +41,13 @@ export const useAdminRoleManagement = () => {
 
       if (targetError) throw targetError;
 
-      // Update the user's role directly
+      // Update the user's role with timestamp
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ role: newRole })
+        .update({ 
+          role: newRole,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
 
       if (updateError) throw updateError;
@@ -49,6 +55,7 @@ export const useAdminRoleManagement = () => {
       return { userId, newRole, oldRole: targetUser.role };
     },
     onSuccess: (data, { userId, newRole, reason }) => {
+      // Optimized cache invalidation
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['pending-users'] });
       

@@ -1,4 +1,7 @@
 
+// ABOUTME: Consolidated profile service with enhanced security and performance
+// ABOUTME: Replaces multiple scattered profile services with a single, secure implementation
+
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from '@supabase/supabase-js';
 import type { Profile } from "@/types/auth";
@@ -15,10 +18,10 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
       return null;
     }
     
-    // First try to get existing profile
+    // Use optimized query with specific field selection
     const { data: existingProfile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, email, role, full_name, last_login_at, total_session_time_minutes, is_active, created_at, updated_at')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -26,7 +29,6 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
 
     if (existingProfile) {
       console.log('✅ Found existing profile:', existingProfile);
-      console.log('🔑 Profile role:', existingProfile.role);
       
       // Log successful profile load
       logAdminAction(`Profile loaded successfully for user: ${user.email}`, user.id, {
@@ -37,7 +39,7 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
       return existingProfile;
     }
 
-    // If no profile exists, create one with default user role
+    // If no profile exists, create one with secure defaults
     if (!error || error.code === 'PGRST116') {
       console.log('➕ Creating new profile for user:', user.id);
       
@@ -49,9 +51,12 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
         .insert([{ 
           id: user.id, 
           email: sanitizedEmail,
-          role: 'user' // Always start with user role
+          role: 'user', // Always start with user role for security
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }])
-        .select()
+        .select('id, email, role, full_name, last_login_at, total_session_time_minutes, is_active, created_at, updated_at')
         .single();
 
       if (createError) {
@@ -61,7 +66,6 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
       }
 
       console.log('✅ Created new profile:', newProfile);
-      console.log('🔑 New profile role:', newProfile?.role);
       
       // Log new profile creation
       logAdminAction(`New user profile created: ${user.email}`, user.id, {
@@ -79,5 +83,49 @@ export const loadOrCreateProfile = async (user: User): Promise<Profile | null> =
     console.error('❌ Unexpected error in loadOrCreateProfile:', error);
     logAuthFailure(`Unexpected error in profile loading: ${error}`, user.id);
     return null;
+  }
+};
+
+export const updateLastLogin = async (userId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        last_login_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating last login:', error);
+    }
+  } catch (error) {
+    console.error('Unexpected error updating last login:', error);
+  }
+};
+
+export const updateSessionTime = async (userId: string, additionalMinutes: number): Promise<void> => {
+  try {
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('total_session_time_minutes')
+      .eq('id', userId)
+      .single();
+
+    if (currentProfile) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          total_session_time_minutes: (currentProfile.total_session_time_minutes || 0) + additionalMinutes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating session time:', error);
+      }
+    }
+  } catch (error) {
+    console.error('Unexpected error updating session time:', error);
   }
 };

@@ -3,31 +3,12 @@
 // ABOUTME: Provides admin interface for managing user accounts and candidates
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { UserTableRow } from './UserTableRow';
-import { UserProfile } from '@/types/user';
+import { useOptimizedUsers } from '@/hooks/useOptimizedUsers';
 
 export const UsersList: React.FC = () => {
-  const { data: users, isLoading, refetch } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: async () => {
-      console.log('📥 Fetching users for admin...');
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('❌ Error fetching users:', error);
-        throw error;
-      }
-      
-      console.log('✅ Users loaded:', data?.length || 0);
-      return data as UserProfile[];
-    },
-  });
+  const { data: users, isLoading, refetchUsers } = useOptimizedUsers();
 
   if (isLoading) {
     return (
@@ -63,7 +44,7 @@ export const UsersList: React.FC = () => {
             <UserTableRow 
               key={user.id} 
               user={user} 
-              onUpdate={() => refetch()}
+              onUpdate={refetchUsers}
             />
           ))}
         </TableBody>

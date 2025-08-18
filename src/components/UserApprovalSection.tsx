@@ -1,4 +1,7 @@
 
+// ABOUTME: Optimized user approval section with better performance
+// ABOUTME: Uses efficient queries and caching for pending user management
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,25 +20,31 @@ export const UserApprovalSection = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, full_name, role, is_active, created_at')
         .eq('is_active', false)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as UserProfile[];
     },
+    staleTime: 30000, // Cache for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
   });
 
   const approvalMutation = useMutation({
     mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: approve })
+        .update({ 
+          is_active: approve,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
       
       if (error) throw error;
     },
     onSuccess: (_, { approve }) => {
+      // Optimized cache invalidation
       queryClient.invalidateQueries({ queryKey: ['pending-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       

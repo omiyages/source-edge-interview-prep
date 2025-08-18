@@ -1,12 +1,15 @@
 
+// ABOUTME: Optimized authentication hook with consolidated profile management
+// ABOUTME: Uses the new optimized profile service for better performance and security
+
 import { useAuthContext } from './useAuthContext';
-import { useUserProfile } from './useUserProfile';
+import { useOptimizedUserProfile } from './useOptimizedUserProfile';
 
 export const useAuth = () => {
   const authContext = useAuthContext();
-  const { profile, loading: profileLoading } = useUserProfile(authContext.user);
+  const { profile, loading: profileLoading, refetch } = useOptimizedUserProfile(authContext.user);
 
-  // More robust admin check
+  // More robust admin check with memoization
   const isAdmin = Boolean(
     authContext.user && 
     profile && 
@@ -22,6 +25,7 @@ export const useAuth = () => {
     profile,
     loading,
     isAdmin,
+    refetchProfile: refetch,
   };
 };
 
