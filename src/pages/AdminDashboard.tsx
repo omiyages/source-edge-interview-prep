@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -10,12 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, X, Clock, LogOut, Users, AlertCircle, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UsersList } from "@/components/UsersList";
-import { UserApprovalSection } from "@/components/UserApprovalSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AssignCourseForm } from "@/components/AssignCourseForm";
-import { KanbanBoard } from "@/components/KanbanBoard";
 import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
-import { DataVisualization } from "@/components/DataVisualization";
 
 interface InterviewQuestion {
   id: string;
@@ -239,11 +237,8 @@ const AdminDashboard = () => {
           </Alert>
         )}
 
-        <Tabs defaultValue="ats" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
-            <TabsTrigger value="ats">
-              ATS Pipeline
-            </TabsTrigger>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -257,36 +252,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
             </TabsTrigger>
-            <TabsTrigger value="all">
-              All Questions ({allQuestions?.length || 0})
-            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="ats">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-foreground mb-2">ATS Pipeline Management</h2>
-              <p className="text-muted-foreground">Manage candidate pipeline and view analytics</p>
-            </div>
-            
-            <Tabs defaultValue="kanban" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="kanban">
-                  Candidate Pipeline (Kanban)
-                </TabsTrigger>
-                <TabsTrigger value="visualization">
-                  Data Visualization
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="kanban" className="h-[600px]">
-                <KanbanBoard />
-              </TabsContent>
-
-              <TabsContent value="visualization">
-                <DataVisualization />
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
 
           <TabsContent value="users">
             <UsersList />
@@ -378,47 +344,6 @@ const AdminDashboard = () => {
                 <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">No pending questions</h3>
                 <p className="text-gray-500">All questions have been reviewed.</p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="all">
-            {loadingAll ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-foreground font-semibold">Loading all questions...</p>
-              </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {allQuestions?.map((question) => (
-                  <Card key={question.id} className="hover:shadow-lg transition-shadow duration-200">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <Badge className={getStatusColor(question.status)}>
-                          {question.status}
-                        </Badge>
-                        <Badge className={getRoleTypeColor(question.role)}>
-                          {question.role}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg leading-tight">
-                        {question.question}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div><strong>Company:</strong> {question.company}</div>
-                        <div><strong>Category:</strong> {question.category}</div>
-                        <div><strong>Stage:</strong> {question.interview_stage}</div>
-                        {question.additional_context && (
-                          <div className="p-3 bg-gray-50 rounded-md">
-                            {question.additional_context}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
               </div>
             )}
           </TabsContent>
