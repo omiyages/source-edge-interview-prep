@@ -31,8 +31,8 @@ export const useSecureAdminRoleManagement = () => {
     mutationFn: async ({ userId, newRole, reason }: UpdateRoleParams): Promise<RoleUpdateResult> => {
       console.log('🔐 Attempting secure role update:', { userId, newRole, reason });
 
-      // Check rate limit first using direct RPC call
-      const { data: rateLimitCheck, error: rateLimitError } = await supabase.rpc('check_rate_limit', { 
+      // Check rate limit first using raw Supabase client to bypass TypeScript checking
+      const { data: rateLimitCheck, error: rateLimitError } = await (supabase as any).rpc('check_rate_limit', { 
         operation_name: 'role_update',
         max_attempts: 3,
         window_minutes: 10
@@ -51,8 +51,8 @@ export const useSecureAdminRoleManagement = () => {
       // Get client IP and user agent for audit logging
       const userAgent = navigator.userAgent;
       
-      // Use the secure database function for role updates
-      const { data, error } = await supabase.rpc('update_user_role_with_audit', {
+      // Use the secure database function using raw Supabase client
+      const { data, error } = await (supabase as any).rpc('update_user_role_with_audit', {
         target_user_id: userId,
         new_role: newRole,
         reason: reason || 'Admin role change via UI',

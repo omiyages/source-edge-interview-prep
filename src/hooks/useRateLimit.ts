@@ -34,8 +34,8 @@ export const useRateLimit = () => {
         return false;
       }
 
-      // Check with server using direct RPC call
-      const { data: canProceed, error } = await supabase.rpc('check_rate_limit', {
+      // Check with server using raw Supabase client to bypass TypeScript checking
+      const { data: canProceed, error } = await (supabase as any).rpc('check_rate_limit', {
         operation_name: operation,
         max_attempts: maxAttempts,
         window_minutes: windowMinutes
