@@ -3,16 +3,41 @@
 // ABOUTME: Provides admin interface for managing user accounts and candidates
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { UserTableRow } from './UserTableRow';
 import { UserProfile } from '@/types/user';
 
-interface UsersListProps {
-  users: UserProfile[];
-  onUpdate: () => void;
-}
+export const UsersList: React.FC = () => {
+  const { data: users, isLoading, refetch } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      console.log('📥 Fetching users for admin...');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('❌ Error fetching users:', error);
+        throw error;
+      }
+      
+      console.log('✅ Users loaded:', data?.length || 0);
+      return data as UserProfile[];
+    },
+  });
 
-export const UsersList: React.FC<UsersListProps> = ({ users, onUpdate }) => {
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Loading users...</p>
+      </div>
+    );
+  }
+
   if (!users || users.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -38,7 +63,7 @@ export const UsersList: React.FC<UsersListProps> = ({ users, onUpdate }) => {
             <UserTableRow 
               key={user.id} 
               user={user} 
-              onUpdate={onUpdate}
+              onUpdate={() => refetch()}
             />
           ))}
         </TableBody>

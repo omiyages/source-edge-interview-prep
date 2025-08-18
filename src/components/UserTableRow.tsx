@@ -18,11 +18,11 @@ interface UserTableRowProps {
 }
 
 export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) => {
-  const { deleteUser } = useDeleteUser();
+  const deleteUserMutation = useDeleteUser();
 
   const handleDelete = () => {
     if (window.confirm(`Are you sure you want to delete ${user.full_name || user.email}?`)) {
-      deleteUser.mutate(user.id, {
+      deleteUserMutation.mutate(user.id, {
         onSuccess: () => {
           onUpdate();
         }
@@ -72,7 +72,7 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) =>
             variant="outline"
             size="sm"
             onClick={handleDelete}
-            disabled={deleteUser.isPending}
+            disabled={deleteUserMutation.isPending}
           >
             <Trash2 className="w-4 h-4" />
           </Button>
