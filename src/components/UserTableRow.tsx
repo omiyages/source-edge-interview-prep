@@ -1,83 +1,78 @@
 
-// ABOUTME: Simplified table row component for displaying candidate information
-// ABOUTME: Only shows essential fields: name, email, and status
+// ABOUTME: Component for rendering individual user/candidate rows in admin tables
+// ABOUTME: Displays user information and provides action buttons for management
 
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
-import { UserProfile } from "@/types/user";
-import { useCandidateInactive } from "@/hooks/useCandidateInactive";
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { UserProfile } from '@/types/user';
+import { EditCandidateDialog } from './EditCandidateDialog';
+import { AdminRoleManager } from './AdminRoleManager';
+import { useDeleteUser } from '@/hooks/useDeleteUser';
+import { Trash2, Shield } from 'lucide-react';
 
 interface UserTableRowProps {
   user: UserProfile;
-  onDelete: (id: string) => void;
-  isDeleting: boolean;
-  onEdit: (user: UserProfile) => void;
+  onUpdate: () => void;
 }
 
-export const UserTableRow = ({ user, onDelete, isDeleting, onEdit }: UserTableRowProps) => {
-  const { toggleCandidateStatus, isLoading: isToggling } = useCandidateInactive();
+export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) => {
+  const { deleteUser } = useDeleteUser();
 
-  const handleToggleStatus = () => {
-    toggleCandidateStatus({
-      candidateId: user.id,
-      isActive: !user.is_active
-    });
+  const handleDelete = () => {
+    if (window.confirm(`Are you sure you want to delete ${user.full_name || user.email}?`)) {
+      deleteUser.mutate(user.id, {
+        onSuccess: () => {
+          onUpdate();
+        }
+      });
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'destructive';
+      case 'user':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
   };
 
   return (
     <TableRow>
       <TableCell className="font-medium">
-        {user.full_name || 'N/A'}
+        {user.full_name || 'No name provided'}
       </TableCell>
+      <TableCell>{user.email}</TableCell>
       <TableCell>
-        {user.email || 'N/A'}
-      </TableCell>
-      <TableCell>
-        <Badge 
-          variant={user.is_active ? "default" : "secondary"}
-          className="flex items-center gap-1 w-fit"
-        >
-          {user.is_active ? (
-            <>
-              <ToggleRight className="w-3 h-3" />
-              Active
-            </>
-          ) : (
-            <>
-              <ToggleLeft className="w-3 h-3" />
-              Inactive
-            </>
-          )}
+        <Badge variant={getRoleBadgeVariant(user.role)}>
+          {user.role}
         </Badge>
       </TableCell>
       <TableCell>
-        <div className="flex space-x-2">
+        <Badge variant={user.is_active ? 'default' : 'secondary'}>
+          {user.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <EditCandidateDialog candidate={user} onUpdate={onUpdate} />
+          <AdminRoleManager 
+            user={user} 
+            trigger={
+              <Button variant="outline" size="sm">
+                <Shield className="w-4 h-4" />
+              </Button>
+            }
+          />
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onEdit(user)}
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToggleStatus}
-            disabled={isToggling}
-          >
-            {user.is_active ? (
-              <ToggleLeft className="w-4 h-4" />
-            ) : (
-              <ToggleRight className="w-4 h-4" />
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(user.id)}
-            disabled={isDeleting}
+            onClick={handleDelete}
+            disabled={deleteUser.isPending}
           >
             <Trash2 className="w-4 h-4" />
           </Button>

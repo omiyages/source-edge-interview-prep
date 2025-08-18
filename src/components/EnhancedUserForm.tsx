@@ -1,12 +1,13 @@
 
 // ABOUTME: Simplified form component for creating and editing candidates
-// ABOUTME: Only includes essential fields: full name and email
+// ABOUTME: Includes essential fields: full name, email, and role assignment
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/types/user';
@@ -25,7 +26,8 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     full_name: '',
-    email: ''
+    email: '',
+    role: 'user' as 'user' | 'admin'
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,7 +35,8 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
     if (user) {
       setFormData({
         full_name: user.full_name || '',
-        email: user.email || ''
+        email: user.email || '',
+        role: (user.role as 'user' | 'admin') || 'user'
       });
     }
   }, [user]);
@@ -63,6 +66,7 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
       const candidateData = {
         full_name: formData.full_name.trim(),
         email: formData.email.trim() || null,
+        role: formData.role,
         is_user: false,
         is_active: true
       };
@@ -140,6 +144,21 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
               placeholder="Enter email address"
               className="mt-1"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="role" className="text-sm font-medium">
+              Role *
+            </Label>
+            <Select value={formData.role} onValueChange={(value: 'user' | 'admin') => handleInputChange('role', value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
