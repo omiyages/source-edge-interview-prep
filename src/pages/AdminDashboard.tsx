@@ -1,353 +1,113 @@
-import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { Navigate, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, LogOut, Users, AlertCircle, Home } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { UsersList } from "@/components/UsersList";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AssignCourseForm } from "@/components/AssignCourseForm";
-import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
+import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
+import { LayoutHeader } from "@/components/LayoutHeader";
 
-interface InterviewQuestion {
-  id: string;
-  question: string;
-  company: string;
-  role: string;
-  interview_stage: string;
-  category: string;
-  submitted_by: string | null;
-  additional_context: string | null;
-  created_at: string;
-  question_type: string;
-  source_url: string | null;
-  source_website: string | null;
-  scraped_at: string | null;
-  status: string;
-  approved_by: string | null;
-  approved_at: string | null;
+interface StatsCardProps {
+  title: string;
+  value: string | number | JSX.Element;
+  isLoading?: boolean;
 }
 
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, isLoading }) => (
+  <Card className="card-interactive">
+    <CardHeader>
+      <CardTitle>{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      {isLoading ? <Skeleton className="h-6 w-16" /> : <div className="text-2xl font-bold">{value}</div>}
+    </CardContent>
+  </Card>
+);
+
 const AdminDashboard = () => {
-  const { user, profile, isAdmin, signOut, loading: authLoading } = useAuth();
+  const { user, token, logout } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  console.log('🚀 AdminDashboard: Component mounted/rendered');
-  console.log('🔧 AdminDashboard render - DETAILED:', {
-    hasUser: !!user,
-    userEmail: user?.email,
-    hasProfile: !!profile,
-    profileRole: profile?.role,
-    isAdmin,
-    authLoading,
-    currentUrl: window.location.href,
-    timestamp: new Date().toISOString()
+  const [stats, setStats] = useState<{ users: number; courses: number; tracks: number }>({
+    users: 0,
+    courses: 0,
+    tracks: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Move ALL hooks to the top - this is critical for React's Rules of Hooks
-  const shouldFetchData = !!user && isAdmin && !authLoading;
-
-  // Fetch pending questions - always call this hook
-  const { data: pendingQuestions, isLoading: loadingPending, error: pendingError } = useQuery({
-    queryKey: ['admin-pending-questions'],
-    queryFn: async () => {
-      console.log('📥 Fetching pending questions...');
-      const { data, error } = await supabase
-        .from('interview_questions')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('❌ Error fetching pending questions:', error);
-        throw error;
-      }
-      
-      console.log('✅ Pending questions loaded:', data?.length || 0);
-      return data as InterviewQuestion[];
-    },
-    enabled: shouldFetchData,
-  });
-
-  // Fetch all questions - always call this hook
-  const { data: allQuestions, isLoading: loadingAll, error: allError } = useQuery({
-    queryKey: ['admin-all-questions'],
-    queryFn: async () => {
-      console.log('📥 Fetching all questions...');
-      const { data, error } = await supabase
-        .from('interview_questions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('❌ Error fetching all questions:', error);
-        throw error;
-      }
-      
-      console.log('✅ All questions loaded:', data?.length || 0);
-      return data as InterviewQuestion[];
-    },
-    enabled: shouldFetchData,
-  });
-
-  // Question approval mutation - always call this hook
-  const approveQuestionMutation = useMutation({
-    mutationFn: async ({ questionId, status }: { questionId: string; status: 'approved' | 'rejected' }) => {
-      console.log('🔄 Updating question status:', { questionId, status });
-      const { error } = await supabase
-        .from('interview_questions')
-        .update({
-          status,
-          approved_by: user?.id,
-          approved_at: new Date().toISOString(),
-        })
-        .eq('id', questionId);
-      
-      if (error) throw error;
-    },
-    onSuccess: (_, { status }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-pending-questions'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-all-questions'] });
-      queryClient.invalidateQueries({ queryKey: ['interview-questions'] });
-      
-      toast({
-        title: status === 'approved' ? "Question Approved" : "Question Rejected",
-        description: `The question has been ${status}.`,
-      });
-    },
-    onError: (error) => {
-      console.error('❌ Error updating question status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update question status.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // NOW do conditional rendering after all hooks are called
-  if (authLoading) {
-    console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground font-semibold">Loading admin dashboard...</p>
-          <p className="text-sm text-muted-foreground mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    console.log('🚫 AdminDashboard: No user found, redirecting to auth');
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (!profile) {
-    console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground font-semibold">Loading user profile...</p>
-          <p className="text-sm text-muted-foreground mt-2">User: {user.email}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    console.log('🚫 AdminDashboard: User is not admin, redirecting home:', { 
-      hasUser: !!user, 
-      email: user.email, 
-      role: profile?.role,
-      isAdmin
-    });
-    return <Navigate to="/" replace />;
-  }
-
-  console.log('✅ AdminDashboard: All checks passed, rendering dashboard');
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+  useEffect(() => {
+    if (!user && !token) {
+      navigate('/auth');
+      return;
     }
-  };
 
-  const getRoleTypeColor = (roleType: string) => {
-    switch (roleType) {
-      case 'Backend Engineer': return 'bg-blue-100 text-blue-800';
-      case 'Frontend Engineer': return 'bg-green-100 text-green-800';
-      case 'SRE/DevOps': return 'bg-orange-100 text-orange-800';
-      case 'Engineering Manager': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+    if (user?.role !== 'admin') {
+      return;
     }
-  };
+
+    const fetchStats = async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get('/admin/stats', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setStats(response.data);
+      } catch (error) {
+        console.error("Failed to fetch admin stats:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [user, token, navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-black text-foreground mb-2">
-              Admin Dashboard
-            </h1>
-            <p className="text-lg text-foreground font-semibold">
-              Welcome back, {profile?.email} 
-              <span className="text-primary font-bold ml-2">👑 Admin</span>
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/')}
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Back to Home
-            </Button>
-            <Button variant="outline" onClick={signOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <LayoutHeader title="Admin Dashboard" />
+      
+      {user?.role !== 'admin' && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+          <p className="text-destructive">You don't have permission to access this page.</p>
         </div>
+      )}
 
-        {/* Error Alerts */}
-        {(pendingError || allError) && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Error loading data. Please try refreshing the page.
-              {pendingError && <div>Pending error: {pendingError.message}</div>}
-              {allError && <div>All questions error: {allError.message}</div>}
-            </AlertDescription>
-          </Alert>
-        )}
+      {user?.role === 'admin' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <StatsCard title="Total Users" value={stats.users} isLoading={isLoading} />
+            <StatsCard title="Total Courses" value={stats.courses} isLoading={isLoading} />
+            <StatsCard title="Total Tracks" value={stats.tracks} isLoading={isLoading} />
+          </div>
 
-        <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="users">
-              <Users className="w-4 h-4 mr-2" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="assignments">
-              Course Assignments
-            </TabsTrigger>
-            <TabsTrigger value="reviews">
-              Course Reviews
-            </TabsTrigger>
-            <TabsTrigger value="pending">
-              Pending Questions ({pendingQuestions?.length || 0})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="users">
-            <UsersList />
-          </TabsContent>
-
-          <TabsContent value="assignments">
-            <AssignCourseForm />
-          </TabsContent>
-
-          <TabsContent value="reviews">
-            <CourseReviewsAdmin />
-          </TabsContent>
-
-          <TabsContent value="pending">
-            {loadingPending ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-foreground font-semibold">Loading pending questions...</p>
+          <Tabs defaultValue="users" className="w-full">
+            <TabsList>
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="courses">Courses</TabsTrigger>
+              <TabsTrigger value="tracks">Tracks</TabsTrigger>
+            </TabsList>
+            <TabsContent value="users">
+              <div className="bg-muted rounded-md p-4">
+                <h3 className="text-lg font-semibold">Users Management</h3>
+                <p className="text-sm text-muted-foreground">Manage user accounts and permissions.</p>
               </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {pendingQuestions?.map((question) => (
-                  <Card key={question.id} className="hover:shadow-lg transition-shadow duration-200">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <Badge className="bg-yellow-100 text-yellow-800">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Pending
-                        </Badge>
-                        <Badge className={getRoleTypeColor(question.role)}>
-                          {question.role}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg leading-tight">
-                        {question.question}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        <div className="text-sm text-gray-600">
-                          <strong>Company:</strong> {question.company}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <strong>Category:</strong> {question.category}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <strong>Stage:</strong> {question.interview_stage}
-                        </div>
-                        {question.additional_context && (
-                          <div className="p-3 bg-gray-50 rounded-md text-sm">
-                            {question.additional_context}
-                          </div>
-                        )}
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
-                            onClick={() => approveQuestionMutation.mutate({ 
-                              questionId: question.id, 
-                              status: 'approved' 
-                            })}
-                            disabled={approveQuestionMutation.isPending}
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => approveQuestionMutation.mutate({ 
-                              questionId: question.id, 
-                              status: 'rejected' 
-                            })}
-                            disabled={approveQuestionMutation.isPending}
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+            </TabsContent>
+            <TabsContent value="courses">
+              <div className="bg-muted rounded-md p-4">
+                <h3 className="text-lg font-semibold">Courses Management</h3>
+                <p className="text-sm text-muted-foreground">Create, edit, and manage courses.</p>
               </div>
-            )}
-            
-            {pendingQuestions?.length === 0 && !loadingPending && (
-              <div className="text-center py-12">
-                <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No pending questions</h3>
-                <p className="text-gray-500">All questions have been reviewed.</p>
+            </TabsContent>
+            <TabsContent value="tracks">
+              <div className="bg-muted rounded-md p-4">
+                <h3 className="text-lg font-semibold">Tracks Management</h3>
+                <p className="text-sm text-muted-foreground">Organize courses into learning tracks.</p>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
     </div>
   );
 };
