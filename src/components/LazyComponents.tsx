@@ -3,8 +3,7 @@
 // ABOUTME: Contains lazy-loaded imports for heavy page components and feature components
 import { lazy } from 'react';
 
-// Page components
-export const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+// Page components (excluding AdminDashboard to avoid import issues)
 export const Resources = lazy(() => import("@/pages/Resources"));
 export const CourseDetail = lazy(() => import("@/pages/CourseDetail"));
 export const Track = lazy(() => import("@/pages/Track"));

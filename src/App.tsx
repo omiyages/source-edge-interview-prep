@@ -1,4 +1,6 @@
 
+// ABOUTME: Main application component with routing and providers
+// ABOUTME: Handles lazy loading and authentication protection for all routes
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -12,10 +14,10 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import PublicSignup from "./pages/PublicSignup";
+import AdminDashboard from "./pages/AdminDashboard";
 
-// Import lazy components
+// Import lazy components (excluding AdminDashboard to avoid import issues)
 import {
-  AdminDashboard,
   Resources,
   CourseDetail,
   Track,
