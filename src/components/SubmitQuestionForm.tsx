@@ -1,6 +1,3 @@
-
-// ABOUTME: Form component for submitting interview questions with validation and security
-// ABOUTME: Includes rich text editor for additional context and handles admin vs user submissions
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -294,13 +291,11 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
       <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
-        <div className="min-h-[200px]">
-          <RichTextEditor
-            value={formData.additional_context}
-            onChange={(value) => setFormData({ ...formData, additional_context: value })}
-            placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
-          />
-        </div>
+        <RichTextEditor
+          value={formData.additional_context}
+          onChange={(value) => setFormData({ ...formData, additional_context: value })}
+          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
+        />
       </div>
 
       <Button 
