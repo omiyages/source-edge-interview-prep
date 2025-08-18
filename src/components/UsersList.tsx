@@ -1,6 +1,6 @@
 
 // ABOUTME: Component for displaying and managing the list of all candidates
-// ABOUTME: Provides CRUD operations and table view for candidate management
+// ABOUTME: Provides CRUD operations and simplified table view for candidate management
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +26,7 @@ export const UsersList = () => {
   const [showUserForm, setShowUserForm] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
 
-  // Fetch candidates instead of profiles for the main list
+  // Fetch candidates
   const { data: candidates, isLoading, refetch } = useQuery({
     queryKey: ['admin-candidates'],
     queryFn: async () => {
@@ -59,7 +59,7 @@ export const UsersList = () => {
           </CardTitle>
           <Button 
             onClick={() => setShowUserForm(true)}
-            variant="gradient"
+            variant="default"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Candidate
@@ -74,10 +74,6 @@ export const UsersList = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Experience</TableHead>
-                  <TableHead>Skills</TableHead>
-                  <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -88,12 +84,11 @@ export const UsersList = () => {
                     key={candidate.id}
                     user={{
                       ...candidate,
-                      role: 'candidate', // Set role as candidate for display
+                      role: 'candidate',
                       created_at: candidate.created_at,
                       updated_at: candidate.updated_at,
-                      last_login_at: null, // Add missing properties with defaults
+                      last_login_at: null,
                       total_session_time_minutes: null,
-                      // Handle is_active safely - check if property exists on candidate
                       is_active: (candidate as any).is_active !== null ? (candidate as any).is_active : true
                     } as UserProfile}
                     onDelete={deleteUserMutation.mutate}
@@ -120,7 +115,7 @@ export const UsersList = () => {
           setEditingUser(null);
         }
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingUser ? 'Edit Candidate' : 'Add New Candidate'}

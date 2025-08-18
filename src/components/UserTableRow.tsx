@@ -1,94 +1,59 @@
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+// ABOUTME: Simplified table row component for displaying candidate information
+// ABOUTME: Only shows essential fields: name, email, and status
+
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Trash2, Edit, ExternalLink, Shield } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Edit, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { UserProfile } from "@/types/user";
-import { AdminRoleManager } from "@/components/AdminRoleManager";
+import { useCandidateInactive } from "@/hooks/useCandidateInactive";
 
 interface UserTableRowProps {
   user: UserProfile;
-  onDelete: (userId: string) => void;
+  onDelete: (id: string) => void;
   isDeleting: boolean;
   onEdit: (user: UserProfile) => void;
 }
 
 export const UserTableRow = ({ user, onDelete, isDeleting, onEdit }: UserTableRowProps) => {
+  const { toggleCandidateStatus, isLoading: isToggling } = useCandidateInactive();
+
+  const handleToggleStatus = () => {
+    toggleCandidateStatus({
+      candidateId: user.id,
+      isActive: !user.is_active
+    });
+  };
+
   return (
     <TableRow>
       <TableCell className="font-medium">
-        <div className="flex items-center gap-2">
-          {user.full_name || "N/A"}
-          {user.linkedin_profile && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={() => window.open(user.linkedin_profile!, '_blank')}
-            >
-              <ExternalLink className="h-3 w-3" />
-            </Button>
+        {user.full_name || 'N/A'}
+      </TableCell>
+      <TableCell>
+        {user.email || 'N/A'}
+      </TableCell>
+      <TableCell>
+        <Badge 
+          variant={user.is_active ? "default" : "secondary"}
+          className="flex items-center gap-1 w-fit"
+        >
+          {user.is_active ? (
+            <>
+              <ToggleRight className="w-3 h-3" />
+              Active
+            </>
+          ) : (
+            <>
+              <ToggleLeft className="w-3 h-3" />
+              Inactive
+            </>
           )}
-        </div>
-      </TableCell>
-      <TableCell>{user.email}</TableCell>
-      <TableCell className="max-w-[150px] truncate">
-        {user.current_company || "N/A"}
-      </TableCell>
-      <TableCell>
-        {user.years_of_experience ? `${user.years_of_experience} years` : "N/A"}
-      </TableCell>
-      <TableCell className="max-w-[200px]">
-        {user.skillsets && user.skillsets.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {user.skillsets.slice(0, 2).map((skill, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {skill}
-              </Badge>
-            ))}
-            {user.skillsets.length > 2 && (
-              <Badge variant="secondary" className="text-xs">
-                +{user.skillsets.length - 2}
-              </Badge>
-            )}
-          </div>
-        ) : (
-          "N/A"
-        )}
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-            {user.role}
-          </Badge>
-          <AdminRoleManager 
-            user={user} 
-            trigger={
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <Shield className="h-3 w-3" />
-              </Button>
-            }
-          />
-        </div>
-      </TableCell>
-      <TableCell>
-        <Badge variant={user.is_active ? 'default' : 'destructive'}>
-          {user.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
+        <div className="flex space-x-2">
           <Button
             variant="outline"
             size="sm"
@@ -96,36 +61,26 @@ export const UserTableRow = ({ user, onDelete, isDeleting, onEdit }: UserTableRo
           >
             <Edit className="w-4 h-4" />
           </Button>
-          {user.role !== 'admin' && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete User</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete {user.email}? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => onDelete(user.id)}
-                    className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggleStatus}
+            disabled={isToggling}
+          >
+            {user.is_active ? (
+              <ToggleLeft className="w-4 h-4" />
+            ) : (
+              <ToggleRight className="w-4 h-4" />
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(user.id)}
+            disabled={isDeleting}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
       </TableCell>
     </TableRow>
