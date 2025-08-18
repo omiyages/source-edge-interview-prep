@@ -14,22 +14,29 @@ interface UpdateRoleParams {
   reason?: string;
 }
 
+interface RoleUpdateResult {
+  success?: boolean;
+  old_role?: string;
+  new_role?: string;
+  target_user_id?: string;
+  error?: string;
+}
+
 export const useSecureAdminRoleManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   const updateUserRole = useMutation({
-    mutationFn: async ({ userId, newRole, reason }: UpdateRoleParams) => {
+    mutationFn: async ({ userId, newRole, reason }: UpdateRoleParams): Promise<RoleUpdateResult> => {
       console.log('🔐 Attempting secure role update:', { userId, newRole, reason });
 
-      // Check rate limit first
-      const { data: rateLimitCheck, error: rateLimitError } = await supabase
-        .rpc('check_rate_limit', { 
-          operation_name: 'role_update',
-          max_attempts: 3,
-          window_minutes: 10
-        });
+      // Check rate limit first using direct RPC call
+      const { data: rateLimitCheck, error: rateLimitError } = await supabase.rpc('check_rate_limit', { 
+        operation_name: 'role_update',
+        max_attempts: 3,
+        window_minutes: 10
+      });
 
       if (rateLimitError) {
         console.error('Rate limit check failed:', rateLimitError);
@@ -45,26 +52,28 @@ export const useSecureAdminRoleManagement = () => {
       const userAgent = navigator.userAgent;
       
       // Use the secure database function for role updates
-      const { data, error } = await supabase
-        .rpc('update_user_role_with_audit', {
-          target_user_id: userId,
-          new_role: newRole,
-          reason: reason || 'Admin role change via UI',
-          user_agent: userAgent
-        });
+      const { data, error } = await supabase.rpc('update_user_role_with_audit', {
+        target_user_id: userId,
+        new_role: newRole,
+        reason: reason || 'Admin role change via UI',
+        user_agent: userAgent
+      });
 
       if (error) {
         console.error('Secure role update failed:', error);
         throw error;
       }
 
-      if (data?.error) {
-        console.error('Role update rejected:', data.error);
-        throw new Error(data.error);
+      // Type assertion for the result since it's a JSON return
+      const result = data as RoleUpdateResult;
+
+      if (result.error) {
+        console.error('Role update rejected:', result.error);
+        throw new Error(result.error);
       }
 
-      console.log('✅ Secure role update successful:', data);
-      return data;
+      console.log('✅ Secure role update successful:', result);
+      return result;
     },
     onSuccess: (data, { userId, newRole, reason }) => {
       // Optimized cache invalidation

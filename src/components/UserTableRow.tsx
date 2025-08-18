@@ -66,7 +66,9 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) =>
             {user.role}
           </Badge>
           {user.role === 'admin' && (
-            <Lock className="w-3 h-3 text-red-500" title="Admin privileges" />
+            <div title="Admin privileges">
+              <Lock className="w-3 h-3 text-red-500" />
+            </div>
           )}
         </div>
       </TableCell>
@@ -78,30 +80,32 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) =>
       <TableCell>
         <div className="flex items-center gap-2">
           <EditCandidateDialog candidate={user} onUpdate={onUpdate} />
-          <AdminRoleManager 
-            user={user} 
-            trigger={
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={isSelfEdit}
-                title={isSelfEdit ? "Cannot modify your own role" : "Manage user role"}
-              >
-                <Shield className="w-4 h-4" />
-                {isSelfEdit && <Lock className="w-3 h-3 ml-1" />}
-              </Button>
-            }
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDelete}
-            disabled={deleteUserMutation.isPending || isSelfEdit}
-            title={isSelfEdit ? "Cannot delete your own account" : "Delete user"}
-          >
-            <Trash2 className="w-4 h-4" />
-            {isSelfEdit && <Lock className="w-3 h-3 ml-1" />}
-          </Button>
+          <div title={isSelfEdit ? "Cannot modify your own role" : "Manage user role"}>
+            <AdminRoleManager 
+              user={user} 
+              trigger={
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  disabled={isSelfEdit}
+                >
+                  <Shield className="w-4 h-4" />
+                  {isSelfEdit && <Lock className="w-3 h-3 ml-1" />}
+                </Button>
+              }
+            />
+          </div>
+          <div title={isSelfEdit ? "Cannot delete your own account" : "Delete user"}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              disabled={deleteUserMutation.isPending || isSelfEdit}
+            >
+              <Trash2 className="w-4 h-4" />
+              {isSelfEdit && <Lock className="w-3 h-3 ml-1" />}
+            </Button>
+          </div>
         </div>
       </TableCell>
     </TableRow>

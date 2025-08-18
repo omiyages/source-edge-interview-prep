@@ -34,13 +34,12 @@ export const useRateLimit = () => {
         return false;
       }
 
-      // Check with server
-      const { data: canProceed, error } = await supabase
-        .rpc('check_rate_limit', {
-          operation_name: operation,
-          max_attempts: maxAttempts,
-          window_minutes: windowMinutes
-        });
+      // Check with server using direct RPC call
+      const { data: canProceed, error } = await supabase.rpc('check_rate_limit', {
+        operation_name: operation,
+        max_attempts: maxAttempts,
+        window_minutes: windowMinutes
+      });
 
       if (error) {
         console.error('Rate limit check failed:', error);
