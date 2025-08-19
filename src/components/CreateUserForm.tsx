@@ -1,284 +1,255 @@
 
-// ABOUTME: Form component for creating new users with basic information
-// ABOUTME: Handles user creation through admin interface with role assignment
+// ABOUTME: Secure user creation form with enhanced validation and proper API usage
+// ABOUTME: Uses secure edge function without hardcoded credentials
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Eye, EyeOff, User, Mail, Shield, AlertTriangle } from "lucide-react";
+import { validateEmail, validateAndSanitizeInput } from "@/utils/secureInputValidation";
+import { useAuth } from "@/hooks/useAuth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-interface CreateUserFormData {
-  fullName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  role: 'user' | 'admin';
-}
-
-interface CreateUserFormProps {
-  onSuccess: () => void;
-}
-
-export const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
-  const [open, setOpen] = useState(false);
+export const CreateUserForm = () => {
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState("user");
+  const [showPassword, setShowPassword] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const form = useForm<CreateUserFormData>({
-    defaultValues: {
-      fullName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      role: "user",
-    },
-  });
+  const { user } = useAuth();
 
   const createUserMutation = useMutation({
-    mutationFn: async (data: CreateUserFormData) => {
-      console.log('🚀 Starting user creation process...');
-      
-      // Validate password confirmation
-      if (data.password !== data.confirmPassword) {
-        console.error('❌ Password mismatch');
-        throw new Error('Passwords do not match.');
-      }
-      
-      // Get current session
-      console.log('🔐 Getting current session...');
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('❌ Session error:', sessionError);
-        throw new Error('Failed to get session: ' + sessionError.message);
-      }
+    mutationFn: async (userData: { email: string; fullName: string; role: string }) => {
+      // Clear previous errors
+      setValidationErrors([]);
 
-      if (!sessionData?.session?.access_token) {
-        console.error('❌ No valid session found');
-        throw new Error('Please sign in again - no valid session');
+      // Validate inputs
+      const emailValid = validateEmail(userData.email);
+      const nameValidation = validateAndSanitizeInput(userData.fullName, 100, user?.id);
+      const roleValidation = validateAndSanitizeInput(userData.role, 10, user?.id);
+
+      const allErrors = [];
+      if (!emailValid) allErrors.push('Please enter a valid email address');
+      if (!nameValidation.isValid) allErrors.push(...nameValidation.errors);
+      if (!roleValidation.isValid) allErrors.push(...roleValidation.errors);
+
+      if (allErrors.length > 0) {
+        setValidationErrors(allErrors);
+        throw new Error('Validation failed');
       }
 
-      console.log('✅ Session valid for user:', sessionData.session.user.email);
+      // Get current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session found');
+      }
 
-      // Create user directly using Supabase admin functions through our edge function
-      const payload = {
-        email: data.email.trim().toLowerCase(),
-        password: data.password,
-        fullName: data.fullName.trim(),
-        role: data.role
-      };
-
-      console.log('📤 Calling admin-user-management function...');
-      
-      const response = await fetch(`https://satshobhbkjptsbmfsia.supabase.co/functions/v1/admin-user-management`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionData.session.access_token}`,
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhdHNob2JoYmtqcHRzYm1mc2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDI5NjUsImV4cCI6MjA2NjMxODk2NX0.T_q1HFL4SQEdzjWjJtfX9WRiHjQLK5WaoH8bCKsLP2c',
+      // Call secure edge function
+      const { data, error } = await supabase.functions.invoke('admin-user-management', {
+        body: {
+          email: userData.email.toLowerCase().trim(),
+          fullName: nameValidation.sanitizedValue,
+          role: roleValidation.sanitizedValue
         },
-        body: JSON.stringify(payload),
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
       });
 
-      const result = await response.json();
-      
-      console.log('📥 Function response:', { status: response.status, result });
-
-      if (!response.ok) {
-        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
 
-      if (result.error) {
-        throw new Error(result.error);
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      if (!result.success) {
-        throw new Error('Server returned unexpected response format');
+      // Store the generated password to show to admin
+      if (data?.temporaryPassword) {
+        setGeneratedPassword(data.temporaryPassword);
       }
 
-      console.log('🎉 User created successfully!', result.user);
-      return result;
+      return data;
     },
-    onSuccess: (result, data) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['pending-users'] });
+      
       toast({
-        title: "Success!",
-        description: `User ${data.email} has been created successfully with role: ${data.role}`,
+        title: "User Created Successfully",
+        description: `User ${data.user?.email} has been created with enhanced security.`,
       });
-      form.reset();
-      setOpen(false);
-      onSuccess();
+
+      // Reset form
+      setEmail("");
+      setFullName("");
+      setRole("user");
     },
     onError: (error: any) => {
-      console.error('💥 Error in user creation process:', error);
+      console.error('User creation error:', error);
       
-      let userMessage = 'An unexpected error occurred while creating the user';
-      
-      if (error?.message) {
-        if (error.message.includes('already exists') || error.message.includes('already_registered')) {
-          userMessage = 'A user with this email already exists';
-        } else if (error.message.includes('sign in again') || error.message.includes('session')) {
-          userMessage = 'Please sign out and sign in again';
-        } else if (error.message.includes('Admin access required')) {
-          userMessage = 'You do not have admin privileges';
-        } else if (error.message === 'Passwords do not match.') {
-          userMessage = error.message;
-        } else {
-          userMessage = error.message;
-        }
+      if (error.message === 'Validation failed') {
+        // Validation errors are already set in state
+        return;
       }
-      
-      console.error('📢 Showing error to user:', userMessage);
-      
+
       toast({
         title: "Error Creating User",
-        description: userMessage,
+        description: error.message || "Failed to create user. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const handleCreateUser = async (data: CreateUserFormData) => {
-    createUserMutation.mutate(data);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim() || !fullName.trim()) {
+      setValidationErrors(['Email and full name are required']);
+      return;
+    }
+
+    createUserMutation.mutate({
+      email: email.trim(),
+      fullName: fullName.trim(),
+      role
+    });
+  };
+
+  const copyPasswordToClipboard = () => {
+    navigator.clipboard.writeText(generatedPassword);
+    toast({
+      title: "Password Copied",
+      description: "Temporary password has been copied to clipboard.",
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
-          <UserPlus className="w-4 h-4 mr-2" />
-          Create User
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Create New User</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleCreateUser)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              rules={{ required: "Full name is required" }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter full name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="email"
-              rules={{ 
-                required: "Email is required",
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Invalid email address"
-                }
-              }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email *</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter email address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="w-5 h-5" />
+          Create User Account
+        </CardTitle>
+        <CardDescription>
+          Create a new user account with secure password generation
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {validationErrors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc list-inside">
+                  {validationErrors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
 
-            <FormField
-              control={form.control}
-              name="role"
-              rules={{ required: "Role is required" }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Email Address *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="user@example.com"
+              required
+              disabled={createUserMutation.isPending}
             />
-            
-            <FormField
-              control={form.control}
-              name="password"
-              rules={{ 
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters"
-                }
-              }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password *</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="Enter password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              rules={{ 
-                required: "Please confirm your password",
-                validate: (value) => 
-                  value === form.getValues('password') || "Passwords do not match"
-              }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password *</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="Confirm password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Full Name *
+            </Label>
+            <Input
+              id="fullName"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="John Doe"
+              required
+              disabled={createUserMutation.isPending}
             />
-            
-            <div className="flex justify-end gap-2 pt-4">
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="role">User Role</Label>
+            <Select value={role} onValueChange={setRole} disabled={createUserMutation.isPending}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={createUserMutation.isPending}
+          >
+            {createUserMutation.isPending ? "Creating User..." : "Create User"}
+          </Button>
+        </form>
+
+        {generatedPassword && (
+          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <h4 className="font-semibold text-yellow-800 mb-2">
+              Temporary Password Generated
+            </h4>
+            <div className="flex items-center gap-2">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={generatedPassword}
+                readOnly
+                className="font-mono text-sm"
+              />
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={createUserMutation.isPending}
+                size="sm"
+                onClick={() => setShowPassword(!showPassword)}
               >
-                Cancel
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
-              <Button type="submit" disabled={createUserMutation.isPending} className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium">
-                {createUserMutation.isPending ? "Creating..." : "Create User"}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={copyPasswordToClipboard}
+              >
+                Copy
               </Button>
             </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+            <p className="text-xs text-yellow-700 mt-2">
+              Please share this password securely with the user. They should change it on first login.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

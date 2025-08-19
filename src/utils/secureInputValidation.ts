@@ -1,127 +1,70 @@
 
-// ABOUTME: Enhanced input validation utility with security checks
-// ABOUTME: Provides comprehensive validation and sanitization for user inputs
+// ABOUTME: Enhanced input validation utilities with XSS protection
+// ABOUTME: Provides comprehensive validation for all user inputs with security focus
 
-import { logInvalidInput, logXSSAttempt } from "./securityLogger";
+import DOMPurify from 'dompurify';
+import { logInvalidInput, logXSSAttempt } from './securityLogger';
 
-export interface ValidationResult {
+interface ValidationResult {
   isValid: boolean;
-  sanitizedValue?: string;
+  sanitizedValue: string;
   errors: string[];
 }
 
-export const validateAndSanitizeEmail = (email: string, userId?: string): ValidationResult => {
-  const errors: string[] = [];
-  
-  if (!email || typeof email !== 'string') {
-    errors.push('Email is required');
-    return { isValid: false, errors };
-  }
-
-  // Check for XSS attempts
-  if (/<script|javascript:|on\w+=/i.test(email)) {
-    logXSSAttempt(`XSS attempt in email field: ${email}`, userId);
-    errors.push('Invalid email format');
-    return { isValid: false, errors };
-  }
-
+export const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const sanitizedEmail = email.trim().toLowerCase();
-  
-  if (!emailRegex.test(sanitizedEmail)) {
-    logInvalidInput(`Invalid email format: ${email}`, userId);
-    errors.push('Please enter a valid email address');
-    return { isValid: false, errors };
-  }
-
-  if (sanitizedEmail.length > 254) {
-    errors.push('Email address is too long');
-    return { isValid: false, errors };
-  }
-
-  return {
-    isValid: true,
-    sanitizedValue: sanitizedEmail,
-    errors: []
-  };
+  return emailRegex.test(email) && email.length <= 254;
 };
 
-export const validateAndSanitizeName = (name: string, userId?: string): ValidationResult => {
+export const validateAndSanitizeInput = (
+  input: string, 
+  maxLength: number = 1000,
+  userId?: string
+): ValidationResult => {
   const errors: string[] = [];
-  
-  if (!name || typeof name !== 'string') {
-    errors.push('Name is required');
-    return { isValid: false, errors };
+
+  if (!input || typeof input !== 'string') {
+    errors.push('Input is required and must be a string');
+    return { isValid: false, sanitizedValue: '', errors };
   }
 
   // Check for XSS attempts
-  if (/<script|javascript:|on\w+=/i.test(name)) {
-    logXSSAttempt(`XSS attempt in name field: ${name}`, userId);
-    errors.push('Invalid name format');
-    return { isValid: false, errors };
+  const xssPatterns = [
+    /<script[^>]*>.*?<\/script>/gi,
+    /javascript:/gi,
+    /on\w+\s*=/gi,
+    /<iframe[^>]*>.*?<\/iframe>/gi,
+    /data:text\/html/gi
+  ];
+
+  for (const pattern of xssPatterns) {
+    if (pattern.test(input)) {
+      logXSSAttempt(`XSS attempt detected in input: ${input.substring(0, 100)}`, userId);
+      errors.push('Invalid characters detected in input');
+      return { isValid: false, sanitizedValue: '', errors };
+    }
   }
 
-  // Remove dangerous characters and excessive whitespace
-  const sanitizedName = name
-    .replace(/[<>]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Sanitize with DOMPurify
+  const sanitized = DOMPurify.sanitize(input, { 
+    ALLOWED_TAGS: [], 
+    ALLOWED_ATTR: [] 
+  }).trim();
 
-  if (sanitizedName.length === 0) {
-    errors.push('Name cannot be empty');
-    return { isValid: false, errors };
+  if (sanitized.length === 0) {
+    errors.push('Input cannot be empty after sanitization');
+    return { isValid: false, sanitizedValue: '', errors };
   }
 
-  if (sanitizedName.length > 100) {
-    errors.push('Name is too long (maximum 100 characters)');
-    return { isValid: false, errors };
+  if (sanitized.length > maxLength) {
+    errors.push(`Input exceeds maximum length of ${maxLength} characters`);
+    return { isValid: false, sanitizedValue: sanitized.substring(0, maxLength), errors };
   }
 
-  // Check for suspicious patterns
-  if (/[{}[\]\\]/.test(sanitizedName)) {
-    logInvalidInput(`Suspicious characters in name: ${name}`, userId);
-    errors.push('Name contains invalid characters');
-    return { isValid: false, errors };
-  }
-
-  return {
-    isValid: true,
-    sanitizedValue: sanitizedName,
-    errors: []
-  };
-};
-
-export const validateAndSanitizeReason = (reason: string, userId?: string): ValidationResult => {
-  const errors: string[] = [];
-  
-  if (!reason || typeof reason !== 'string') {
-    return {
-      isValid: true,
-      sanitizedValue: '',
-      errors: []
-    };
-  }
-
-  // Check for XSS attempts
-  if (/<script|javascript:|on\w+=/i.test(reason)) {
-    logXSSAttempt(`XSS attempt in reason field: ${reason}`, userId);
-    errors.push('Invalid reason format');
-    return { isValid: false, errors };
-  }
-
-  const sanitizedReason = reason
-    .replace(/[<>]/g, '')
-    .trim();
-
-  if (sanitizedReason.length > 500) {
-    errors.push('Reason is too long (maximum 500 characters)');
-    return { isValid: false, errors };
-  }
-
-  return {
-    isValid: true,
-    sanitizedValue: sanitizedReason,
-    errors: []
+  return { 
+    isValid: true, 
+    sanitizedValue: sanitized, 
+    errors: [] 
   };
 };
 
@@ -131,6 +74,7 @@ export const validateRole = (role: string): ValidationResult => {
   if (!validRoles.includes(role)) {
     return {
       isValid: false,
+      sanitizedValue: '',
       errors: ['Invalid role specified']
     };
   }
@@ -140,4 +84,30 @@ export const validateRole = (role: string): ValidationResult => {
     sanitizedValue: role,
     errors: []
   };
+};
+
+export const validateAndSanitizeReason = (
+  reason: string,
+  userId?: string
+): ValidationResult => {
+  const validation = validateAndSanitizeInput(reason, 500, userId);
+  
+  if (validation.isValid && validation.sanitizedValue.length < 10) {
+    return {
+      isValid: false,
+      sanitizedValue: validation.sanitizedValue,
+      errors: ['Reason must be at least 10 characters long']
+    };
+  }
+
+  return validation;
+};
+
+export const sanitizeInput = (input: string): string => {
+  if (!input || typeof input !== 'string') return '';
+  
+  return DOMPurify.sanitize(input, { 
+    ALLOWED_TAGS: [], 
+    ALLOWED_ATTR: [] 
+  }).trim();
 };
