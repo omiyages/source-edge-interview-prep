@@ -1,4 +1,7 @@
 
+// ABOUTME: Rich text editor component using ReactQuill for formatted text input
+// ABOUTME: Provides toolbar for formatting options and maintains consistent styling
+
 import React from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -33,6 +36,9 @@ const formats = [
 ];
 
 export const RichTextEditor = ({ value, onChange, placeholder, className }: RichTextEditorProps) => {
+  const isLargeEditor = className?.includes('min-h-[400px]');
+  const editorHeight = isLargeEditor ? '400px' : '300px';
+  
   return (
     <div className={cn("rich-text-editor", className)}>
       <ReactQuill
@@ -45,9 +51,10 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
         style={{
           backgroundColor: 'white',
           borderRadius: '6px',
-          minHeight: '300px',
+          minHeight: editorHeight,
+          height: editorHeight,
           fontWeight: 'normal',
-          fontSize: '14px', // Minimum 14px
+          fontSize: '14px',
         }}
       />
       <style dangerouslySetInnerHTML={{
@@ -57,6 +64,10 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
             font-family: inherit;
             font-size: 14px !important;
             line-height: 1.5;
+            min-height: ${isLargeEditor ? '350px' : '250px'} !important;
+          }
+          .ql-container {
+            min-height: ${editorHeight} !important;
           }
           .ql-editor p {
             font-weight: normal !important;

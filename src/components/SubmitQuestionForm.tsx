@@ -1,3 +1,7 @@
+
+// ABOUTME: Form component for submitting new interview questions with validation and security features
+// ABOUTME: Includes admin functionality to add new dropdown options dynamically
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { validateQuestionInput, validateCompanyInput, validateRoleInput, sanitizeTextInput, checkRateLimit } from "@/utils/inputSecurity";
 import { logInvalidInput, logRateLimitExceeded } from "@/utils/securityLogger";
+import { Plus } from "lucide-react";
 
 interface SubmitQuestionFormProps {
   onSuccess: () => void;
@@ -20,6 +25,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isAdmin = profile?.role === 'admin';
+  
   const [formData, setFormData] = useState({
     question: "",
     company: "",
@@ -30,7 +37,21 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     team: "",
     position_name: "",
   });
+  
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [customInputs, setCustomInputs] = useState({
+    showCompanyInput: false,
+    showRoleInput: false,
+    showCategoryInput: false,
+    showStageInput: false,
+  });
+
+  const [customValues, setCustomValues] = useState({
+    newCompany: "",
+    newRole: "",
+    newCategory: "",
+    newStage: "",
+  });
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -58,6 +79,14 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  const handleCustomInput = (field: string, value: string) => {
+    if (value.trim()) {
+      setFormData(prev => ({ ...prev, [field]: value.trim() }));
+      setCustomInputs(prev => ({ ...prev, [`show${field.charAt(0).toUpperCase() + field.slice(1)}Input`]: false }));
+      setCustomValues(prev => ({ ...prev, [`new${field.charAt(0).toUpperCase() + field.slice(1)}`]: "" }));
+    }
   };
 
   const submitQuestionMutation = useMutation({
@@ -102,6 +131,18 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         position_name: "",
       });
       setValidationErrors({});
+      setCustomInputs({
+        showCompanyInput: false,
+        showRoleInput: false,
+        showCategoryInput: false,
+        showStageInput: false,
+      });
+      setCustomValues({
+        newCompany: "",
+        newRole: "",
+        newCategory: "",
+        newStage: "",
+      });
 
       onSuccess();
     },
@@ -129,7 +170,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
     // Check rate limiting
     const rateLimitKey = `submit_question_${user.id}`;
-    if (!checkRateLimit(rateLimitKey, 5, 300000)) { // 5 requests per 5 minutes
+    if (!checkRateLimit(rateLimitKey, 5, 300000)) {
       logRateLimitExceeded(`Question submission rate limit exceeded`, user.id);
       toast({
         title: "Rate limit exceeded",
@@ -149,7 +190,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    // Sanitize inputs before submission - note: additional_context is now HTML from rich text editor
+    // Sanitize inputs before submission
     const questionData = {
       question: sanitizeTextInput(formData.question),
       company: sanitizeTextInput(formData.company),
@@ -188,19 +229,62 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="company">Company *</Label>
-          <Select 
-            value={formData.company} 
-            onValueChange={(value) => setFormData({ ...formData, company: value })}
-          >
-            <SelectTrigger className={validationErrors.company ? "border-red-500" : ""}>
-              <SelectValue placeholder="Select company" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Woven by Toyota">Woven by Toyota</SelectItem>
-              <SelectItem value="LexxPluss">LexxPluss</SelectItem>
-              <SelectItem value="Wismettac">Wismettac</SelectItem>
-            </SelectContent>
-          </Select>
+          {customInputs.showCompanyInput ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter new company name"
+                value={customValues.newCompany}
+                onChange={(e) => setCustomValues(prev => ({ ...prev, newCompany: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCustomInput('company', customValues.newCompany);
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => handleCustomInput('company', customValues.newCompany)}
+              >
+                Add
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCustomInputs(prev => ({ ...prev, showCompanyInput: false }))}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Select 
+                value={formData.company} 
+                onValueChange={(value) => setFormData({ ...formData, company: value })}
+              >
+                <SelectTrigger className={validationErrors.company ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Woven by Toyota">Woven by Toyota</SelectItem>
+                  <SelectItem value="LexxPluss">LexxPluss</SelectItem>
+                  <SelectItem value="Wismettac">Wismettac</SelectItem>
+                </SelectContent>
+              </Select>
+              {isAdmin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showCompanyInput: true }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
           {validationErrors.company && (
             <p className="text-sm text-red-600">{validationErrors.company}</p>
           )}
@@ -208,23 +292,66 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
         <div className="space-y-2">
           <Label htmlFor="role">Role *</Label>
-          <Select 
-            value={formData.role} 
-            onValueChange={(value) => setFormData({ ...formData, role: value })}
-          >
-            <SelectTrigger className={validationErrors.role ? "border-red-500" : ""}>
-              <SelectValue placeholder="Select role type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Backend Engineer">Backend Engineer</SelectItem>
-              <SelectItem value="Frontend Engineer">Frontend Engineer</SelectItem>
-              <SelectItem value="Full Stack Engineer">Full Stack Engineer</SelectItem>
-              <SelectItem value="SRE/DevOps">SRE/DevOps</SelectItem>
-              <SelectItem value="Engineering Manager">Engineering Manager</SelectItem>
-              <SelectItem value="Product Manager">Product Manager</SelectItem>
-              <SelectItem value="Data Engineer">Data Engineer</SelectItem>
-            </SelectContent>
-          </Select>
+          {customInputs.showRoleInput ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter new role"
+                value={customValues.newRole}
+                onChange={(e) => setCustomValues(prev => ({ ...prev, newRole: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCustomInput('role', customValues.newRole);
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => handleCustomInput('role', customValues.newRole)}
+              >
+                Add
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCustomInputs(prev => ({ ...prev, showRoleInput: false }))}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Select 
+                value={formData.role} 
+                onValueChange={(value) => setFormData({ ...formData, role: value })}
+              >
+                <SelectTrigger className={validationErrors.role ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select role type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Backend Engineer">Backend Engineer</SelectItem>
+                  <SelectItem value="Frontend Engineer">Frontend Engineer</SelectItem>
+                  <SelectItem value="Full Stack Engineer">Full Stack Engineer</SelectItem>
+                  <SelectItem value="SRE/DevOps">SRE/DevOps</SelectItem>
+                  <SelectItem value="Engineering Manager">Engineering Manager</SelectItem>
+                  <SelectItem value="Product Manager">Product Manager</SelectItem>
+                  <SelectItem value="Data Engineer">Data Engineer</SelectItem>
+                </SelectContent>
+              </Select>
+              {isAdmin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showRoleInput: true }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
           {validationErrors.role && (
             <p className="text-sm text-red-600">{validationErrors.role}</p>
           )}
@@ -234,34 +361,120 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Technical">Technical</SelectItem>
-              <SelectItem value="Behavioral">Behavioral</SelectItem>
-              <SelectItem value="System Design">System Design</SelectItem>
-              <SelectItem value="Background">Background</SelectItem>
-              <SelectItem value="Culture Fit">Culture Fit</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+          {customInputs.showCategoryInput ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter new category"
+                value={customValues.newCategory}
+                onChange={(e) => setCustomValues(prev => ({ ...prev, newCategory: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCustomInput('category', customValues.newCategory);
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => handleCustomInput('category', customValues.newCategory)}
+              >
+                Add
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCustomInputs(prev => ({ ...prev, showCategoryInput: false }))}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Technical">Technical</SelectItem>
+                  <SelectItem value="Behavioral">Behavioral</SelectItem>
+                  <SelectItem value="System Design">System Design</SelectItem>
+                  <SelectItem value="Background">Background</SelectItem>
+                  <SelectItem value="Culture Fit">Culture Fit</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {isAdmin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showCategoryInput: true }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="interview_stage">Interview Stage</Label>
-          <Select value={formData.interview_stage} onValueChange={(value) => setFormData({ ...formData, interview_stage: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select stage" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="HR Screen">HR Screen</SelectItem>
-              <SelectItem value="Technical Interview">Technical Interview</SelectItem>
-              <SelectItem value="Cross-Functional">Cross-Functional</SelectItem>
-              <SelectItem value="Final Interview">Final Interview</SelectItem>
-            </SelectContent>
-          </Select>
+          {customInputs.showStageInput ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter new interview stage"
+                value={customValues.newStage}
+                onChange={(e) => setCustomValues(prev => ({ ...prev, newStage: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCustomInput('interview_stage', customValues.newStage);
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => handleCustomInput('interview_stage', customValues.newStage)}
+              >
+                Add
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCustomInputs(prev => ({ ...prev, showStageInput: false }))}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Select value={formData.interview_stage} onValueChange={(value) => setFormData({ ...formData, interview_stage: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HR Screen">HR Screen</SelectItem>
+                  <SelectItem value="Technical Interview">Technical Interview</SelectItem>
+                  <SelectItem value="Cross-Functional">Cross-Functional</SelectItem>
+                  <SelectItem value="Final Interview">Final Interview</SelectItem>
+                </SelectContent>
+              </Select>
+              {isAdmin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showStageInput: true }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -291,11 +504,14 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
       <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
-        <RichTextEditor
-          value={formData.additional_context}
-          onChange={(value) => setFormData({ ...formData, additional_context: value })}
-          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
-        />
+        <div style={{ minHeight: '400px' }}>
+          <RichTextEditor
+            value={formData.additional_context}
+            onChange={(value) => setFormData({ ...formData, additional_context: value })}
+            placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
+            className="min-h-[400px]"
+          />
+        </div>
       </div>
 
       <Button 
