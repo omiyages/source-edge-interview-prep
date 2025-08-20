@@ -20,10 +20,13 @@ export const useSecureCandidates = () => {
         throw new Error('Insufficient permissions');
       }
 
-      let query = supabase.from('candidates');
+      let query = supabase.from('candidates').select('*');
 
       // Filter sensitive fields for non-admin users
-      query = filterSensitiveFields(query, 'candidates', profile?.role);
+      if (profile?.role !== 'admin') {
+        const safeFields = ['id', 'full_name', 'current_company', 'years_of_experience', 'skillsets', 'is_active', 'created_at', 'updated_at'];
+        query = supabase.from('candidates').select(safeFields.join(', '));
+      }
 
       // Apply user-specific filtering
       if (profile?.role !== 'admin') {
@@ -49,12 +52,12 @@ export const useSecureProfiles = () => {
     queryFn: async () => {
       if (!user) throw new Error('Not authenticated');
 
-      let query = supabase.from('profiles');
+      let query = supabase.from('profiles').select('*');
 
       // Non-admin users can only see their own profile
       if (profile?.role !== 'admin') {
-        query = query.eq('id', user.id);
-        query = filterSensitiveFields(query, 'profiles', profile?.role);
+        const safeFields = ['id', 'full_name', 'role', 'current_company', 'years_of_experience', 'skillsets', 'is_active', 'created_at', 'updated_at'];
+        query = supabase.from('profiles').select(safeFields.join(', ')).eq('id', user.id);
       }
 
       const { data, error } = await query;
@@ -76,12 +79,11 @@ export const useSecureGoogleSheetsIntegrations = () => {
       if (!user) throw new Error('Not authenticated');
 
       // Only users can access their own integrations
+      const safeFields = ['id', 'sheet_id', 'sheet_name', 'is_active', 'last_sync_at', 'created_at', 'updated_at'];
       let query = supabase
         .from('google_sheets_integrations')
+        .select(safeFields.join(', '))
         .eq('user_id', user.id);
-
-      // Always filter sensitive fields like tokens
-      query = filterSensitiveFields(query, 'google_sheets_integrations', profile?.role);
 
       const { data, error } = await query;
       
