@@ -1,8 +1,8 @@
 
 // ABOUTME: Form component for submitting new interview questions with validation and security features
-// ABOUTME: Includes admin functionality to add new dropdown options dynamically
+// ABOUTME: Includes admin functionality to add new dropdown options dynamically with database persistence
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { validateQuestionInput, validateCompanyInput, validateRoleInput, sanitizeTextInput, checkRateLimit } from "@/utils/inputSecurity";
 import { logInvalidInput, logRateLimitExceeded } from "@/utils/securityLogger";
 import { Plus } from "lucide-react";
@@ -53,6 +53,30 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     newStage: "",
   });
 
+  // Fetch dynamic dropdown options
+  const { data: dropdownOptions, refetch: refetchOptions } = useQuery({
+    queryKey: ['dropdown-options'],
+    queryFn: async () => {
+      const { data: questions, error } = await supabase
+        .from('interview_questions')
+        .select('company, role, category, interview_stage');
+      
+      if (error) throw error;
+
+      const companies = [...new Set(questions.map(q => q.company).filter(Boolean))].sort();
+      const roles = [...new Set(questions.map(q => q.role).filter(Boolean))].sort();
+      const categories = [...new Set(questions.map(q => q.category).filter(Boolean))].sort();
+      const interviewStages = [...new Set(questions.map(q => q.interview_stage).filter(Boolean))].sort();
+
+      return {
+        companies,
+        roles,
+        categories,
+        interviewStages
+      };
+    },
+  });
+
   const validateForm = () => {
     const errors: Record<string, string> = {};
     
@@ -81,11 +105,62 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleCustomInput = (field: string, value: string) => {
-    if (value.trim()) {
-      setFormData(prev => ({ ...prev, [field]: value.trim() }));
+  const addCustomOptionMutation = useMutation({
+    mutationFn: async ({ field, value }: { field: string; value: string }) => {
+      // Create a temporary question entry to add the new option to our dropdown data
+      const questionData = {
+        question: "Temporary entry for option addition",
+        company: field === 'company' ? value : 'Temp',
+        role: field === 'role' ? value : 'Temp',
+        category: field === 'category' ? value : 'Technical',
+        interview_stage: field === 'interview_stage' ? value : 'Technical Interview',
+        submitted_by: profile?.email || user?.email,
+        question_type: 'temp_option',
+        status: 'temp',
+      };
+
+      const { error } = await supabase
+        .from('interview_questions')
+        .insert(questionData);
+
+      if (error) throw error;
+
+      // Immediately delete the temporary entry
+      await supabase
+        .from('interview_questions')
+        .delete()
+        .eq('question_type', 'temp_option')
+        .eq('status', 'temp');
+
+      return value;
+    },
+    onSuccess: (value, { field }) => {
+      // Update form data and close custom input
+      setFormData(prev => ({ ...prev, [field]: value }));
       setCustomInputs(prev => ({ ...prev, [`show${field.charAt(0).toUpperCase() + field.slice(1)}Input`]: false }));
       setCustomValues(prev => ({ ...prev, [`new${field.charAt(0).toUpperCase() + field.slice(1)}`]: "" }));
+      
+      // Refetch options to update dropdowns
+      refetchOptions();
+      
+      toast({
+        title: "Option added",
+        description: `${field.charAt(0).toUpperCase() + field.slice(1)} "${value}" has been added successfully.`,
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding custom option:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add custom option. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCustomInput = (field: string, value: string) => {
+    if (value.trim() && isAdmin) {
+      addCustomOptionMutation.mutate({ field, value: value.trim() });
     }
   };
 
@@ -112,6 +187,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] });
       queryClient.invalidateQueries({ queryKey: ['all-questions-for-stage'] });
+      queryClient.invalidateQueries({ queryKey: ['dropdown-options'] });
+      
       toast({
         title: "Question submitted!",
         description: profile?.role === 'admin' 
@@ -246,8 +323,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
                 type="button"
                 size="sm"
                 onClick={() => handleCustomInput('company', customValues.newCompany)}
+                disabled={addCustomOptionMutation.isPending}
               >
-                Add
+                {addCustomOptionMutation.isPending ? "..." : "Add"}
               </Button>
               <Button
                 type="button"
@@ -268,9 +346,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
                   <SelectValue placeholder="Select company" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Woven by Toyota">Woven by Toyota</SelectItem>
-                  <SelectItem value="LexxPluss">LexxPluss</SelectItem>
-                  <SelectItem value="Wismettac">Wismettac</SelectItem>
+                  {dropdownOptions?.companies?.map((company) => (
+                    <SelectItem key={company} value={company}>{company}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {isAdmin && (
@@ -309,8 +387,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
                 type="button"
                 size="sm"
                 onClick={() => handleCustomInput('role', customValues.newRole)}
+                disabled={addCustomOptionMutation.isPending}
               >
-                Add
+                {addCustomOptionMutation.isPending ? "..." : "Add"}
               </Button>
               <Button
                 type="button"
@@ -331,13 +410,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
                   <SelectValue placeholder="Select role type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Backend Engineer">Backend Engineer</SelectItem>
-                  <SelectItem value="Frontend Engineer">Frontend Engineer</SelectItem>
-                  <SelectItem value="Full Stack Engineer">Full Stack Engineer</SelectItem>
-                  <SelectItem value="SRE/DevOps">SRE/DevOps</SelectItem>
-                  <SelectItem value="Engineering Manager">Engineering Manager</SelectItem>
-                  <SelectItem value="Product Manager">Product Manager</SelectItem>
-                  <SelectItem value="Data Engineer">Data Engineer</SelectItem>
+                  {dropdownOptions?.roles?.map((role) => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {isAdmin && (
@@ -378,8 +453,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
                 type="button"
                 size="sm"
                 onClick={() => handleCustomInput('category', customValues.newCategory)}
+                disabled={addCustomOptionMutation.isPending}
               >
-                Add
+                {addCustomOptionMutation.isPending ? "..." : "Add"}
               </Button>
               <Button
                 type="button"
@@ -397,12 +473,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Technical">Technical</SelectItem>
-                  <SelectItem value="Behavioral">Behavioral</SelectItem>
-                  <SelectItem value="System Design">System Design</SelectItem>
-                  <SelectItem value="Background">Background</SelectItem>
-                  <SelectItem value="Culture Fit">Culture Fit</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  {dropdownOptions?.categories?.map((category) => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {isAdmin && (
@@ -438,8 +511,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
                 type="button"
                 size="sm"
                 onClick={() => handleCustomInput('interview_stage', customValues.newStage)}
+                disabled={addCustomOptionMutation.isPending}
               >
-                Add
+                {addCustomOptionMutation.isPending ? "..." : "Add"}
               </Button>
               <Button
                 type="button"
@@ -457,10 +531,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
                   <SelectValue placeholder="Select stage" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="HR Screen">HR Screen</SelectItem>
-                  <SelectItem value="Technical Interview">Technical Interview</SelectItem>
-                  <SelectItem value="Cross-Functional">Cross-Functional</SelectItem>
-                  <SelectItem value="Final Interview">Final Interview</SelectItem>
+                  {dropdownOptions?.interviewStages?.map((stage) => (
+                    <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {isAdmin && (
@@ -504,12 +577,12 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
       <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
-        <div style={{ minHeight: '400px' }}>
+        <div style={{ minHeight: '600px' }}>
           <RichTextEditor
             value={formData.additional_context}
             onChange={(value) => setFormData({ ...formData, additional_context: value })}
             placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
-            className="min-h-[400px]"
+            className="min-h-[600px]"
           />
         </div>
       </div>
