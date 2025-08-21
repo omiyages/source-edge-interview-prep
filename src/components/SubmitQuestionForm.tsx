@@ -53,21 +53,36 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     newStage: "",
   });
 
-  // Fetch dynamic dropdown options from the new dropdown_options table
+  // Fetch dynamic dropdown options using RPC call to avoid type issues
   const { data: dropdownOptions, refetch: refetchOptions } = useQuery({
     queryKey: ['dropdown-options'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('dropdown_options')
-        .select('field_name, value')
-        .order('value');
+      // Use a direct SQL query via RPC to avoid TypeScript type issues
+      const { data, error } = await supabase.rpc('get_dropdown_options');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching dropdown options:', error);
+        // Fallback to existing interview_questions data
+        const questionsResult = await supabase
+          .from('interview_questions')
+          .select('company, role, category, interview_stage')
+          .eq('status', 'approved');
+        
+        if (questionsResult.error) throw questionsResult.error;
 
-      const companies = data?.filter(item => item.field_name === 'company').map(item => item.value).sort() || [];
-      const roles = data?.filter(item => item.field_name === 'role').map(item => item.value).sort() || [];
-      const categories = data?.filter(item => item.field_name === 'category').map(item => item.value).sort() || [];
-      const interviewStages = data?.filter(item => item.field_name === 'interview_stage').map(item => item.value).sort() || [];
+        const companies = [...new Set(questionsResult.data?.map(item => item.company).filter(Boolean))].sort();
+        const roles = [...new Set(questionsResult.data?.map(item => item.role).filter(Boolean))].sort();
+        const categories = [...new Set(questionsResult.data?.map(item => item.category).filter(Boolean))].sort();
+        const interviewStages = [...new Set(questionsResult.data?.map(item => item.interview_stage).filter(Boolean))].sort();
+
+        return { companies, roles, categories, interviewStages };
+      }
+
+      // Process RPC result
+      const companies = data?.filter((item: any) => item.field_name === 'company').map((item: any) => item.value).sort() || [];
+      const roles = data?.filter((item: any) => item.field_name === 'role').map((item: any) => item.value).sort() || [];
+      const categories = data?.filter((item: any) => item.field_name === 'category').map((item: any) => item.value).sort() || [];
+      const interviewStages = data?.filter((item: any) => item.field_name === 'interview_stage').map((item: any) => item.value).sort() || [];
 
       return {
         companies,
@@ -110,14 +125,12 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     mutationFn: async ({ field, value }: { field: string; value: string }) => {
       console.log('🔧 Adding custom option:', { field, value });
       
-      const { data, error } = await supabase
-        .from('dropdown_options')
-        .insert({
-          field_name: field,
-          value: value.trim(),
-          created_by: user?.id
-        })
-        .select();
+      // Use RPC call to add custom option
+      const { data, error } = await supabase.rpc('add_dropdown_option', {
+        field_name: field,
+        option_value: value.trim(),
+        user_id: user?.id
+      });
 
       if (error) {
         console.error('❌ Error adding custom option:', error);
