@@ -1,4 +1,3 @@
-
 // ABOUTME: Form component for submitting new interview questions with validation and security features
 // ABOUTME: Includes admin functionality to add new dropdown options dynamically with database persistence
 
@@ -19,6 +18,11 @@ import { Plus } from "lucide-react";
 
 interface SubmitQuestionFormProps {
   onSuccess: () => void;
+}
+
+interface DropdownOption {
+  field_name: string;
+  value: string;
 }
 
 export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
@@ -53,43 +57,59 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     newStage: "",
   });
 
-  // Fetch dynamic dropdown options using RPC call to avoid type issues
+  // Fetch dynamic dropdown options using the Edge Function
   const { data: dropdownOptions, refetch: refetchOptions } = useQuery({
     queryKey: ['dropdown-options'],
     queryFn: async () => {
-      // Use a direct SQL query via RPC to avoid TypeScript type issues
-      const { data, error } = await supabase.rpc('get_dropdown_options');
+      console.log('🔄 Fetching dropdown options...');
       
-      if (error) {
-        console.error('Error fetching dropdown options:', error);
+      try {
+        // Use the Edge Function to get dropdown options
+        const { data, error } = await supabase.functions.invoke('dropdown-options', {
+          method: 'GET'
+        });
+        
+        if (error) {
+          console.error('❌ Error from Edge Function:', error);
+          throw error;
+        }
+
+        console.log('✅ Raw data from Edge Function:', data);
+
+        // Process the data - it should be an array of DropdownOption objects
+        const options = data as DropdownOption[];
+        
+        const companies = options?.filter(item => item.field_name === 'company').map(item => item.value).sort() || [];
+        const roles = options?.filter(item => item.field_name === 'role').map(item => item.value).sort() || [];
+        const categories = options?.filter(item => item.field_name === 'category').map(item => item.value).sort() || [];
+        const interviewStages = options?.filter(item => item.field_name === 'interview_stage').map(item => item.value).sort() || [];
+
+        console.log('✅ Processed dropdown options:', { companies, roles, categories, interviewStages });
+
+        return {
+          companies,
+          roles,
+          categories,
+          interviewStages
+        };
+      } catch (error) {
+        console.error('❌ Error fetching dropdown options:', error);
+        
         // Fallback to existing interview_questions data
-        const questionsResult = await supabase
+        const { data: questionsData, error: questionsError } = await supabase
           .from('interview_questions')
           .select('company, role, category, interview_stage')
           .eq('status', 'approved');
         
-        if (questionsResult.error) throw questionsResult.error;
+        if (questionsError) throw questionsError;
 
-        const companies = [...new Set(questionsResult.data?.map(item => item.company).filter(Boolean))].sort();
-        const roles = [...new Set(questionsResult.data?.map(item => item.role).filter(Boolean))].sort();
-        const categories = [...new Set(questionsResult.data?.map(item => item.category).filter(Boolean))].sort();
-        const interviewStages = [...new Set(questionsResult.data?.map(item => item.interview_stage).filter(Boolean))].sort();
+        const companies = [...new Set(questionsData?.map(item => item.company).filter(Boolean))].sort();
+        const roles = [...new Set(questionsData?.map(item => item.role).filter(Boolean))].sort();
+        const categories = [...new Set(questionsData?.map(item => item.category).filter(Boolean))].sort();
+        const interviewStages = [...new Set(questionsData?.map(item => item.interview_stage).filter(Boolean))].sort();
 
         return { companies, roles, categories, interviewStages };
       }
-
-      // Process RPC result
-      const companies = data?.filter((item: any) => item.field_name === 'company').map((item: any) => item.value).sort() || [];
-      const roles = data?.filter((item: any) => item.field_name === 'role').map((item: any) => item.value).sort() || [];
-      const categories = data?.filter((item: any) => item.field_name === 'category').map((item: any) => item.value).sort() || [];
-      const interviewStages = data?.filter((item: any) => item.field_name === 'interview_stage').map((item: any) => item.value).sort() || [];
-
-      return {
-        companies,
-        roles,
-        categories,
-        interviewStages
-      };
     },
   });
 
@@ -125,11 +145,14 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     mutationFn: async ({ field, value }: { field: string; value: string }) => {
       console.log('🔧 Adding custom option:', { field, value });
       
-      // Use RPC call to add custom option
-      const { data, error } = await supabase.rpc('add_dropdown_option', {
-        field_name: field,
-        option_value: value.trim(),
-        user_id: user?.id
+      // Use the Edge Function to add custom option
+      const { data, error } = await supabase.functions.invoke('dropdown-options', {
+        method: 'POST',
+        body: {
+          field_name: field,
+          option_value: value.trim(),
+          user_id: user?.id
+        }
       });
 
       if (error) {
