@@ -53,20 +53,21 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     newStage: "",
   });
 
-  // Fetch dynamic dropdown options
+  // Fetch dynamic dropdown options from the new dropdown_options table
   const { data: dropdownOptions, refetch: refetchOptions } = useQuery({
     queryKey: ['dropdown-options'],
     queryFn: async () => {
-      const { data: questions, error } = await supabase
-        .from('interview_questions')
-        .select('company, role, category, interview_stage');
+      const { data, error } = await supabase
+        .from('dropdown_options')
+        .select('field_name, value')
+        .order('value');
       
       if (error) throw error;
 
-      const companies = [...new Set(questions.map(q => q.company).filter(Boolean))].sort();
-      const roles = [...new Set(questions.map(q => q.role).filter(Boolean))].sort();
-      const categories = [...new Set(questions.map(q => q.category).filter(Boolean))].sort();
-      const interviewStages = [...new Set(questions.map(q => q.interview_stage).filter(Boolean))].sort();
+      const companies = data?.filter(item => item.field_name === 'company').map(item => item.value).sort() || [];
+      const roles = data?.filter(item => item.field_name === 'role').map(item => item.value).sort() || [];
+      const categories = data?.filter(item => item.field_name === 'category').map(item => item.value).sort() || [];
+      const interviewStages = data?.filter(item => item.field_name === 'interview_stage').map(item => item.value).sort() || [];
 
       return {
         companies,
@@ -107,38 +108,38 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
   const addCustomOptionMutation = useMutation({
     mutationFn: async ({ field, value }: { field: string; value: string }) => {
-      // Create a temporary question entry to add the new option to our dropdown data
-      const questionData = {
-        question: "Temporary entry for option addition",
-        company: field === 'company' ? value : 'Temp',
-        role: field === 'role' ? value : 'Temp',
-        category: field === 'category' ? value : 'Technical',
-        interview_stage: field === 'interview_stage' ? value : 'Technical Interview',
-        submitted_by: profile?.email || user?.email,
-        question_type: 'temp_option',
-        status: 'temp',
-      };
+      console.log('🔧 Adding custom option:', { field, value });
+      
+      const { data, error } = await supabase
+        .from('dropdown_options')
+        .insert({
+          field_name: field,
+          value: value.trim(),
+          created_by: user?.id
+        })
+        .select();
 
-      const { error } = await supabase
-        .from('interview_questions')
-        .insert(questionData);
+      if (error) {
+        console.error('❌ Error adding custom option:', error);
+        throw error;
+      }
 
-      if (error) throw error;
-
-      // Immediately delete the temporary entry
-      await supabase
-        .from('interview_questions')
-        .delete()
-        .eq('question_type', 'temp_option')
-        .eq('status', 'temp');
-
+      console.log('✅ Custom option added successfully:', data);
       return value;
     },
     onSuccess: (value, { field }) => {
+      console.log('✅ Custom option mutation successful:', { field, value });
+      
       // Update form data and close custom input
       setFormData(prev => ({ ...prev, [field]: value }));
-      setCustomInputs(prev => ({ ...prev, [`show${field.charAt(0).toUpperCase() + field.slice(1)}Input`]: false }));
-      setCustomValues(prev => ({ ...prev, [`new${field.charAt(0).toUpperCase() + field.slice(1)}`]: "" }));
+      setCustomInputs(prev => ({ 
+        ...prev, 
+        [`show${field.charAt(0).toUpperCase() + field.slice(1)}Input`]: false 
+      }));
+      setCustomValues(prev => ({ 
+        ...prev, 
+        [`new${field.charAt(0).toUpperCase() + field.slice(1)}`]: "" 
+      }));
       
       // Refetch options to update dropdowns
       refetchOptions();
@@ -148,11 +149,19 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         description: `${field.charAt(0).toUpperCase() + field.slice(1)} "${value}" has been added successfully.`,
       });
     },
-    onError: (error) => {
-      console.error('Error adding custom option:', error);
+    onError: (error: any) => {
+      console.error('❌ Error adding custom option:', error);
+      
+      let errorMessage = "Failed to add custom option. Please try again.";
+      
+      // Handle duplicate value error
+      if (error.message?.includes('duplicate key') || error.code === '23505') {
+        errorMessage = "This option already exists.";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to add custom option. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -160,6 +169,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
   const handleCustomInput = (field: string, value: string) => {
     if (value.trim() && isAdmin) {
+      console.log('🔄 Handling custom input:', { field, value });
       addCustomOptionMutation.mutate({ field, value: value.trim() });
     }
   };
