@@ -426,6 +426,13 @@ export type Database = {
             referencedRelation: "google_sheets_integrations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "google_sheets_candidate_imports_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "safe_google_integrations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       google_sheets_integrations: {
@@ -875,7 +882,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      safe_google_integrations: {
+        Row: {
+          column_mappings: Json | null
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          last_sync_at: string | null
+          range_specification: string | null
+          sheet_id: string | null
+          sheet_name: string | null
+          token_status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          column_mappings?: Json | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          range_specification?: string | null
+          sheet_id?: string | null
+          sheet_name?: string | null
+          token_status?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          column_mappings?: Json | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          range_specification?: string | null
+          sheet_id?: string | null
+          sheet_name?: string | null
+          token_status?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_rate_limit: {
@@ -886,8 +934,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      encrypt_token: {
+        Args: { token: string }
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_integration_token: {
+        Args: { integration_id: string }
         Returns: string
       }
       has_role: {
@@ -909,6 +965,10 @@ export type Database = {
           p_user_id?: string
         }
         Returns: undefined
+      }
+      update_integration_token: {
+        Args: { integration_id: string; new_token: string }
+        Returns: boolean
       }
       update_user_role_with_audit: {
         Args: {

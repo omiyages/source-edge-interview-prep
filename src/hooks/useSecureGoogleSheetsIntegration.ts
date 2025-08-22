@@ -1,14 +1,13 @@
-// ABOUTME: Secure Google Sheets integration hook with encrypted token storage
-// ABOUTME: Provides encrypted OAuth token management for Google Sheets integrations
+// ABOUTME: Secure Google Sheets integration hook with database-level encryption 
+// ABOUTME: Uses secure RLS policies and encrypted token storage to prevent token theft
 
-import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { tokenEncryptionService } from '@/services/tokenEncryptionService';
 import { useToast } from '@/hooks/use-toast';
+import { enhancedSecurityLogger } from '@/utils/enhancedSecurityLogger';
 
-interface GoogleSheetsIntegration {
+interface SafeGoogleSheetsIntegration {
   id: string;
   user_id: string;
   sheet_id: string;
@@ -19,7 +18,7 @@ interface GoogleSheetsIntegration {
   updated_at: string;
   range_specification?: string;
   column_mappings?: any;
-  access_token?: string;
+  token_status: 'configured' | 'not_configured'; // No actual token exposed
 }
 
 interface CreateIntegrationParams {
@@ -34,130 +33,151 @@ export const useSecureGoogleSheetsIntegration = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isEncrypting, setIsEncrypting] = useState(false);
 
-  // Fetch integrations (access_token will be encrypted in DB)
+  // Fetch integrations using the safe view (no access tokens exposed)
   const { data: integrations, isLoading, error } = useQuery({
-    queryKey: ['google-sheets-integrations', user?.id],
+    queryKey: ['safe-google-integrations', user?.id],
     queryFn: async () => {
-      if (!user) throw new Error('Not authenticated');
+      if (!user) return [];
 
+      // Use the safe view that excludes access tokens entirely
       const { data, error } = await supabase
-        .from('google_sheets_integrations')
+        .from('safe_google_integrations')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as GoogleSheetsIntegration[];
+
+      // Log security event for integration access
+      try {
+        await enhancedSecurityLogger.logEvent({
+          eventType: 'admin_action',
+          resourceAccessed: 'safe_google_integrations',
+          actionAttempted: 'view_integrations',
+          success: true,
+          riskLevel: 'low',
+          metadata: { userId: user.id, count: data?.length || 0 }
+        });
+      } catch (logError) {
+        console.warn('Failed to log security event:', logError);
+      }
+
+      return data as SafeGoogleSheetsIntegration[];
     },
     enabled: !!user,
   });
 
-  // Create integration with encrypted token
+  // Create integration (uses secure token handling)
   const createIntegration = useMutation({
     mutationFn: async (params: CreateIntegrationParams) => {
       if (!user) throw new Error('Not authenticated');
 
-      setIsEncrypting(true);
+      // Step 1: Create integration record without token (security requirement)
+      const safeIntegrationData = {
+        user_id: user.id,
+        sheet_id: params.sheet_id,
+        sheet_name: params.sheet_name,
+        range_specification: params.range_specification || 'A:Z',
+        column_mappings: params.column_mappings || {},
+        is_active: true,
+      };
+
+      const { data, error } = await supabase
+        .from('google_sheets_integrations')
+        .insert(safeIntegrationData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Step 2: Securely set the access token using the secure function
       try {
-        // Encrypt the access token
-        const { encryptedData, iv } = await tokenEncryptionService.encryptToken(params.access_token);
-        
-        // Store encrypted token and IV together
-        const encryptedToken = JSON.stringify({ encryptedData, iv });
-
-        const { data, error } = await supabase
+        await supabase.rpc('update_integration_token', {
+          integration_id: data.id,
+          new_token: params.access_token,
+        });
+      } catch (tokenError) {
+        // If token update fails, clean up the integration
+        await supabase
           .from('google_sheets_integrations')
-          .insert({
-            user_id: user.id,
-            sheet_id: params.sheet_id,
-            sheet_name: params.sheet_name,
-            access_token: encryptedToken,
-            range_specification: params.range_specification || 'A:Z',
-            column_mappings: params.column_mappings || {},
-            is_active: true,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        return data;
-      } finally {
-        setIsEncrypting(false);
+          .delete()
+          .eq('id', data.id);
+        
+        throw new Error('Failed to securely store access token');
       }
+
+      // Log security event
+      try {
+        await enhancedSecurityLogger.logAdminAction(
+          'integration_created',
+          data.id,
+          true,
+          { sheet_id: params.sheet_id, sheet_name: params.sheet_name }
+        );
+      } catch (logError) {
+        console.warn('Failed to log security event:', logError);
+      }
+
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['safe-google-integrations'] });
       toast({
-        title: "Integration created",
-        description: "Google Sheets integration has been created successfully with encrypted token storage.",
+        title: "Integration Created",
+        description: "Google Sheets integration has been created with secure token storage.",
       });
     },
     onError: (error: any) => {
       console.error('Integration creation failed:', error);
       toast({
-        title: "Integration failed",
+        title: "Integration Failed",
         description: error.message || "Failed to create Google Sheets integration.",
         variant: "destructive",
       });
     },
   });
 
-  // Decrypt and retrieve access token
-  const getDecryptedToken = useCallback(async (integration: GoogleSheetsIntegration): Promise<string | null> => {
-    try {
-      if (!integration.access_token) {
-        return null;
-      }
-
-      // Parse the encrypted token data
-      const tokenData = JSON.parse(integration.access_token);
-      
-      // Decrypt the token
-      const decryptedToken = await tokenEncryptionService.decryptToken(
-        tokenData.encryptedData,
-        tokenData.iv
-      );
-
-      return decryptedToken;
-    } catch (error) {
-      console.error('Token decryption failed:', error);
-      toast({
-        title: "Token Error",
-        description: "Failed to decrypt access token. Please re-authenticate.",
-        variant: "destructive",
-      });
-      return null;
-    }
-  }, [toast]);
-
-  // Update integration
+  // Update integration metadata (excludes token updates)
   const updateIntegration = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<GoogleSheetsIntegration> }) => {
-      if (!user) throw new Error('Not authenticated');
-
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<SafeGoogleSheetsIntegration> }) => {
+      // Remove any sensitive fields that shouldn't be updated directly
+      const { token_status, ...safeUpdates } = updates;
+      
       const { data, error } = await supabase
         .from('google_sheets_integrations')
-        .update(updates)
+        .update(safeUpdates)
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('user_id', user?.id) // Ensure user can only update their own
         .select()
         .single();
 
       if (error) throw error;
+
+      // Log security event
+      try {
+        await enhancedSecurityLogger.logAdminAction(
+          'integration_updated',
+          id,
+          true,
+          { updatedFields: Object.keys(safeUpdates) }
+        );
+      } catch (logError) {
+        console.warn('Failed to log security event:', logError);
+      }
+
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['safe-google-integrations'] });
       toast({
-        title: "Integration updated",
+        title: "Integration Updated",
         description: "Google Sheets integration has been updated successfully.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Update failed",
+        title: "Update Failed",
         description: error.message || "Failed to update Google Sheets integration.",
         variant: "destructive",
       });
@@ -167,43 +187,80 @@ export const useSecureGoogleSheetsIntegration = () => {
   // Delete integration
   const deleteIntegration = useMutation({
     mutationFn: async (id: string) => {
-      if (!user) throw new Error('Not authenticated');
-
       const { error } = await supabase
         .from('google_sheets_integrations')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user?.id); // Ensure user can only delete their own
 
       if (error) throw error;
+
+      // Log security event
+      try {
+        await enhancedSecurityLogger.logAdminAction(
+          'integration_deleted',
+          id,
+          true,
+          { operation: 'delete_integration' }
+        );
+      } catch (logError) {
+        console.warn('Failed to log security event:', logError);
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['google-sheets-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['safe-google-integrations'] });
       toast({
-        title: "Integration deleted",
+        title: "Integration Deleted",
         description: "Google Sheets integration has been deleted successfully.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Delete failed",
+        title: "Delete Failed",
         description: error.message || "Failed to delete Google Sheets integration.",
         variant: "destructive",
       });
     },
   });
 
+  // Secure token update function
+  const updateAccessToken = async (integrationId: string, newToken: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.rpc('update_integration_token', {
+        integration_id: integrationId,
+        new_token: newToken,
+      });
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['safe-google-integrations'] });
+      
+      toast({
+        title: "Token Updated",
+        description: "Access token has been securely updated.",
+      });
+
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Token Update Failed",
+        description: error.message || "Failed to update access token",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   return {
     integrations,
     isLoading,
     error,
-    isEncrypting,
     createIntegration: createIntegration.mutate,
     isCreating: createIntegration.isPending,
     updateIntegration: updateIntegration.mutate,
     isUpdating: updateIntegration.isPending,
     deleteIntegration: deleteIntegration.mutate,
     isDeleting: deleteIntegration.isPending,
-    getDecryptedToken,
+    updateAccessToken, // Secure token update method
   };
 };
