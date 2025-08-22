@@ -341,6 +341,51 @@ export type Database = {
         }
         Relationships: []
       }
+      enhanced_security_events: {
+        Row: {
+          action_attempted: string | null
+          created_at: string | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          resource_accessed: string | null
+          risk_level: string | null
+          success: boolean
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_attempted?: string | null
+          created_at?: string | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resource_accessed?: string | null
+          risk_level?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_attempted?: string | null
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resource_accessed?: string | null
+          risk_level?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       google_sheets_candidate_imports: {
         Row: {
           candidate_id: string | null
@@ -851,6 +896,19 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_security_event: {
+        Args: {
+          p_action_attempted?: string
+          p_event_type: string
+          p_metadata?: Json
+          p_resource_accessed?: string
+          p_risk_level?: string
+          p_success?: boolean
+          p_user_email?: string
+          p_user_id?: string
+        }
+        Returns: undefined
       }
       update_user_role_with_audit: {
         Args: {

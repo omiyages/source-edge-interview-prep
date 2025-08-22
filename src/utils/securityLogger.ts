@@ -93,13 +93,21 @@ if (typeof window !== 'undefined') {
 }
 
 // Helper functions for common security events
-export const logAuthFailure = (details: string, userId?: string): void => {
+export const logAuthFailure = async (details: string, userId?: string): Promise<void> => {
   securityLogger.log({
     type: 'auth_failure',
     userId,
     details,
     severity: 'high',
   });
+
+  // Also log to enhanced security logger for database persistence
+  try {
+    const { enhancedSecurityLogger } = await import('./enhancedSecurityLogger');
+    await enhancedSecurityLogger.logAuthFailure(details, { userId });
+  } catch (error) {
+    console.warn('Failed to log to enhanced security logger:', error);
+  }
 };
 
 export const logRateLimitExceeded = (details: string, userId?: string): void => {
@@ -121,7 +129,7 @@ export const logInvalidInput = (details: string, userId?: string, metadata?: Rec
   });
 };
 
-export const logAdminAction = (details: string, userId?: string, metadata?: Record<string, any>): void => {
+export const logAdminAction = async (details: string, userId?: string, metadata?: Record<string, any>): Promise<void> => {
   securityLogger.log({
     type: 'admin_action',
     userId,
@@ -129,9 +137,22 @@ export const logAdminAction = (details: string, userId?: string, metadata?: Reco
     severity: 'low',
     metadata,
   });
+
+  // Also log to enhanced security logger for database persistence
+  try {
+    const { enhancedSecurityLogger } = await import('./enhancedSecurityLogger');
+    await enhancedSecurityLogger.logAdminAction(
+      details, 
+      metadata?.resourceId, 
+      metadata?.success !== false, 
+      { userId, ...metadata }
+    );
+  } catch (error) {
+    console.warn('Failed to log to enhanced security logger:', error);
+  }
 };
 
-export const logXSSAttempt = (details: string, userId?: string, metadata?: Record<string, any>): void => {
+export const logXSSAttempt = async (details: string, userId?: string, metadata?: Record<string, any>): Promise<void> => {
   securityLogger.log({
     type: 'xss_attempt',
     userId,
@@ -139,6 +160,18 @@ export const logXSSAttempt = (details: string, userId?: string, metadata?: Recor
     severity: 'critical',
     metadata,
   });
+
+  // Also log to enhanced security logger for database persistence
+  try {
+    const { enhancedSecurityLogger } = await import('./enhancedSecurityLogger');
+    await enhancedSecurityLogger.logXSSAttempt(
+      details, 
+      metadata?.location || 'unknown', 
+      { userId, ...metadata }
+    );
+  } catch (error) {
+    console.warn('Failed to log to enhanced security logger:', error);
+  }
 };
 
 export const logSuspiciousActivity = (details: string, userId?: string, metadata?: Record<string, any>): void => {
