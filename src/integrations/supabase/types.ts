@@ -314,6 +314,33 @@ export type Database = {
         }
         Relationships: []
       }
+      dropdown_options: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          field_name: string
+          id: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          field_name: string
+          id?: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          field_name?: string
+          id?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       google_sheets_candidate_imports: {
         Row: {
           candidate_id: string | null

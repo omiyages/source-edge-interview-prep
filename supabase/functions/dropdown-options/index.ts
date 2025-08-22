@@ -13,10 +13,33 @@ serve(async (req) => {
   }
 
   try {
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
     )
+
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     if (req.method === 'GET') {
       // Get dropdown options
@@ -34,7 +57,28 @@ serve(async (req) => {
     }
 
     if (req.method === 'POST') {
-      const { field_name, option_value, user_id } = await req.json()
+      // Check if user is admin before allowing creation
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile || profile.role !== 'admin') {
+        return new Response(
+          JSON.stringify({ error: 'Admin privileges required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const { field_name, option_value } = await req.json()
+
+      if (!field_name || !option_value) {
+        return new Response(
+          JSON.stringify({ error: 'field_name and option_value are required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
 
       // Insert new dropdown option
       const { data, error } = await supabaseClient
@@ -42,7 +86,7 @@ serve(async (req) => {
         .insert({
           field_name,
           value: option_value,
-          created_by: user_id
+          created_by: user.id
         })
         .select()
 
