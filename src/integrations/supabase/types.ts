@@ -894,6 +894,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_safe_integration_data: {
+        Args: { integration_id: string }
+        Returns: {
+          column_mappings: Json
+          created_at: string
+          has_token: boolean
+          id: string
+          is_active: boolean
+          last_sync_at: string
+          range_specification: string
+          sheet_id: string
+          sheet_name: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       get_user_integration_token: {
         Args: { integration_id: string }
         Returns: string
@@ -946,6 +962,10 @@ export type Database = {
           user_agent?: string
         }
         Returns: Json
+      }
+      validate_token_access: {
+        Args: { integration_id: string }
+        Returns: boolean
       }
     }
     Enums: {
