@@ -34,18 +34,15 @@ export const useSecureGoogleSheetsIntegration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch integrations using the safe view (no access tokens exposed)
+  // Fetch integrations using secure function (no access tokens exposed)
   const { data: integrations, isLoading, error } = useQuery({
-    queryKey: ['safe-google-integrations', user?.id],
+    queryKey: ['secure-google-integrations', user?.id],
     queryFn: async () => {
       if (!user) return [];
 
-      // Use the safe view that excludes access tokens entirely
+      // Use the secure function that excludes access tokens entirely
       const { data, error } = await supabase
-        .from('safe_google_integrations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .rpc('get_user_integrations');
 
       if (error) throw error;
 
@@ -53,7 +50,7 @@ export const useSecureGoogleSheetsIntegration = () => {
       try {
         await enhancedSecurityLogger.logEvent({
           eventType: 'admin_action',
-          resourceAccessed: 'safe_google_integrations',
+          resourceAccessed: 'google_sheets_integrations',
           actionAttempted: 'view_integrations',
           success: true,
           riskLevel: 'low',
@@ -122,7 +119,7 @@ export const useSecureGoogleSheetsIntegration = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['safe-google-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['secure-google-integrations'] });
       toast({
         title: "Integration Created",
         description: "Google Sheets integration has been created with secure token storage.",
@@ -169,7 +166,7 @@ export const useSecureGoogleSheetsIntegration = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['safe-google-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['secure-google-integrations'] });
       toast({
         title: "Integration Updated",
         description: "Google Sheets integration has been updated successfully.",
@@ -208,7 +205,7 @@ export const useSecureGoogleSheetsIntegration = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['safe-google-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['secure-google-integrations'] });
       toast({
         title: "Integration Deleted",
         description: "Google Sheets integration has been deleted successfully.",
@@ -233,7 +230,7 @@ export const useSecureGoogleSheetsIntegration = () => {
 
       if (error) throw error;
 
-      queryClient.invalidateQueries({ queryKey: ['safe-google-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['secure-google-integrations'] });
       
       toast({
         title: "Token Updated",
