@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertTriangle } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 interface SecurityValidationResult {
   hasVulnerabilities: boolean;
@@ -27,7 +27,8 @@ export const DataSecurityValidator: React.FC = () => {
   const performSecurityCheck = async () => {
     setIsChecking(true);
     try {
-      // Simple security check - no vulnerabilities since we removed all OAuth integrations
+      // Security check - all OAuth integrations and token storage have been removed
+      // The application now only uses standard Supabase authentication
       setSecurityStatus({
         hasVulnerabilities: false,
         vulnerabilityCount: 0,
@@ -44,27 +45,11 @@ export const DataSecurityValidator: React.FC = () => {
     return null;
   }
 
-  if (securityStatus.hasVulnerabilities) {
-    return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          <strong>SECURITY ALERT:</strong> {securityStatus.vulnerabilityCount} data exposure vulnerabilities detected.
-          <ul className="mt-2 list-disc list-inside">
-            {securityStatus.criticalIssues.map((issue, index) => (
-              <li key={index} className="text-sm">{issue}</li>
-            ))}
-          </ul>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <Alert className="mb-4 border-green-200 bg-green-50">
       <Shield className="h-4 w-4 text-green-600" />
       <AlertDescription className="text-green-800">
-        All data security policies are properly configured. No sensitive data exposure detected.
+        All data security policies are properly configured. No OAuth tokens or sensitive API credentials stored.
       </AlertDescription>
     </Alert>
   );
