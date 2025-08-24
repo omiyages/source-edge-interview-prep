@@ -922,10 +922,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_user_integration_token: {
-        Args: { integration_id: string }
-        Returns: string
-      }
       get_user_integrations: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -962,6 +958,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      monitor_oauth_security: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          security_summary: Json
+        }[]
+      }
+      secure_google_api_proxy: {
+        Args: {
+          api_endpoint: string
+          http_method?: string
+          integration_id: string
+          request_body?: Json
+        }
+        Returns: Json
+      }
       update_integration_token: {
         Args: { integration_id: string; new_token: string }
         Returns: boolean
@@ -973,6 +984,10 @@ export type Database = {
           target_user_id: string
           user_agent?: string
         }
+        Returns: Json
+      }
+      validate_google_token_status: {
+        Args: { integration_id: string }
         Returns: Json
       }
       validate_token_access: {
