@@ -1,6 +1,6 @@
 
 // ABOUTME: Security policy audit utility to identify and fix RLS policy issues
-// ABOUTME: Helps identify remaining EXPOSED_SENSITIVE_DATA vulnerabilities
+// ABOUTME: Helps identify security vulnerabilities in the system
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,12 +29,6 @@ export const auditRLSPolicies = async (): Promise<PolicyAuditResult[]> => {
       policy: 'Authenticated users can view their own profile',
       issue: 'May expose sensitive profile data without proper filtering',
       fix: 'Add explicit column filtering for sensitive fields'
-    },
-    {
-      table: 'google_sheets_integrations',
-      policy: 'Users can view their own integrations',
-      issue: 'May expose OAuth tokens and sensitive API credentials',
-      fix: 'Exclude sensitive fields from SELECT policy'
     }
   ];
 

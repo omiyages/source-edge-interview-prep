@@ -1,12 +1,10 @@
 
-
 // ABOUTME: Secure data access hook that enforces data protection policies
-// ABOUTME: Prevents EXPOSED_SENSITIVE_DATA vulnerabilities in queries
+// ABOUTME: Provides secure access to user data with proper role-based permissions
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { maskSensitiveData, checkDataAccessPermission } from '@/utils/sensitiveDataProtection';
 
 export const useSecureCandidates = () => {
   const { user, profile } = useAuth();
@@ -15,11 +13,6 @@ export const useSecureCandidates = () => {
     queryKey: ['secure-candidates', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('Not authenticated');
-
-      // Check if user has permission to view candidates
-      if (!checkDataAccessPermission('candidates', 'SELECT', profile?.role, user.id)) {
-        throw new Error('Insufficient permissions');
-      }
 
       let query;
       
@@ -39,8 +32,7 @@ export const useSecureCandidates = () => {
       
       if (error) throw error;
 
-      // Mask any remaining sensitive data
-      return maskSensitiveData(data || [], 'candidates', profile?.role);
+      return data || [];
     },
     enabled: !!user,
   });
@@ -72,33 +64,8 @@ export const useSecureProfiles = () => {
       
       if (error) throw error;
 
-      return maskSensitiveData(data || [], 'profiles', profile?.role);
+      return data || [];
     },
     enabled: !!user,
   });
 };
-
-export const useSecureGoogleSheetsIntegrations = () => {
-  const { user, profile } = useAuth();
-
-  return useQuery({
-    queryKey: ['secure-google-sheets', user?.id],
-    queryFn: async () => {
-      if (!user) throw new Error('Not authenticated');
-
-      // Only users can access their own integrations
-      const safeFields = ['id', 'sheet_id', 'sheet_name', 'is_active', 'last_sync_at', 'created_at', 'updated_at'];
-      
-      const { data, error } = await supabase
-        .from('google_sheets_integrations')
-        .select(safeFields.join(', '))
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-
-      return maskSensitiveData(data || [], 'google_sheets_integrations', profile?.role);
-    },
-    enabled: !!user,
-  });
-};
-

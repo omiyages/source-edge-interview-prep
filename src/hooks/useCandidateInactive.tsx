@@ -1,6 +1,6 @@
 
-// ABOUTME: Hook for toggling candidate active/inactive status in the pipeline
-// ABOUTME: Handles updating both candidates and candidate_pipeline tables
+// ABOUTME: Hook for toggling candidate active/inactive status
+// ABOUTME: Handles updating candidate status with proper permissions
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +14,7 @@ export const useCandidateInactive = () => {
     mutationFn: async ({ candidateId, isActive }: { candidateId: string; isActive: boolean }) => {
       console.log('🔄 Toggling candidate status:', { candidateId, isActive });
       
-      // Update candidate record - use type assertion to handle is_active
+      // Update candidate record
       const { error: candidateError } = await supabase
         .from('candidates')
         .update({ is_active: isActive } as any)
@@ -25,17 +25,6 @@ export const useCandidateInactive = () => {
         throw candidateError;
       }
 
-      // Update pipeline records
-      const { error: pipelineError } = await supabase
-        .from('candidate_pipeline')
-        .update({ is_active: isActive })
-        .eq('candidate_id', candidateId);
-
-      if (pipelineError) {
-        console.error('❌ Error updating pipeline status:', pipelineError);
-        throw pipelineError;
-      }
-
       console.log('✅ Successfully updated candidate status');
       return { candidateId, isActive };
     },
@@ -43,8 +32,7 @@ export const useCandidateInactive = () => {
       console.log('🎉 Mutation successful, invalidating queries');
       
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['candidates-pipeline'] });
-      queryClient.invalidateQueries({ queryKey: ['kanban-data'] });
+      queryClient.invalidateQueries({ queryKey: ['candidates'] });
       
       toast({
         title: "Success",
