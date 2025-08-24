@@ -898,6 +898,10 @@ export type Database = {
         Args: { token: string }
         Returns: string
       }
+      enhanced_check_role_change_rate_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
