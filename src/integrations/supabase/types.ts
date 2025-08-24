@@ -878,6 +878,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      block_direct_token_access: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           max_attempts?: number
@@ -885,6 +889,10 @@ export type Database = {
           window_minutes?: number
         }
         Returns: boolean
+      }
+      encrypt_access_token: {
+        Args: { plain_token: string }
+        Returns: string
       }
       encrypt_token: {
         Args: { token: string }
@@ -964,6 +972,10 @@ export type Database = {
         Returns: Json
       }
       validate_token_access: {
+        Args: { integration_id: string }
+        Returns: boolean
+      }
+      validate_token_ownership: {
         Args: { integration_id: string }
         Returns: boolean
       }
