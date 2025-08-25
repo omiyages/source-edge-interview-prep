@@ -48,6 +48,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     showRoleInput: false,
     showCategoryInput: false,
     showStageInput: false,
+    showTeamInput: false,
   });
 
   const [customValues, setCustomValues] = useState({
@@ -55,6 +56,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     newRole: "",
     newCategory: "",
     newStage: "",
+    newTeam: "",
   });
 
   // Fetch dynamic dropdown options using the Edge Function
@@ -83,14 +85,16 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         const roles = options?.filter(item => item.field_name === 'role').map(item => item.value).sort() || [];
         const categories = options?.filter(item => item.field_name === 'category').map(item => item.value).sort() || [];
         const interviewStages = options?.filter(item => item.field_name === 'interview_stage').map(item => item.value).sort() || [];
+        const teams = options?.filter(item => item.field_name === 'team').map(item => item.value).sort() || [];
 
-        console.log('✅ Processed dropdown options:', { companies, roles, categories, interviewStages });
+        console.log('✅ Processed dropdown options:', { companies, roles, categories, interviewStages, teams });
 
         return {
           companies,
           roles,
           categories,
-          interviewStages
+          interviewStages,
+          teams
         };
       } catch (error) {
         console.error('❌ Error fetching dropdown options:', error);
@@ -98,7 +102,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         // Fallback to existing interview_questions data
         const { data: questionsData, error: questionsError } = await supabase
           .from('interview_questions')
-          .select('company, role, category, interview_stage')
+          .select('company, role, category, interview_stage, team')
           .eq('status', 'approved');
         
         if (questionsError) throw questionsError;
@@ -107,8 +111,9 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         const roles = [...new Set(questionsData?.map(item => item.role).filter(Boolean))].sort();
         const categories = [...new Set(questionsData?.map(item => item.category).filter(Boolean))].sort();
         const interviewStages = [...new Set(questionsData?.map(item => item.interview_stage).filter(Boolean))].sort();
+        const teams = [...new Set(questionsData?.map(item => item.team).filter(Boolean))].sort();
 
-        return { companies, roles, categories, interviewStages };
+        return { companies, roles, categories, interviewStages, teams };
       }
     },
   });
@@ -259,12 +264,14 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         showRoleInput: false,
         showCategoryInput: false,
         showStageInput: false,
+        showTeamInput: false,
       });
       setCustomValues({
         newCompany: "",
         newRole: "",
         newCategory: "",
         newStage: "",
+        newTeam: "",
       });
 
       onSuccess();
@@ -600,13 +607,60 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="team">Team</Label>
-          <Input
-            id="team"
-            placeholder="e.g., Cloud & AI (optional)"
-            value={formData.team}
-            onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-            maxLength={100}
-          />
+          {customInputs.showTeamInput ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter new team"
+                value={customValues.newTeam}
+                onChange={(e) => setCustomValues(prev => ({ ...prev, newTeam: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCustomInput('team', customValues.newTeam);
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => handleCustomInput('team', customValues.newTeam)}
+                disabled={addCustomOptionMutation.isPending}
+              >
+                {addCustomOptionMutation.isPending ? "..." : "Add"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCustomInputs(prev => ({ ...prev, showTeamInput: false }))}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Select value={formData.team} onValueChange={(value) => setFormData({ ...formData, team: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions?.teams?.map((team) => (
+                    <SelectItem key={team} value={team}>{team}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isAdmin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showTeamInput: true }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -623,14 +677,12 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
       <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
-        <div style={{ minHeight: '600px' }}>
-          <RichTextEditor
-            value={formData.additional_context}
-            onChange={(value) => setFormData({ ...formData, additional_context: value })}
-            placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
-            className="min-h-[600px]"
-          />
-        </div>
+        <RichTextEditor
+          value={formData.additional_context}
+          onChange={(value) => setFormData({ ...formData, additional_context: value })}
+          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
+          className="min-h-[400px]"
+        />
       </div>
 
       <Button 
