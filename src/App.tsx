@@ -1,7 +1,7 @@
 
 // ABOUTME: Main application component with routing and providers
 // ABOUTME: Handles lazy loading and authentication protection for all routes
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,13 +10,16 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { queryClient } from "@/lib/queryClient";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
+
+// Import only essential components directly
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import PublicSignup from "./pages/PublicSignup";
 import AdminDashboard from "./pages/AdminDashboard";
 
-// Import lazy components (excluding AdminDashboard to avoid import issues)
+// Import lazy components for better code splitting
 import {
   Resources,
   CourseDetail,
@@ -24,17 +27,23 @@ import {
   UserDashboard
 } from "@/components/LazyComponents";
 
-// Loading component for suspense
-const PageLoader = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-      <p className="text-foreground font-semibold">Loading...</p>
+// Optimized loading component with performance monitoring
+const PageLoader = () => {
+  usePerformanceMonitor('PageLoader');
+  
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-foreground font-semibold">Loading...</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 function App() {
+  usePerformanceMonitor('App');
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

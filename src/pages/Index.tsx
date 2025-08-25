@@ -3,12 +3,15 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuestions } from "@/hooks/useQuestions";
 import { useResources } from "@/hooks/useResources";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { HeroSection } from "@/components/HeroSection";
 import { ResourcesPreview } from "@/components/ResourcesPreview";
 import { QuestionsSection } from "@/components/QuestionsSection";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  usePerformanceMonitor('Index');
+  
   const { user, isAdmin, loading: authLoading, profile } = useAuth();
   const { toast } = useToast();
   
