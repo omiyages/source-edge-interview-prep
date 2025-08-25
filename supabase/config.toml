@@ -55,6 +55,3 @@ verify_jwt = true
 
 [functions.dropdown-options]
 verify_jwt = true
-
-[functions.scrape-linkedin]
-verify_jwt = true
