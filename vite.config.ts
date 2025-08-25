@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: 'es2020', // Target modern browsers to avoid unnecessary polyfills
+    target: ['es2022', 'chrome89', 'firefox89', 'safari15'], // Target modern browsers to avoid polyfills
     minify: 'esbuild',
     cssCodeSplit: true,
     rollupOptions: {
@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   esbuild: {
-    target: 'es2020', // Ensure esbuild also targets modern browsers
+    target: 'es2022', // Ensure esbuild also targets modern browsers
     legalComments: 'none' // Remove legal comments to reduce bundle size
   }
 }));
