@@ -14,140 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      candidate_pipeline: {
-        Row: {
-          applied_company: string | null
-          applied_job_title: string | null
-          candidate_id: string | null
-          candidate_ref_id: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          moved_at: string
-          moved_by: string | null
-          notes: string | null
-          sheet_row_id: string | null
-          stage_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          applied_company?: string | null
-          applied_job_title?: string | null
-          candidate_id?: string | null
-          candidate_ref_id?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          moved_at?: string
-          moved_by?: string | null
-          notes?: string | null
-          sheet_row_id?: string | null
-          stage_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          applied_company?: string | null
-          applied_job_title?: string | null
-          candidate_id?: string | null
-          candidate_ref_id?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          moved_at?: string
-          moved_by?: string | null
-          notes?: string | null
-          sheet_row_id?: string | null
-          stage_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "candidate_pipeline_candidate_id_fkey"
-            columns: ["candidate_id"]
-            isOneToOne: false
-            referencedRelation: "candidates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidate_pipeline_candidate_ref_id_fkey"
-            columns: ["candidate_ref_id"]
-            isOneToOne: false
-            referencedRelation: "candidates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidate_pipeline_moved_by_fkey"
-            columns: ["moved_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidate_pipeline_stage_id_fkey"
-            columns: ["stage_id"]
-            isOneToOne: false
-            referencedRelation: "hiring_stages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      candidates: {
-        Row: {
-          created_at: string
-          current_company: string | null
-          email: string | null
-          full_name: string | null
-          general_notes: string | null
-          id: string
-          is_active: boolean | null
-          is_user: boolean
-          linkedin_profile: string | null
-          past_companies: string[] | null
-          phone_number: string | null
-          salary: number | null
-          skillsets: string[] | null
-          updated_at: string
-          user_id: string | null
-          years_of_experience: number | null
-        }
-        Insert: {
-          created_at?: string
-          current_company?: string | null
-          email?: string | null
-          full_name?: string | null
-          general_notes?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_user?: boolean
-          linkedin_profile?: string | null
-          past_companies?: string[] | null
-          phone_number?: string | null
-          salary?: number | null
-          skillsets?: string[] | null
-          updated_at?: string
-          user_id?: string | null
-          years_of_experience?: number | null
-        }
-        Update: {
-          created_at?: string
-          current_company?: string | null
-          email?: string | null
-          full_name?: string | null
-          general_notes?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_user?: boolean
-          linkedin_profile?: string | null
-          past_companies?: string[] | null
-          phone_number?: string | null
-          salary?: number | null
-          skillsets?: string[] | null
-          updated_at?: string
-          user_id?: string | null
-          years_of_experience?: number | null
-        }
-        Relationships: []
-      }
       course_assignments: {
         Row: {
           assigned_at: string
@@ -383,120 +249,6 @@ export type Database = {
           user_agent?: string | null
           user_email?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      google_sheets_candidate_imports: {
-        Row: {
-          candidate_id: string | null
-          id: string
-          import_data: Json | null
-          imported_at: string
-          integration_id: string | null
-          sheet_row_number: number | null
-        }
-        Insert: {
-          candidate_id?: string | null
-          id?: string
-          import_data?: Json | null
-          imported_at?: string
-          integration_id?: string | null
-          sheet_row_number?: number | null
-        }
-        Update: {
-          candidate_id?: string | null
-          id?: string
-          import_data?: Json | null
-          imported_at?: string
-          integration_id?: string | null
-          sheet_row_number?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "google_sheets_candidate_imports_candidate_id_fkey"
-            columns: ["candidate_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "google_sheets_candidate_imports_integration_id_fkey"
-            columns: ["integration_id"]
-            isOneToOne: false
-            referencedRelation: "google_sheets_integrations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      google_sheets_integrations: {
-        Row: {
-          access_token: string | null
-          column_mappings: Json | null
-          created_at: string
-          id: string
-          is_active: boolean | null
-          last_sync_at: string | null
-          range_specification: string | null
-          sheet_id: string
-          sheet_name: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          access_token?: string | null
-          column_mappings?: Json | null
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_sync_at?: string | null
-          range_specification?: string | null
-          sheet_id: string
-          sheet_name?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          access_token?: string | null
-          column_mappings?: Json | null
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_sync_at?: string | null
-          range_specification?: string | null
-          sheet_id?: string
-          sheet_name?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      hiring_stages: {
-        Row: {
-          color: string | null
-          created_at: string
-          id: string
-          name: string
-          order_index: number
-          stage_order: number
-          updated_at: string
-        }
-        Insert: {
-          color?: string | null
-          created_at?: string
-          id?: string
-          name: string
-          order_index: number
-          stage_order: number
-          updated_at?: string
-        }
-        Update: {
-          color?: string | null
-          created_at?: string
-          id?: string
-          name?: string
-          order_index?: number
-          stage_order?: number
-          updated_at?: string
         }
         Relationships: []
       }
@@ -878,10 +630,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      block_direct_token_access: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
       check_rate_limit: {
         Args: {
           max_attempts?: number
@@ -890,14 +638,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      encrypt_access_token: {
-        Args: { plain_token: string }
-        Returns: string
-      }
-      encrypt_token: {
-        Args: { token: string }
-        Returns: string
-      }
       enhanced_check_role_change_rate_limit: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -905,38 +645,6 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
-      }
-      get_safe_integration_data: {
-        Args: { integration_id: string }
-        Returns: {
-          column_mappings: Json
-          created_at: string
-          has_token: boolean
-          id: string
-          is_active: boolean
-          last_sync_at: string
-          range_specification: string
-          sheet_id: string
-          sheet_name: string
-          updated_at: string
-          user_id: string
-        }[]
-      }
-      get_user_integrations: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          column_mappings: Json
-          created_at: string
-          id: string
-          is_active: boolean
-          last_sync_at: string
-          range_specification: string
-          sheet_id: string
-          sheet_name: string
-          token_status: string
-          updated_at: string
-          user_id: string
-        }[]
       }
       has_role: {
         Args: {
@@ -958,25 +666,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      monitor_oauth_security: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          security_summary: Json
-        }[]
-      }
-      secure_google_api_proxy: {
-        Args: {
-          api_endpoint: string
-          http_method?: string
-          integration_id: string
-          request_body?: Json
-        }
-        Returns: Json
-      }
-      update_integration_token: {
-        Args: { integration_id: string; new_token: string }
-        Returns: boolean
-      }
       update_user_role_with_audit: {
         Args: {
           new_role: string
@@ -985,18 +674,6 @@ export type Database = {
           user_agent?: string
         }
         Returns: Json
-      }
-      validate_google_token_status: {
-        Args: { integration_id: string }
-        Returns: Json
-      }
-      validate_token_access: {
-        Args: { integration_id: string }
-        Returns: boolean
-      }
-      validate_token_ownership: {
-        Args: { integration_id: string }
-        Returns: boolean
       }
     }
     Enums: {
