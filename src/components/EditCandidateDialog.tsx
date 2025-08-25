@@ -1,6 +1,6 @@
 
-// ABOUTME: Dialog component for editing candidate information
-// ABOUTME: Provides inline editing capabilities for candidate data including role assignment
+// ABOUTME: Dialog component for editing user profile information
+// ABOUTME: Provides inline editing capabilities for user data including role assignment
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -62,7 +62,7 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
       };
 
       const { error } = await supabase
-        .from('candidates')
+        .from('profiles')
         .update(updateData)
         .eq('id', candidate.id);
 
@@ -70,7 +70,7 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
 
       toast({
         title: "Success",
-        description: "Candidate updated successfully",
+        description: "User profile updated successfully",
       });
 
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -79,10 +79,10 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
       setIsOpen(false);
       onUpdate();
     } catch (error: any) {
-      console.error('Error updating candidate:', error);
+      console.error('Error updating user profile:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update candidate",
+        description: error.message || "Failed to update user profile",
         variant: "destructive",
       });
     } finally {
@@ -99,7 +99,7 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Candidate</DialogTitle>
+          <DialogTitle>Edit User Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -118,7 +118,7 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
           
           <div>
             <Label htmlFor="edit_email" className="text-sm font-medium">
-              Email (Optional)
+              Email
             </Label>
             <Input
               id="edit_email"
@@ -127,6 +127,7 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Enter email address"
               className="mt-1"
+              required
             />
           </div>
 
@@ -150,7 +151,7 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Updating...' : 'Update Candidate'}
+              {isLoading ? 'Updating...' : 'Update User'}
             </Button>
           </div>
         </form>

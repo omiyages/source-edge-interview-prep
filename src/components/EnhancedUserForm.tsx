@@ -1,5 +1,5 @@
 
-// ABOUTME: Simplified form component for creating and editing candidates
+// ABOUTME: Simplified form component for creating and editing user profiles
 // ABOUTME: Includes essential fields: full name, email, and role assignment
 
 import React, { useState, useEffect } from 'react';
@@ -51,10 +51,10 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.full_name.trim()) {
+    if (!formData.full_name.trim() || !formData.email.trim()) {
       toast({
         title: "Validation Error",
-        description: "Full name is required",
+        description: "Full name and email are required",
         variant: "destructive",
       });
       return;
@@ -63,47 +63,41 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
     setIsLoading(true);
 
     try {
-      const candidateData = {
+      const profileData = {
         full_name: formData.full_name.trim(),
-        email: formData.email.trim() || null,
+        email: formData.email.trim(),
         role: formData.role,
-        is_user: false,
         is_active: true
       };
 
       if (user?.id) {
-        // Update existing candidate
+        // Update existing user profile
         const { error } = await supabase
-          .from('candidates')
-          .update(candidateData)
+          .from('profiles')
+          .update(profileData)
           .eq('id', user.id);
 
         if (error) throw error;
 
         toast({
           title: "Success",
-          description: "Candidate updated successfully",
+          description: "User profile updated successfully",
         });
       } else {
-        // Create new candidate
-        const { error } = await supabase
-          .from('candidates')
-          .insert([candidateData]);
-
-        if (error) throw error;
-
+        // Create new user profile (this would typically be handled during auth signup)
         toast({
-          title: "Success",
-          description: "New candidate created successfully",
+          title: "Info",
+          description: "User profiles are created during the authentication process",
+          variant: "default",
         });
       }
 
       onSuccess();
     } catch (error: any) {
-      console.error('Error saving candidate:', error);
+      console.error('Error saving user profile:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save candidate",
+        description: error.message || "Failed to save user profile",
         variant: "destructive",
       });
     } finally {
@@ -115,7 +109,7 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Candidate Information</CardTitle>
+          <CardTitle className="text-base">User Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -134,7 +128,7 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
           
           <div>
             <Label htmlFor="email" className="text-sm font-medium">
-              Email (Optional)
+              Email *
             </Label>
             <Input
               id="email"
@@ -143,6 +137,7 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Enter email address"
               className="mt-1"
+              required
             />
           </div>
 
@@ -168,7 +163,7 @@ export const EnhancedUserForm: React.FC<EnhancedUserFormProps> = ({
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving...' : user ? 'Update Candidate' : 'Create Candidate'}
+          {isLoading ? 'Saving...' : user ? 'Update User' : 'Create User'}
         </Button>
       </div>
     </form>
