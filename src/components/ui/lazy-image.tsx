@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './skeleton';
@@ -24,6 +25,8 @@ export const LazyImage = ({
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
+    // Use IntersectionObserver to avoid forced reflows
+    // This is more performant than measuring element positions
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -31,7 +34,11 @@ export const LazyImage = ({
           observer.disconnect();
         }
       },
-      { threshold: 0.1 }
+      { 
+        threshold: 0.1,
+        // Add rootMargin to load images slightly before they come into view
+        rootMargin: '50px'
+      }
     );
 
     if (imgRef.current) {

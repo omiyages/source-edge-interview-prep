@@ -8,12 +8,25 @@ export function useIsMobile() {
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    
     const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      // Use matchMedia result instead of measuring window.innerWidth
+      // This prevents forced reflows by avoiding geometric property reads
+      setIsMobile(mql.matches)
     }
-    mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    return () => mql.removeEventListener("change", onChange)
+    
+    // Set initial value using matchMedia
+    setIsMobile(mql.matches)
+    
+    // Use the newer API if available, fallback to older one
+    if (mql.addEventListener) {
+      mql.addEventListener("change", onChange)
+      return () => mql.removeEventListener("change", onChange)
+    } else {
+      // Fallback for older browsers
+      mql.addListener(onChange)
+      return () => mql.removeListener(onChange)
+    }
   }, [])
 
   return !!isMobile

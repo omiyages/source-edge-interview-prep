@@ -1,4 +1,6 @@
+
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { rafThrottle } from '@/utils/performanceOptimization';
 
 interface UseInfiniteScrollOptions {
   threshold?: number;
@@ -20,6 +22,14 @@ export const useInfiniteScroll = ({
     setIsFetching(true);
   }, [hasNextPage, isLoading, isFetching]);
 
+  // Use RAF throttling to prevent forced reflows in the intersection callback
+  const throttledLoadMore = useCallback(
+    rafThrottle(() => {
+      loadMore();
+    }),
+    [loadMore]
+  );
+
   const setTarget = useCallback((node: HTMLDivElement | null) => {
     if (observerRef.current) {
       observerRef.current.disconnect();
@@ -29,7 +39,8 @@ export const useInfiniteScroll = ({
       observerRef.current = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) {
-            loadMore();
+            // Use throttled version to prevent forced reflows
+            throttledLoadMore();
           }
         },
         {
@@ -41,7 +52,7 @@ export const useInfiniteScroll = ({
     }
 
     elementRef.current = node;
-  }, [hasNextPage, isLoading, loadMore, threshold]);
+  }, [hasNextPage, isLoading, throttledLoadMore, threshold]);
 
   useEffect(() => {
     return () => {
