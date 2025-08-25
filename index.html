@@ -11,7 +11,8 @@
 
     <!-- Preload critical resources to break dependency chains -->
     <link rel="modulepreload" href="/src/main.tsx" />
-    <link rel="preload" href="/src/index.css" as="style" />
+    <link rel="preload" href="/src/index.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
     
     <!-- DNS prefetch for potential external resources -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
