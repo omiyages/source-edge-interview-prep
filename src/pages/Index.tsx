@@ -1,13 +1,15 @@
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuestions } from "@/hooks/useQuestions";
 import { useResources } from "@/hooks/useResources";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { HeroSection } from "@/components/HeroSection";
-import { ResourcesPreview } from "@/components/ResourcesPreview";
-import { QuestionsSection } from "@/components/QuestionsSection";
 import { useToast } from "@/hooks/use-toast";
+
+// Lazy load non-critical components
+const ResourcesPreview = React.lazy(() => import("@/components/ResourcesPreview").then(module => ({ default: module.ResourcesPreview })));
+const QuestionsSection = React.lazy(() => import("@/components/QuestionsSection").then(module => ({ default: module.QuestionsSection })));
 
 const Index = () => {
   usePerformanceMonitor('Index');
@@ -52,16 +54,38 @@ const Index = () => {
       />
 
       <div className="container mx-auto px-4 py-8">
-        <ResourcesPreview 
-          resources={resources}
-          loading={resourcesLoading}
-        />
+        <Suspense fallback={
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-48 mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-48 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        }>
+          <ResourcesPreview 
+            resources={resources}
+            loading={resourcesLoading}
+          />
+        </Suspense>
 
-        <QuestionsSection 
-          questions={questions}
-          loading={questionsLoading}
-          error={questionsError}
-        />
+        <Suspense fallback={
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-48 mb-4"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-32 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        }>
+          <QuestionsSection 
+            questions={questions}
+            loading={questionsLoading}
+            error={questionsError}
+          />
+        </Suspense>
       </div>
     </div>
   );

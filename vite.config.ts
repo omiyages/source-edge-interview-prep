@@ -46,12 +46,48 @@ export default defineConfig(({ mode }) => ({
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
-          query: ['@tanstack/react-query'],
-          supabase: ['@supabase/supabase-js']
+        manualChunks: (id) => {
+          // Create more granular chunks to reduce initial bundle size
+          if (id.includes('node_modules')) {
+            // Separate large libraries into their own chunks
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('react-router')) {
+              return 'router';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'radix-ui';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'react-query';
+            }
+            if (id.includes('@supabase')) {
+              return 'supabase';
+            }
+            if (id.includes('lucide-react')) {
+              return 'icons';
+            }
+            if (id.includes('recharts')) {
+              return 'charts';
+            }
+            // Group smaller vendors together
+            return 'vendor';
+          }
+          
+          // Split application code by features
+          if (id.includes('/pages/')) {
+            return 'pages';
+          }
+          if (id.includes('/components/ui/')) {
+            return 'ui-components';
+          }
+          if (id.includes('/hooks/')) {
+            return 'hooks';
+          }
+          if (id.includes('/services/')) {
+            return 'services';
+          }
         }
       }
     }
