@@ -18,11 +18,11 @@ export const ResourcesList = lazy(() => import("@/components/ResourcesList").the
 export const AdminRoleManager = lazy(() => import("@/components/AdminRoleManager").then(module => ({ default: module.AdminRoleManager })));
 export const UsersList = lazy(() => import("@/components/UsersList").then(module => ({ default: module.UsersList })));
 export const CreateCourseForm = lazy(() => import("@/components/CreateCourseForm").then(module => ({ default: module.CreateCourseForm })));
-export const EditCourseForm = lazy(() => import("@/components/EditCourseForm"));
+export const EditCourseForm = lazy(() => import("@/components/EditCourseForm").then(module => ({ default: module.EditCourseForm })));
 
 // Form components (loaded on demand) - using named exports
 export const SubmitQuestionForm = lazy(() => import("@/components/SubmitQuestionForm").then(module => ({ default: module.SubmitQuestionForm })));
-export const EditQuestionForm = lazy(() => import("@/components/EditQuestionForm"));
-export const CreateResourceForm = lazy(() => import("@/components/CreateResourceForm"));
+export const EditQuestionForm = lazy(() => import("@/components/EditQuestionForm").then(module => ({ default: module.EditQuestionForm })));
+export const CreateResourceForm = lazy(() => import("@/components/CreateResourceForm").then(module => ({ default: module.CreateResourceForm })));
 export const CSVImportForm = lazy(() => import("@/components/CSVImportForm").then(module => ({ default: module.CSVImportForm })));
 
