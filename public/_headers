@@ -2,31 +2,49 @@
 # Cache static assets for 1 year with immutable directive
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+  Content-Type: application/javascript; charset=utf-8
 
-# Cache JS and CSS files for 1 year
+# Cache JS and CSS files for 1 year with proper MIME types
 *.js
   Cache-Control: public, max-age=31536000, immutable
+  Content-Type: application/javascript; charset=utf-8
+*.mjs
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: application/javascript; charset=utf-8
 *.css
   Cache-Control: public, max-age=31536000, immutable
+  Content-Type: text/css; charset=utf-8
 
 # Cache images for 1 month
 *.png
   Cache-Control: public, max-age=2592000
+  Content-Type: image/png
 *.jpg
   Cache-Control: public, max-age=2592000
+  Content-Type: image/jpeg
 *.jpeg
   Cache-Control: public, max-age=2592000
+  Content-Type: image/jpeg
 *.svg
   Cache-Control: public, max-age=2592000
+  Content-Type: image/svg+xml
 *.gif
   Cache-Control: public, max-age=2592000
+  Content-Type: image/gif
 *.webp
   Cache-Control: public, max-age=2592000
+  Content-Type: image/webp
 
 # Don't cache the main HTML file
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: text/html; charset=utf-8
 
 # Don't cache the root index
 /
   Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: text/html; charset=utf-8
+
+# Ensure proper MIME types for module scripts
+/src/*
+  Content-Type: application/javascript; charset=utf-8

@@ -46,6 +46,8 @@ export default defineConfig(({ mode }) => ({
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
+        // Ensure proper module format
+        format: 'es',
         manualChunks: (id) => {
           // Create more granular chunks to reduce initial bundle size
           if (id.includes('node_modules')) {
@@ -75,7 +77,7 @@ export default defineConfig(({ mode }) => ({
             return 'vendor';
           }
           
-          // Split application code by features
+          // Split application code by features for better caching
           if (id.includes('/pages/')) {
             return 'pages';
           }
@@ -95,5 +97,9 @@ export default defineConfig(({ mode }) => ({
   esbuild: {
     target: 'es2022', // Ensure esbuild also targets modern browsers
     legalComments: 'none' // Remove legal comments to reduce bundle size
+  },
+  // Add explicit MIME type handling
+  define: {
+    __DEV__: mode === 'development'
   }
 }));
