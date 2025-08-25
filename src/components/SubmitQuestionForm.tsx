@@ -339,364 +339,370 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="question">Interview Question *</Label>
-        <Textarea
-          id="question"
-          placeholder="Enter the interview question..."
-          value={formData.question}
-          onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-          required
-          rows={3}
-          className={validationErrors.question ? "border-red-500" : ""}
-        />
-        {validationErrors.question && (
-          <p className="text-sm text-red-600">{validationErrors.question}</p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="company">Company *</Label>
-          {customInputs.showCompanyInput ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter new company name"
-                value={customValues.newCompany}
-                onChange={(e) => setCustomValues(prev => ({ ...prev, newCompany: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleCustomInput('company', customValues.newCompany);
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => handleCustomInput('company', customValues.newCompany)}
-                disabled={addCustomOptionMutation.isPending}
-              >
-                {addCustomOptionMutation.isPending ? "..." : "Add"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setCustomInputs(prev => ({ ...prev, showCompanyInput: false }))}
-              >
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Select 
-                value={formData.company} 
-                onValueChange={(value) => setFormData({ ...formData, company: value })}
-              >
-                <SelectTrigger className={validationErrors.company ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select company" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dropdownOptions?.companies?.map((company) => (
-                    <SelectItem key={company} value={company}>{company}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {isAdmin && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCustomInputs(prev => ({ ...prev, showCompanyInput: true }))}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
-          {validationErrors.company && (
-            <p className="text-sm text-red-600">{validationErrors.company}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="role">Role *</Label>
-          {customInputs.showRoleInput ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter new role"
-                value={customValues.newRole}
-                onChange={(e) => setCustomValues(prev => ({ ...prev, newRole: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleCustomInput('role', customValues.newRole);
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => handleCustomInput('role', customValues.newRole)}
-                disabled={addCustomOptionMutation.isPending}
-              >
-                {addCustomOptionMutation.isPending ? "..." : "Add"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setCustomInputs(prev => ({ ...prev, showRoleInput: false }))}
-              >
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Select 
-                value={formData.role} 
-                onValueChange={(value) => setFormData({ ...formData, role: value })}
-              >
-                <SelectTrigger className={validationErrors.role ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select role type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dropdownOptions?.roles?.map((role) => (
-                    <SelectItem key={role} value={role}>{role}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {isAdmin && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCustomInputs(prev => ({ ...prev, showRoleInput: true }))}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
-          {validationErrors.role && (
-            <p className="text-sm text-red-600">{validationErrors.role}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          {customInputs.showCategoryInput ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter new category"
-                value={customValues.newCategory}
-                onChange={(e) => setCustomValues(prev => ({ ...prev, newCategory: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleCustomInput('category', customValues.newCategory);
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => handleCustomInput('category', customValues.newCategory)}
-                disabled={addCustomOptionMutation.isPending}
-              >
-                {addCustomOptionMutation.isPending ? "..." : "Add"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setCustomInputs(prev => ({ ...prev, showCategoryInput: false }))}
-              >
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dropdownOptions?.categories?.map((category) => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {isAdmin && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCustomInputs(prev => ({ ...prev, showCategoryInput: true }))}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="interview_stage">Interview Stage</Label>
-          {customInputs.showStageInput ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter new interview stage"
-                value={customValues.newStage}
-                onChange={(e) => setCustomValues(prev => ({ ...prev, newStage: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleCustomInput('interview_stage', customValues.newStage);
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => handleCustomInput('interview_stage', customValues.newStage)}
-                disabled={addCustomOptionMutation.isPending}
-              >
-                {addCustomOptionMutation.isPending ? "..." : "Add"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setCustomInputs(prev => ({ ...prev, showStageInput: false }))}
-              >
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Select value={formData.interview_stage} onValueChange={(value) => setFormData({ ...formData, interview_stage: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dropdownOptions?.interviewStages?.map((stage) => (
-                    <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {isAdmin && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCustomInputs(prev => ({ ...prev, showStageInput: true }))}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="team">Team</Label>
-          {customInputs.showTeamInput ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter new team"
-                value={customValues.newTeam}
-                onChange={(e) => setCustomValues(prev => ({ ...prev, newTeam: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleCustomInput('team', customValues.newTeam);
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => handleCustomInput('team', customValues.newTeam)}
-                disabled={addCustomOptionMutation.isPending}
-              >
-                {addCustomOptionMutation.isPending ? "..." : "Add"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setCustomInputs(prev => ({ ...prev, showTeamInput: false }))}
-              >
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Select value={formData.team} onValueChange={(value) => setFormData({ ...formData, team: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select team" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dropdownOptions?.teams?.map((team) => (
-                    <SelectItem key={team} value={team}>{team}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {isAdmin && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCustomInputs(prev => ({ ...prev, showTeamInput: true }))}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="position_name">Position Name</Label>
-          <Input
-            id="position_name"
-            placeholder="e.g., Senior Software Engineer (optional)"
-            value={formData.position_name}
-            onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
-            maxLength={100}
+          <Label htmlFor="question">Interview Question *</Label>
+          <Textarea
+            id="question"
+            placeholder="Enter the interview question..."
+            value={formData.question}
+            onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+            required
+            rows={3}
+            className={validationErrors.question ? "border-red-500" : ""}
           />
+          {validationErrors.question && (
+            <p className="text-sm text-red-600">{validationErrors.question}</p>
+          )}
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="additional_context">Additional Context</Label>
-        <RichTextEditor
-          value={formData.additional_context}
-          onChange={(value) => setFormData({ ...formData, additional_context: value })}
-          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
-          className="min-h-[400px]"
-        />
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="company">Company *</Label>
+            {customInputs.showCompanyInput ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter new company name"
+                  value={customValues.newCompany}
+                  onChange={(e) => setCustomValues(prev => ({ ...prev, newCompany: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCustomInput('company', customValues.newCompany);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleCustomInput('company', customValues.newCompany)}
+                  disabled={addCustomOptionMutation.isPending}
+                >
+                  {addCustomOptionMutation.isPending ? "..." : "Add"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showCompanyInput: false }))}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Select 
+                  value={formData.company} 
+                  onValueChange={(value) => setFormData({ ...formData, company: value })}
+                >
+                  <SelectTrigger className={validationErrors.company ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dropdownOptions?.companies?.map((company) => (
+                      <SelectItem key={company} value={company}>{company}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCustomInputs(prev => ({ ...prev, showCompanyInput: true }))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+            {validationErrors.company && (
+              <p className="text-sm text-red-600">{validationErrors.company}</p>
+            )}
+          </div>
 
-      <Button 
-        type="submit" 
-        variant="gradient"
-        className="w-full"
-        disabled={submitQuestionMutation.isPending}
-      >
-        {submitQuestionMutation.isPending ? "Submitting..." : "Submit Question"}
-      </Button>
-      
-      <p className="text-xs text-gray-500 text-center">
-        * Required fields. {profile?.role === 'admin' ? 'Questions will be published immediately.' : 'Questions will be reviewed before publishing.'}
-      </p>
-    </form>
+          <div className="space-y-2">
+            <Label htmlFor="role">Role *</Label>
+            {customInputs.showRoleInput ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter new role"
+                  value={customValues.newRole}
+                  onChange={(e) => setCustomValues(prev => ({ ...prev, newRole: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCustomInput('role', customValues.newRole);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleCustomInput('role', customValues.newRole)}
+                  disabled={addCustomOptionMutation.isPending}
+                >
+                  {addCustomOptionMutation.isPending ? "..." : "Add"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showRoleInput: false }))}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Select 
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                >
+                  <SelectTrigger className={validationErrors.role ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select role type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dropdownOptions?.roles?.map((role) => (
+                      <SelectItem key={role} value={role}>{role}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCustomInputs(prev => ({ ...prev, showRoleInput: true }))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+            {validationErrors.role && (
+              <p className="text-sm text-red-600">{validationErrors.role}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            {customInputs.showCategoryInput ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter new category"
+                  value={customValues.newCategory}
+                  onChange={(e) => setCustomValues(prev => ({ ...prev, newCategory: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCustomInput('category', customValues.newCategory);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleCustomInput('category', customValues.newCategory)}
+                  disabled={addCustomOptionMutation.isPending}
+                >
+                  {addCustomOptionMutation.isPending ? "..." : "Add"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showCategoryInput: false }))}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dropdownOptions?.categories?.map((category) => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCustomInputs(prev => ({ ...prev, showCategoryInput: true }))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="interview_stage">Interview Stage</Label>
+            {customInputs.showStageInput ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter new interview stage"
+                  value={customValues.newStage}
+                  onChange={(e) => setCustomValues(prev => ({ ...prev, newStage: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCustomInput('interview_stage', customValues.newStage);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleCustomInput('interview_stage', customValues.newStage)}
+                  disabled={addCustomOptionMutation.isPending}
+                >
+                  {addCustomOptionMutation.isPending ? "..." : "Add"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showStageInput: false }))}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Select value={formData.interview_stage} onValueChange={(value) => setFormData({ ...formData, interview_stage: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dropdownOptions?.interviewStages?.map((stage) => (
+                      <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCustomInputs(prev => ({ ...prev, showStageInput: true }))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="team">Team</Label>
+            {customInputs.showTeamInput ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter new team"
+                  value={customValues.newTeam}
+                  onChange={(e) => setCustomValues(prev => ({ ...prev, newTeam: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCustomInput('team', customValues.newTeam);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleCustomInput('team', customValues.newTeam)}
+                  disabled={addCustomOptionMutation.isPending}
+                >
+                  {addCustomOptionMutation.isPending ? "..." : "Add"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomInputs(prev => ({ ...prev, showTeamInput: false }))}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Select value={formData.team} onValueChange={(value) => setFormData({ ...formData, team: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dropdownOptions?.teams?.map((team) => (
+                      <SelectItem key={team} value={team}>{team}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCustomInputs(prev => ({ ...prev, showTeamInput: true }))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="position_name">Position Name</Label>
+            <Input
+              id="position_name"
+              placeholder="e.g., Senior Software Engineer (optional)"
+              value={formData.position_name}
+              onChange={(e) => setFormData({ ...formData, position_name: e.target.value })}
+              maxLength={100}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="additional_context">Additional Context</Label>
+          <div className="min-h-[300px]">
+            <RichTextEditor
+              value={formData.additional_context}
+              onChange={(value) => setFormData({ ...formData, additional_context: value })}
+              placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
+              className="min-h-[300px]"
+            />
+          </div>
+        </div>
+
+        <div className="pt-4 border-t">
+          <Button 
+            type="submit" 
+            variant="gradient"
+            className="w-full"
+            disabled={submitQuestionMutation.isPending}
+          >
+            {submitQuestionMutation.isPending ? "Submitting..." : "Submit Question"}
+          </Button>
+          
+          <p className="text-xs text-gray-500 text-center mt-3">
+            * Required fields. {profile?.role === 'admin' ? 'Questions will be published immediately.' : 'Questions will be reviewed before publishing.'}
+          </p>
+        </div>
+      </form>
+    </div>
   );
 };
