@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, Star } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +28,7 @@ interface InterviewQuestion {
   status?: string;
   team: string | null;
   position_name: string | null;
+  recommended?: boolean;
 }
 
 interface QuestionCardProps {
@@ -96,7 +97,10 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
     <Card className="group h-full flex flex-col bg-white hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-gray-300">
       <CardHeader className="pb-3 space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-center">
+            {question.recommended && (
+              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            )}
             <Badge 
               variant="secondary" 
               className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}

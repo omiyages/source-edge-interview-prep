@@ -7,8 +7,10 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Star } from "lucide-react";
 
 interface InterviewQuestion {
   id: string;
@@ -20,6 +22,7 @@ interface InterviewQuestion {
   additional_context: string | null;
   team: string | null;
   position_name: string | null;
+  recommended?: boolean;
 }
 
 interface EditQuestionFormProps {
@@ -40,6 +43,7 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
     additional_context: question.additional_context || "",
     team: question.team || "",
     position_name: question.position_name || "",
+    recommended: question.recommended || false,
   });
 
   const updateQuestionMutation = useMutation({
@@ -55,6 +59,7 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
           additional_context: questionData.additional_context || null,
           team: questionData.team || null,
           position_name: questionData.position_name || null,
+          recommended: questionData.recommended,
         })
         .eq('id', question.id);
 
@@ -189,11 +194,26 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
       </div>
 
       <div className="space-y-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="recommended"
+            checked={formData.recommended}
+            onCheckedChange={(checked) => setFormData({ ...formData, recommended: checked as boolean })}
+          />
+          <Label htmlFor="recommended" className="flex items-center gap-2 cursor-pointer">
+            <Star className="h-4 w-4 text-yellow-500" />
+            Mark as Recommended
+          </Label>
+        </div>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
         <RichTextEditor
           value={formData.additional_context}
           onChange={(value) => setFormData({ ...formData, additional_context: value })}
-          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
+          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more). You can paste images directly here."
+          enableImagePaste={true}
         />
       </div>
 

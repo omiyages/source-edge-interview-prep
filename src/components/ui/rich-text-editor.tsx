@@ -1,17 +1,20 @@
 
 // ABOUTME: Rich text editor component using ReactQuill for formatted text input
-// ABOUTME: Provides toolbar for formatting options and maintains consistent styling
+// ABOUTME: Provides toolbar for formatting options and maintains consistent styling with image paste support
 
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  enableImagePaste?: boolean;
 }
 
 const modules = {
@@ -21,7 +24,7 @@ const modules = {
     [{ 'color': [] }, { 'background': [] }],
     [{ 'list': 'ordered'}, { 'list': 'bullet' }],
     ['blockquote', 'code-block'],
-    ['link'],
+    ['link', 'image'],
     ['clean']
   ],
 };
@@ -32,20 +35,143 @@ const formats = [
   'color', 'background',
   'list', 'bullet',
   'blockquote', 'code-block',
-  'link'
+  'link', 'image'
 ];
 
-export const RichTextEditor = ({ value, onChange, placeholder, className }: RichTextEditorProps) => {
+export const RichTextEditor = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className,
+  enableImagePaste = false 
+}: RichTextEditorProps) => {
+  const quillRef = useRef<ReactQuill>(null);
+  const { toast } = useToast();
+
+  const uploadImage = useCallback(async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `question-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        toast({
+          title: "Upload Error",
+          description: "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      const { data } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  }, [toast]);
+
+  const handlePaste = useCallback(async (event: ClipboardEvent) => {
+    if (!enableImagePaste) return;
+
+    const clipboardData = event.clipboardData;
+    if (!clipboardData) return;
+
+    const items = Array.from(clipboardData.items);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+
+    if (imageItem) {
+      event.preventDefault();
+      const file = imageItem.getAsFile();
+      if (!file) return;
+
+      toast({
+        title: "Uploading Image",
+        description: "Please wait while your image is being uploaded...",
+      });
+
+      const imageUrl = await uploadImage(file);
+      if (imageUrl && quillRef.current) {
+        const quill = quillRef.current.getEditor();
+        const range = quill.getSelection();
+        const index = range ? range.index : quill.getLength();
+        quill.insertEmbed(index, 'image', imageUrl);
+      }
+    }
+  }, [enableImagePaste, uploadImage, toast]);
+
+  const imageHandler = useCallback(async () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      toast({
+        title: "Uploading Image",
+        description: "Please wait while your image is being uploaded...",
+      });
+
+      const imageUrl = await uploadImage(file);
+      if (imageUrl && quillRef.current) {
+        const quill = quillRef.current.getEditor();
+        const range = quill.getSelection();
+        const index = range ? range.index : quill.getLength();
+        quill.insertEmbed(index, 'image', imageUrl);
+      }
+    };
+  }, [uploadImage, toast]);
+
+  const modulesWithImageHandler = {
+    ...modules,
+    toolbar: {
+      ...modules.toolbar,
+      handlers: {
+        image: imageHandler,
+      },
+    },
+  };
+
+  React.useEffect(() => {
+    if (enableImagePaste && quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      const container = quill.container;
+      
+      container.addEventListener('paste', handlePaste);
+      
+      return () => {
+        container.removeEventListener('paste', handlePaste);
+      };
+    }
+  }, [enableImagePaste, handlePaste]);
+
   const isLargeEditor = className?.includes('min-h-[400px]');
   const editorHeight = isLargeEditor ? '400px' : '300px';
   
   return (
     <div className={cn("rich-text-editor", className)}>
       <ReactQuill
+        ref={quillRef}
         theme="snow"
         value={value}
         onChange={onChange}
-        modules={modules}
+        modules={modulesWithImageHandler}
         formats={formats}
         placeholder={placeholder}
         style={{
@@ -102,6 +228,13 @@ export const RichTextEditor = ({ value, onChange, placeholder, className }: Rich
           }
           .ql-editor pre {
             font-size: 14px !important;
+          }
+          .ql-editor img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
           }
           .ql-toolbar .ql-picker-label {
             font-size: 14px !important;

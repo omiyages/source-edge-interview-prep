@@ -10,11 +10,12 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { validateQuestionInput, validateCompanyInput, validateRoleInput, sanitizeTextInput, checkRateLimit } from "@/utils/inputSecurity";
 import { logInvalidInput, logRateLimitExceeded } from "@/utils/securityLogger";
-import { Plus } from "lucide-react";
+import { Plus, Star } from "lucide-react";
 
 interface SubmitQuestionFormProps {
   onSuccess: () => void;
@@ -40,6 +41,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     additional_context: "",
     team: "",
     position_name: "",
+    recommended: false,
   });
   
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -59,14 +61,12 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     newTeam: "",
   });
 
-  // Fetch dynamic dropdown options using the Edge Function
   const { data: dropdownOptions, refetch: refetchOptions } = useQuery({
     queryKey: ['dropdown-options'],
     queryFn: async () => {
       console.log('🔄 Fetching dropdown options...');
       
       try {
-        // Use the Edge Function to get dropdown options
         const { data, error } = await supabase.functions.invoke('dropdown-options', {
           method: 'GET'
         });
@@ -78,7 +78,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
         console.log('✅ Raw data from Edge Function:', data);
 
-        // Process the data - it should be an array of DropdownOption objects
         const options = data as DropdownOption[];
         
         const companies = options?.filter(item => item.field_name === 'company').map(item => item.value).sort() || [];
@@ -99,7 +98,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       } catch (error) {
         console.error('❌ Error fetching dropdown options:', error);
         
-        // Fallback to existing interview_questions data
         const { data: questionsData, error: questionsError } = await supabase
           .from('interview_questions')
           .select('company, role, category, interview_stage, team')
@@ -121,21 +119,18 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
   const validateForm = () => {
     const errors: Record<string, string> = {};
     
-    // Validate question
     const questionValidation = validateQuestionInput(formData.question);
     if (!questionValidation.isValid) {
       errors.question = questionValidation.message || "Invalid question";
       logInvalidInput(`Question validation failed: ${questionValidation.message}`, user?.id);
     }
     
-    // Validate company
     const companyValidation = validateCompanyInput(formData.company);
     if (!companyValidation.isValid) {
       errors.company = companyValidation.message || "Invalid company";
       logInvalidInput(`Company validation failed: ${companyValidation.message}`, user?.id);
     }
     
-    // Validate role
     const roleValidation = validateRoleInput(formData.role);
     if (!roleValidation.isValid) {
       errors.role = roleValidation.message || "Invalid role";
@@ -150,7 +145,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     mutationFn: async ({ field, value }: { field: string; value: string }) => {
       console.log('🔧 Adding custom option:', { field, value });
       
-      // Use the Edge Function to add custom option
       const { data, error } = await supabase.functions.invoke('dropdown-options', {
         method: 'POST',
         body: {
@@ -171,7 +165,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     onSuccess: (value, { field }) => {
       console.log('✅ Custom option mutation successful:', { field, value });
       
-      // Update form data and close custom input
       setFormData(prev => ({ ...prev, [field]: value }));
       setCustomInputs(prev => ({ 
         ...prev, 
@@ -182,7 +175,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         [`new${field.charAt(0).toUpperCase() + field.slice(1)}`]: "" 
       }));
       
-      // Refetch options to update dropdowns
       refetchOptions();
       
       toast({
@@ -195,7 +187,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       
       let errorMessage = "Failed to add custom option. Please try again.";
       
-      // Handle duplicate value error
       if (error.message?.includes('duplicate key') || error.code === '23505') {
         errorMessage = "This option already exists.";
       }
@@ -247,7 +238,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           : "Your question has been submitted for review and will appear once approved.",
       });
 
-      // Reset form
       setFormData({
         question: "",
         company: "",
@@ -257,6 +247,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
         additional_context: "",
         team: "",
         position_name: "",
+        recommended: false,
       });
       setValidationErrors({});
       setCustomInputs({
@@ -298,7 +289,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    // Check rate limiting
     const rateLimitKey = `submit_question_${user.id}`;
     if (!checkRateLimit(rateLimitKey, 5, 300000)) {
       logRateLimitExceeded(`Question submission rate limit exceeded`, user.id);
@@ -310,7 +300,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    // Validate form
     if (!validateForm()) {
       toast({
         title: "Validation Error",
@@ -320,7 +309,6 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    // Sanitize inputs before submission
     const questionData = {
       question: sanitizeTextInput(formData.question),
       company: sanitizeTextInput(formData.company),
@@ -330,6 +318,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       additional_context: formData.additional_context.trim() ? formData.additional_context : null,
       team: formData.team ? sanitizeTextInput(formData.team) : null,
       position_name: formData.position_name.trim() ? sanitizeTextInput(formData.position_name) : null,
+      recommended: formData.recommended,
       submitted_by: profile?.email || user.email,
       question_type: 'user_submitted',
       status: profile?.role === 'admin' ? 'approved' : 'pending',
@@ -676,12 +665,27 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       </div>
 
       <div className="space-y-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="recommended"
+            checked={formData.recommended}
+            onCheckedChange={(checked) => setFormData({ ...formData, recommended: checked as boolean })}
+          />
+          <Label htmlFor="recommended" className="flex items-center gap-2 cursor-pointer">
+            <Star className="h-4 w-4 text-yellow-500" />
+            Mark as Recommended
+          </Label>
+        </div>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="additional_context">Additional Context</Label>
         <RichTextEditor
           value={formData.additional_context}
           onChange={(value) => setFormData({ ...formData, additional_context: value })}
-          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more)."
+          placeholder="Add any additional information regarding the interview question (eg. tips, detailed information, and more). You can paste images directly here."
           className="min-h-[400px]"
+          enableImagePaste={true}
         />
       </div>
 
