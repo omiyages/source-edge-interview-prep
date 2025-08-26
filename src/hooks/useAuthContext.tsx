@@ -20,41 +20,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
-    // Get initial session
+    // Set a maximum timeout for auth initialization
+    const authTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('⚠️ Auth initialization timeout - proceeding without session');
+        setLoading(false);
+        setUser(null);
+      }
+    }, 10000); // 10 second timeout
+
+    // Get initial session with enhanced error handling
     const getInitialSession = async () => {
       try {
         console.log('🔄 Getting initial session...');
+        console.log('🔍 Supabase client initialized:', !!supabase);
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (!mounted) return;
+        if (!mounted) {
+          console.log('🚫 Component unmounted during auth check');
+          return;
+        }
         
         if (error) {
           console.error('❌ Error getting session:', error);
+          console.error('Error details:', {
+            message: error.message,
+            status: error.status,
+            name: error.name
+          });
           setUser(null);
         } else {
-          console.log('✅ Initial session:', session?.user?.email || 'No user');
+          console.log('✅ Initial session result:', {
+            hasSession: !!session,
+            userId: session?.user?.id,
+            userEmail: session?.user?.email,
+            expiresAt: session?.expires_at
+          });
           setUser(session?.user ?? null);
         }
       } catch (error) {
         console.error('❌ Unexpected error getting session:', error);
+        console.error('Error type:', typeof error);
+        console.error('Error constructor:', error?.constructor?.name);
         if (mounted) setUser(null);
       } finally {
         if (mounted) {
+          clearTimeout(authTimeout);
           setLoading(false);
           console.log('✅ Auth initialization complete');
         }
       }
     };
 
-    getInitialSession();
+    // Add a small delay to ensure DOM is ready
+    timeoutId = setTimeout(() => {
+      getInitialSession();
+    }, 100);
 
-    // Listen for auth changes
+    // Listen for auth changes with enhanced logging
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return;
+        if (!mounted) {
+          console.log('🚫 Auth state change ignored - component unmounted');
+          return;
+        }
         
-        console.log('🔄 Auth state changed:', event, session?.user?.email || 'No user');
+        console.log('🔄 Auth state changed:', {
+          event,
+          hasSession: !!session,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email
+        });
+        
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_OUT') {
@@ -65,7 +105,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       mounted = false;
+      clearTimeout(authTimeout);
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
+      console.log('🧹 Auth context cleanup complete');
     };
   }, []);
 

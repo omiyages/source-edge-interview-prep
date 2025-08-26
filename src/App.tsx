@@ -1,7 +1,7 @@
 
 // ABOUTME: Main application component with routing and providers
 // ABOUTME: Handles lazy loading and authentication protection for all routes
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,6 +43,27 @@ const PageLoader = () => {
 
 function App() {
   usePerformanceMonitor('App');
+
+  useEffect(() => {
+    console.log('🚀 App component mounted');
+    console.log('🔍 Environment check:', {
+      isDevelopment: import.meta.env.DEV,
+      isProduction: import.meta.env.PROD,
+      baseUrl: import.meta.env.BASE_URL,
+      supabaseUrl: import.meta.env.VITE_SUPABASE_URL || 'Using default'
+    });
+
+    // Check if Supabase client is available
+    try {
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        console.log('✅ Supabase client loaded successfully', !!supabase);
+      }).catch(error => {
+        console.error('❌ Failed to load Supabase client:', error);
+      });
+    } catch (error) {
+      console.error('❌ Error checking Supabase client:', error);
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

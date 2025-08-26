@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, Suspense } from "react";
+import React, { useState, useCallback, Suspense, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuestions } from "@/hooks/useQuestions";
 import { useResources } from "@/hooks/useResources";
@@ -16,6 +16,19 @@ const Index = () => {
   
   const { user, isAdmin, loading: authLoading, profile } = useAuth();
   const { toast } = useToast();
+  const [forceShowContent, setForceShowContent] = useState(false);
+  
+  // Emergency fallback if auth takes too long
+  useEffect(() => {
+    const emergencyTimeout = setTimeout(() => {
+      if (authLoading) {
+        console.warn('🚨 Emergency timeout - forcing content display');
+        setForceShowContent(true);
+      }
+    }, 15000); // 15 second emergency timeout
+
+    return () => clearTimeout(emergencyTimeout);
+  }, [authLoading]);
   
   // Only fetch data when user is authenticated and not loading
   const shouldFetchData = !authLoading && !!user;
@@ -33,16 +46,36 @@ const Index = () => {
     refetchQuestions();
   }, [toast, refetchQuestions]);
 
-  if (authLoading) {
+  // Show loading with enhanced debugging
+  if (authLoading && !forceShowContent) {
+    console.log('🔄 Index: Showing auth loading state', { authLoading, user: !!user, forceShowContent });
+    
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-foreground font-semibold">Loading application...</p>
+          <p className="text-muted-foreground text-sm mt-2">
+            Initializing authentication...
+          </p>
+          {/* Show emergency message after 10 seconds */}
+          <div className="mt-4">
+            <p className="text-xs text-muted-foreground">
+              If this takes longer than expected, try refreshing the page
+            </p>
+          </div>
         </div>
       </div>
     );
   }
+
+  console.log('🎯 Index: Rendering main content', { 
+    authLoading, 
+    user: !!user, 
+    isAdmin, 
+    forceShowContent,
+    profileLoaded: !!profile 
+  });
 
   return (
     <div className="min-h-screen bg-background">
