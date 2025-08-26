@@ -10,8 +10,8 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     headers: {
-      // Set cache headers for development server
-      'Cache-Control': mode === 'development' ? 'no-cache' : 'public, max-age=31536000, immutable'
+      // Set proper MIME types for module scripts
+      'Content-Type': 'application/javascript; charset=utf-8'
     }
   },
   plugins: [
@@ -25,12 +25,11 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: ['es2022', 'chrome89', 'firefox89', 'safari15'], // Target modern browsers to avoid polyfills
+    target: ['es2022', 'chrome89', 'firefox89', 'safari15'],
     minify: 'esbuild',
     cssCodeSplit: true,
     rollupOptions: {
       output: {
-        // Add cache-busting hashes to filenames for better caching
         assetFileNames: (assetInfo) => {
           if (!assetInfo.name) return `assets/[name]-[hash][extname]`;
           
@@ -46,12 +45,9 @@ export default defineConfig(({ mode }) => ({
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-        // Ensure proper module format
         format: 'es',
         manualChunks: (id) => {
-          // Create more granular chunks to reduce initial bundle size
           if (id.includes('node_modules')) {
-            // Separate large libraries into their own chunks
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-vendor';
             }
@@ -73,11 +69,9 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('recharts')) {
               return 'charts';
             }
-            // Group smaller vendors together
             return 'vendor';
           }
           
-          // Split application code by features for better caching
           if (id.includes('/pages/')) {
             return 'pages';
           }
@@ -95,10 +89,9 @@ export default defineConfig(({ mode }) => ({
     }
   },
   esbuild: {
-    target: 'es2022', // Ensure esbuild also targets modern browsers
-    legalComments: 'none' // Remove legal comments to reduce bundle size
+    target: 'es2022',
+    legalComments: 'none'
   },
-  // Add explicit MIME type handling
   define: {
     __DEV__: mode === 'development'
   }
