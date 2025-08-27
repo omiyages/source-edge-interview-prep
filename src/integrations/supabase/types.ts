@@ -265,6 +265,7 @@ export type Database = {
           position_name: string | null
           question: string
           question_type: string | null
+          recommended: boolean | null
           role: string
           scraped_at: string | null
           source_url: string | null
@@ -286,6 +287,7 @@ export type Database = {
           position_name?: string | null
           question: string
           question_type?: string | null
+          recommended?: boolean | null
           role: string
           scraped_at?: string | null
           source_url?: string | null
@@ -307,6 +309,7 @@ export type Database = {
           position_name?: string | null
           question?: string
           question_type?: string | null
+          recommended?: boolean | null
           role?: string
           scraped_at?: string | null
           source_url?: string | null
