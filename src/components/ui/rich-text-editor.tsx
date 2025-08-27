@@ -151,7 +151,7 @@ export const RichTextEditor = ({
   React.useEffect(() => {
     if (enableImagePaste && quillRef.current) {
       const quill = quillRef.current.getEditor();
-      const container = quill.container;
+      const container = quill.root;
       
       container.addEventListener('paste', handlePaste);
       
