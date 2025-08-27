@@ -117,26 +117,55 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
   });
 
   const validateForm = () => {
+    console.log('🔍 Starting form validation...');
+    console.log('📝 Form data to validate:', formData);
+    
     const errors: Record<string, string> = {};
     
-    const questionValidation = validateQuestionInput(formData.question);
-    if (!questionValidation.isValid) {
-      errors.question = questionValidation.message || "Invalid question";
-      logInvalidInput(`Question validation failed: ${questionValidation.message}`, user?.id);
+    // Check required fields first
+    if (!formData.question.trim()) {
+      errors.question = "Question is required";
+      console.log('❌ Question validation failed: empty');
+    } else {
+      const questionValidation = validateQuestionInput(formData.question);
+      if (!questionValidation.isValid) {
+        errors.question = questionValidation.message || "Invalid question";
+        console.log('❌ Question validation failed:', questionValidation.message);
+        logInvalidInput(`Question validation failed: ${questionValidation.message}`, user?.id);
+      } else {
+        console.log('✅ Question validation passed');
+      }
     }
     
-    const companyValidation = validateCompanyInput(formData.company);
-    if (!companyValidation.isValid) {
-      errors.company = companyValidation.message || "Invalid company";
-      logInvalidInput(`Company validation failed: ${companyValidation.message}`, user?.id);
+    if (!formData.company.trim()) {
+      errors.company = "Company is required";
+      console.log('❌ Company validation failed: empty');
+    } else {
+      const companyValidation = validateCompanyInput(formData.company);
+      if (!companyValidation.isValid) {
+        errors.company = companyValidation.message || "Invalid company";
+        console.log('❌ Company validation failed:', companyValidation.message);
+        logInvalidInput(`Company validation failed: ${companyValidation.message}`, user?.id);
+      } else {
+        console.log('✅ Company validation passed');
+      }
     }
     
-    const roleValidation = validateRoleInput(formData.role);
-    if (!roleValidation.isValid) {
-      errors.role = roleValidation.message || "Invalid role";
-      logInvalidInput(`Role validation failed: ${roleValidation.message}`, user?.id);
+    if (!formData.role.trim()) {
+      errors.role = "Role is required";
+      console.log('❌ Role validation failed: empty');
+    } else {
+      const roleValidation = validateRoleInput(formData.role);
+      if (!roleValidation.isValid) {
+        errors.role = roleValidation.message || "Invalid role";
+        console.log('❌ Role validation failed:', roleValidation.message);
+        logInvalidInput(`Role validation failed: ${roleValidation.message}`, user?.id);
+      } else {
+        console.log('✅ Role validation passed');
+      }
     }
     
+    console.log('📊 Validation results:', { errors, hasErrors: Object.keys(errors).length > 0 });
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -208,25 +237,33 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
   const submitQuestionMutation = useMutation({
     mutationFn: async (questionData: any) => {
-      console.log('📝 Submitting question...');
-      console.log('User:', user?.email);
-      console.log('Profile:', profile);
-      console.log('Question data:', questionData);
+      console.log('📝 Starting question submission process...');
+      console.log('👤 User:', user?.email);
+      console.log('🎭 Profile:', profile);
+      console.log('📊 Question data:', questionData);
       
-      const { data, error } = await supabase
-        .from('interview_questions')
-        .insert(questionData)
-        .select();
+      try {
+        const { data, error } = await supabase
+          .from('interview_questions')
+          .insert(questionData)
+          .select();
 
-      if (error) {
-        console.error('❌ Error submitting question:', error);
-        throw error;
+        if (error) {
+          console.error('❌ Database error submitting question:', error);
+          throw error;
+        }
+
+        console.log('✅ Question submitted successfully to database:', data);
+        return data;
+      } catch (dbError) {
+        console.error('❌ Exception during database operation:', dbError);
+        throw dbError;
       }
-
-      console.log('✅ Question submitted successfully:', data);
-      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🎉 Question submission mutation completed successfully:', data);
+      
+      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['questions'] });
       queryClient.invalidateQueries({ queryKey: ['all-questions-for-stage'] });
       queryClient.invalidateQueries({ queryKey: ['dropdown-options'] });
@@ -238,6 +275,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           : "Your question has been submitted for review and will appear once approved.",
       });
 
+      // Reset form
       setFormData({
         question: "",
         company: "",
@@ -268,7 +306,14 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       onSuccess();
     },
     onError: (error: any) => {
-      console.error('❌ Error submitting question:', error);
+      console.error('❌ Question submission mutation error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
       toast({
         title: "Error",
         description: error.message || "Failed to submit question. Please try again.",
@@ -279,52 +324,74 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🚀 Form submission started...');
     
-    if (!user) {
+    try {
+      if (!user) {
+        console.log('❌ No user found, aborting submission');
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to submit questions.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ User authenticated:', user.email);
+
+      const rateLimitKey = `submit_question_${user.id}`;
+      if (!checkRateLimit(rateLimitKey, 5, 300000)) {
+        console.log('❌ Rate limit exceeded for user:', user.id);
+        logRateLimitExceeded(`Question submission rate limit exceeded`, user.id);
+        toast({
+          title: "Rate limit exceeded",
+          description: "You're submitting questions too quickly. Please wait a moment and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Rate limit check passed');
+
+      if (!validateForm()) {
+        console.log('❌ Form validation failed, showing validation errors');
+        toast({
+          title: "Validation Error",
+          description: "Please correct the errors in the form.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Form validation passed, preparing question data...');
+
+      const questionData = {
+        question: sanitizeTextInput(formData.question),
+        company: sanitizeTextInput(formData.company),
+        role: sanitizeTextInput(formData.role),
+        category: sanitizeTextInput(formData.category),
+        interview_stage: sanitizeTextInput(formData.interview_stage),
+        additional_context: formData.additional_context.trim() ? formData.additional_context : null,
+        team: formData.team ? sanitizeTextInput(formData.team) : null,
+        position_name: formData.position_name.trim() ? sanitizeTextInput(formData.position_name) : null,
+        recommended: formData.recommended,
+        submitted_by: profile?.email || user.email,
+        question_type: 'user_submitted',
+        status: profile?.role === 'admin' ? 'approved' : 'pending',
+      };
+
+      console.log('📦 Prepared question data for submission:', questionData);
+      console.log('🔄 Triggering mutation...');
+
+      submitQuestionMutation.mutate(questionData);
+    } catch (submitError) {
+      console.error('❌ Exception during form submission:', submitError);
       toast({
-        title: "Authentication required",
-        description: "Please sign in to submit questions.",
+        title: "Submission Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      return;
     }
-
-    const rateLimitKey = `submit_question_${user.id}`;
-    if (!checkRateLimit(rateLimitKey, 5, 300000)) {
-      logRateLimitExceeded(`Question submission rate limit exceeded`, user.id);
-      toast({
-        title: "Rate limit exceeded",
-        description: "You're submitting questions too quickly. Please wait a moment and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!validateForm()) {
-      toast({
-        title: "Validation Error",
-        description: "Please correct the errors in the form.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const questionData = {
-      question: sanitizeTextInput(formData.question),
-      company: sanitizeTextInput(formData.company),
-      role: sanitizeTextInput(formData.role),
-      category: sanitizeTextInput(formData.category),
-      interview_stage: sanitizeTextInput(formData.interview_stage),
-      additional_context: formData.additional_context.trim() ? formData.additional_context : null,
-      team: formData.team ? sanitizeTextInput(formData.team) : null,
-      position_name: formData.position_name.trim() ? sanitizeTextInput(formData.position_name) : null,
-      recommended: formData.recommended,
-      submitted_by: profile?.email || user.email,
-      question_type: 'user_submitted',
-      status: profile?.role === 'admin' ? 'approved' : 'pending',
-    };
-
-    submitQuestionMutation.mutate(questionData);
   };
 
   return (
