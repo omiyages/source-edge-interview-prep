@@ -30,16 +30,16 @@ export const StageNavigation = ({ stages, selectedStage, onStageSelect }: StageN
             onClick={() => onStageSelect(stage)}
             className={`flex items-center gap-2 text-sm ${
               selectedStage?.id === stage.id 
-                ? "bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 text-white border-none" 
-                : ""
+                ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-none shadow-lg" 
+                : "bg-white hover:bg-gray-50 border-gray-200"
             }`}
           >
             <Badge 
               variant="secondary" 
-              className={`text-xs ${
+              className={`text-xs min-w-[20px] h-5 flex items-center justify-center ${
                 selectedStage?.id === stage.id 
                   ? "bg-white/20 text-white border-white/30" 
-                  : "bg-purple-gradient text-white"
+                  : "bg-gradient-to-r from-purple-600 to-purple-700 text-white border-none"
               }`}
             >
               {index + 1}
@@ -58,16 +58,16 @@ export const StageNavigation = ({ stages, selectedStage, onStageSelect }: StageN
             onClick={() => onStageSelect(stage)}
             className={`flex items-center gap-2 ${
               selectedStage?.id === stage.id 
-                ? "bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 text-white border-none" 
-                : ""
+                ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-none shadow-lg" 
+                : "bg-white hover:bg-gray-50 border-gray-200"
             }`}
           >
             <Badge 
               variant="secondary" 
-              className={`text-xs ${
+              className={`text-xs min-w-[20px] h-5 flex items-center justify-center ${
                 selectedStage?.id === stage.id 
                   ? "bg-white/20 text-white border-white/30" 
-                  : "bg-purple-gradient text-white"
+                  : "bg-gradient-to-r from-purple-600 to-purple-700 text-white border-none"
               }`}
             >
               {index + 1}
