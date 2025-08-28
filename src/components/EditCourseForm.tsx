@@ -75,7 +75,7 @@ export const EditCourseForm = ({ course, onSuccess }: EditCourseFormProps) => {
     setIsSubmitting(true);
 
     try {
-      // Update the course
+      // Update the course basic information
       const { error: courseError } = await supabase
         .from('courses')
         .update({
@@ -88,29 +88,64 @@ export const EditCourseForm = ({ course, onSuccess }: EditCourseFormProps) => {
 
       if (courseError) throw courseError;
 
-      // Delete existing stages
-      const { error: deleteError } = await supabase
+      // Handle stage updates more carefully to preserve relationships
+      const existingStageIds = stages
+        .filter(stage => stage.id && stage.id !== '')
+        .map(stage => stage.id);
+
+      // Get current stages from database
+      const { data: currentStages, error: fetchError } = await supabase
         .from('course_stages')
-        .delete()
+        .select('id')
         .eq('course_id', course.id);
 
-      if (deleteError) throw deleteError;
+      if (fetchError) throw fetchError;
 
-      // Insert updated stages
-      if (stages.length > 0) {
-        const stageInserts = stages.map((stage, index) => ({
-          course_id: course.id,
-          title: stage.title,
-          description: stage.description,
-          information: stage.information,
-          stage_order: index + 1,
-        }));
+      const currentStageIds = currentStages?.map(s => s.id) || [];
 
-        const { error: stagesError } = await supabase
+      // Delete stages that were removed (only those not in the new stages list)
+      const stagesToDelete = currentStageIds.filter(id => !existingStageIds.includes(id));
+      
+      if (stagesToDelete.length > 0) {
+        const { error: deleteError } = await supabase
           .from('course_stages')
-          .insert(stageInserts);
+          .delete()
+          .in('id', stagesToDelete);
 
-        if (stagesError) throw stagesError;
+        if (deleteError) throw deleteError;
+      }
+
+      // Update existing stages and insert new ones
+      for (let index = 0; index < stages.length; index++) {
+        const stage = stages[index];
+        
+        if (stage.id && stage.id !== '') {
+          // Update existing stage
+          const { error: updateError } = await supabase
+            .from('course_stages')
+            .update({
+              title: stage.title,
+              description: stage.description,
+              information: stage.information,
+              stage_order: index + 1,
+            })
+            .eq('id', stage.id);
+
+          if (updateError) throw updateError;
+        } else {
+          // Insert new stage
+          const { error: insertError } = await supabase
+            .from('course_stages')
+            .insert({
+              course_id: course.id,
+              title: stage.title,
+              description: stage.description,
+              information: stage.information,
+              stage_order: index + 1,
+            });
+
+          if (insertError) throw insertError;
+        }
       }
 
       toast({
