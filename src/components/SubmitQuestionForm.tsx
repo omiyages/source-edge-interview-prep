@@ -1,3 +1,4 @@
+
 // ABOUTME: Form component for submitting new interview questions with rich text support
 // ABOUTME: Handles question creation with company, featured status, and rich additional context
 
@@ -25,6 +26,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
   const [difficulty, setDifficulty] = useState("");
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
+  const [role, setRole] = useState("");
+  const [interviewStage, setInterviewStage] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -55,17 +58,16 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
     try {
       const { error } = await supabase
-        .from('questions')
+        .from('interview_questions')
         .insert({
           question: question.trim(),
-          answer: answer.trim() || null,
+          company: company.trim() || 'Unknown',
+          role: role.trim() || 'General',
+          interview_stage: interviewStage || 'Technical',
+          category: category || 'Technical',
           additional_context: additionalContext.trim() || null,
-          company: company.trim() || null,
-          difficulty: difficulty || null,
-          category: category || null,
-          subcategory: subcategory || null,
-          is_featured: isFeatured,
-          submitted_by: user.id,
+          recommended: isFeatured,
+          submitted_by: user.email,
           status: 'pending'
         });
 
@@ -84,6 +86,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       setDifficulty("");
       setCategory("");
       setSubcategory("");
+      setRole("");
+      setInterviewStage("");
       setIsFeatured(false);
       
       onSuccess();
@@ -115,54 +119,63 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       </div>
 
       <div>
-        <Label htmlFor="answer">Answer</Label>
-        <Textarea
-          id="answer"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder="Enter the answer (optional)..."
-          className="mt-1"
-          rows={4}
-        />
-      </div>
-
-      <div>
         <Label htmlFor="additional-context">Additional Context</Label>
         <div className="mt-1">
           <RichTextEditor
             value={additionalContext}
             onChange={setAdditionalContext}
             placeholder="Add any additional context, code snippets, or images..."
+            enableImagePaste={true}
           />
         </div>
       </div>
 
       <div>
-        <Label htmlFor="company">Company</Label>
+        <Label htmlFor="company">Company *</Label>
         <Input
           id="company"
           value={company}
           onChange={(e) => setCompany(e.target.value)}
-          placeholder="Company name (optional)..."
+          placeholder="Company name..."
           className="mt-1"
+          required
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="difficulty">Difficulty</Label>
-          <Select value={difficulty} onValueChange={setDifficulty}>
+          <Label htmlFor="role">Role *</Label>
+          <Select value={role} onValueChange={setRole} required>
             <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select difficulty" />
+              <SelectValue placeholder="Select role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Easy">Easy</SelectItem>
-              <SelectItem value="Medium">Medium</SelectItem>
-              <SelectItem value="Hard">Hard</SelectItem>
+              <SelectItem value="Frontend Engineer">Frontend Engineer</SelectItem>
+              <SelectItem value="Backend Engineer">Backend Engineer</SelectItem>
+              <SelectItem value="Full Stack Engineer">Full Stack Engineer</SelectItem>
+              <SelectItem value="Engineering Manager">Engineering Manager</SelectItem>
+              <SelectItem value="SRE/DevOps">SRE/DevOps</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
+        <div>
+          <Label htmlFor="interview_stage">Interview Stage</Label>
+          <Select value={interviewStage} onValueChange={setInterviewStage}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select stage" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Phone Screen">Phone Screen</SelectItem>
+              <SelectItem value="Technical Screen">Technical Screen</SelectItem>
+              <SelectItem value="On-site">On-site</SelectItem>
+              <SelectItem value="Final Round">Final Round</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="category">Category</Label>
           <Select value={category} onValueChange={setCategory}>
@@ -177,17 +190,17 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      <div>
-        <Label htmlFor="subcategory">Subcategory</Label>
-        <Input
-          id="subcategory"
-          value={subcategory}
-          onChange={(e) => setSubcategory(e.target.value)}
-          placeholder="Subcategory (optional)..."
-          className="mt-1"
-        />
+        <div>
+          <Label htmlFor="subcategory">Subcategory</Label>
+          <Input
+            id="subcategory"
+            value={subcategory}
+            onChange={(e) => setSubcategory(e.target.value)}
+            placeholder="Subcategory (optional)..."
+            className="mt-1"
+          />
+        </div>
       </div>
 
       <div className="flex items-center space-x-2">
