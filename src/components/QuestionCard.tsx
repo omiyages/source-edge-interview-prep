@@ -223,10 +223,6 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                       <span className="font-medium text-gray-900">Stage:</span>
                       <p className="text-sm text-gray-600">{question.interview_stage}</p>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-900">Type:</span>
-                      <p className="text-sm text-gray-600">{question.question_type}</p>
-                    </div>
                   </div>
                   
                   {question.additional_context && (
