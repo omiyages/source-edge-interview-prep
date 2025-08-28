@@ -1,4 +1,7 @@
 
+// ABOUTME: This component displays individual interview question cards with view/edit/delete functionality
+// ABOUTME: It handles question display, admin actions, and detailed question viewing in modal dialogs
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -110,11 +113,6 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
               >
                 {question.role}
               </Badge>
-              {question.status && (
-                <Badge variant="outline" className="text-xs font-medium px-2 py-1">
-                  {question.status}
-                </Badge>
-              )}
             </div>
             {isAdmin && (
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -183,7 +181,7 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                   View Question
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-lg font-semibold">Question Details</DialogTitle>
                 </DialogHeader>
@@ -198,11 +196,6 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                     >
                       {question.role}
                     </Badge>
-                    {question.status && (
-                      <Badge variant="outline" className="text-xs font-medium px-2 py-1">
-                        {question.status}
-                      </Badge>
-                    )}
                   </div>
                   
                   <div>
