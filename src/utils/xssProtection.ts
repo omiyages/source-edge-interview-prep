@@ -16,14 +16,18 @@ export const sanitizeHtml = (html: string, options: SanitizeOptions = {}): strin
   }
 
   const defaultConfig = {
-    ALLOWED_TAGS: options.allowedTags || ['p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'blockquote'],
-    ALLOWED_ATTR: options.allowedAttributes || ['class'],
+    ALLOWED_TAGS: options.allowedTags || [
+      'p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'blockquote', 
+      'h1', 'h2', 'h3', 'code', 'pre', 'span', 'div', 'img'
+    ],
+    ALLOWED_ATTR: options.allowedAttributes || ['class', 'style', 'src', 'alt', 'width', 'height'],
     KEEP_CONTENT: !options.stripTags,
     RETURN_DOM: false,
     RETURN_DOM_FRAGMENT: false,
     RETURN_DOM_IMPORT: false,
     FORBID_TAGS: ['script', 'object', 'embed', 'form', 'input', 'button', 'select', 'textarea'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'style'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur'],
+    ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
   };
 
   try {
@@ -36,8 +40,11 @@ export const sanitizeHtml = (html: string, options: SanitizeOptions = {}): strin
 
 export const sanitizeForDisplay = (content: string): string => {
   return sanitizeHtml(content, {
-    allowedTags: ['p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'blockquote', 'h1', 'h2', 'h3'],
-    allowedAttributes: ['class'],
+    allowedTags: [
+      'p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'blockquote', 
+      'h1', 'h2', 'h3', 'code', 'pre', 'span', 'div', 'img'
+    ],
+    allowedAttributes: ['class', 'style', 'src', 'alt', 'width', 'height'],
   });
 };
 

@@ -1,13 +1,18 @@
 
 import DOMPurify from 'dompurify';
 
-// Configure DOMPurify with secure defaults
+// Configure DOMPurify with secure defaults that preserve code formatting
 const sanitizeConfig = {
-  ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre'],
-  ALLOWED_ATTR: ['class'],
-  FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick', 'onmouseover'],
+  ALLOWED_TAGS: [
+    'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 
+    'code', 'pre', 'span', 'div', 'img'
+  ],
+  ALLOWED_ATTR: ['class', 'style', 'src', 'alt', 'width', 'height'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
   FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link', 'meta', 'iframe'],
   ALLOW_DATA_ATTR: false,
+  ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
 };
 
 export const sanitizeHtml = (html: string): string => {
