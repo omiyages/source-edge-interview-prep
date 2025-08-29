@@ -195,21 +195,40 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     setIsLoading(true);
 
     try {
+      // Use default values if no stage/category is selected
+      const finalInterviewStage = interviewStage || 'Technical Screen';
+      const finalCategory = category || 'Technical';
+
+      console.log('Submitting question with data:', {
+        question: question.trim(),
+        company: company,
+        role: role,
+        interview_stage: finalInterviewStage,
+        category: finalCategory,
+        additional_context: additionalContext.trim() || null,
+        recommended: isFeatured,
+        submitted_by: user.email,
+        status: 'pending'
+      });
+
       const { error } = await supabase
         .from('interview_questions')
         .insert({
           question: question.trim(),
           company: company,
           role: role,
-          interview_stage: interviewStage || 'Technical',
-          category: category || 'Technical',
+          interview_stage: finalInterviewStage,
+          category: finalCategory,
           additional_context: additionalContext.trim() || null,
           recommended: isFeatured,
           submitted_by: user.email,
           status: 'pending'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
 
       toast({
         title: "Success!",
@@ -230,7 +249,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       console.error('Error submitting question:', error);
       toast({
         title: "Error",
-        description: "Failed to submit question. Please try again.",
+        description: `Failed to submit question: ${error.message || 'Please try again'}`,
         variant: "destructive",
       });
     } finally {
