@@ -165,7 +165,7 @@ export const RichTextEditor = ({
   const editorHeight = isLargeEditor ? '400px' : '300px';
   
   return (
-    <div className={cn("rich-text-editor", className)}>
+    <div className={cn("rich-text-editor w-full overflow-hidden", className)}>
       <ReactQuill
         ref={quillRef}
         theme="snow"
@@ -181,65 +181,80 @@ export const RichTextEditor = ({
           height: editorHeight,
           fontWeight: 'normal',
           fontSize: '14px',
+          width: '100%',
+          maxWidth: '100%',
         }}
       />
       <style dangerouslySetInnerHTML={{
         __html: `
-          .ql-editor {
+          .rich-text-editor .ql-container {
+            min-height: ${editorHeight} !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+          }
+          .rich-text-editor .ql-editor {
             font-weight: normal !important;
             font-family: inherit;
             font-size: 14px !important;
             line-height: 1.5;
             min-height: ${isLargeEditor ? '350px' : '250px'} !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            word-wrap: break-word !important;
           }
-          .ql-container {
-            min-height: ${editorHeight} !important;
+          .rich-text-editor .ql-toolbar {
+            max-width: 100% !important;
+            overflow-x: auto !important;
           }
-          .ql-editor p {
+          .rich-text-editor .ql-editor p {
             font-weight: normal !important;
             font-size: 14px !important;
           }
-          .ql-editor strong {
+          .rich-text-editor .ql-editor strong {
             font-weight: bold !important;
           }
-          .ql-editor b {
+          .rich-text-editor .ql-editor b {
             font-weight: bold !important;
           }
-          .ql-editor li {
+          .rich-text-editor .ql-editor li {
             font-size: 14px !important;
           }
-          .ql-editor span {
+          .rich-text-editor .ql-editor span {
             font-size: 14px !important;
           }
-          .ql-editor h1 {
+          .rich-text-editor .ql-editor h1 {
             font-size: 18px !important;
           }
-          .ql-editor h2 {
+          .rich-text-editor .ql-editor h2 {
             font-size: 16px !important;
           }
-          .ql-editor h3 {
+          .rich-text-editor .ql-editor h3 {
             font-size: 14px !important;
           }
-          .ql-editor blockquote {
+          .rich-text-editor .ql-editor blockquote {
             font-size: 14px !important;
           }
-          .ql-editor code {
+          .rich-text-editor .ql-editor code {
             font-size: 14px !important;
           }
-          .ql-editor pre {
+          .rich-text-editor .ql-editor pre {
             font-size: 14px !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            word-wrap: break-word !important;
+            white-space: pre-wrap !important;
           }
-          .ql-editor img {
+          .rich-text-editor .ql-editor img {
             max-width: 100%;
             height: auto;
             margin: 10px 0;
             border-radius: 4px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
           }
-          .ql-toolbar .ql-picker-label {
+          .rich-text-editor .ql-toolbar .ql-picker-label {
             font-size: 14px !important;
           }
-          .ql-toolbar .ql-picker-item {
+          .rich-text-editor .ql-toolbar .ql-picker-item {
             font-size: 14px !important;
           }
         `

@@ -381,13 +381,16 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
               onChange={setAdditionalContext}
               placeholder="Add any additional context, code snippets, or images..."
               enableImagePaste={true}
+              className="overflow-hidden"
             />
           </div>
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? "Submitting..." : "Submit Question"}
-        </Button>
+        <div className="pt-4">
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? "Submitting..." : "Submit Question"}
+          </Button>
+        </div>
       </form>
 
       {/* New Option Dialog */}

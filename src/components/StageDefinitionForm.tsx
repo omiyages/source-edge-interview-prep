@@ -93,11 +93,14 @@ export const StageDefinitionForm = ({ stages, setStages }: StageDefinitionFormPr
 
             <div>
               <Label htmlFor={`information-${index}`}>Detailed Information</Label>
-              <RichTextEditor
-                value={stage.information}
-                onChange={(value) => updateStage(index, "information", value)}
-                placeholder="Detailed information about this stage, expectations, and guidelines"
-              />
+              <div className="overflow-hidden">
+                <RichTextEditor
+                  value={stage.information}
+                  onChange={(value) => updateStage(index, "information", value)}
+                  placeholder="Detailed information about this stage, expectations, and guidelines"
+                  className="overflow-hidden"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
