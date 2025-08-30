@@ -1,12 +1,13 @@
 
 // ABOUTME: Component for displaying practice questions organized by category
-// ABOUTME: Groups questions into sections like the learning resources
+// ABOUTME: Groups questions into collapsible sections like the learning resources
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Settings2, ChevronDown, ChevronRight } from "lucide-react";
 import QuestionCard from "./QuestionCard";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface InterviewQuestion {
@@ -42,6 +43,8 @@ export const StageQuestions = ({
   stageId,
   onQuestionsUpdate 
 }: StageQuestionsProps) => {
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+
   // Set up real-time subscription for stage questions
   useEffect(() => {
     if (!stageId || !onQuestionsUpdate) return;
@@ -81,6 +84,24 @@ export const StageQuestions = ({
     return acc;
   }, {} as Record<string, InterviewQuestion[]>) || {};
 
+  const toggleCategory = (category: string) => {
+    const newOpenCategories = new Set(openCategories);
+    if (newOpenCategories.has(category)) {
+      newOpenCategories.delete(category);
+    } else {
+      newOpenCategories.add(category);
+    }
+    setOpenCategories(newOpenCategories);
+  };
+
+  // Auto-open categories if there are questions
+  useEffect(() => {
+    if (questions && questions.length > 0 && openCategories.size === 0) {
+      const categories = Object.keys(questionsByCategory);
+      setOpenCategories(new Set(categories));
+    }
+  }, [questions, questionsByCategory, openCategories.size]);
+
   return (
     <Card className="border-gray-200 bg-white shadow-sm">
       <CardHeader className="pb-4">
@@ -101,25 +122,34 @@ export const StageQuestions = ({
       </CardHeader>
       <CardContent>
         {questions && questions.length > 0 ? (
-          <div className="space-y-8">
+          <div className="space-y-4">
             {Object.entries(questionsByCategory).map(([category, categoryQuestions]) => (
-              <div key={category} className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-medium text-gray-900">{category}</h3>
-                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                    ({categoryQuestions.length})
-                  </span>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {categoryQuestions.map((question) => (
-                    <QuestionCard 
-                      key={question.id} 
-                      question={question} 
-                      hideDelete={true}
-                    />
-                  ))}
-                </div>
-              </div>
+              <Collapsible
+                key={category}
+                open={openCategories.has(category)}
+                onOpenChange={() => toggleCategory(category)}
+              >
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-gray-900">{category}</h3>
+                    <span className="text-sm text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+                      ({categoryQuestions.length})
+                    </span>
+                  </div>
+                  {openCategories.has(category) ? (
+                    <ChevronDown className="w-4 h-4 text-gray-600" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-gray-600" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-4">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {categoryQuestions.map((question) => (
+                      <QuestionCard key={question.id} question={question} />
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             ))}
           </div>
         ) : (
