@@ -54,14 +54,6 @@
     font-size: 14px !important;
 }
 
-
-.flex.items-center.gap-2 {gap: 0rem !important;}
-
-.rounded-full {
-    background: none !important;
-}
-
-
   .bg-primary\/10.rounded-full.border.border-primary\/20.px-4.py-2 {
     text-align: center;
   }
