@@ -1,3 +1,4 @@
+
 // ABOUTME: Component for displaying individual interview question cards
 // ABOUTME: Supports hiding delete button for course pages to avoid confusion
 
@@ -137,7 +138,6 @@ const QuestionCard = ({ question, onQuestionUpdate, hideDelete = false }: Questi
                   <EditQuestionForm
                     question={question}
                     onSuccess={handleEditSuccess}
-                    onCancel={() => setIsEditDialogOpen(false)}
                   />
                 </DialogContent>
               </Dialog>
