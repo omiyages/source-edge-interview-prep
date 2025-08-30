@@ -1,4 +1,3 @@
-
 // ABOUTME: This component displays individual interview question cards with view/edit/delete functionality
 // ABOUTME: It handles question display, admin actions, and detailed question viewing in modal dialogs
 
@@ -37,9 +36,10 @@ interface InterviewQuestion {
 
 interface QuestionCardProps {
   question: InterviewQuestion;
+  showDeleteButton?: boolean;
 }
 
-const QuestionCard = ({ question }: QuestionCardProps) => {
+const QuestionCard = ({ question, showDeleteButton = true }: QuestionCardProps) => {
   const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -114,7 +114,7 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                 {question.role}
               </Badge>
             </div>
-            {isAdmin && (
+            {isAdmin && showDeleteButton && (
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                   <DialogTrigger asChild>
@@ -181,7 +181,7 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                   View Question
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
                 <DialogHeader>
                   <DialogTitle className="text-lg font-semibold">Question Details</DialogTitle>
                 </DialogHeader>
@@ -200,45 +200,48 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                   
                   <div>
                     <h3 className="font-medium text-gray-900 mb-2">Question</h3>
-                    <p className="text-sm text-gray-700">{question.question}</p>
+                    <p className="text-sm text-gray-700 break-words">{question.question}</p>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <span className="font-medium text-gray-900">Company:</span>
-                      <p className="text-sm text-gray-600">{question.company}</p>
+                      <p className="text-sm text-gray-600 break-words">{question.company}</p>
                     </div>
                     <div>
                       <span className="font-medium text-gray-900">Category:</span>
-                      <p className="text-sm text-gray-600">{question.category}</p>
+                      <p className="text-sm text-gray-600 break-words">{question.category}</p>
                     </div>
                     <div>
                       <span className="font-medium text-gray-900">Stage:</span>
-                      <p className="text-sm text-gray-600">{question.interview_stage}</p>
+                      <p className="text-sm text-gray-600 break-words">{question.interview_stage}</p>
                     </div>
                   </div>
                   
                   {question.additional_context && (
                     <div>
                       <h3 className="font-medium text-gray-900 mb-2">Additional Context</h3>
-                      <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                        <RichTextDisplay content={question.additional_context} className="text-sm" />
+                      <div className="p-3 bg-gray-50 rounded-md border border-gray-100 overflow-hidden">
+                        <RichTextDisplay 
+                          content={question.additional_context} 
+                          className="text-sm break-words overflow-wrap-anywhere max-w-full [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-words [&_code]:whitespace-pre-wrap" 
+                        />
                       </div>
                     </div>
                   )}
                   
                   {(question.team || question.position_name) && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {question.team && (
                         <div>
                           <span className="font-medium text-gray-900">Team:</span>
-                          <p className="text-sm text-gray-600">{question.team}</p>
+                          <p className="text-sm text-gray-600 break-words">{question.team}</p>
                         </div>
                       )}
                       {question.position_name && (
                         <div>
                           <span className="font-medium text-gray-900">Position:</span>
-                          <p className="text-sm text-gray-600">{question.position_name}</p>
+                          <p className="text-sm text-gray-600 break-words">{question.position_name}</p>
                         </div>
                       )}
                     </div>
@@ -251,7 +254,7 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                         {question.source_website && (
                           <div>
                             <span className="font-medium text-gray-900">Website:</span>
-                            <p className="text-sm text-gray-600">{question.source_website}</p>
+                            <p className="text-sm text-gray-600 break-words">{question.source_website}</p>
                           </div>
                         )}
                         {question.source_url && (
@@ -261,7 +264,7 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
                               href={question.source_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline break-all"
+                              className="text-sm text-blue-600 hover:underline break-all block"
                             >
                               {question.source_url}
                             </a>
