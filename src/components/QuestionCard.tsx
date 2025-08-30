@@ -1,4 +1,3 @@
-
 // ABOUTME: Card component for displaying individual interview questions with edit/delete actions
 // ABOUTME: Supports conditional display of delete button based on context
 
@@ -13,7 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import EditQuestionForm from "./EditQuestionForm";
+import { EditQuestionForm } from "./EditQuestionForm";
 
 interface InterviewQuestion {
   id: string;
