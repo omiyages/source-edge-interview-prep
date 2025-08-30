@@ -1,19 +1,18 @@
+// ABOUTME: Component for displaying individual interview question cards
+// ABOUTME: Supports hiding delete button for course pages to avoid confusion
 
-// ABOUTME: This component displays individual interview question cards with view/edit/delete functionality
-// ABOUTME: It handles question display, admin actions, and detailed question viewing in modal dialogs
-
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, Edit, Star, Eye } from "lucide-react";
+import { Edit2, Trash2, ExternalLink, Building, User, Calendar, Hash } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { EditQuestionForm } from "./EditQuestionForm";
-import { RichTextDisplay } from "@/components/ui/rich-text-display";
+import { supabase } from "@/integrations/supabase/client";
+import { checkQuestionDeletePermission, checkQuestionEditPermission } from "@/utils/questionPermissions";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { EditQuestionForm } from "@/components/EditQuestionForm";
 
 interface InterviewQuestion {
   id: string;
@@ -29,258 +28,214 @@ interface InterviewQuestion {
   source_url: string | null;
   source_website: string | null;
   scraped_at: string | null;
-  status?: string;
   team: string | null;
   position_name: string | null;
-  recommended?: boolean;
 }
 
 interface QuestionCardProps {
   question: InterviewQuestion;
+  onQuestionUpdate?: () => void;
+  hideDelete?: boolean;
 }
 
-const QuestionCard = ({ question }: QuestionCardProps) => {
-  const { isAdmin, user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+const QuestionCard = ({ question, onQuestionUpdate, hideDelete = false }: QuestionCardProps) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [canDelete, setCanDelete] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const { user, isAdmin } = useAuth();
+  const { toast } = useToast();
 
-  console.log('🗑️ QuestionCard delete check:', {
-    questionId: question.id,
-    userEmail: user?.email,
-    isAdmin,
-    canDelete: isAdmin
+  // Check permissions on component mount
+  useState(() => {
+    if (user?.email) {
+      checkQuestionDeletePermission(question.id, user.email, isAdmin).then(setCanDelete);
+      checkQuestionEditPermission(question.id, user.email, isAdmin).then(setCanEdit);
+    }
   });
 
-  const deleteQuestionMutation = useMutation({
-    mutationFn: async (questionId: string) => {
-      console.log('🗑️ Attempting to delete question:', questionId);
-      
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      console.log('🗑️ Deleting question:', question.id);
+
       const { error } = await supabase
         .from('interview_questions')
         .delete()
-        .eq('id', questionId);
-      
+        .eq('id', question.id);
+
       if (error) {
         console.error('❌ Delete error:', error);
         throw error;
       }
-      
+
       console.log('✅ Question deleted successfully');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interview-questions'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-pending-questions'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-all-questions'] });
+      
       toast({
-        title: "Question Deleted",
+        title: "Question deleted",
         description: "The question has been successfully deleted.",
       });
-    },
-    onError: (error: any) => {
-      console.error('❌ Delete mutation error:', error);
+
+      onQuestionUpdate?.();
+    } catch (error) {
+      console.error('💥 Error deleting question:', error);
       toast({
         title: "Error",
-        description: `Failed to delete question: ${error.message || 'Unknown error'}`,
+        description: "Failed to delete question. Please try again.",
         variant: "destructive",
       });
-    },
-  });
-
-  const getRoleTypeColor = (roleType: string) => {
-    switch (roleType) {
-      case 'Backend Engineer': return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'Frontend Engineer': return 'bg-green-50 text-green-700 border-green-200';
-      case 'SRE/DevOps': return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 'Engineering Manager': return 'bg-purple-50 text-purple-700 border-purple-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    onQuestionUpdate?.();
+    toast({
+      title: "Question updated",
+      description: "The question has been successfully updated.",
+    });
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   return (
-    <>
-      <Card className="group h-full flex flex-col bg-white hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-gray-300">
-        <CardHeader className="pb-3 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex flex-wrap gap-1.5 items-center">
-              {question.recommended && (
-                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-              )}
-              <Badge 
-                variant="secondary" 
-                className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
-              >
-                {question.role}
-              </Badge>
-            </div>
-            {isAdmin && (
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-gray-600 hover:text-primary hover:bg-primary/10"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle className="text-lg font-semibold">Edit Interview Question</DialogTitle>
-                    </DialogHeader>
-                    <EditQuestionForm 
-                      question={question} 
-                      onSuccess={() => setIsEditDialogOpen(false)} 
-                    />
-                  </DialogContent>
-                </Dialog>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    console.log('🗑️ Delete button clicked for question:', question.id);
-                    deleteQuestionMutation.mutate(question.id);
-                  }}
-                  disabled={deleteQuestionMutation.isPending}
-                  className="h-8 w-8 p-0 text-gray-600 hover:text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-          <CardTitle className="text-sm font-medium leading-relaxed text-gray-900 line-clamp-3">
+    <Card className="h-full flex flex-col hover:shadow-md transition-shadow duration-200 border-gray-200 bg-white">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 flex-1">
             {question.question}
           </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 flex-1 flex flex-col space-y-3">
-          <div className="space-y-2 flex-1">
-            <div className="text-xs text-gray-600">
-              <span className="font-medium text-gray-900">Company:</span> {question.company}
-            </div>
-            <div className="text-xs text-gray-600">
-              <span className="font-medium text-gray-900">Category:</span> {question.category}
-            </div>
-            <div className="text-xs text-gray-600">
-              <span className="font-medium text-gray-900">Stage:</span> {question.interview_stage}
-            </div>
-          </div>
-          
-          {/* View Question Button */}
-          <div className="pt-2">
-            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs border-gray-300 hover:bg-gray-50"
-                >
-                  <Eye className="w-3 h-3 mr-1" />
-                  View Question
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-lg font-semibold">Question Details</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {question.recommended && (
-                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                    )}
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
+          <div className="flex gap-1 flex-shrink-0">
+            {canEdit && (
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Edit Question</DialogTitle>
+                  </DialogHeader>
+                  <EditQuestionForm
+                    question={question}
+                    onSuccess={handleEditSuccess}
+                    onCancel={() => setIsEditDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
+            {canDelete && !hideDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Question</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this question? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-red-600 hover:bg-red-700"
+                      disabled={isDeleting}
                     >
-                      {question.role}
-                    </Badge>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Question</h3>
-                    <p className="text-sm text-gray-700">{question.question}</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="font-medium text-gray-900">Company:</span>
-                      <p className="text-sm text-gray-600">{question.company}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-900">Category:</span>
-                      <p className="text-sm text-gray-600">{question.category}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-900">Stage:</span>
-                      <p className="text-sm text-gray-600">{question.interview_stage}</p>
-                    </div>
-                  </div>
-                  
-                  {question.additional_context && (
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-2">Additional Context</h3>
-                      <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                        <RichTextDisplay content={question.additional_context} className="text-sm" />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(question.team || question.position_name) && (
-                    <div className="grid grid-cols-2 gap-4">
-                      {question.team && (
-                        <div>
-                          <span className="font-medium text-gray-900">Team:</span>
-                          <p className="text-sm text-gray-600">{question.team}</p>
-                        </div>
-                      )}
-                      {question.position_name && (
-                        <div>
-                          <span className="font-medium text-gray-900">Position:</span>
-                          <p className="text-sm text-gray-600">{question.position_name}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {(question.source_url || question.source_website) && (
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-2">Source Information</h3>
-                      <div className="space-y-1">
-                        {question.source_website && (
-                          <div>
-                            <span className="font-medium text-gray-900">Website:</span>
-                            <p className="text-sm text-gray-600">{question.source_website}</p>
-                          </div>
-                        )}
-                        {question.source_url && (
-                          <div>
-                            <span className="font-medium text-gray-900">URL:</span>
-                            <a 
-                              href={question.source_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline break-all"
-                            >
-                              {question.source_url}
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
-          
-          <div className="text-xs text-gray-500 pt-2 border-t border-gray-100">
-            Added {new Date(question.created_at).toLocaleDateString()}
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex-1 flex flex-col gap-3">
+        {/* Company and Role */}
+        <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-1 text-gray-600">
+            <Building className="w-3 h-3" />
+            <span className="font-medium">{question.company}</span>
           </div>
-        </CardContent>
-      </Card>
-    </>
+          <div className="flex items-center gap-1 text-gray-600">
+            <User className="w-3 h-3" />
+            <span>{question.role}</span>
+          </div>
+        </div>
+
+        {/* Category and Stage badges */}
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100">
+            <Hash className="w-2 h-2 mr-1" />
+            {question.category}
+          </Badge>
+          <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
+            {question.interview_stage}
+          </Badge>
+        </div>
+
+        {/* Additional context */}
+        {question.additional_context && (
+          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border-l-2 border-gray-300">
+            <p className="font-medium text-gray-700 mb-1">Context:</p>
+            <p>{truncateText(question.additional_context, 150)}</p>
+          </div>
+        )}
+
+        {/* Source link */}
+        {question.source_url && (
+          <div className="mt-auto">
+            <a
+              href={question.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Source: {question.source_website || 'External Link'}
+            </a>
+          </div>
+        )}
+
+        {/* Footer with metadata */}
+        <div className="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            <span>{formatDate(question.created_at)}</span>
+          </div>
+          {question.question_type === 'user_submitted' && question.submitted_by && (
+            <span className="text-green-600 font-medium">Community</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
