@@ -1,18 +1,19 @@
-// ABOUTME: Card component for displaying individual interview questions with edit/delete actions
-// ABOUTME: Supports conditional display of delete button based on context
+
+// ABOUTME: This component displays individual interview question cards with view/edit/delete functionality
+// ABOUTME: It handles question display, admin actions, and detailed question viewing in modal dialogs
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Eye } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Trash2, Edit, Star, Eye } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EditQuestionForm } from "./EditQuestionForm";
+import { RichTextDisplay } from "@/components/ui/rich-text-display";
 
 interface InterviewQuestion {
   id: string;
@@ -28,184 +29,257 @@ interface InterviewQuestion {
   source_url: string | null;
   source_website: string | null;
   scraped_at: string | null;
+  status?: string;
   team: string | null;
   position_name: string | null;
+  recommended?: boolean;
 }
 
 interface QuestionCardProps {
   question: InterviewQuestion;
-  showDeleteButton?: boolean;
 }
 
-const QuestionCard = ({ question, showDeleteButton = true }: QuestionCardProps) => {
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
+const QuestionCard = ({ question }: QuestionCardProps) => {
+  const { isAdmin, user } = useAuth();
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
+  console.log('🗑️ QuestionCard delete check:', {
+    questionId: question.id,
+    userEmail: user?.email,
+    isAdmin,
+    canDelete: isAdmin
+  });
+
+  const deleteQuestionMutation = useMutation({
+    mutationFn: async (questionId: string) => {
+      console.log('🗑️ Attempting to delete question:', questionId);
+      
       const { error } = await supabase
         .from('interview_questions')
         .delete()
-        .eq('id', question.id);
+        .eq('id', questionId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Delete error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Question deleted successfully');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      queryClient.invalidateQueries({ queryKey: ['interview-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-all-questions'] });
       toast({
-        title: "Question deleted",
+        title: "Question Deleted",
         description: "The question has been successfully deleted.",
       });
     },
-    onError: (error) => {
-      console.error('Error deleting question:', error);
+    onError: (error: any) => {
+      console.error('❌ Delete mutation error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete question. Please try again.",
+        description: `Failed to delete question: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     },
   });
 
-  const handleEditSuccess = () => {
-    setShowEditDialog(false);
-    queryClient.invalidateQueries({ queryKey: ['questions'] });
+  const getRoleTypeColor = (roleType: string) => {
+    switch (roleType) {
+      case 'Backend Engineer': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'Frontend Engineer': return 'bg-green-50 text-green-700 border-green-200';
+      case 'SRE/DevOps': return 'bg-orange-50 text-orange-700 border-orange-200';
+      case 'Engineering Manager': return 'bg-purple-50 text-purple-700 border-purple-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
   };
 
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow">
-        <CardContent className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-medium leading-relaxed line-clamp-3 flex-1">
-                {question.question}
-              </p>
+      <Card className="group h-full flex flex-col bg-white hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-gray-300">
+        <CardHeader className="pb-3 space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {question.recommended && (
+                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              )}
+              <Badge 
+                variant="secondary" 
+                className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
+              >
+                {question.role}
+              </Badge>
+            </div>
+            {isAdmin && (
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowViewDialog(true)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-                {isAdmin && (
-                  <>
+                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                  <DialogTrigger asChild>
                     <Button
-                      size="sm"
                       variant="ghost"
-                      onClick={() => setShowEditDialog(true)}
-                      className="h-8 w-8 p-0"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-gray-600 hover:text-primary hover:bg-primary/10"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    {showDeleteButton && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Question</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this question? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteMutation.mutate()}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              <Badge variant="secondary" className="text-xs">
-                {question.company}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {question.role}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {question.category}
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* View Question Dialog */}
-      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Question Details</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium mb-2">Question</h4>
-              <p className="text-sm text-gray-700">{question.question}</p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium mb-1">Company</h4>
-                <p className="text-sm text-gray-600">{question.company}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">Role</h4>
-                <p className="text-sm text-gray-600">{question.role}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">Category</h4>
-                <p className="text-sm text-gray-600">{question.category}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">Interview Stage</h4>
-                <p className="text-sm text-gray-600">{question.interview_stage}</p>
-              </div>
-            </div>
-
-            {question.additional_context && (
-              <div>
-                <h4 className="font-medium mb-2">Additional Context</h4>
-                <p className="text-sm text-gray-700">{question.additional_context}</p>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-lg font-semibold">Edit Interview Question</DialogTitle>
+                    </DialogHeader>
+                    <EditQuestionForm 
+                      question={question} 
+                      onSuccess={() => setIsEditDialogOpen(false)} 
+                    />
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    console.log('🗑️ Delete button clicked for question:', question.id);
+                    deleteQuestionMutation.mutate(question.id);
+                  }}
+                  disabled={deleteQuestionMutation.isPending}
+                  className="h-8 w-8 p-0 text-gray-600 hover:text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Question Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Question</DialogTitle>
-          </DialogHeader>
-          <EditQuestionForm
-            question={question}
-            onSuccess={handleEditSuccess}
-          />
-        </DialogContent>
-      </Dialog>
+          <CardTitle className="text-sm font-medium leading-relaxed text-gray-900 line-clamp-3">
+            {question.question}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 flex-1 flex flex-col space-y-3">
+          <div className="space-y-2 flex-1">
+            <div className="text-xs text-gray-600">
+              <span className="font-medium text-gray-900">Company:</span> {question.company}
+            </div>
+            <div className="text-xs text-gray-600">
+              <span className="font-medium text-gray-900">Category:</span> {question.category}
+            </div>
+            <div className="text-xs text-gray-600">
+              <span className="font-medium text-gray-900">Stage:</span> {question.interview_stage}
+            </div>
+          </div>
+          
+          {/* View Question Button */}
+          <div className="pt-2">
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs border-gray-300 hover:bg-gray-50"
+                >
+                  <Eye className="w-3 h-3 mr-1" />
+                  View Question
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-semibold">Question Details</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {question.recommended && (
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    )}
+                    <Badge 
+                      variant="secondary" 
+                      className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
+                    >
+                      {question.role}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-2">Question</h3>
+                    <p className="text-sm text-gray-700">{question.question}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="font-medium text-gray-900">Company:</span>
+                      <p className="text-sm text-gray-600">{question.company}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-900">Category:</span>
+                      <p className="text-sm text-gray-600">{question.category}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-900">Stage:</span>
+                      <p className="text-sm text-gray-600">{question.interview_stage}</p>
+                    </div>
+                  </div>
+                  
+                  {question.additional_context && (
+                    <div>
+                      <h3 className="font-medium text-gray-900 mb-2">Additional Context</h3>
+                      <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
+                        <RichTextDisplay content={question.additional_context} className="text-sm" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {(question.team || question.position_name) && (
+                    <div className="grid grid-cols-2 gap-4">
+                      {question.team && (
+                        <div>
+                          <span className="font-medium text-gray-900">Team:</span>
+                          <p className="text-sm text-gray-600">{question.team}</p>
+                        </div>
+                      )}
+                      {question.position_name && (
+                        <div>
+                          <span className="font-medium text-gray-900">Position:</span>
+                          <p className="text-sm text-gray-600">{question.position_name}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {(question.source_url || question.source_website) && (
+                    <div>
+                      <h3 className="font-medium text-gray-900 mb-2">Source Information</h3>
+                      <div className="space-y-1">
+                        {question.source_website && (
+                          <div>
+                            <span className="font-medium text-gray-900">Website:</span>
+                            <p className="text-sm text-gray-600">{question.source_website}</p>
+                          </div>
+                        )}
+                        {question.source_url && (
+                          <div>
+                            <span className="font-medium text-gray-900">URL:</span>
+                            <a 
+                              href={question.source_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline break-all"
+                            >
+                              {question.source_url}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          <div className="text-xs text-gray-500 pt-2 border-t border-gray-100">
+            Added {new Date(question.created_at).toLocaleDateString()}
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 };
