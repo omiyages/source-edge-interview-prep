@@ -81,6 +81,13 @@ export const StageQuestions = ({
     return acc;
   }, {} as Record<string, InterviewQuestion[]>) || {};
 
+  const handleRemoveFromStage = (questionId: string) => {
+    // Trigger questions update to refresh the view
+    if (onQuestionsUpdate) {
+      onQuestionsUpdate();
+    }
+  };
+
   return (
     <Card className="border-gray-200 bg-white shadow-sm">
       <CardHeader className="pb-4">
@@ -112,7 +119,12 @@ export const StageQuestions = ({
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {categoryQuestions.map((question) => (
-                    <QuestionCard key={question.id} question={question} />
+                    <QuestionCard 
+                      key={question.id} 
+                      question={question} 
+                      stageId={stageId}
+                      onRemoveFromStage={handleRemoveFromStage}
+                    />
                   ))}
                 </div>
               </div>

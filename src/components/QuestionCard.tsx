@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, Edit, Star, Eye } from "lucide-react";
+import { Trash2, Edit, Star, Eye, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -37,9 +37,17 @@ interface InterviewQuestion {
 interface QuestionCardProps {
   question: InterviewQuestion;
   showDeleteButton?: boolean;
+  // Course-specific props for removal instead of deletion
+  stageId?: string;
+  onRemoveFromStage?: (questionId: string) => void;
 }
 
-const QuestionCard = ({ question, showDeleteButton = true }: QuestionCardProps) => {
+const QuestionCard = ({ 
+  question, 
+  showDeleteButton = true, 
+  stageId, 
+  onRemoveFromStage 
+}: QuestionCardProps) => {
   const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -50,9 +58,54 @@ const QuestionCard = ({ question, showDeleteButton = true }: QuestionCardProps) 
     questionId: question.id,
     userEmail: user?.email,
     isAdmin,
-    canDelete: isAdmin
+    canDelete: isAdmin,
+    stageId,
+    hasRemoveHandler: !!onRemoveFromStage
   });
 
+  // Course-specific removal mutation
+  const removeFromStageMutation = useMutation({
+    mutationFn: async (questionId: string) => {
+      if (!stageId) throw new Error('Stage ID required for removal');
+      
+      console.log('🗑️ Attempting to remove question from stage:', { questionId, stageId });
+      
+      const { error } = await supabase
+        .from('stage_questions')
+        .delete()
+        .eq('stage_id', stageId)
+        .eq('question_id', questionId);
+      
+      if (error) {
+        console.error('❌ Remove from stage error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Question removed from stage successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stage-questions', stageId] });
+      toast({
+        title: "Question Removed",
+        description: "The question has been removed from this course stage.",
+      });
+      
+      // Call the parent's remove handler if provided
+      if (onRemoveFromStage) {
+        onRemoveFromStage(question.id);
+      }
+    },
+    onError: (error: any) => {
+      console.error('❌ Remove from stage mutation error:', error);
+      toast({
+        title: "Error",
+        description: `Failed to remove question: ${error.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Full question deletion mutation (for non-course contexts)
   const deleteQuestionMutation = useMutation({
     mutationFn: async (questionId: string) => {
       console.log('🗑️ Attempting to delete question:', questionId);
@@ -88,6 +141,18 @@ const QuestionCard = ({ question, showDeleteButton = true }: QuestionCardProps) 
     },
   });
 
+  const handleDeleteClick = () => {
+    if (stageId && onRemoveFromStage) {
+      // Course context: remove from stage
+      console.log('🗑️ Removing question from stage:', question.id);
+      removeFromStageMutation.mutate(question.id);
+    } else {
+      // Non-course context: delete question entirely
+      console.log('🗑️ Deleting question entirely:', question.id);
+      deleteQuestionMutation.mutate(question.id);
+    }
+  };
+
   const getRoleTypeColor = (roleType: string) => {
     switch (roleType) {
       case 'Backend Engineer': return 'bg-blue-50 text-blue-700 border-blue-200';
@@ -97,6 +162,12 @@ const QuestionCard = ({ question, showDeleteButton = true }: QuestionCardProps) 
       default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
+
+  // Determine which icon and tooltip to show
+  const deleteIcon = stageId && onRemoveFromStage ? X : Trash2;
+  const deleteTooltip = stageId && onRemoveFromStage 
+    ? "Remove from course" 
+    : "Delete question permanently";
 
   return (
     <>
@@ -139,14 +210,12 @@ const QuestionCard = ({ question, showDeleteButton = true }: QuestionCardProps) 
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    console.log('🗑️ Delete button clicked for question:', question.id);
-                    deleteQuestionMutation.mutate(question.id);
-                  }}
-                  disabled={deleteQuestionMutation.isPending}
+                  onClick={handleDeleteClick}
+                  disabled={deleteQuestionMutation.isPending || removeFromStageMutation.isPending}
                   className="h-8 w-8 p-0 text-gray-600 hover:text-red-600 hover:bg-red-50"
+                  title={deleteTooltip}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {React.createElement(deleteIcon, { className: "w-4 h-4" })}
                 </Button>
               </div>
             )}
