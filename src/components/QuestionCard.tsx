@@ -1,7 +1,7 @@
 // ABOUTME: This component displays individual interview question cards with view/edit/delete functionality
 // ABOUTME: It handles question display, admin actions, and detailed question viewing in modal dialogs
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
