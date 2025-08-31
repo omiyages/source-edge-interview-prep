@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Plus } from "lucide-react";
 import {
   Dialog,
@@ -61,8 +61,6 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
     interview_stage: question.interview_stage,
     category: question.category,
     additional_context: question.additional_context || "",
-    source_url: question.source_url || "",
-    source_website: question.source_website || "",
     team: question.team || "",
     position_name: question.position_name || "",
     recommended: question.recommended || false,
@@ -360,37 +358,15 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="source_website">Source Website</Label>
-            <Input
-              id="source_website"
-              value={formData.source_website}
-              onChange={(e) => setFormData({ ...formData, source_website: e.target.value })}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="source_url">Source URL</Label>
-            <Input
-              id="source_url"
-              value={formData.source_url}
-              onChange={(e) => setFormData({ ...formData, source_url: e.target.value })}
-              className="mt-1"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="recommended"
-            checked={formData.recommended}
-            onCheckedChange={(checked) => setFormData({ ...formData, recommended: checked as boolean })}
-          />
+        <div className="flex items-center justify-between">
           <Label htmlFor="recommended" className="text-sm font-medium">
             Mark as featured question
           </Label>
+          <Switch
+            id="recommended"
+            checked={formData.recommended}
+            onCheckedChange={(checked) => setFormData({ ...formData, recommended: checked })}
+          />
         </div>
 
         <div>
