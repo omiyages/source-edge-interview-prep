@@ -39,9 +39,9 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - Purple Gradient with Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-purple-gradient relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
+      {/* Left Side - Darker Purple Gradient with Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-800 to-purple-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/60" />
         
         {/* Geometric Background Elements */}
         <div className="absolute top-20 left-20 w-32 h-32 border border-white/20 rounded-lg rotate-12 transform"></div>
