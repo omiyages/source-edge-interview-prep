@@ -1,4 +1,3 @@
-
 // ABOUTME: Form component for editing interview questions with rich text support
 // ABOUTME: Provides comprehensive question editing with dynamic dropdown options and add new option functionality
 
@@ -369,15 +368,14 @@ export const EditQuestionForm = ({ question, onSuccess }: EditQuestionFormProps)
           />
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="additional-context">Additional Context</Label>
-          <div className="mt-1">
+          <div className="min-h-[250px]">
             <RichTextEditor
               value={formData.additional_context}
               onChange={(value) => setFormData({ ...formData, additional_context: value })}
               placeholder="Add any additional context, code snippets, or images..."
               enableImagePaste={true}
-              className="overflow-hidden"
             />
           </div>
         </div>

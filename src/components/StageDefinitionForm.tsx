@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,12 +94,11 @@ export const StageDefinitionForm = ({ stages, setStages }: StageDefinitionFormPr
 
             <div>
               <Label htmlFor={`information-${index}`}>Detailed Information</Label>
-              <div className="overflow-hidden">
+              <div className="min-h-[250px]">
                 <RichTextEditor
                   value={stage.information}
                   onChange={(value) => updateStage(index, "information", value)}
                   placeholder="Detailed information about this stage, expectations, and guidelines"
-                  className="overflow-hidden"
                 />
               </div>
             </div>

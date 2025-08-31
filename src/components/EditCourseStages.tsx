@@ -105,12 +105,11 @@ export const EditCourseStages = ({ stages, onStagesChange }: EditCourseStagesPro
                 <Label htmlFor={`stage-information-${index}`}>
                   Detailed Information
                 </Label>
-                <div className="overflow-hidden">
+                <div className="min-h-[250px]">
                   <RichTextEditor
                     value={stage.information}
                     onChange={(value) => updateStage(index, 'information', value)}
                     placeholder="Detailed information about this stage, preparation tips, what to expect, etc..."
-                    className="overflow-hidden"
                   />
                 </div>
               </div>
