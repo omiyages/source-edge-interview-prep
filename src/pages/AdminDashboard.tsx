@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, LogOut, Users, AlertCircle, Home } from "lucide-react";
+import { Check, X, Clock, LogOut, Users, AlertCircle, Home, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UsersList } from "@/components/UsersList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AssignCourseForm } from "@/components/AssignCourseForm";
 import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
+import { CreateUserForm } from "@/components/CreateUserForm";
 
 interface InterviewQuestion {
   id: string;
@@ -237,10 +238,14 @@ const AdminDashboard = () => {
         )}
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="create-user">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Create User
             </TabsTrigger>
             <TabsTrigger value="assignments">
               Course Assignments
@@ -255,6 +260,12 @@ const AdminDashboard = () => {
 
           <TabsContent value="users">
             <UsersList />
+          </TabsContent>
+
+          <TabsContent value="create-user">
+            <div className="flex justify-center">
+              <CreateUserForm />
+            </div>
           </TabsContent>
 
           <TabsContent value="assignments">
