@@ -20,6 +20,7 @@ import Resources from "./pages/Resources";
 import CourseDetail from "./pages/CourseDetail";
 import Track from "./pages/Track";
 import UserDashboard from "./pages/UserDashboard";
+import WovenByToyota from "./pages/WovenByToyota";
 
 function App() {
   return (
@@ -77,6 +78,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Track />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/woven-by-toyota" 
+                element={
+                  <ProtectedRoute>
+                    <WovenByToyota />
                   </ProtectedRoute>
                 } 
               />
