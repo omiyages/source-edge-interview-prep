@@ -11,10 +11,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, User, Mail, Shield, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Shield, AlertTriangle, Key, RefreshCw } from "lucide-react";
 import { validateEmail, validateAndSanitizeInput } from "@/utils/secureInputValidation";
 import { useAuth } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { generateSecurePassword, validatePasswordStrength } from "@/utils/passwordGenerator";
+import { Switch } from "@/components/ui/switch";
 
 export const CreateUserForm = () => {
   const [email, setEmail] = useState("");
@@ -23,13 +25,30 @@ export const CreateUserForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [useManualPassword, setUseManualPassword] = useState(false);
+  const [manualPassword, setManualPassword] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [] });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
+  const generatePassword = () => {
+    const newPassword = generateSecurePassword(16);
+    setGeneratedPassword(newPassword);
+    if (!useManualPassword) {
+      setManualPassword(newPassword);
+    }
+  };
+
+  const handleManualPasswordChange = (value: string) => {
+    setManualPassword(value);
+    const strength = validatePasswordStrength(value);
+    setPasswordStrength(strength);
+  };
+
   const createUserMutation = useMutation({
-    mutationFn: async (userData: { email: string; fullName: string; role: string }) => {
+    mutationFn: async (userData: { email: string; fullName: string; role: string; password?: string }) => {
       // Clear previous errors
       setValidationErrors([]);
 
@@ -43,6 +62,15 @@ export const CreateUserForm = () => {
       if (!nameValidation.isValid) allErrors.push(...nameValidation.errors);
       if (!roleValidation.isValid) allErrors.push(...roleValidation.errors);
 
+      // Validate manual password if provided
+      if (useManualPassword && userData.password) {
+        const strength = validatePasswordStrength(userData.password);
+        if (strength.score < 4) {
+          allErrors.push('Password is too weak. Please use a stronger password.');
+          allErrors.push(...strength.feedback);
+        }
+      }
+
       if (allErrors.length > 0) {
         setValidationErrors(allErrors);
         throw new Error('Validation failed');
@@ -54,13 +82,21 @@ export const CreateUserForm = () => {
         throw new Error('No active session found');
       }
 
+      // Prepare request body
+      const requestBody: any = {
+        email: userData.email.toLowerCase().trim(),
+        fullName: nameValidation.sanitizedValue,
+        role: roleValidation.sanitizedValue
+      };
+
+      // Add custom password if manual mode is enabled
+      if (useManualPassword && userData.password) {
+        requestBody.customPassword = userData.password;
+      }
+
       // Call secure edge function
       const { data, error } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          email: userData.email.toLowerCase().trim(),
-          fullName: nameValidation.sanitizedValue,
-          role: roleValidation.sanitizedValue
-        },
+        body: requestBody,
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         }
@@ -95,6 +131,9 @@ export const CreateUserForm = () => {
       setEmail("");
       setFullName("");
       setRole("user");
+      setManualPassword("");
+      setPasswordStrength({ score: 0, feedback: [] });
+      setUseManualPassword(false);
     },
     onError: (error: any) => {
       console.error('User creation error:', error);
@@ -120,18 +159,25 @@ export const CreateUserForm = () => {
       return;
     }
 
+    if (useManualPassword && !manualPassword.trim()) {
+      setValidationErrors(['Manual password is required when manual mode is enabled']);
+      return;
+    }
+
     createUserMutation.mutate({
       email: email.trim(),
       fullName: fullName.trim(),
-      role
+      role,
+      password: useManualPassword ? manualPassword : undefined
     });
   };
 
   const copyPasswordToClipboard = () => {
-    navigator.clipboard.writeText(generatedPassword);
+    const passwordToCopy = useManualPassword ? manualPassword : generatedPassword;
+    navigator.clipboard.writeText(passwordToCopy);
     toast({
       title: "Password Copied",
-      description: "Temporary password has been copied to clipboard.",
+      description: "Password has been copied to clipboard.",
     });
   };
 
@@ -206,6 +252,94 @@ export const CreateUserForm = () => {
             </Select>
           </div>
 
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password-mode" className="flex items-center gap-2">
+                <Key className="w-4 h-4" />
+                Password Mode
+              </Label>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="manual-password" className="text-sm">Auto</Label>
+                <Switch
+                  id="manual-password"
+                  checked={useManualPassword}
+                  onCheckedChange={setUseManualPassword}
+                />
+                <Label htmlFor="manual-password" className="text-sm">Manual</Label>
+              </div>
+            </div>
+
+            {useManualPassword ? (
+              <div className="space-y-2">
+                <Label htmlFor="manualPassword">Set Password *</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="manualPassword"
+                    type={showPassword ? "text" : "password"}
+                    value={manualPassword}
+                    onChange={(e) => handleManualPasswordChange(e.target.value)}
+                    placeholder="Enter secure password"
+                    disabled={createUserMutation.isPending}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+                {manualPassword && (
+                  <div className="text-xs space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span>Strength:</span>
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all ${
+                            passwordStrength.score < 2 ? 'bg-red-500' :
+                            passwordStrength.score < 4 ? 'bg-yellow-500' : 'bg-green-500'
+                          }`}
+                          style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    {passwordStrength.feedback.length > 0 && (
+                      <ul className="text-orange-600 list-disc list-inside">
+                        {passwordStrength.feedback.map((feedback, index) => (
+                          <li key={index}>{feedback}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generatePassword}
+                  disabled={createUserMutation.isPending}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Generate Password
+                </Button>
+                {generatedPassword && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyPasswordToClipboard}
+                  >
+                    Copy
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
           <Button 
             type="submit" 
             className="w-full" 
@@ -215,7 +349,7 @@ export const CreateUserForm = () => {
           </Button>
         </form>
 
-        {generatedPassword && (
+        {generatedPassword && !useManualPassword && (
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
             <h4 className="font-semibold text-yellow-800 mb-2">
               Temporary Password Generated

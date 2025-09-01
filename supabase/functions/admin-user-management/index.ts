@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -210,7 +211,7 @@ Deno.serve(async (req) => {
     }
     
     // Default to CREATE_USER for backward compatibility
-    const { email, fullName, role = 'user' } = requestData;
+    const { email, fullName, role = 'user', customPassword } = requestData;
     
     // 7. Validate and sanitize inputs with enhanced security
     if (!email) {
@@ -255,12 +256,29 @@ Deno.serve(async (req) => {
     console.log('📝 Creating user with enhanced security:', { 
       email: sanitizedEmail, 
       fullName: sanitizedFullName, 
-      role: sanitizedRole
+      role: sanitizedRole,
+      hasCustomPassword: !!customPassword
     });
 
-    // 8. Generate secure temporary password
-    const temporaryPassword = generateSecurePassword(16);
-    console.log('🔐 Generated secure temporary password');
+    // 8. Determine password to use
+    let passwordToUse: string;
+    if (customPassword && typeof customPassword === 'string' && customPassword.trim().length > 0) {
+      // Validate custom password
+      if (customPassword.length < 8) {
+        return new Response(
+          JSON.stringify({ error: 'Custom password must be at least 8 characters long' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      passwordToUse = customPassword;
+      console.log('🔐 Using custom password provided by admin');
+    } else {
+      passwordToUse = generateSecurePassword(16);
+      console.log('🔐 Generated secure temporary password');
+    }
 
     // 9. Check if user already exists
     console.log('🔍 Checking if user already exists...');
@@ -290,12 +308,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 10. Create user with secure password
+    // 10. Create user with the determined password
     console.log('👤 Creating new user...');
     
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: sanitizedEmail,
-      password: temporaryPassword,
+      password: passwordToUse,
       email_confirm: true,
       user_metadata: {
         full_name: sanitizedFullName
@@ -372,13 +390,14 @@ Deno.serve(async (req) => {
         created_at: newUser.user.created_at,
         email_confirmed: true
       },
-      temporaryPassword: temporaryPassword,
+      temporaryPassword: passwordToUse,
       security: {
         audit_logged: true,
         rate_limited: true,
-        input_sanitized: true
+        input_sanitized: true,
+        custom_password_used: !!customPassword
       },
-      note: 'Please share this temporary password securely with the user. They should change it on first login.'
+      note: 'Please share this password securely with the user. They should change it on first login.'
     };
 
     console.log('🎉 Returning secure success response');
