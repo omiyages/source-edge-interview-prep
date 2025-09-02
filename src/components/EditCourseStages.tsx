@@ -4,8 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Save, BookTemplate } from "lucide-react";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { StageTemplateDialog } from "@/components/StageTemplateDialog";
+import { StageTemplateSelector } from "@/components/StageTemplateSelector";
 
 interface CourseStage {
   id: string;
@@ -68,19 +70,39 @@ export const EditCourseStages = ({ stages, onStagesChange }: EditCourseStagesPro
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center">
                 <CardTitle className="text-sm">Stage {index + 1}</CardTitle>
-                {stages.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeStage(index)}
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  <StageTemplateDialog stage={stage}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      title="Save as template"
+                    >
+                      <Save className="w-4 h-4" />
+                    </Button>
+                  </StageTemplateDialog>
+                  {stages.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeStage(index)}
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              <StageTemplateSelector
+                onApplyTemplate={(templateData) => {
+                  const updatedStages = [...stages];
+                  updatedStages[index] = { ...updatedStages[index], ...templateData };
+                  onStagesChange(updatedStages);
+                }}
+              />
+              
               <div className="space-y-2">
                 <Label htmlFor={`stage-title-${index}`}>Stage Title *</Label>
                 <Input

@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Save } from "lucide-react";
+import { StageTemplateDialog } from "@/components/StageTemplateDialog";
+import { StageTemplateSelector } from "@/components/StageTemplateSelector";
 
 interface CourseStage {
   title: string;
@@ -60,18 +62,38 @@ export const StageDefinitionForm = ({ stages, setStages }: StageDefinitionFormPr
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h5 className="font-medium">Stage {stage.stage_order}</h5>
-            {stages.length > 1 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeStage(index)}
-                className="h-8 w-8 p-0"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              <StageTemplateDialog stage={stage}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  title="Save as template"
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
+              </StageTemplateDialog>
+              {stages.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeStage(index)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <StageTemplateSelector
+              onApplyTemplate={(templateData) => {
+                const newStages = [...stages];
+                newStages[index] = { ...newStages[index], ...templateData };
+                setStages(newStages);
+              }}
+            />
+            
             <div>
               <Label htmlFor={`title-${index}`}>Stage Title</Label>
               <Input
