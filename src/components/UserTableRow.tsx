@@ -77,6 +77,24 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) =>
           {user.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </TableCell>
+      <TableCell className="text-sm">
+        {user.last_login_at 
+          ? new Date(user.last_login_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric', 
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : 'Never'
+        }
+      </TableCell>
+      <TableCell className="text-sm">
+        {user.total_session_time_minutes 
+          ? `${Math.round(user.total_session_time_minutes / 60)}h ${user.total_session_time_minutes % 60}m`
+          : '0h 0m'
+        }
+      </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
           <EditCandidateDialog candidate={user} onUpdate={onUpdate} />
