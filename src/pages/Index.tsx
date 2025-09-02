@@ -1,4 +1,6 @@
+
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/hooks/useAuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,14 +22,14 @@ import { useResources } from "@/hooks/useResources";
 
 const Index = () => {
   const { user, isAdmin } = useAuth();
+  const { signOut } = useAuthContext();
   const navigate = useNavigate();
   const { courses, loading: coursesLoading } = useCourses(true, 6);
   const { resources, loading: resourcesLoading } = useResources(true, 3);
 
   const handleLogout = async () => {
     try {
-      const { signOut } = await import("@/hooks/useAuthContext");
-      // This will be handled by the auth context
+      await signOut();
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -228,7 +230,7 @@ const Index = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <Badge variant="outline" className="text-xs">
-                        {resource.type || 'Document'}
+                        Document
                       </Badge>
                     </div>
                     
