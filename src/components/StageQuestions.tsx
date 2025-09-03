@@ -5,6 +5,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Settings2 } from "lucide-react";
 import QuestionCard from "./QuestionCard";
 import { useEffect } from "react";
@@ -109,26 +110,34 @@ export const StageQuestions = ({
       </CardHeader>
       <CardContent>
         {questions && questions.length > 0 ? (
-          <div className="space-y-6">
+          <Accordion 
+            type="multiple" 
+            defaultValue={[Object.keys(questionsByCategory)[0]]} 
+            className="w-full"
+          >
             {Object.entries(questionsByCategory).map(([category, categoryQuestions]) => (
-              <div key={category} className="space-y-3">
-                <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                  <Badge variant="secondary">{category}</Badge>
-                  <span className="text-sm text-gray-500">({categoryQuestions.length})</span>
-                </h4>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {categoryQuestions.map((question) => (
-                    <QuestionCard 
-                      key={question.id} 
-                      question={question} 
-                      stageId={stageId}
-                      onRemoveFromStage={handleRemoveFromStage}
-                    />
-                  ))}
-                </div>
-              </div>
+              <AccordionItem key={category} value={category}>
+                <AccordionTrigger className="text-left hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{category}</Badge>
+                    <span className="text-sm text-gray-500">({categoryQuestions.length})</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
+                    {categoryQuestions.map((question) => (
+                      <QuestionCard 
+                        key={question.id} 
+                        question={question} 
+                        stageId={stageId}
+                        onRemoveFromStage={handleRemoveFromStage}
+                      />
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No questions assigned to this stage yet.</p>
