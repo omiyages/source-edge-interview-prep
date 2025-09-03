@@ -666,6 +666,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_enhanced_rate_limit: {
+        Args: {
+          max_attempts?: number
+          operation_name: string
+          window_minutes?: number
+        }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           max_attempts?: number
@@ -681,6 +689,22 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_secure_profile: {
+        Args: { target_user_id: string }
+        Returns: {
+          created_at: string
+          current_company: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          linkedin_profile: string
+          role: string
+          salary_info: Json
+          skillsets: string[]
+          years_of_experience: number
+        }[]
       }
       has_role: {
         Args: {
@@ -702,6 +726,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      mask_sensitive_profile_data: {
+        Args: {
+          is_own_profile?: boolean
+          profile_data: Json
+          requesting_user_role: string
+        }
+        Returns: Json
+      }
       update_user_role_with_audit: {
         Args: {
           new_role: string
@@ -710,6 +742,15 @@ export type Database = {
           user_agent?: string
         }
         Returns: Json
+      }
+      validate_question_input: {
+        Args: {
+          additional_context?: string
+          company_name: string
+          question_text: string
+          role_name: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

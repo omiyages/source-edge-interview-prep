@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus } from "lucide-react";
+import { useEnhancedSecureInput } from "@/hooks/useEnhancedSecureInput";
+import { Plus, Shield } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,8 +35,20 @@ interface SubmitQuestionFormProps {
 }
 
 export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
-  const [question, setQuestion] = useState("");
-  const [additionalContext, setAdditionalContext] = useState("");
+  // Secure input hooks with validation and rate limiting
+  const questionInput = useEnhancedSecureInput("", {
+    maxLength: 2000,
+    required: true,
+    rateLimitOperation: "submit_question",
+    rateLimitMaxAttempts: 3,
+    rateLimitWindowMinutes: 10,
+  });
+  
+  const contextInput = useEnhancedSecureInput("", {
+    maxLength: 1000,
+    allowHtml: true,
+  });
+
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [interviewStage, setInterviewStage] = useState("");
@@ -165,28 +178,10 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    if (!question.trim()) {
+    if (!company || !role) {
       toast({
         title: "Error", 
-        description: "Please enter a question.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!company) {
-      toast({
-        title: "Error", 
-        description: "Please select a company.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!role) {
-      toast({
-        title: "Error", 
-        description: "Please select a role.",
+        description: "Please select both company and role.",
         variant: "destructive",
       });
       return;
@@ -194,32 +189,21 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
     setIsLoading(true);
 
-    try {
+    // Use enhanced secure validation and submission
+    const success = await questionInput.validateAndSubmit(async () => {
       // Use default values if no stage/category is selected
       const finalInterviewStage = interviewStage || 'Technical Screen';
       const finalCategory = category || 'Technical';
 
-      console.log('Submitting question with data:', {
-        question: question.trim(),
-        company: company,
-        role: role,
-        interview_stage: finalInterviewStage,
-        category: finalCategory,
-        additional_context: additionalContext.trim() || null,
-        recommended: isFeatured,
-        submitted_by: user.email,
-        status: 'pending'
-      });
-
       const { error } = await supabase
         .from('interview_questions')
         .insert({
-          question: question.trim(),
+          question: questionInput.value,
           company: company,
           role: role,
           interview_stage: finalInterviewStage,
           category: finalCategory,
-          additional_context: additionalContext.trim() || null,
+          additional_context: contextInput.value || null,
           recommended: isFeatured,
           submitted_by: user.email,
           status: 'pending'
@@ -236,8 +220,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       });
 
       // Reset form
-      setQuestion("");
-      setAdditionalContext("");
+      questionInput.reset();
+      contextInput.reset();
       setCompany("");
       setRole("");
       setInterviewStage("");
@@ -245,32 +229,39 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       setIsFeatured(false);
       
       onSuccess();
-    } catch (error) {
-      console.error('Error submitting question:', error);
-      toast({
-        title: "Error",
-        description: `Failed to submit question: ${error.message || 'Please try again'}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
+
+    setIsLoading(false);
   };
 
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label htmlFor="question">Question *</Label>
+          <Label htmlFor="question" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Question *
+          </Label>
           <Textarea
             id="question"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            value={questionInput.value}
+            onChange={(e) => questionInput.setValue(e.target.value)}
             placeholder="Enter the interview question..."
             required
-            className="mt-1"
+            className={`mt-1 ${!questionInput.isValid ? 'border-red-500' : ''}`}
             rows={3}
+            disabled={questionInput.isBlocked}
           />
+          {questionInput.errors.length > 0 && (
+            <p className="text-sm text-red-600 mt-1">
+              {questionInput.errors.join(', ')}
+            </p>
+          )}
+          {questionInput.isBlocked && (
+            <p className="text-sm text-orange-600 mt-1">
+              Rate limited. Please wait before trying again.
+            </p>
+          )}
         </div>
 
         <div>
@@ -396,12 +387,17 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           <Label htmlFor="additional-context">Additional Context</Label>
           <div className="mt-1">
             <RichTextEditor
-              value={additionalContext}
-              onChange={setAdditionalContext}
+              value={contextInput.value}
+              onChange={contextInput.setValue}
               placeholder="Add any additional context, code snippets, or images..."
               enableImagePaste={true}
-              className="overflow-hidden"
+              className={`overflow-hidden ${!contextInput.isValid ? 'border-red-500' : ''}`}
             />
+            {contextInput.errors.length > 0 && (
+              <p className="text-sm text-red-600 mt-1">
+                {contextInput.errors.join(', ')}
+              </p>
+            )}
           </div>
         </div>
 

@@ -12,6 +12,7 @@ import { Separator } from "./ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { sanitizeForDisplay } from "@/utils/xssProtection";
 
 interface CourseStage {
   id: string;
@@ -36,8 +37,8 @@ const stageRatingSchema = z.object({
 
 const reviewFormSchema = z.object({
   stageRatings: z.array(stageRatingSchema),
-  supportFeedback: z.string().optional(),
-  improvementSuggestions: z.string().optional(),
+  supportFeedback: z.string().max(1000, "Support feedback must be less than 1000 characters").optional(),
+  improvementSuggestions: z.string().max(1000, "Improvement suggestions must be less than 1000 characters").optional(),
 });
 
 type ReviewFormData = z.infer<typeof reviewFormSchema>;
@@ -115,12 +116,13 @@ export const CourseReviewForm = ({ courseId, stages, onReviewSubmitted }: Course
     setIsSubmitting(true);
 
     try {
+      // Sanitize input data before submission
       const reviewData = {
         user_id: user.id,
         course_id: courseId,
         stage_ratings: data.stageRatings,
-        support_feedback: data.supportFeedback || null,
-        improvement_suggestions: data.improvementSuggestions || null,
+        support_feedback: data.supportFeedback ? sanitizeForDisplay(data.supportFeedback) : null,
+        improvement_suggestions: data.improvementSuggestions ? sanitizeForDisplay(data.improvementSuggestions) : null,
       };
 
       let result;
