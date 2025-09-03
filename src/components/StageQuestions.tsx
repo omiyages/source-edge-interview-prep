@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Settings2 } from "lucide-react";
 import QuestionCard from "./QuestionCard";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface InterviewQuestion {
@@ -44,6 +44,19 @@ export const StageQuestions = ({
   stageId,
   onQuestionsUpdate 
 }: StageQuestionsProps) => {
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategoryExpansion = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
   // Set up real-time subscription for stage questions
   useEffect(() => {
     if (!stageId || !onQuestionsUpdate) return;
@@ -111,32 +124,61 @@ export const StageQuestions = ({
       <CardContent>
         {questions && questions.length > 0 ? (
           <Accordion 
-            type="multiple" 
-            defaultValue={[Object.keys(questionsByCategory)[0]]} 
+            type="single" 
+            defaultValue={Object.keys(questionsByCategory)[0]} 
             className="w-full"
+            collapsible
           >
-            {Object.entries(questionsByCategory).map(([category, categoryQuestions]) => (
-              <AccordionItem key={category} value={category}>
-                <AccordionTrigger className="text-left hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{category}</Badge>
-                    <span className="text-sm text-gray-500">({categoryQuestions.length})</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
-                    {categoryQuestions.map((question) => (
-                      <QuestionCard 
-                        key={question.id} 
-                        question={question} 
-                        stageId={stageId}
-                        onRemoveFromStage={handleRemoveFromStage}
-                      />
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
+            {Object.entries(questionsByCategory).map(([category, categoryQuestions]) => {
+              const isExpanded = expandedCategories.has(category);
+              const displayedQuestions = isExpanded ? categoryQuestions : categoryQuestions.slice(0, 6);
+              const hasMore = categoryQuestions.length > 6;
+
+              return (
+                <AccordionItem key={category} value={category}>
+                  <AccordionTrigger className="text-left hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{category}</Badge>
+                      <span className="text-sm text-gray-500">({categoryQuestions.length})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
+                      {displayedQuestions.map((question) => (
+                        <QuestionCard 
+                          key={question.id} 
+                          question={question} 
+                          stageId={stageId}
+                          onRemoveFromStage={handleRemoveFromStage}
+                        />
+                      ))}
+                    </div>
+                    {hasMore && !isExpanded && (
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          variant="outline"
+                          onClick={() => toggleCategoryExpansion(category)}
+                          className="border-gray-300 hover:bg-gray-50"
+                        >
+                          View More ({categoryQuestions.length - 6} more)
+                        </Button>
+                      </div>
+                    )}
+                    {hasMore && isExpanded && (
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          variant="outline"
+                          onClick={() => toggleCategoryExpansion(category)}
+                          className="border-gray-300 hover:bg-gray-50"
+                        >
+                          Show Less
+                        </Button>
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
           </Accordion>
         ) : (
           <div className="text-center py-12">
