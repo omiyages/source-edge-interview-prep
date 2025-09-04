@@ -26,9 +26,17 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
   // Filter questions based on search term and filters
   const filteredQuestions = useMemo(() => {
     return questions.filter((question) => {
-      const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           question.role.toLowerCase().includes(searchTerm.toLowerCase());
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        question.question.toLowerCase().includes(searchLower) ||
+        question.company.toLowerCase().includes(searchLower) ||
+        question.role.toLowerCase().includes(searchLower) ||
+        question.category?.toLowerCase().includes(searchLower) ||
+        question.interview_stage?.toLowerCase().includes(searchLower) ||
+        question.additional_context?.toLowerCase().includes(searchLower) ||
+        question.team?.toLowerCase().includes(searchLower) ||
+        question.position_name?.toLowerCase().includes(searchLower) ||
+        question.source_website?.toLowerCase().includes(searchLower);
       
       const matchesCompany = !filters.company || question.company === filters.company;
       const matchesRole = !filters.role || question.role === filters.role;
