@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Plus, Settings2 } from "lucide-react";
-import { useEffect } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ExternalLink, Plus, Settings2, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface Resource {
   id: string;
@@ -22,6 +23,7 @@ interface StageResourcesSectionProps {
 }
 
 export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: StageResourcesSectionProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const { data: stageResources, isLoading, refetch } = useQuery({
     queryKey: ['stage-resources-display', stageId],
     queryFn: async () => {
@@ -86,75 +88,82 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
   }, {} as Record<string, Resource[]>);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Learning Resources</CardTitle>
-          {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onManageClick}
-            >
-              <Settings2 className="w-4 h-4 mr-2" />
-              Manage Resources
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {Object.keys(resourcesByCategory).length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">No resources assigned to this stage yet.</p>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CollapsibleTrigger className="flex items-center gap-2 hover:text-gray-600 transition-colors">
+              <CardTitle>Learning Resources</CardTitle>
+              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
             {isAdmin && (
               <Button
                 variant="outline"
+                size="sm"
                 onClick={onManageClick}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Resources
+                <Settings2 className="w-4 h-4 mr-2" />
+                Manage Resources
               </Button>
             )}
           </div>
-        ) : (
-          <div className="space-y-6">
-            {Object.entries(resourcesByCategory).map(([category, resources]) => (
-              <div key={category}>
-                <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                  <Badge variant="secondary">{category}</Badge>
-                  <span className="text-sm text-gray-500">({resources.length})</span>
-                </h4>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {resources.map((resource) => (
-                    <div
-                      key={resource.id}
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h5 className="font-medium text-sm mb-1">{resource.title}</h5>
-                          {resource.description && (
-                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{resource.description}</p>
-                          )}
-                          <p className="text-sm text-blue-600 truncate">{resource.url}</p>
-                        </div>
-                        <a
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-shrink-0 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent>
+            {Object.keys(resourcesByCategory).length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No resources assigned to this stage yet.</p>
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    onClick={onManageClick}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Resources
+                  </Button>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(resourcesByCategory).map(([category, resources]) => (
+                  <div key={category}>
+                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                      <Badge variant="secondary">{category}</Badge>
+                      <span className="text-sm text-gray-500">({resources.length})</span>
+                    </h4>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {resources.map((resource) => (
+                        <div
+                          key={resource.id}
+                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-medium text-sm mb-1">{resource.title}</h5>
+                              {resource.description && (
+                                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{resource.description}</p>
+                              )}
+                              <p className="text-sm text-blue-600 truncate">{resource.url}</p>
+                            </div>
+                            <a
+                              href={resource.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };
