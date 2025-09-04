@@ -11,6 +11,10 @@ interface InterviewQuestion {
   role: string;
   category: string;
   interview_stage: string;
+  additional_context: string | null;
+  team: string | null;
+  position_name: string | null;
+  source_website: string | null;
 }
 
 export const useQuestionManager = (stageId: string) => {
@@ -53,7 +57,7 @@ export const useQuestionManager = (stageId: string) => {
       console.log('Fetching all questions for stage management...');
       const { data, error } = await supabase
         .from('interview_questions')
-        .select('id, question, company, role, category, interview_stage')
+        .select('id, question, company, role, category, interview_stage, additional_context, team, position_name, source_website')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -97,9 +101,17 @@ export const useQuestionManager = (stageId: string) => {
   };
 
   const filteredQuestions = allQuestions?.filter(question => {
-    const matchesSearch = question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      question.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      question.role.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      question.question.toLowerCase().includes(searchLower) ||
+      question.company.toLowerCase().includes(searchLower) ||
+      question.role.toLowerCase().includes(searchLower) ||
+      question.category?.toLowerCase().includes(searchLower) ||
+      question.interview_stage?.toLowerCase().includes(searchLower) ||
+      question.additional_context?.toLowerCase().includes(searchLower) ||
+      question.team?.toLowerCase().includes(searchLower) ||
+      question.position_name?.toLowerCase().includes(searchLower) ||
+      question.source_website?.toLowerCase().includes(searchLower);
     
     const matchesCompany = !filters.company || question.company === filters.company;
     const matchesRole = !filters.role || question.role === filters.role;
