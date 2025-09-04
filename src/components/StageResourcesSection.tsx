@@ -23,7 +23,7 @@ interface StageResourcesSectionProps {
 }
 
 export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: StageResourcesSectionProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const { data: stageResources, isLoading, refetch } = useQuery({
     queryKey: ['stage-resources-display', stageId],
     queryFn: async () => {
@@ -87,51 +87,64 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
     return acc;
   }, {} as Record<string, Resource[]>);
 
+  const toggleCategoryExpansion = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
+
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CollapsibleTrigger className="flex items-center gap-2 hover:text-gray-600 transition-colors">
-              <CardTitle>Learning Resources</CardTitle>
-              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-            </CollapsibleTrigger>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Learning Resources</CardTitle>
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onManageClick}
+            >
+              <Settings2 className="w-4 h-4 mr-2" />
+              Manage Resources
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {Object.keys(resourcesByCategory).length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 mb-4">No resources assigned to this stage yet.</p>
             {isAdmin && (
               <Button
                 variant="outline"
-                size="sm"
                 onClick={onManageClick}
               >
-                <Settings2 className="w-4 h-4 mr-2" />
-                Manage Resources
+                <Plus className="w-4 h-4 mr-2" />
+                Add Resources
               </Button>
             )}
           </div>
-        </CardHeader>
-        <CollapsibleContent>
-          <CardContent>
-            {Object.keys(resourcesByCategory).length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">No resources assigned to this stage yet.</p>
-                {isAdmin && (
-                  <Button
-                    variant="outline"
-                    onClick={onManageClick}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Resources
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {Object.entries(resourcesByCategory).map(([category, resources]) => (
-                  <div key={category}>
-                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                      <Badge variant="secondary">{category}</Badge>
-                      <span className="text-sm text-gray-500">({resources.length})</span>
-                    </h4>
-                    <div className="grid gap-3 md:grid-cols-2">
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(resourcesByCategory).map(([category, resources]) => {
+              const isExpanded = expandedCategories.has(category);
+              
+              return (
+                <Collapsible key={category} open={isExpanded} onOpenChange={() => toggleCategoryExpansion(category)}>
+                  <CollapsibleTrigger className="flex items-center gap-2 w-full hover:text-gray-600 transition-colors">
+                    <Badge variant="secondary">{category}</Badge>
+                    <span className="text-sm text-gray-500">({resources.length})</span>
+                    <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <div className="grid gap-3 md:grid-cols-2 mt-3">
                       {resources.map((resource) => (
                         <div
                           key={resource.id}
@@ -157,13 +170,13 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
                         </div>
                       ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
