@@ -38,17 +38,17 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
   };
 
   return (
-    <Card className="group relative bg-white border-0 shadow-sm hover:shadow-lg transition-all duration-300 h-full overflow-hidden">
+    <Card className="group relative bg-card border border-border shadow-sm hover:shadow-xl transition-all duration-300 h-full overflow-hidden hover-lift">
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50/30 to-primary/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-card via-muted/30 to-primary/5 pointer-events-none" />
       
       {/* Category indicator bar at top */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 via-primary/60 to-primary/20" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/30 via-primary to-primary/30" />
 
-      <CardHeader className="relative pb-3">
-        <div className="flex items-start justify-between gap-3">
+      <CardHeader className="relative pb-4 pt-6">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2 leading-tight">
+            <CardTitle className="text-lg font-semibold text-foreground line-clamp-2 mb-3 leading-tight">
               {resource.title}
             </CardTitle>
             <Badge 
@@ -83,15 +83,15 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
         </div>
       </CardHeader>
 
-      <CardContent className="relative space-y-4 flex-1 flex flex-col">
+      <CardContent className="relative space-y-5 flex-1 flex flex-col px-6 pb-6">
         {resource.description && (
-          <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed flex-1">
+          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-1">
             {resource.description}
           </p>
         )}
         
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-          <span className="text-xs text-gray-500">
+        <div className="flex items-center justify-between pt-4 border-t border-border/50">
+          <span className="text-xs text-muted-foreground">
             Added {new Date(resource.created_at).toLocaleDateString('en-US', { 
               month: 'short', 
               day: 'numeric',
@@ -103,9 +103,9 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
             variant="outline"
             size="sm"
             onClick={() => window.open(resource.url, '_blank')}
-            className="hover:bg-primary hover:text-white hover:border-primary transition-all duration-200 font-medium"
+            className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-200 font-medium hover-scale"
           >
-            <Globe className="h-4 w-4 mr-1" />
+            <Globe className="h-4 w-4 mr-1.5" />
             Visit
           </Button>
         </div>
