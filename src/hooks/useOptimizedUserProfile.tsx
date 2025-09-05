@@ -45,13 +45,16 @@ export const useOptimizedUserProfile = (user: User | null) => {
     if (!user?.id || !profile) return;
 
     const sessionStart = Date.now();
+    let lastUpdateTime = sessionStart;
     let sessionUpdateTimeout: NodeJS.Timeout;
     
     const updateSessionTimeDebounced = () => {
-      const sessionDuration = Math.floor((Date.now() - sessionStart) / 1000 / 60); // minutes
+      const now = Date.now();
+      const incrementalMinutes = Math.floor((now - lastUpdateTime) / 1000 / 60); // minutes since last update
       
-      if (sessionDuration > 0) {
-        updateSessionTime(user.id, sessionDuration);
+      if (incrementalMinutes > 0) {
+        updateSessionTime(user.id, incrementalMinutes);
+        lastUpdateTime = now; // Update the last update time
       }
     };
 
