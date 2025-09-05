@@ -7,6 +7,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { NotificationBadge } from "@/components/ui/notification-badge";
+import { useAssignedCoursesCount } from "@/hooks/useAssignedCoursesCount";
 
 interface HeroSectionProps {
   isAdmin: boolean;
@@ -19,14 +21,16 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
   const { signOut, profile } = useAuth();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { count: assignedCoursesCount } = useAssignedCoursesCount();
 
   const NavigationItems = () => (
     <>
       {!isAdmin && (
         <Link to="/dashboard">
-          <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+          <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-colors font-medium relative">
             <BookOpen className="w-4 h-4 mr-2" />
             My Dashboard
+            <NotificationBadge count={assignedCoursesCount} />
           </Button>
         </Link>
       )}
