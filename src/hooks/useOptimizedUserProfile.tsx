@@ -44,6 +44,7 @@ export const useOptimizedUserProfile = (user: User | null) => {
   useEffect(() => {
     if (!user?.id || !profile) return;
 
+    console.log('🕒 Starting session tracking for user:', user.email);
     const sessionStart = Date.now();
     let lastUpdateTime = sessionStart;
     let sessionUpdateTimeout: NodeJS.Timeout;
@@ -52,7 +53,10 @@ export const useOptimizedUserProfile = (user: User | null) => {
       const now = Date.now();
       const incrementalMinutes = Math.floor((now - lastUpdateTime) / 1000 / 60); // minutes since last update
       
+      console.log(`⏱️ Session update check - Incremental minutes: ${incrementalMinutes}, User: ${user.email}`);
+      
       if (incrementalMinutes > 0) {
+        console.log(`✅ Updating session time by ${incrementalMinutes} minutes for user: ${user.email}`);
         updateSessionTime(user.id, incrementalMinutes);
         lastUpdateTime = now; // Update the last update time
       }

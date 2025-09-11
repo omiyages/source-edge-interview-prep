@@ -13,6 +13,7 @@ import { UsersList } from "@/components/UsersList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AssignCourseForm } from "@/components/AssignCourseForm";
 import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
+import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
 
 interface InterviewQuestion {
@@ -238,7 +239,7 @@ const AdminDashboard = () => {
         )}
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -249,6 +250,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="assignments">
               Course Assignments
+            </TabsTrigger>
+            <TabsTrigger value="progress">
+              Course Progress
             </TabsTrigger>
             <TabsTrigger value="reviews">
               Course Reviews
@@ -270,6 +274,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="assignments">
             <AssignCourseForm />
+          </TabsContent>
+
+          <TabsContent value="progress">
+            <CourseProgressList />
           </TabsContent>
 
           <TabsContent value="reviews">

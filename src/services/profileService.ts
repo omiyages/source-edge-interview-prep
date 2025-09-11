@@ -106,6 +106,8 @@ export const updateLastLogin = async (userId: string): Promise<void> => {
 
 export const updateSessionTime = async (userId: string, additionalMinutes: number): Promise<void> => {
   try {
+    console.log(`🕐 Attempting to update session time: ${additionalMinutes} minutes for user ${userId}`);
+    
     const { data: currentProfile } = await supabase
       .from('profiles')
       .select('total_session_time_minutes')
@@ -113,19 +115,28 @@ export const updateSessionTime = async (userId: string, additionalMinutes: numbe
       .single();
 
     if (currentProfile) {
+      const currentTime = currentProfile.total_session_time_minutes || 0;
+      const newTime = currentTime + additionalMinutes;
+      
+      console.log(`📊 Session time update: ${currentTime} -> ${newTime} minutes for user ${userId}`);
+      
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          total_session_time_minutes: (currentProfile.total_session_time_minutes || 0) + additionalMinutes,
+          total_session_time_minutes: newTime,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);
 
       if (error) {
-        console.error('Error updating session time:', error);
+        console.error('❌ Error updating session time:', error);
+      } else {
+        console.log(`✅ Session time updated successfully: ${newTime} minutes for user ${userId}`);
       }
+    } else {
+      console.warn(`⚠️ No profile found for user ${userId} when updating session time`);
     }
   } catch (error) {
-    console.error('Unexpected error updating session time:', error);
+    console.error('❌ Unexpected error updating session time:', error);
   }
 };
