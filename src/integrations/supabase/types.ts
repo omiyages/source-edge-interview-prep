@@ -682,6 +682,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      enable_secure_profile_access: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       enhanced_check_role_change_rate_limit: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -689,6 +693,28 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_profiles_secure: {
+        Args: {
+          include_sensitive_fields?: boolean
+          requesting_user_role?: string
+          target_user_ids?: string[]
+        }
+        Returns: {
+          created_at: string
+          current_company: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          last_login_at: string
+          linkedin_profile: string
+          masked_salary_range: string
+          role: string
+          skillsets: string[]
+          total_session_time_minutes: number
+          years_of_experience: number
+        }[]
       }
       get_secure_profile: {
         Args: { target_user_id: string }
@@ -732,6 +758,10 @@ export type Database = {
           profile_data: Json
           requesting_user_role: string
         }
+        Returns: Json
+      }
+      update_profile_secure: {
+        Args: { profile_updates: Json; target_user_id: string }
         Returns: Json
       }
       update_user_role_with_audit: {
