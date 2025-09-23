@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { generateSecurePassword, validatePasswordStrength } from "@/utils/passwordGenerator";
 import { Switch } from "@/components/ui/switch";
+import { StickyFormActions } from "@/components/ui/sticky-form-actions";
 
 export const CreateUserForm = () => {
   const [email, setEmail] = useState("");
@@ -193,7 +194,7 @@ export const CreateUserForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-16">
           {validationErrors.length > 0 && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
@@ -340,13 +341,14 @@ export const CreateUserForm = () => {
             )}
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={createUserMutation.isPending}
-          >
-            {createUserMutation.isPending ? "Creating User..." : "Create User"}
-          </Button>
+          <StickyFormActions>
+            <Button 
+              type="submit" 
+              disabled={createUserMutation.isPending}
+            >
+              {createUserMutation.isPending ? "Creating User..." : "Create User"}
+            </Button>
+          </StickyFormActions>
         </form>
 
         {generatedPassword && !useManualPassword && (

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { StickyFormActions } from "@/components/ui/sticky-form-actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -72,7 +73,7 @@ export const EditResourceForm = ({ resource, onSuccess }: EditResourceFormProps)
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 pb-16">
       <div className="space-y-2">
         <Label htmlFor="title">Title *</Label>
         <Input
@@ -125,9 +126,11 @@ export const EditResourceForm = ({ resource, onSuccess }: EditResourceFormProps)
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={updateResourceMutation.isPending}>
-        {updateResourceMutation.isPending ? "Updating..." : "Update Resource"}
-      </Button>
+      <StickyFormActions>
+        <Button type="submit" disabled={updateResourceMutation.isPending}>
+          {updateResourceMutation.isPending ? "Updating..." : "Update Resource"}
+        </Button>
+      </StickyFormActions>
     </form>
   );
 };

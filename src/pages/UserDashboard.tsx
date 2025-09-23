@@ -13,6 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen, TrendingUp, LogOut, Home, CheckCircle } from 'lucide-react';
 import { slugify } from '@/utils/slugify';
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 const UserDashboard = () => {
   const { user, profile, loading, isAdmin, signOut } = useAuth();
@@ -124,6 +127,7 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Dashboard' }]} className="mb-4" />
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -162,19 +166,41 @@ const UserDashboard = () => {
           </TabsList>
 
           <TabsContent value="progress">
-            {coursesLoading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-foreground font-semibold">Loading your progress...</p>
+            {coursesLoading && (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader className="pb-3">
+                      <LoadingSkeleton lines={1} className="mb-2" />
+                      <LoadingSkeleton lines={1} />
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <LoadingSkeleton lines={3} />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {!coursesLoading && (assignedCourses?.length ?? 0) > 0 && (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {assignedCourses?.map((assignment) => (
                   <Card key={assignment.course_id} className="hover:shadow-lg transition-shadow duration-200">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg leading-tight">
-                        {assignment.courses?.title || 'Course'}
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg leading-tight">
+                          {assignment.courses?.title || 'Course'}
+                        </CardTitle>
+                        <div className="relative inline-flex items-center justify-center">
+                          <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                            <path className="text-muted stroke-current" strokeWidth="3" fill="none" d="M18 2.0845a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path className="text-primary stroke-current" strokeWidth="3" strokeLinecap="round" fill="none"
+                              strokeDasharray={`${assignment.progressPercentage}, 100`}
+                              d="M18 2.0845a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                          </svg>
+                          <span className="absolute text-xs font-semibold">{assignment.progressPercentage}%</span>
+                        </div>
+                      </div>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="space-y-4">
@@ -184,9 +210,7 @@ const UserDashboard = () => {
                             {assignment.progressPercentage}%
                           </span>
                         </div>
-                        
                         <Progress value={assignment.progressPercentage} className="h-3" />
-                        
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <CheckCircle className="h-4 w-4 text-green-600" />
@@ -194,12 +218,11 @@ const UserDashboard = () => {
                           </span>
                           <span>{assignment.totalStages} total stages</span>
                         </div>
-                        
                         <Button 
                           className="w-full mt-4" 
                           onClick={() => navigate(`/course/${slugify(assignment.courses?.title || '')}`)}
                         >
-                          Continue Learning
+                          Continue
                         </Button>
                       </div>
                     </CardContent>
@@ -207,23 +230,34 @@ const UserDashboard = () => {
                 ))}
               </div>
             )}
-            
-            {assignedCourses?.length === 0 && !coursesLoading && (
-              <div className="text-center py-12">
-                <TrendingUp className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No progress yet</h3>
-                <p className="text-muted-foreground">Start learning to see your progress here.</p>
-              </div>
+
+            {!coursesLoading && (assignedCourses?.length ?? 0) === 0 && (
+              <EmptyState
+                title="No progress yet"
+                description="Start learning to see your progress here."
+                icon={<TrendingUp className="w-16 h-16 mx-auto text-muted-foreground" />}
+              />
             )}
           </TabsContent>
 
           <TabsContent value="courses">
-            {coursesLoading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-foreground font-semibold">Loading your courses...</p>
+            {coursesLoading && (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader className="pb-3">
+                      <LoadingSkeleton lines={1} className="mb-2" />
+                      <LoadingSkeleton lines={1} />
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <LoadingSkeleton lines={3} />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {!coursesLoading && (assignedCourses?.length ?? 0) > 0 && (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {assignedCourses?.map((assignment) => (
                   <Card key={assignment.id} className="hover:shadow-lg transition-shadow duration-200">
@@ -237,14 +271,11 @@ const UserDashboard = () => {
                         <p className="text-sm text-muted-foreground">
                           {assignment.courses?.description}
                         </p>
-                        
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Progress:</span>
                           <span className="font-medium">{assignment.progressPercentage}%</span>
                         </div>
-                        
                         <Progress value={assignment.progressPercentage} className="h-2" />
-                        
                         <Button 
                           className="w-full" 
                           onClick={() => navigate(`/course/${slugify(assignment.courses?.title || '')}`)}
@@ -258,13 +289,13 @@ const UserDashboard = () => {
                 ))}
               </div>
             )}
-            
-            {assignedCourses?.length === 0 && !coursesLoading && (
-              <div className="text-center py-12">
-                <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No courses assigned</h3>
-                <p className="text-muted-foreground">Contact your administrator to get course assignments.</p>
-              </div>
+
+            {!coursesLoading && (assignedCourses?.length ?? 0) === 0 && (
+              <EmptyState
+                title="No courses assigned"
+                description="Contact your administrator to get course assignments."
+                icon={<BookOpen className="w-16 h-16 mx-auto text-muted-foreground" />}
+              />
             )}
           </TabsContent>
         </Tabs>

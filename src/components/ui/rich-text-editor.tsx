@@ -1,7 +1,7 @@
 // ABOUTME: Rich text editor component using ReactQuill for formatted text input
 // ABOUTME: Provides toolbar for formatting options and maintains consistent styling with image paste support
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useMemo, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cn } from '@/lib/utils';
@@ -46,13 +46,43 @@ export const RichTextEditor = ({
 }: RichTextEditorProps) => {
   const quillRef = useRef<ReactQuill>(null);
   const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
 
   const uploadImage = useCallback(async (file: File): Promise<string | null> => {
     try {
+      // Validate file type and size before upload
+      const allowedTypes = new Set([
+        'image/png',
+        'image/jpeg',
+        'image/jpg',
+        'image/webp',
+        'image/gif'
+      ]);
+      const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+
+      if (!allowedTypes.has(file.type) || file.type === 'image/svg+xml') {
+        toast({
+          title: "Unsupported file type",
+          description: "Please upload PNG, JPG, WEBP, or GIF images.",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      if (file.size > maxSizeBytes) {
+        toast({
+          title: "File too large",
+          description: "Please upload images up to 5MB.",
+          variant: "destructive",
+        });
+        return null;
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `question-images/${fileName}`;
 
+      setIsUploading(true);
       const { error: uploadError } = await supabase.storage
         .from('uploads')
         .upload(filePath, file);
@@ -82,6 +112,12 @@ export const RichTextEditor = ({
       return null;
     }
   }, [toast]);
+  
+  React.useEffect(() => {
+    return () => {
+      setIsUploading(false);
+    };
+  }, []);
 
   const handlePaste = useCallback(async (event: ClipboardEvent) => {
     if (!enableImagePaste) return;
@@ -109,6 +145,7 @@ export const RichTextEditor = ({
         const index = range ? range.index : quill.getLength();
         quill.insertEmbed(index, 'image', imageUrl);
       }
+      setIsUploading(false);
     }
   }, [enableImagePaste, uploadImage, toast]);
 
@@ -134,6 +171,7 @@ export const RichTextEditor = ({
         const index = range ? range.index : quill.getLength();
         quill.insertEmbed(index, 'image', imageUrl);
       }
+      setIsUploading(false);
     };
   }, [uploadImage, toast]);
 
@@ -179,6 +217,10 @@ export const RichTextEditor = ({
           maxWidth: '100%',
         }}
       />
+      <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+        <span>{`${(value || '').replace(/<[^>]+>/g, '').length} chars`}</span>
+        {isUploading && <span>Uploading image…</span>}
+      </div>
       <style dangerouslySetInnerHTML={{
         __html: `
           .rich-text-editor .ql-container {

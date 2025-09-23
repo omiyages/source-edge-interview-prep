@@ -9,6 +9,10 @@ import { ResourcesFilters } from "@/components/ResourcesFilters";
 import { ResourcesList } from "@/components/ResourcesList";
 import { ResourcesEmpty } from "@/components/ResourcesEmpty";
 import { ResourcesLoading } from "@/components/ResourcesLoading";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FolderX } from "lucide-react";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 interface Resource {
   id: string;
@@ -78,6 +82,27 @@ const Resources = () => {
     }
   }, [user]);
 
+  // Initialize category from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const categoryParam = params.get('category');
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, []);
+
+  // Persist category to URL without navigation
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (selectedCategory && selectedCategory !== 'all') {
+      params.set('category', selectedCategory);
+    } else {
+      params.delete('category');
+    }
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
+  }, [selectedCategory]);
+
   useEffect(() => {
     if (selectedCategory === "all") {
       setFilteredResources(resources);
@@ -130,12 +155,36 @@ const Resources = () => {
   };
 
   if (loading) {
-    return <ResourcesLoading />;
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <ResourcesHeader />
+          <ResourcesFilters
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            isAdmin={isAdmin}
+            createDialogOpen={createDialogOpen}
+            onCreateDialogOpenChange={setCreateDialogOpen}
+            onCreateSuccess={handleCreateSuccess}
+          />
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="p-4 rounded-lg border">
+                <LoadingSkeleton lines={1} className="mb-2" />
+                <LoadingSkeleton lines={3} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Resources' }]} className="mb-4" />
         <ResourcesHeader />
 
         <ResourcesFilters
@@ -155,12 +204,16 @@ const Resources = () => {
             onDelete={handleDelete}
           />
         ) : (
-          <ResourcesEmpty selectedCategory={selectedCategory} />
+          <EmptyState
+            title={selectedCategory === 'all' ? 'No resources yet' : 'No resources in this category'}
+            description={selectedCategory === 'all' ? 'Create the first resource to kick things off.' : 'Try a different category or add a new resource.'}
+            icon={<FolderX className="w-16 h-16 mx-auto text-gray-400" />}
+          />
         )}
 
         {editingResource && (
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-            <DialogContent className="sm:max-w-md bg-white">
+            <DialogContent className="sm:max-w-md bg-background">
               <DialogHeader>
                 <DialogTitle>Edit Resource</DialogTitle>
               </DialogHeader>

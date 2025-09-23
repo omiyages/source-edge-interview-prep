@@ -9,6 +9,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { queryClient } from "@/lib/queryClient";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Import components directly
 import Index from "./pages/Index";
@@ -28,8 +30,12 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <BrowserRouter>
+              <div className="fixed right-4 bottom-4 z-50">
+                <ThemeToggle />
+              </div>
+              <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/signup" element={<PublicSignup />} />
               <Route 
@@ -80,9 +86,10 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </ThemeProvider>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

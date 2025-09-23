@@ -1,0 +1,91 @@
+{
+  "security": {
+    "headers": {
+      "Content-Security-Policy": "default-src 'self'; connect-src 'self' https://*.supabase.co https://api.mapbox.com; img-src 'self' https://*.supabase.co data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "X-XSS-Protection": "1; mode=block",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Resource-Policy": "same-origin"
+    },
+    "rateLimiting": {
+      "windowMs": 900000,
+      "max": 100,
+      "message": "Too many requests from this IP, please try again later.",
+      "standardHeaders": true,
+      "legacyHeaders": false,
+      "skipSuccessfulRequests": false,
+      "skipFailedRequests": false
+    },
+    "inputValidation": {
+      "maxLength": {
+        "question": 5000,
+        "description": 2000,
+        "title": 200,
+        "url": 2048
+      },
+      "allowedFileTypes": ["image/jpeg", "image/png", "image/webp", "image/gif"],
+      "maxFileSize": 5242880,
+      "sanitizeHtml": true
+    },
+    "authentication": {
+      "sessionTimeout": 3600000,
+      "maxLoginAttempts": 5,
+      "lockoutDuration": 900000,
+      "requireEmailVerification": true,
+      "passwordPolicy": {
+        "minLength": 8,
+        "requireUppercase": true,
+        "requireLowercase": true,
+        "requireNumbers": true,
+        "requireSpecialChars": true
+      }
+    },
+    "monitoring": {
+      "logLevel": "info",
+      "retentionDays": 90,
+      "alertThresholds": {
+        "failedLogins": 10,
+        "suspiciousActivity": 5,
+        "dataAccessViolations": 1
+      }
+    }
+  },
+  "performance": {
+    "caching": {
+      "staticAssets": 31536000,
+      "apiResponses": 300,
+      "databaseQueries": 600
+    },
+    "compression": {
+      "gzip": true,
+      "brotli": true,
+      "minify": true
+    },
+    "cdn": {
+      "enabled": true,
+      "regions": ["us-east-1", "eu-west-1", "ap-southeast-1"]
+    }
+  },
+  "database": {
+    "connectionPooling": {
+      "maxConnections": 20,
+      "minConnections": 5,
+      "idleTimeout": 30000
+    },
+    "queryOptimization": {
+      "enableQueryCache": true,
+      "cacheSize": 1000,
+      "slowQueryThreshold": 1000
+    },
+    "backup": {
+      "frequency": "daily",
+      "retention": 30,
+      "encryption": true
+    }
+  }
+}

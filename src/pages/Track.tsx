@@ -9,6 +9,9 @@ import { Plus, BookOpen, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateCourseForm } from "@/components/CreateCourseForm";
 import { CourseCard } from "@/components/CourseCard";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 interface Course {
   id: string;
@@ -63,6 +66,7 @@ const Track = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tracks' }]} className="mb-4" />
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-between items-center mb-4">
@@ -113,9 +117,13 @@ const Track = () => {
 
         {/* Courses Grid */}
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-foreground font-semibold">Loading courses...</p>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="p-4 rounded-lg border">
+                <LoadingSkeleton lines={1} className="mb-2" />
+                <LoadingSkeleton lines={3} />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -126,15 +134,11 @@ const Track = () => {
         )}
 
         {courses?.length === 0 && !isLoading && (
-          <div className="text-center py-12">
-            <div className="text-muted-foreground mb-4">
-              <BookOpen className="w-16 h-16 mx-auto" />
-            </div>
-            <h3 className="text-lg font-black text-foreground mb-2">No courses available yet</h3>
-            <p className="text-muted-foreground font-semibold">
-              {isAdmin ? "Create your first course to get started." : "Check back later for new courses."}
-            </p>
-          </div>
+          <EmptyState
+            title="No courses available yet"
+            description={isAdmin ? "Create your first course to get started." : "Check back later for new courses."}
+            icon={<BookOpen className="w-16 h-16 mx-auto text-muted-foreground" />}
+          />
         )}
       </div>
     </div>

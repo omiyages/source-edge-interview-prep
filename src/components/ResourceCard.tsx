@@ -28,13 +28,13 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      'Documentation': 'bg-blue-50 text-blue-700 border-blue-200',
-      'Tutorial': 'bg-green-50 text-green-700 border-green-200',
-      'Video': 'bg-purple-50 text-purple-700 border-purple-200',
-      'Article': 'bg-orange-50 text-orange-700 border-orange-200',
-      'Tool': 'bg-pink-50 text-pink-700 border-pink-200',
+      'Documentation': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
+      'Tutorial': 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800',
+      'Video': 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800',
+      'Article': 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800',
+      'Tool': 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950 dark:text-pink-300 dark:border-pink-800',
     };
-    return colors[category as keyof typeof colors] || 'bg-gray-50 text-gray-700 border-gray-200';
+    return colors[category as keyof typeof colors] || 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600';
   };
 
   return (

@@ -104,16 +104,16 @@ export const StageQuestions = ({
   };
 
   return (
-    <Card className="border-gray-200 bg-white shadow-sm">
+    <Card className="border-border bg-card shadow-sm">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-gray-900">Practice Questions</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Practice Questions</CardTitle>
           {isAdmin && (
             <Button
               variant="outline"
               size="sm"
               onClick={onManageClick}
-              className="text-sm border-gray-300 hover:bg-gray-50"
+              className="text-sm border-border hover:bg-muted"
             >
               <Settings2 className="w-4 h-4 mr-2" />
               Manage Questions
@@ -138,7 +138,7 @@ export const StageQuestions = ({
                   <AccordionTrigger className="text-left hover:no-underline">
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{category}</Badge>
-                      <span className="text-sm text-gray-500">({categoryQuestions.length})</span>
+                      <span className="text-sm text-muted-foreground">({categoryQuestions.length})</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
@@ -157,7 +157,7 @@ export const StageQuestions = ({
                         <Button
                           variant="outline"
                           onClick={() => toggleCategoryExpansion(category)}
-                          className="border-gray-300 hover:bg-gray-50"
+                          className="border-border hover:bg-muted"
                         >
                           View More ({categoryQuestions.length - 6} more)
                         </Button>
@@ -168,7 +168,7 @@ export const StageQuestions = ({
                         <Button
                           variant="outline"
                           onClick={() => toggleCategoryExpansion(category)}
-                          className="border-gray-300 hover:bg-gray-50"
+                          className="border-border hover:bg-muted"
                         >
                           Show Less
                         </Button>
@@ -181,12 +181,12 @@ export const StageQuestions = ({
           </Accordion>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No questions assigned to this stage yet.</p>
+            <p className="text-muted-foreground mb-4">No questions assigned to this stage yet.</p>
             {isAdmin && (
               <Button
                 variant="outline"
                 onClick={onManageClick}
-                className="border-gray-300 hover:bg-gray-50"
+                className="border-border hover:bg-muted"
               >
                 <Settings2 className="w-4 h-4 mr-2" />
                 Add Questions

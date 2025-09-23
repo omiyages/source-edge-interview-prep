@@ -1,51 +1,62 @@
-
-// ABOUTME: Performance optimization utilities to prevent forced reflows
-// ABOUTME: Provides throttled and debounced functions for scroll and resize events
-
-/**
- * Throttle function that prevents forced reflows by limiting execution frequency
- */
-export const throttle = <T extends (...args: any[]) => any>(
-  func: T,
-  limit: number
-): ((...args: Parameters<T>) => void) => {
-  let inThrottle: boolean;
-  return function(this: any, ...args: Parameters<T>) {
-    if (!inThrottle) {
-      func.apply(this, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
-};
-
-/**
- * RAF-based throttle for smooth animations without forced reflows
- */
-export const rafThrottle = <T extends (...args: any[]) => any>(
-  func: T
-): ((...args: Parameters<T>) => void) => {
+// Performance optimization utilities
+export const rafThrottle = (callback: () => void) => {
   let rafId: number | null = null;
-  return function(this: any, ...args: Parameters<T>) {
-    if (rafId === null) {
-      rafId = requestAnimationFrame(() => {
-        func.apply(this, args);
-        rafId = null;
-      });
+  
+  return () => {
+    if (rafId !== null) {
+      return;
     }
+    
+    rafId = requestAnimationFrame(() => {
+      callback();
+      rafId = null;
+    });
   };
 };
 
-/**
- * Debounce function for resize events to prevent excessive reflows
- */
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
-  delay: number
+  wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeoutId: NodeJS.Timeout;
-  return function(this: any, ...args: Parameters<T>) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(this, args), delay);
+  let timeout: NodeJS.Timeout;
+  
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
   };
+};
+
+export const measurePerformance = (name: string, fn: () => void) => {
+  const start = performance.now();
+  fn();
+  const end = performance.now();
+  console.log(`${name} took ${end - start} milliseconds`);
+};
+
+export const lazyLoadComponent = <T extends React.ComponentType<any>>(
+  importFunc: () => Promise<{ default: T }>
+) => {
+  return React.lazy(importFunc);
+};
+
+// Image optimization
+export const optimizeImage = (src: string, width?: number, quality = 80) => {
+  if (!src.includes('supabase.co')) return src;
+  
+  const url = new URL(src);
+  url.searchParams.set('width', width?.toString() || '800');
+  url.searchParams.set('quality', quality.toString());
+  return url.toString();
+};
+
+// Memory management
+export const cleanupMemory = () => {
+  if ('memory' in performance) {
+    const memory = (performance as any).memory;
+    console.log('Memory usage:', {
+      used: Math.round(memory.usedJSHeapSize / 1048576) + ' MB',
+      total: Math.round(memory.totalJSHeapSize / 1048576) + ' MB',
+      limit: Math.round(memory.jsHeapSizeLimit / 1048576) + ' MB'
+    });
+  }
 };

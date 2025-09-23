@@ -75,7 +75,7 @@ export const CourseHeader = ({
       {/* Course Info */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-4xl font-bold text-gray-900">{course.title}</h1>
+          <h1 className="text-4xl font-bold text-foreground">{course.title}</h1>
           {/* Company Badge on the far right */}
           {course.company && (
             <div className="bg-primary/10 rounded-full border border-primary/20 px-4 py-2">
@@ -85,24 +85,24 @@ export const CourseHeader = ({
         </div>
         
         {course.description && (
-          <p className="text-lg text-gray-600 mb-6">{course.description}</p>
+          <p className="text-lg text-muted-foreground mb-6">{course.description}</p>
         )}
         
         {/* Jobs Information Only */}
         {course.attached_jobs && course.attached_jobs.length > 0 && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100/50">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-xl p-6 border border-blue-100/50 dark:border-blue-800/50">
             <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-lg mt-1">
-                <Briefcase className="w-5 h-5 text-indigo-600" />
+              <div className="flex items-center justify-center w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-lg mt-1">
+                <Briefcase className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-3">Relevant Positions</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3">Relevant Positions</p>
                 <div className="flex flex-wrap gap-2">
                   {course.attached_jobs.map((job, index) => (
                     <Badge 
                       key={index} 
                       variant="secondary" 
-                      className="bg-white/80 text-gray-700 border border-gray-200/50 hover:bg-white hover:shadow-sm transition-all duration-200 px-3 py-1"
+                      className="bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-600/50 hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm transition-all duration-200 px-3 py-1"
                     >
                       {job}
                     </Badge>
@@ -114,9 +114,9 @@ export const CourseHeader = ({
         )}
         
         {(!course.attached_jobs || course.attached_jobs.length === 0) && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100/50">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-xl p-6 border border-blue-100/50 dark:border-blue-800/50">
             <div className="text-center py-4">
-              <p className="text-gray-500 text-sm">No position information available</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">No position information available</p>
             </div>
           </div>
         )}

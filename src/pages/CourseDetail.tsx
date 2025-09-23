@@ -14,6 +14,7 @@ import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm"
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
 import { CourseReviewForm } from "@/components/CourseReviewForm";
 import { useCourseData, useStageQuestions, useUserProgress } from "@/hooks/useCourseData";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 interface CourseStage {
   id: string;
@@ -55,10 +56,10 @@ const CourseDetail = () => {
 
   if (loading || isLoadingCourse) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading course...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading course...</p>
         </div>
       </div>
     );
@@ -66,10 +67,10 @@ const CourseDetail = () => {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Course not found</h1>
-          <p className="text-gray-600 mb-4">The course you're looking for doesn't exist or may have been removed.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Course not found</h1>
+          <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist or may have been removed.</p>
           <Link to="/tracks">
             <Button>
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -82,8 +83,9 @@ const CourseDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tracks', href: '/tracks' }, { label: course?.title || 'Course' }]} className="mb-4" />
         <CourseHeader
           course={course}
           selectedStage={selectedStage}
@@ -127,11 +129,11 @@ const CourseDetail = () => {
         {/* Selected Stage Content or Course Review */}
         {allStagesCompleted ? (
           <div className="space-y-8">
-            <div className="text-center py-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
-              <h2 className="text-2xl font-bold text-green-800 mb-2">
+            <div className="text-center py-8 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 rounded-lg border border-green-200 dark:border-green-800">
+              <h2 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">
                 🎉 Congratulations!
               </h2>
-              <p className="text-green-700">
+              <p className="text-green-700 dark:text-green-400">
                 You've completed all stages of this course. Please share your feedback below.
               </p>
             </div>

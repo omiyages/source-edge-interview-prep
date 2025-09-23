@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, X, Clock, LogOut, Users, AlertCircle, Home, UserPlus } from "lucide-react";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
 import { UsersList } from "@/components/UsersList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,6 +17,7 @@ import { AssignCourseForm } from "@/components/AssignCourseForm";
 import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
 import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 interface InterviewQuestion {
   id: string;
@@ -200,6 +203,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Admin' }]} className="mb-4" />
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -285,12 +289,31 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="pending">
-            {loadingPending ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-foreground font-semibold">Loading pending questions...</p>
+            {loadingPending && (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader className="pb-3">
+                      <LoadingSkeleton lines={1} className="mb-2" />
+                      <LoadingSkeleton lines={2} />
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <LoadingSkeleton lines={3} />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {!loadingPending && pendingQuestions?.length === 0 && (
+              <EmptyState
+                title="No pending questions"
+                description="All questions have been reviewed."
+                icon={<Clock className="w-16 h-16 mx-auto text-gray-400" />}
+              />
+            )}
+
+            {!loadingPending && (pendingQuestions?.length ?? 0) > 0 && (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {pendingQuestions?.map((question) => (
                   <Card key={question.id} className="hover:shadow-lg transition-shadow duration-200">
@@ -354,14 +377,6 @@ const AdminDashboard = () => {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
-            )}
-            
-            {pendingQuestions?.length === 0 && !loadingPending && (
-              <div className="text-center py-12">
-                <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No pending questions</h3>
-                <p className="text-gray-500">All questions have been reviewed.</p>
               </div>
             )}
           </TabsContent>

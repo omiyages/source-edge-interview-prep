@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { StickyFormActions } from "@/components/ui/sticky-form-actions";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StageDefinitionForm } from "./StageDefinitionForm";
@@ -77,15 +78,17 @@ export const CreateCourseStep2 = ({
               setStages={setStages}
             />
 
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={onBack}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <Button onClick={handleCreateCourse} disabled={isSubmitting}>
-                {isSubmitting ? "Creating Course..." : "Create Course & Configure Content"}
-              </Button>
-            </div>
+            <StickyFormActions>
+              <div className="flex w-full justify-between">
+                <Button variant="outline" onClick={onBack}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <Button onClick={handleCreateCourse} disabled={isSubmitting}>
+                  {isSubmitting ? "Creating Course..." : "Create Course & Configure Content"}
+                </Button>
+              </div>
+            </StickyFormActions>
           </>
         ) : (
           <>
@@ -96,19 +99,21 @@ export const CreateCourseStep2 = ({
               onAssignmentSuccess={onAssignmentSuccess}
             />
 
-            <div className="flex justify-between pt-6">
-              <Button variant="outline" onClick={onBack}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Course Info
-              </Button>
-              <Button 
-                onClick={onFinish}
-                disabled={!allStagesConfigured}
-                className={allStagesConfigured ? "" : "opacity-50"}
-              >
-                {allStagesConfigured ? "Complete Course Setup" : "Assign Content to All Stages"}
-              </Button>
-            </div>
+            <StickyFormActions>
+              <div className="flex w-full justify-between">
+                <Button variant="outline" onClick={onBack}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Course Info
+                </Button>
+                <Button 
+                  onClick={onFinish}
+                  disabled={!allStagesConfigured}
+                  className={allStagesConfigured ? "" : "opacity-50"}
+                >
+                  {allStagesConfigured ? "Complete Course Setup" : "Assign Content to All Stages"}
+                </Button>
+              </div>
+            </StickyFormActions>
           </>
         )}
       </div>

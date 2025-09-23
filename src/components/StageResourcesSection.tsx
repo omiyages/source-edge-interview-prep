@@ -119,7 +119,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
       <CardContent>
         {Object.keys(resourcesByCategory).length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">No resources assigned to this stage yet.</p>
+            <p className="text-muted-foreground mb-4">No resources assigned to this stage yet.</p>
             {isAdmin && (
               <Button
                 variant="outline"
@@ -137,9 +137,9 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
               
               return (
                 <Collapsible key={category} open={isExpanded} onOpenChange={() => toggleCategoryExpansion(category)}>
-                  <CollapsibleTrigger className="flex items-center gap-2 w-full hover:text-gray-600 transition-colors">
+                  <CollapsibleTrigger className="flex items-center gap-2 w-full hover:text-muted-foreground transition-colors">
                     <Badge variant="secondary">{category}</Badge>
-                    <span className="text-sm text-gray-500">({resources.length})</span>
+                    <span className="text-sm text-muted-foreground">({resources.length})</span>
                     <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                   </CollapsibleTrigger>
                   
@@ -148,21 +148,21 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
                       {resources.map((resource) => (
                         <div
                           key={resource.id}
-                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                          className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow bg-card"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <h5 className="font-medium text-sm mb-1">{resource.title}</h5>
+                              <h5 className="font-medium text-sm mb-1 text-foreground">{resource.title}</h5>
                               {resource.description && (
-                                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{resource.description}</p>
+                                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{resource.description}</p>
                               )}
-                              <p className="text-sm text-blue-600 truncate">{resource.url}</p>
+                              <p className="text-sm text-blue-600 dark:text-blue-400 truncate">{resource.url}</p>
                             </div>
                             <a
                               href={resource.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-shrink-0 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                              className="flex-shrink-0 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950 rounded-md transition-colors"
                             >
                               <ExternalLink className="w-4 h-4" />
                             </a>

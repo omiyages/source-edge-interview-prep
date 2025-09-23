@@ -111,9 +111,9 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
   };
 
   return (
-    <Card className="group relative bg-white border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden" onClick={handleCardClick}>
+    <Card className="group relative bg-card border border-border shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden" onClick={handleCardClick}>
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50/30 to-primary/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-primary/10 pointer-events-none" />
       
       {/* Progress indicator bar at top */}
       {!isAdmin && courseProgress && (
@@ -128,11 +128,11 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
       <CardHeader className="relative pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2 leading-tight">
+            <CardTitle className="text-lg font-semibold text-foreground line-clamp-2 mb-2 leading-tight">
               {course.title}
             </CardTitle>
             {course.description && (
-              <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                 {course.description}
               </p>
             )}
@@ -185,21 +185,21 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
       <CardContent className="relative space-y-4">
         {/* Progress section for non-admin users */}
         {!isAdmin && courseProgress && (
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+          <div className="bg-secondary rounded-lg p-3 border border-border">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-gray-700">Progress</span>
-              <span className="text-sm font-semibold text-gray-900">{courseProgress.progress_percentage}%</span>
+              <span className="text-xs font-medium text-muted-foreground">Progress</span>
+              <span className="text-sm font-semibold text-foreground">{courseProgress.progress_percentage}%</span>
             </div>
             
             {/* Custom progress bar */}
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div className="w-full bg-muted rounded-full h-2 mb-2">
               <div 
                 className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(courseProgress.progress_percentage)}`}
                 style={{ width: `${courseProgress.progress_percentage}%` }}
               />
             </div>
             
-            <div className="flex items-center gap-3 text-xs text-gray-600">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <CheckCircle className="h-3 w-3 text-green-600" />
                 {courseProgress.completed_stages} completed
@@ -214,7 +214,7 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
         
         {/* Course metadata */}
         <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-4 text-gray-600">
+          <div className="flex items-center gap-4 text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
               <span>{new Date(course.created_at).toLocaleDateString('en-US', { 
@@ -232,7 +232,7 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
           {/* Company badge */}
           <Badge 
             variant="secondary" 
-            className="bg-blue-50 text-blue-700 border-blue-200 font-medium px-2 py-1 text-xs"
+            className="font-medium px-2 py-1 text-xs"
           >
             {course.company || "No Company"}
           </Badge>

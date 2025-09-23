@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { OptimizedQuestionList } from "./OptimizedQuestionList";
 import { QuestionFilters } from "./QuestionFilters";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -22,6 +22,34 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
     category: "",
     interview_stage: ""
   });
+
+  // Initialize state from URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q') || "";
+    const company = params.get('company') || "";
+    const role = params.get('role') || "";
+    const category = params.get('category') || "";
+    const interview_stage = params.get('stage') || "";
+    const page = parseInt(params.get('page') || '1', 10);
+
+    if (q) setSearchTerm(q);
+    setFilters({ company, role, category, interview_stage });
+    if (!Number.isNaN(page) && page > 0) setCurrentPage(page);
+  }, []);
+
+  // Persist state to URL params (replace, not push)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (searchTerm) params.set('q', searchTerm); else params.delete('q');
+    if (filters.company) params.set('company', filters.company); else params.delete('company');
+    if (filters.role) params.set('role', filters.role); else params.delete('role');
+    if (filters.category) params.set('category', filters.category); else params.delete('category');
+    if (filters.interview_stage) params.set('stage', filters.interview_stage); else params.delete('stage');
+    if (currentPage > 1) params.set('page', String(currentPage)); else params.delete('page');
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
+  }, [searchTerm, filters, currentPage]);
 
   // Filter questions based on search term and filters
   const filteredQuestions = useMemo(() => {
@@ -101,7 +129,7 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
   if (error) {
     return (
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mb-8">Interview Questions</h2>
+        <h2 className="text-3xl font-bold text-foreground mb-8">Interview Questions</h2>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-600">Failed to load questions: {error}</p>
         </div>
@@ -111,7 +139,7 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
 
   return (
     <section className="mb-12">
-      <h2 className="text-3xl font-bold text-gray-900 mb-8">Interview Questions</h2>
+      <h2 className="text-3xl font-bold text-foreground mb-8">Interview Questions</h2>
       
       <div className="mb-6">
         <QuestionFilters

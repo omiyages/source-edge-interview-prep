@@ -32,7 +32,7 @@ export const QuestionFilters = ({
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search questions..."
           value={searchTerm}
@@ -41,15 +41,15 @@ export const QuestionFilters = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-gray-50 rounded-md">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-muted rounded-md">
         <Select 
           value={filters.company} 
           onValueChange={(value) => onFilterChange('company', value === "all" ? "" : value)}
         >
-          <SelectTrigger className="bg-white h-8 text-xs">
+          <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="Company" />
           </SelectTrigger>
-          <SelectContent className="bg-white border shadow-lg z-50">
+          <SelectContent className="z-50">
             <SelectItem value="all">All Companies</SelectItem>
             {getUniqueValues('company').map((company) => (
               <SelectItem key={company} value={company}>{company}</SelectItem>
@@ -61,10 +61,10 @@ export const QuestionFilters = ({
           value={filters.role} 
           onValueChange={(value) => onFilterChange('role', value === "all" ? "" : value)}
         >
-          <SelectTrigger className="bg-white h-8 text-xs">
+          <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="Role" />
           </SelectTrigger>
-          <SelectContent className="bg-white border shadow-lg z-50">
+          <SelectContent className="z-50">
             <SelectItem value="all">All Roles</SelectItem>
             {getUniqueValues('role').map((role) => (
               <SelectItem key={role} value={role}>{role}</SelectItem>
@@ -76,10 +76,10 @@ export const QuestionFilters = ({
           value={filters.category} 
           onValueChange={(value) => onFilterChange('category', value === "all" ? "" : value)}
         >
-          <SelectTrigger className="bg-white h-8 text-xs">
+          <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
-          <SelectContent className="bg-white border shadow-lg z-50">
+          <SelectContent className="z-50">
             <SelectItem value="all">All Categories</SelectItem>
             {getUniqueValues('category').map((category) => (
               <SelectItem key={category} value={category}>{category}</SelectItem>
@@ -91,10 +91,10 @@ export const QuestionFilters = ({
           value={filters.interview_stage} 
           onValueChange={(value) => onFilterChange('interview_stage', value === "all" ? "" : value)}
         >
-          <SelectTrigger className="bg-white h-8 text-xs">
+          <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="Stage" />
           </SelectTrigger>
-          <SelectContent className="bg-white border shadow-lg z-50">
+          <SelectContent className="z-50">
             <SelectItem value="all">All Stages</SelectItem>
             {getUniqueValues('interview_stage').map((stage) => (
               <SelectItem key={stage} value={stage}>{stage}</SelectItem>
@@ -103,7 +103,7 @@ export const QuestionFilters = ({
         </Select>
 
         <div className="md:col-span-4 flex justify-between items-center">
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-muted-foreground">
             {resultCount} {resultCount === 1 ? 'result' : 'results'}
           </span>
           <Button 

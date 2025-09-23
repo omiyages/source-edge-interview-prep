@@ -31,7 +31,7 @@ export const StageNavigation = ({ stages, selectedStage, onStageSelect }: StageN
             className={`flex items-center gap-2 text-sm ${
               selectedStage?.id === stage.id 
                 ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-none shadow-lg" 
-                : "bg-white hover:bg-gray-50 border-gray-200"
+                : "bg-card hover:bg-muted border-border"
             }`}
           >
             <Badge 
@@ -59,7 +59,7 @@ export const StageNavigation = ({ stages, selectedStage, onStageSelect }: StageN
             className={`flex items-center gap-2 ${
               selectedStage?.id === stage.id 
                 ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-none shadow-lg" 
-                : "bg-white hover:bg-gray-50 border-gray-200"
+                : "bg-card hover:bg-muted border-border"
             }`}
           >
             <Badge 

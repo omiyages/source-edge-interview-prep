@@ -36,9 +36,9 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
 
   if (loading) {
     return (
-      <Card className="mb-8">
+      <Card className="mb-8 bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <BookOpen className="w-5 h-5" />
             Learning Resources
           </CardTitle>
@@ -47,9 +47,9 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-6 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/2 mb-2"></div>
+                <div className="h-6 bg-muted rounded w-16"></div>
               </div>
             ))}
           </div>
@@ -59,9 +59,9 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
   }
 
   return (
-    <Card className="mb-8">
+    <Card className="mb-8 bg-card border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-foreground">
           <BookOpen className="w-5 h-5" />
           Learning Resources ({filteredResources.length})
         </CardTitle>
@@ -70,21 +70,17 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
         {/* Search and Filters */}
         <div className="space-y-4 mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search resources..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
-              style={{ borderColor: 'rgb(219 234 254 / 0.5)' }}
             />
           </div>
           
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger 
-              className="w-48"
-              style={{ borderColor: 'rgb(219 234 254 / 0.5)' }}
-            >
+            <SelectTrigger className="w-48">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -98,22 +94,21 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
 
         {filteredResources.length === 0 ? (
           <div className="text-center py-8">
-            <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No resources found matching your filters.</p>
+            <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No resources found matching your filters.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResources.slice(0, 6).map((resource) => (
               <div 
                 key={resource.id} 
-                className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
-                style={{ borderColor: 'rgb(219 234 254 / 0.5)', border: '1px solid' }}
+                className="bg-card rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow border border-border"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold mb-2">{resource.title}</h3>
+                    <h3 className="font-semibold mb-2 text-foreground">{resource.title}</h3>
                     {resource.description && (
-                      <p className="text-gray-600 text-sm mb-3">{resource.description}</p>
+                      <p className="text-muted-foreground text-sm mb-3">{resource.description}</p>
                     )}
                     <Badge variant="secondary">{resource.category}</Badge>
                   </div>
@@ -122,7 +117,6 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
                     size="sm"
                     onClick={() => window.open(resource.url, '_blank')}
                     className="shrink-0"
-                    style={{ borderColor: 'rgb(219 234 254 / 0.5)' }}
                   >
                     <ExternalLink className="w-4 h-4" />
                   </Button>
@@ -135,7 +129,6 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
                 <Button 
                   variant="outline"
                   onClick={() => navigate('/resources')}
-                  style={{ borderColor: 'rgb(219 234 254 / 0.5)' }}
                 >
                   View All Resources ({resources.length})
                 </Button>
