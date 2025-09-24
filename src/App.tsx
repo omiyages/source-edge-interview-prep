@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { queryClient } from "@/lib/queryClient";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SessionTracker } from "@/components/SessionTracker";
 
 // Import components directly
 import Index from "./pages/Index";
@@ -32,6 +33,7 @@ function App() {
           <Sonner />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <BrowserRouter>
+              <SessionTracker />
               <div className="fixed right-4 bottom-4 z-50">
                 <ThemeToggle />
               </div>
