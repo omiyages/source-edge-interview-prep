@@ -18,6 +18,7 @@ import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
 import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { KanbanBoard } from "@/components/KanbanBoard";
 
 interface InterviewQuestion {
   id: string;
@@ -242,8 +243,12 @@ const AdminDashboard = () => {
           </Alert>
         )}
 
-        <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+        <Tabs defaultValue="kanban" className="w-full">
+          <TabsList className="grid w-full grid-cols-7 mb-6">
+            <TabsTrigger value="kanban">
+              <Users className="w-4 h-4 mr-2" />
+              Kanban
+            </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -265,6 +270,10 @@ const AdminDashboard = () => {
               Pending Questions ({pendingQuestions?.length || 0})
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="kanban">
+            <KanbanBoard />
+          </TabsContent>
 
           <TabsContent value="users">
             <UsersList />
