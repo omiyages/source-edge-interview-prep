@@ -209,7 +209,7 @@ export const RichTextEditor = ({
         formats={formats}
         placeholder={placeholder}
         style={{
-          backgroundColor: 'white',
+          backgroundColor: 'transparent',
           borderRadius: '6px',
           fontWeight: 'normal',
           fontSize: '14px',
@@ -228,6 +228,10 @@ export const RichTextEditor = ({
             max-width: 100% !important;
             border-bottom-left-radius: 6px !important;
             border-bottom-right-radius: 6px !important;
+            background-color: transparent !important;
+          }
+          .rich-text-editor .ql-container.ql-snow {
+            border: 1px solid hsl(var(--border)) !important;
           }
           .rich-text-editor .ql-editor {
             font-weight: normal !important;
@@ -240,12 +244,24 @@ export const RichTextEditor = ({
             overflow-y: auto !important;
             word-wrap: break-word !important;
             padding: 12px 15px !important;
+            background-color: transparent !important;
+            color: hsl(var(--foreground)) !important;
           }
           .rich-text-editor .ql-toolbar {
             max-width: 100% !important;
             overflow-x: auto !important;
             border-top-left-radius: 6px !important;
             border-top-right-radius: 6px !important;
+            background-color: hsl(var(--muted)) !important;
+            border: 1px solid hsl(var(--border)) !important;
+          }
+          .rich-text-editor .ql-toolbar .ql-picker-label,
+          .rich-text-editor .ql-toolbar .ql-picker-item,
+          .rich-text-editor .ql-toolbar button {
+            color: hsl(var(--foreground)) !important;
+          }
+          .rich-text-editor .ql-toolbar button:hover {
+            background-color: hsl(var(--accent)) !important;
           }
           .rich-text-editor .ql-editor p {
             font-weight: normal !important;

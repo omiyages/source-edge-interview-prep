@@ -35,15 +35,11 @@ interface SubmitQuestionFormProps {
 }
 
 export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
-  // Secure input hooks with validation and rate limiting
-  const questionInput = useEnhancedSecureInput("", {
-    maxLength: 2000,
-    required: true,
-    rateLimitOperation: "submit_question",
-    rateLimitMaxAttempts: 3,
-    rateLimitWindowMinutes: 10,
-  });
+  // Regular state for question input to prevent overwriting issues
+  const [question, setQuestion] = useState("");
+  const [questionError, setQuestionError] = useState("");
   
+  // Secure input hook for context (rich text)
   const contextInput = useEnhancedSecureInput("", {
     maxLength: 1000,
     allowHtml: true,
@@ -189,8 +185,22 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
 
     setIsLoading(true);
 
-    // Use enhanced secure validation and submission
-    const success = await questionInput.validateAndSubmit(async () => {
+    // Validate question input
+    if (!question.trim()) {
+      setQuestionError("Question is required");
+      setIsLoading(false);
+      return;
+    }
+
+    if (question.length > 2000) {
+      setQuestionError("Question must be less than 2000 characters");
+      setIsLoading(false);
+      return;
+    }
+
+    setQuestionError("");
+
+    try {
       // Use default values if no stage/category is selected
       const finalInterviewStage = interviewStage || 'Technical Screen';
       const finalCategory = category || 'Technical';
@@ -198,7 +208,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       const { error } = await supabase
         .from('interview_questions')
         .insert({
-          question: questionInput.value,
+          question: question.trim(),
           company: company,
           role: role,
           interview_stage: finalInterviewStage,
@@ -220,7 +230,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       });
 
       // Reset form
-      questionInput.reset();
+      setQuestion("");
+      setQuestionError("");
       contextInput.reset();
       setCompany("");
       setRole("");
@@ -229,7 +240,14 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       setIsFeatured(false);
       
       onSuccess();
-    });
+    } catch (error) {
+      console.error('Error submitting question:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit question. Please try again.",
+        variant: "destructive",
+      });
+    }
 
     setIsLoading(false);
   };
@@ -244,22 +262,16 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
           </Label>
           <Textarea
             id="question"
-            value={questionInput.value}
-            onChange={(e) => questionInput.setValue(e.target.value)}
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
             placeholder="Enter the interview question..."
             required
-            className={`mt-1 ${!questionInput.isValid ? 'border-red-500' : ''}`}
+            className={`mt-1 ${questionError ? 'border-red-500' : ''}`}
             rows={3}
-            disabled={questionInput.isBlocked}
           />
-          {questionInput.errors.length > 0 && (
+          {questionError && (
             <p className="text-sm text-red-600 mt-1">
-              {questionInput.errors.join(', ')}
-            </p>
-          )}
-          {questionInput.isBlocked && (
-            <p className="text-sm text-orange-600 mt-1">
-              Rate limited. Please wait before trying again.
+              {questionError}
             </p>
           )}
         </div>
