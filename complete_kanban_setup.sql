@@ -1,7 +1,14 @@
--- Kanban Board Database Schema
--- Run these SQL commands in your Supabase SQL editor
+-- Complete Kanban Setup with Position Field
+-- Run this SQL in your Supabase SQL Editor
 
--- 1. Create user_stages table to track user progress through interview stages
+-- 1. Add position field to profiles table
+ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS position TEXT;
+
+-- Create index for position field
+CREATE INDEX IF NOT EXISTS idx_profiles_position ON public.profiles(position);
+
+-- 2. Create user_stages table to track user progress through interview stages
 CREATE TABLE IF NOT EXISTS user_stages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -12,7 +19,7 @@ CREATE TABLE IF NOT EXISTS user_stages (
   UNIQUE(user_id, stage)
 );
 
--- 2. Create stage_transitions table to track when users move between stages
+-- 3. Create stage_transitions table to track when users move between stages
 CREATE TABLE IF NOT EXISTS stage_transitions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -23,7 +30,7 @@ CREATE TABLE IF NOT EXISTS stage_transitions (
   notes TEXT
 );
 
--- 3. Create admin_notes table for user-specific notes and to-do items
+-- 4. Create admin_notes table for user-specific notes and to-do items
 CREATE TABLE IF NOT EXISTS admin_notes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -35,7 +42,7 @@ CREATE TABLE IF NOT EXISTS admin_notes (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. Create user_rejections table to track rejected users
+-- 5. Create user_rejections table to track rejected users
 CREATE TABLE IF NOT EXISTS user_rejections (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -45,7 +52,7 @@ CREATE TABLE IF NOT EXISTS user_rejections (
   UNIQUE(user_id)
 );
 
--- 5. Add indexes for performance
+-- 6. Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_user_stages_user_id ON user_stages(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_stages_stage ON user_stages(stage);
 CREATE INDEX IF NOT EXISTS idx_user_stages_active ON user_stages(is_active);
@@ -55,7 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_notes_user_id ON admin_notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_admin_notes_type ON admin_notes(note_type);
 CREATE INDEX IF NOT EXISTS idx_user_rejections_user_id ON user_rejections(user_id);
 
--- 6. Create function to move user to a new stage
+-- 7. Create function to move user to a new stage
 CREATE OR REPLACE FUNCTION move_user_to_stage(
   p_user_id UUID,
   p_new_stage VARCHAR(50),
@@ -88,7 +95,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 7. Create function to get user's current stage
+-- 8. Create function to get user's current stage
 CREATE OR REPLACE FUNCTION get_user_current_stage(p_user_id UUID)
 RETURNS VARCHAR(50) AS $$
 DECLARE
@@ -102,7 +109,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 8. Create function to get users by stage
+-- 9. Create function to get users by stage
 CREATE OR REPLACE FUNCTION get_users_by_stage(p_stage VARCHAR(50))
 RETURNS TABLE (
   user_id UUID,
@@ -133,7 +140,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 9. Create function to reject a user
+-- 10. Create function to reject a user
 CREATE OR REPLACE FUNCTION reject_user(
   p_user_id UUID,
   p_rejected_by UUID,
@@ -153,13 +160,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 10. Add RLS policies
+-- 11. Add RLS policies
 ALTER TABLE user_stages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stage_transitions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_rejections ENABLE ROW LEVEL SECURITY;
 
--- Admins can manage all user stages
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Admins can manage user stages" ON user_stages;
+DROP POLICY IF EXISTS "Admins can view stage transitions" ON stage_transitions;
+DROP POLICY IF EXISTS "Admins can manage admin notes" ON admin_notes;
+DROP POLICY IF EXISTS "Admins can manage user rejections" ON user_rejections;
+
+-- Create new policies
 CREATE POLICY "Admins can manage user stages" ON user_stages
   FOR ALL USING (
     EXISTS (
@@ -169,7 +182,6 @@ CREATE POLICY "Admins can manage user stages" ON user_stages
     )
   );
 
--- Admins can view all stage transitions
 CREATE POLICY "Admins can view stage transitions" ON stage_transitions
   FOR ALL USING (
     EXISTS (
@@ -179,7 +191,6 @@ CREATE POLICY "Admins can view stage transitions" ON stage_transitions
     )
   );
 
--- Admins can manage admin notes
 CREATE POLICY "Admins can manage admin notes" ON admin_notes
   FOR ALL USING (
     EXISTS (
@@ -189,7 +200,6 @@ CREATE POLICY "Admins can manage admin notes" ON admin_notes
     )
   );
 
--- Admins can manage user rejections
 CREATE POLICY "Admins can manage user rejections" ON user_rejections
   FOR ALL USING (
     EXISTS (
@@ -199,9 +209,8 @@ CREATE POLICY "Admins can manage user rejections" ON user_rejections
     )
   );
 
--- 11. Grant permissions
+-- 12. Grant permissions
 GRANT EXECUTE ON FUNCTION move_user_to_stage(UUID, VARCHAR, UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_current_stage(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_users_by_stage(VARCHAR) TO authenticated;
 GRANT EXECUTE ON FUNCTION reject_user(UUID, UUID, TEXT) TO authenticated;
-

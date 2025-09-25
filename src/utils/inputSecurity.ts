@@ -23,7 +23,7 @@ export const sanitizeTextInput = (input: string): string => {
   return sanitizeInput(input);
 };
 
-export const validateInputLength = (input: string, maxLength: number = 1000): boolean => {
+export const validateInputLength = (input: string, maxLength: number = 10000): boolean => {
   return input && input.length <= maxLength;
 };
 
@@ -53,8 +53,8 @@ export const validateQuestionInput = (question: string): ValidationResult => {
     return { isValid: false, message: 'Question must be at least 10 characters long' };
   }
 
-  if (question.length > 2000) {
-    return { isValid: false, message: 'Question exceeds maximum length of 2000 characters' };
+  if (question.length > 10000) {
+    return { isValid: false, message: 'Question exceeds maximum length of 10,000 characters' };
   }
 
   if (detectXSSAttempt(question)) {

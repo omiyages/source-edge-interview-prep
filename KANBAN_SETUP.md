@@ -170,3 +170,4 @@ npm install @hello-pangea/dnd
 - **Mobile-responsive design** for on-the-go management
 
 The Kanban board is now fully functional and ready for managing your user pipeline! 🎉
+

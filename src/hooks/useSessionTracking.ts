@@ -146,3 +146,4 @@ export const useSessionTracking = () => {
     isActive: isActiveRef.current
   };
 };
+

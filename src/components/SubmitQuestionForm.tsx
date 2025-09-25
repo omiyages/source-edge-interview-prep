@@ -41,7 +41,7 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
   
   // Secure input hook for context (rich text)
   const contextInput = useEnhancedSecureInput("", {
-    maxLength: 1000,
+    maxLength: 10000,
     allowHtml: true,
   });
 
@@ -192,8 +192,8 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
       return;
     }
 
-    if (question.length > 2000) {
-      setQuestionError("Question must be less than 2000 characters");
+    if (question.length > 10000) {
+      setQuestionError("Question must be less than 10,000 characters");
       setIsLoading(false);
       return;
     }

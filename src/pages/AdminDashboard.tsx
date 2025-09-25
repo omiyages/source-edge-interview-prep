@@ -243,58 +243,92 @@ const AdminDashboard = () => {
           </Alert>
         )}
 
-        <Tabs defaultValue="kanban" className="w-full">
-          <TabsList className="grid w-full grid-cols-7 mb-6">
-            <TabsTrigger value="kanban">
-              <Users className="w-4 h-4 mr-2" />
-              Kanban
-            </TabsTrigger>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="create-user">
-              <UserPlus className="w-4 h-4 mr-2" />
-              Create User
+            <TabsTrigger value="courses">
+              Course Management
             </TabsTrigger>
-            <TabsTrigger value="assignments">
-              Course Assignments
-            </TabsTrigger>
-            <TabsTrigger value="progress">
-              Course Progress
-            </TabsTrigger>
-            <TabsTrigger value="reviews">
-              Course Reviews
+            <TabsTrigger value="questions">
+              Questions
             </TabsTrigger>
             <TabsTrigger value="pending">
               Pending Questions ({pendingQuestions?.length || 0})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="kanban">
-            <KanbanBoard />
-          </TabsContent>
-
+          {/* Users Tab with Subtabs */}
           <TabsContent value="users">
-            <UsersList />
+            <Tabs defaultValue="kanban" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="kanban">
+                  <Users className="w-4 h-4 mr-2" />
+                  Kanban Board
+                </TabsTrigger>
+                <TabsTrigger value="users-list">
+                  <Users className="w-4 h-4 mr-2" />
+                  Users List
+                </TabsTrigger>
+                <TabsTrigger value="create-user">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Create User
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="kanban">
+                <KanbanBoard />
+              </TabsContent>
+
+              <TabsContent value="users-list">
+                <UsersList />
+              </TabsContent>
+
+              <TabsContent value="create-user">
+                <div className="flex justify-center">
+                  <CreateUserForm />
+                </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
-          <TabsContent value="create-user">
-            <div className="flex justify-center">
-              <CreateUserForm />
+          {/* Course Management Tab with Subtabs */}
+          <TabsContent value="courses">
+            <Tabs defaultValue="assignments" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="assignments">
+                  Course Assignments
+                </TabsTrigger>
+                <TabsTrigger value="progress">
+                  Course Progress
+                </TabsTrigger>
+                <TabsTrigger value="reviews">
+                  Course Reviews
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="assignments">
+                <AssignCourseForm />
+              </TabsContent>
+
+              <TabsContent value="progress">
+                <CourseProgressList />
+              </TabsContent>
+
+              <TabsContent value="reviews">
+                <CourseReviewsAdmin />
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* Questions Tab */}
+          <TabsContent value="questions">
+            <div className="text-center py-8">
+              <h3 className="text-lg font-semibold mb-2">Questions Management</h3>
+              <p className="text-muted-foreground">Question management features will be available here.</p>
             </div>
-          </TabsContent>
-
-          <TabsContent value="assignments">
-            <AssignCourseForm />
-          </TabsContent>
-
-          <TabsContent value="progress">
-            <CourseProgressList />
-          </TabsContent>
-
-          <TabsContent value="reviews">
-            <CourseReviewsAdmin />
           </TabsContent>
 
           <TabsContent value="pending">

@@ -3,8 +3,9 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { User, Clock, X, Eye } from 'lucide-react';
+import { User, Clock, X, Eye, Plus, Calendar, EyeOff } from 'lucide-react';
 import { UserDetailModal } from './UserDetailModal';
+import { AddUserToKanbanModal } from './AddUserToKanbanModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,9 @@ interface KanbanUser {
   last_activity_at: string;
   total_session_time_minutes: number;
   stage_updated_at: string;
+  upcoming_interview_name?: string;
+  upcoming_interview_date?: string;
+  is_rejected?: boolean;
 }
 
 interface KanbanColumn {
@@ -42,28 +46,64 @@ export const KanbanBoard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<KanbanUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { user } = useAuth();
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [showRejected, setShowRejected] = useState(false);
+  const { user: currentUser, profile } = useAuth();
   const { toast } = useToast();
 
   // Load users for all stages
   const loadKanbanData = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Loading kanban data...');
+      
+      // First, let's test if we can access the database at all
+      console.log('🔍 Testing database connection...');
+      const { data: testData, error: testError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .limit(5);
+      
+      console.log('📊 Database test result:', { testData, testError });
+      
+      if (testError) {
+        console.error('❌ Database connection failed:', testError);
+        toast({
+          title: "Database Error",
+          description: `Cannot connect to database: ${testError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const newColumns: KanbanColumn[] = [];
 
       for (const stage of KANBAN_STAGES) {
-        const { data, error } = await supabase.rpc('get_users_by_stage', {
-          p_stage: stage.id
+        console.log(`🔍 Loading users for stage: ${stage.id}`);
+        
+        // Use the new function that handles rejected candidates
+        const { data, error } = await supabase.rpc('get_users_by_stage_with_rejected', {
+          p_stage: stage.id,
+          p_show_rejected: showRejected
         });
 
+        console.log(`📊 Stage ${stage.id} result:`, { data, error });
+
         if (error) {
-          console.error(`Error loading users for stage ${stage.id}:`, error);
+          console.error(`❌ Error loading users for stage ${stage.id}:`, error);
+          console.error(`❌ Error details:`, {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
           newColumns.push({
             id: stage.id,
             title: stage.title,
             users: []
           });
         } else {
+          console.log(`✅ Stage ${stage.id} loaded ${data?.length || 0} users`);
           newColumns.push({
             id: stage.id,
             title: stage.title,
@@ -72,9 +112,10 @@ export const KanbanBoard: React.FC = () => {
         }
       }
 
+      console.log('📋 Final columns:', newColumns);
       setColumns(newColumns);
     } catch (error) {
-      console.error('Error loading kanban data:', error);
+      console.error('❌ Error loading kanban data:', error);
       toast({
         title: "Error",
         description: "Failed to load kanban data. Please try again.",
@@ -87,7 +128,7 @@ export const KanbanBoard: React.FC = () => {
 
   useEffect(() => {
     loadKanbanData();
-  }, []);
+  }, [showRejected]);
 
   const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -101,20 +142,40 @@ export const KanbanBoard: React.FC = () => {
 
     if (!user || !destColumn) return;
 
+    console.log('🔍 Current user:', currentUser);
+    console.log('🔍 User ID:', currentUser?.id);
+    console.log('🔍 Profile:', profile);
+    console.log('🔍 Profile role:', profile?.role);
+
     try {
+      console.log('🔄 Moving user:', {
+        user_id: user.user_id,
+        from_stage: sourceColumn.title,
+        to_stage: destColumn.title,
+        transitioned_by: currentUser?.id
+      });
+
       // Update database
       const { error } = await supabase.rpc('move_user_to_stage', {
         p_user_id: user.user_id,
         p_new_stage: destColumn.id,
-        p_transitioned_by: user?.id,
+        p_transitioned_by: currentUser?.id,
         p_notes: `Moved from ${sourceColumn.title} to ${destColumn.title}`
       });
 
+      console.log('📊 Move user result:', { error });
+
       if (error) {
-        console.error('Error moving user:', error);
+        console.error('❌ Error moving user:', error);
+        console.error('❌ Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         toast({
           title: "Error",
-          description: "Failed to move user. Please try again.",
+          description: `Failed to move user: ${error.message}`,
           variant: "destructive",
         });
         return;
@@ -229,9 +290,28 @@ export const KanbanBoard: React.FC = () => {
 
   return (
     <div className="w-full">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-foreground mb-2">User Pipeline</h2>
-        <p className="text-muted-foreground">Drag and drop users between stages to track their progress.</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">User Pipeline</h2>
+          <p className="text-muted-foreground">Drag and drop users between stages to track their progress.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant={showRejected ? "default" : "outline"}
+            onClick={() => setShowRejected(!showRejected)}
+            className="flex items-center gap-2"
+          >
+            {showRejected ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {showRejected ? "Hide Rejected" : "Show Rejected"}
+          </Button>
+          <Button 
+            onClick={() => setIsAddUserModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add User
+          </Button>
+        </div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -281,6 +361,11 @@ export const KanbanBoard: React.FC = () => {
                                       <span className="font-medium text-sm">
                                         {user.full_name || user.email}
                                       </span>
+                                      {user.is_rejected && (
+                                        <Badge variant="destructive" className="text-xs">
+                                          Rejected
+                                        </Badge>
+                                      )}
                                     </div>
                                     <Button
                                       size="sm"
@@ -303,6 +388,15 @@ export const KanbanBoard: React.FC = () => {
                                     <div>
                                       Last activity: {formatLastActivity(user.last_activity_at || user.stage_updated_at)}
                                     </div>
+                                    {user.upcoming_interview_name && user.upcoming_interview_date && (
+                                      <div className="flex items-center gap-1 text-blue-600">
+                                        <Calendar className="w-3 h-3" />
+                                        <span>{user.upcoming_interview_name}</span>
+                                        <span className="text-xs">
+                                          {new Date(user.upcoming_interview_date).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                    )}
                                     <div className="flex items-center gap-1">
                                       <Eye className="w-3 h-3" />
                                       <span>Click to view details</span>
@@ -335,6 +429,13 @@ export const KanbanBoard: React.FC = () => {
           onUpdate={loadKanbanData}
         />
       )}
+
+      <AddUserToKanbanModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        onUserAdded={loadKanbanData}
+      />
     </div>
   );
 };
+

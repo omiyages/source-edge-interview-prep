@@ -120,3 +120,4 @@ GRANT EXECUTE ON FUNCTION update_user_session_time(UUID, INTEGER) TO authenticat
 GRANT EXECUTE ON FUNCTION get_user_session_stats(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION reset_user_session_time(UUID) TO authenticated;
 GRANT SELECT ON admin_session_analytics TO authenticated;
+

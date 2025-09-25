@@ -56,7 +56,7 @@ export const stripAllHtml = (content: string): string => {
   });
 };
 
-export const validateAndSanitizeInput = (input: string, maxLength: number = 1000): { isValid: boolean; sanitized: string; errors: string[] } => {
+export const validateAndSanitizeInput = (input: string, maxLength: number = 10000): { isValid: boolean; sanitized: string; errors: string[] } => {
   const errors: string[] = [];
   
   if (!input || typeof input !== 'string') {

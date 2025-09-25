@@ -177,3 +177,4 @@ getTTFB(console.log);
 - **Largest Contentful Paint**: < 2.5s (currently ~4s)
 - **Bundle Size**: < 300KB total (currently 717KB)
 - **Database Query Time**: < 100ms average (currently ~300ms)
+

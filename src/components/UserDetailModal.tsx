@@ -21,11 +21,15 @@ import {
   Plus, 
   Trash2,
   Calendar,
-  Target
+  Target,
+  FileText,
+  CalendarDays,
+  XCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { InterviewScheduler } from './InterviewScheduler';
 
 interface KanbanUser {
   user_id: string;
@@ -35,6 +39,9 @@ interface KanbanUser {
   last_activity_at: string;
   total_session_time_minutes: number;
   stage_updated_at: string;
+  upcoming_interview_name?: string;
+  upcoming_interview_date?: string;
+  is_rejected?: boolean;
 }
 
 interface CourseAssignment {
@@ -53,6 +60,20 @@ interface AdminNote {
   is_completed: boolean;
   created_at: string;
   created_by: string;
+}
+
+interface Interview {
+  id: string;
+  user_id: string;
+  interview_name: string;
+  scheduled_date: string;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+  notes?: string;
+  meeting_link?: string;
+  location?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface UserDetailModalProps {
@@ -255,6 +276,35 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
     }
   };
 
+  const handleRejectUser = async () => {
+    if (!window.confirm(`Are you sure you want to reject ${user.full_name || user.email}? This will mark them as rejected and hide them from the kanban board.`)) return;
+
+    try {
+      const { error } = await supabase.rpc('reject_user', {
+        p_user_id: user.user_id,
+        p_rejected_by: currentUser?.id,
+        p_reason: 'Rejected by admin'
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "User has been rejected and will be hidden from the kanban board.",
+      });
+      
+      onUpdate(); // Refresh the kanban data
+      onClose();
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject user. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatTimeSpent = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -281,6 +331,15 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           <DialogTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
             {user.full_name || user.email}
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleRejectUser}
+              className="flex items-center gap-1 ml-2"
+            >
+              <XCircle className="w-3 h-3" />
+              Reject
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
@@ -291,10 +350,21 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           </div>
         ) : (
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="courses">Courses</TabsTrigger>
-              <TabsTrigger value="notes">Notes & To-dos</TabsTrigger>
+              <TabsTrigger value="notes">
+                <FileText className="w-4 h-4 mr-2" />
+                Notes
+              </TabsTrigger>
+              <TabsTrigger value="todos">
+                <Target className="w-4 h-4 mr-2" />
+                To-dos
+              </TabsTrigger>
+              <TabsTrigger value="interviews">
+                <CalendarDays className="w-4 h-4 mr-2" />
+                Interviews
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
@@ -398,119 +468,127 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
               </Card>
             </TabsContent>
 
+            {/* Notes Tab */}
             <TabsContent value="notes" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium">Add Note</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Textarea
-                      placeholder="Add a note about this user..."
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      rows={3}
-                    />
-                    <Button 
-                      onClick={handleAddNote} 
-                      disabled={isAddingNote || !newNote.trim()}
-                      size="sm"
-                    >
-                      {isAddingNote ? "Adding..." : "Add Note"}
-                    </Button>
-                  </CardContent>
-                </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Add Note</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea
+                    placeholder="Add a note about this user..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    rows={3}
+                  />
+                  <Button 
+                    onClick={handleAddNote} 
+                    disabled={isAddingNote || !newNote.trim()}
+                    size="sm"
+                  >
+                    {isAddingNote ? "Adding..." : "Add Note"}
+                  </Button>
+                </CardContent>
+              </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium">Add To-do</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Input
-                      placeholder="Add a to-do item..."
-                      value={newTodo}
-                      onChange={(e) => setNewTodo(e.target.value)}
-                    />
-                    <Button 
-                      onClick={handleAddTodo} 
-                      disabled={isAddingTodo || !newTodo.trim()}
-                      size="sm"
-                    >
-                      {isAddingTodo ? "Adding..." : "Add To-do"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Notes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {notes.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No notes yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {notes.map((note) => (
+                        <div key={note.id} className="p-2 bg-muted rounded text-sm">
+                          <p>{note.content}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDate(note.created_at)}
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="mt-1 h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteNote(note.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium">Notes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {notes.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">No notes yet.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {notes.map((note) => (
-                          <div key={note.id} className="p-2 bg-muted rounded text-sm">
-                            <p>{note.content}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatDate(note.created_at)}
+            {/* Todos Tab */}
+            <TabsContent value="todos" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Add To-do</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Input
+                    placeholder="Add a to-do item..."
+                    value={newTodo}
+                    onChange={(e) => setNewTodo(e.target.value)}
+                  />
+                  <Button 
+                    onClick={handleAddTodo} 
+                    disabled={isAddingTodo || !newTodo.trim()}
+                    size="sm"
+                  >
+                    {isAddingTodo ? "Adding..." : "Add To-do"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">To-do Items</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {todos.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No to-do items yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {todos.map((todo) => (
+                        <div key={todo.id} className="flex items-start gap-2 p-2 bg-muted rounded">
+                          <Checkbox
+                            checked={todo.is_completed}
+                            onCheckedChange={() => handleToggleTodo(todo.id, todo.is_completed)}
+                          />
+                          <div className="flex-1">
+                            <p className={`text-sm ${todo.is_completed ? 'line-through text-muted-foreground' : ''}`}>
+                              {todo.content}
                             </p>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="mt-1 h-6 w-6 p-0 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteNote(note.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatDate(todo.created_at)}
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteNote(todo.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium">To-do Items</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {todos.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">No to-do items yet.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {todos.map((todo) => (
-                          <div key={todo.id} className="flex items-start gap-2 p-2 bg-muted rounded">
-                            <Checkbox
-                              checked={todo.is_completed}
-                              onCheckedChange={() => handleToggleTodo(todo.id, todo.is_completed)}
-                            />
-                            <div className="flex-1">
-                              <p className={`text-sm ${todo.is_completed ? 'line-through text-muted-foreground' : ''}`}>
-                                {todo.content}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {formatDate(todo.created_at)}
-                              </p>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteNote(todo.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+            {/* Interviews Tab */}
+            <TabsContent value="interviews" className="space-y-4">
+              <InterviewScheduler 
+                userId={user.user_id} 
+                onUpdate={loadUserDetails}
+              />
             </TabsContent>
           </Tabs>
         )}
@@ -518,3 +596,4 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
     </Dialog>
   );
 };
+

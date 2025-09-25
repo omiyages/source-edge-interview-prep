@@ -18,7 +18,7 @@ export const validateEmail = (email: string): boolean => {
 
 export const validateAndSanitizeInput = (
   input: string, 
-  maxLength: number = 1000,
+  maxLength: number = 10000,
   userId?: string
 ): ValidationResult => {
   const errors: string[] = [];

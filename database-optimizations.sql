@@ -189,3 +189,4 @@ $$ LANGUAGE plpgsql;
 -- 14. Enable query plan caching
 -- This is usually enabled by default in Supabase, but you can verify
 -- by checking the shared_preload_libraries setting
+

@@ -293,7 +293,7 @@ const QuestionCard = ({
                       <div className="p-3 bg-muted rounded-md border border-border overflow-hidden">
                         <RichTextDisplay 
                           content={question.additional_context} 
-                          className="text-sm break-words overflow-wrap-anywhere max-w-full [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-words [&_code]:whitespace-pre-wrap" 
+                          className="text-sm break-words overflow-wrap-anywhere max-w-full [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-words [&_code]:whitespace-pre-wrap [&_pre]:bg-background [&_pre]:border [&_pre]:border-border [&_pre]:shadow-sm" 
                         />
                       </div>
                     </div>

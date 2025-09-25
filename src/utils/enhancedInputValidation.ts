@@ -24,7 +24,7 @@ export const validateSecureTextInput = (
 ): ValidationResult => {
   const {
     minLength = 1,
-    maxLength = 1000,
+    maxLength = 10000,
     required = true,
     allowSpecialChars = true,
     userId

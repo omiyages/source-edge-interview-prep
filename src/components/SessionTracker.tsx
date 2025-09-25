@@ -22,3 +22,4 @@ export const SessionTracker = () => {
   // This component doesn't render anything - it just runs the tracking logic
   return null;
 };
+

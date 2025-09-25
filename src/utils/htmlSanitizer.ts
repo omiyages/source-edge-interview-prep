@@ -6,12 +6,12 @@ const sanitizeConfig = {
   ALLOWED_TAGS: [
     'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 
-    'code', 'pre', 'span', 'div', 'img'
+    'code', 'pre', 'span', 'div', 'img', 'kbd', 'samp', 'var'
   ],
-  ALLOWED_ATTR: ['class', 'style', 'src', 'alt', 'width', 'height'],
+  ALLOWED_ATTR: ['class', 'style', 'src', 'alt', 'width', 'height', 'data-*'],
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
   FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link', 'meta', 'iframe'],
-  ALLOW_DATA_ATTR: false,
+  ALLOW_DATA_ATTR: true,
   ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
 };
 
