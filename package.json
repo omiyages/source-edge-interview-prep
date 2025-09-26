@@ -8,7 +8,12 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "security:test": "node test-https-security.js",
+    "security:test:domain": "node test-https-security.js",
+    "ssl:setup": "chmod +x setup-ssl.sh && ./setup-ssl.sh",
+    "security:audit": "npm audit",
+    "security:audit:fix": "npm audit fix"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
