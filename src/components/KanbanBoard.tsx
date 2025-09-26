@@ -396,7 +396,7 @@ export const KanbanBoard: React.FC = () => {
                                       )}
                                       {user.incomplete_tasks_count && user.incomplete_tasks_count > 0 && (
                                         <Badge variant="destructive" className="text-xs">
-                                          {user.incomplete_tasks_count} Task{user.incomplete_tasks_count > 1 ? 's' : ''}
+                                          {user.incomplete_tasks_count}
                                         </Badge>
                                       )}
                                       {user.upcoming_interview_name && user.upcoming_interview_date && (

@@ -147,11 +147,13 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .from('admin_notes')
         .select('*')
         .eq('user_id', user.user_id)
-        .order('transitioned_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (notesError) {
         console.error('Error loading admin notes:', notesError);
       } else {
+        console.log('✅ Loaded admin notes:', notes?.length || 0, 'notes');
+        console.log('📝 Notes data:', notes);
         setAdminNotes(notes || []);
       }
 
