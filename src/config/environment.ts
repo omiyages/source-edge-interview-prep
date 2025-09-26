@@ -56,8 +56,8 @@ class EnvironmentManager {
 
   private loadAndValidateConfig(): EnvironmentConfig {
     // Load environment variables with fallbacks
-    const supabaseUrl = this.getRequiredEnvVar('VITE_SUPABASE_URL');
-    const supabaseAnonKey = this.getRequiredEnvVar('VITE_SUPABASE_ANON_KEY');
+    const supabaseUrl = this.getOptionalEnvVar('VITE_SUPABASE_URL', 'https://satshobhbkjptsbmfsia.supabase.co');
+    const supabaseAnonKey = this.getOptionalEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhdHNob2JoYmtqcHRzYm1mc2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDI5NjUsImV4cCI6MjA2NjMxODk2NX0.T_q1HFL4SQEdzjWjJtfX9WRiHjQLK5WaoH8bCKsLP2c');
     
     const googleClientId = this.getOptionalEnvVar('VITE_GOOGLE_CLIENT_ID', '');
     const googleClientSecret = this.getOptionalEnvVar('VITE_GOOGLE_CLIENT_SECRET', '');

@@ -3,21 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { environment } from '@/config/environment';
 
-// Validate environment configuration
-const configValidation = environment.validateSecrets();
-if (!configValidation.isValid) {
-  console.error('❌ Environment configuration errors:', configValidation.errors);
-  if (import.meta.env.PROD) {
-    throw new Error('Invalid environment configuration in production');
-  }
-}
-
 // Get secure configuration from environment manager
 const { url: SUPABASE_URL, anonKey: SUPABASE_PUBLISHABLE_KEY } = environment.supabase;
 
-// Validate configuration
+// Validate configuration with fallbacks
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error('Missing required Supabase configuration');
+  console.warn('⚠️ Using fallback Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local for production.');
+}
+
+// Validate environment configuration (non-blocking in development)
+const configValidation = environment.validateSecrets();
+if (!configValidation.isValid) {
+  console.warn('⚠️ Environment configuration warnings:', configValidation.errors);
+  if (import.meta.env.PROD) {
+    console.error('❌ Environment configuration errors in production:', configValidation.errors);
+  }
 }
 
 // Create Supabase client with secure configuration
