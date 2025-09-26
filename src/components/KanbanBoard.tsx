@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { User, Clock, X, Eye, Plus, Calendar, EyeOff } from 'lucide-react';
 import { UserDetailModal } from './UserDetailModal';
 import { AddUserToKanbanModal } from './AddUserToKanbanModal';
+import { BulkAddUsersModal } from './BulkAddUsersModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -18,9 +19,11 @@ interface KanbanUser {
   last_activity_at: string;
   total_session_time_minutes: number;
   stage_updated_at: string;
+  last_updated_at: string;
   upcoming_interview_name?: string;
   upcoming_interview_date?: string;
   is_rejected?: boolean;
+  incomplete_tasks_count?: number;
 }
 
 interface KanbanColumn {
@@ -47,6 +50,7 @@ export const KanbanBoard: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<KanbanUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isBulkAddModalOpen, setIsBulkAddModalOpen] = useState(false);
   const [showRejected, setShowRejected] = useState(false);
   const { user: currentUser, profile } = useAuth();
   const { toast } = useToast();
@@ -83,7 +87,7 @@ export const KanbanBoard: React.FC = () => {
         
         // Use the new function that handles rejected candidates
         const { data, error } = await supabase.rpc('get_users_by_stage_with_rejected', {
-          p_stage: stage.id,
+          p_stage_name: stage.id,  // stage.id is actually the stage name
           p_show_rejected: showRejected
         });
 
@@ -158,7 +162,7 @@ export const KanbanBoard: React.FC = () => {
       // Update database
       const { error } = await supabase.rpc('move_user_to_stage', {
         p_user_id: user.user_id,
-        p_new_stage: destColumn.id,
+        p_new_stage_name: destColumn.id,  // destColumn.id is the stage name
         p_transitioned_by: currentUser?.id,
         p_notes: `Moved from ${sourceColumn.title} to ${destColumn.title}`
       });
@@ -212,6 +216,22 @@ export const KanbanBoard: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Function to determine card color based on user status
+  const getCardColor = (user: KanbanUser) => {
+    // Check for incomplete tasks first (red takes priority)
+    if (user.incomplete_tasks_count && user.incomplete_tasks_count > 0) {
+      return 'bg-red-50 border-2 border-red-200 shadow-sm';
+    }
+    
+    // Check for upcoming interviews (green)
+    if (user.upcoming_interview_name && user.upcoming_interview_date) {
+      return 'bg-green-50 border-2 border-green-200 shadow-sm';
+    }
+    
+    // Default card color with better visibility
+    return 'bg-white border-2 border-gray-200 shadow-sm';
   };
 
   const handleRejectUser = async (userId: string, userEmail: string) => {
@@ -311,6 +331,14 @@ export const KanbanBoard: React.FC = () => {
             <Plus className="w-4 h-4" />
             Add User
           </Button>
+          <Button 
+            onClick={() => setIsBulkAddModalOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <User className="w-4 h-4" />
+            Bulk Add
+          </Button>
         </div>
       </div>
 
@@ -350,8 +378,8 @@ export const KanbanBoard: React.FC = () => {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`p-3 bg-card border border-border rounded-lg cursor-pointer hover:shadow-md transition-shadow ${
-                                    snapshot.isDragging ? 'shadow-lg' : ''
+                                  className={`p-3 ${getCardColor(user)} rounded-lg cursor-pointer hover:shadow-lg hover:border-gray-300 transition-all duration-200 ${
+                                    snapshot.isDragging ? 'shadow-xl scale-105' : ''
                                   }`}
                                   onClick={() => handleUserClick(user)}
                                 >
@@ -359,11 +387,21 @@ export const KanbanBoard: React.FC = () => {
                                     <div className="flex items-center gap-2">
                                       <User className="w-4 h-4 text-muted-foreground" />
                                       <span className="font-medium text-sm">
-                                        {user.full_name || user.email}
+                                        {(user.full_name || user.email).replace(/0$/, '').trim()}
                                       </span>
                                       {user.is_rejected && (
                                         <Badge variant="destructive" className="text-xs">
                                           Rejected
+                                        </Badge>
+                                      )}
+                                      {user.incomplete_tasks_count && user.incomplete_tasks_count > 0 && (
+                                        <Badge variant="destructive" className="text-xs">
+                                          {user.incomplete_tasks_count} Task{user.incomplete_tasks_count > 1 ? 's' : ''}
+                                        </Badge>
+                                      )}
+                                      {user.upcoming_interview_name && user.upcoming_interview_date && (
+                                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                          Interview
                                         </Badge>
                                       )}
                                     </div>
@@ -381,13 +419,14 @@ export const KanbanBoard: React.FC = () => {
                                   </div>
                                   
                                   <div className="space-y-1 text-xs text-muted-foreground">
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="w-3 h-3" />
-                                      <span>{formatTimeSpent(user.total_session_time_minutes || 0)}</span>
-                                    </div>
                                     <div>
                                       Last activity: {formatLastActivity(user.last_activity_at || user.stage_updated_at)}
                                     </div>
+                                    {user.last_updated_at && (
+                                      <div className="text-xs text-blue-600 font-medium">
+                                        Updated: {formatLastActivity(user.last_updated_at)}
+                                      </div>
+                                    )}
                                     {user.upcoming_interview_name && user.upcoming_interview_date && (
                                       <div className="flex items-center gap-1 text-blue-600">
                                         <Calendar className="w-3 h-3" />
@@ -434,6 +473,12 @@ export const KanbanBoard: React.FC = () => {
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
         onUserAdded={loadKanbanData}
+      />
+
+      <BulkAddUsersModal
+        isOpen={isBulkAddModalOpen}
+        onClose={() => setIsBulkAddModalOpen(false)}
+        onUpdate={loadKanbanData}
       />
     </div>
   );

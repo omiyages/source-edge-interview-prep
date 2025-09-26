@@ -39,6 +39,7 @@ interface KanbanUser {
   last_activity_at: string;
   total_session_time_minutes: number;
   stage_updated_at: string;
+  last_updated_at: string;
   upcoming_interview_name?: string;
   upcoming_interview_date?: string;
   is_rejected?: boolean;
@@ -91,6 +92,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 }) => {
   const [courseAssignments, setCourseAssignments] = useState<CourseAssignment[]>([]);
   const [adminNotes, setAdminNotes] = useState<AdminNote[]>([]);
+  const [stageTransitions, setStageTransitions] = useState<any[]>([]);
+  const [interviews, setInterviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState('');
   const [newTodo, setNewTodo] = useState('');
@@ -104,6 +107,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       loadUserDetails();
     }
   }, [isOpen, user.user_id]);
+
 
   const loadUserDetails = async () => {
     try {
@@ -143,12 +147,38 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .from('admin_notes')
         .select('*')
         .eq('user_id', user.user_id)
-        .order('created_at', { ascending: false });
+        .order('transitioned_at', { ascending: false });
 
       if (notesError) {
         console.error('Error loading admin notes:', notesError);
       } else {
         setAdminNotes(notes || []);
+      }
+
+      // Load stage transitions
+      const { data: transitions, error: transitionsError } = await supabase
+        .from('stage_transitions')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .order('transitioned_at', { ascending: false });
+
+      if (transitionsError) {
+        console.error('Error loading stage transitions:', transitionsError);
+      } else {
+        setStageTransitions(transitions || []);
+      }
+
+      // Load interviews
+      const { data: interviewData, error: interviewError } = await supabase
+        .from('interviews')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .order('scheduled_date', { ascending: false });
+
+      if (interviewError) {
+        console.error('Error loading interviews:', interviewError);
+      } else {
+        setInterviews(interviewData || []);
       }
     } catch (error) {
       console.error('Error loading user details:', error);
@@ -408,21 +438,158 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Admin Notes:</span>
-                      <span className="text-sm font-medium">{notes.length}</span>
+                      <span className="text-sm font-medium">{adminNotes.filter(note => note.note_type === 'note').length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">To-do Items:</span>
-                      <span className="text-sm font-medium">{todos.length}</span>
+                      <span className="text-sm font-medium">{adminNotes.filter(note => note.note_type === 'todo').length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Completed:</span>
                       <span className="text-sm font-medium">
-                        {todos.filter(todo => todo.is_completed).length}/{todos.length}
+                        {adminNotes.filter(note => note.note_type === 'todo' && note.is_completed).length}/{adminNotes.filter(note => note.note_type === 'todo').length}
                       </span>
                     </div>
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Activity Timeline */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Activity Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    
+                    // Create a combined timeline of all activities
+                    const timelineItems = [];
+                    
+                    // Add notes
+                    adminNotes.filter(note => note.note_type === 'note').forEach(note => {
+                      timelineItems.push({
+                        id: `note-${note.id}`,
+                        type: 'note',
+                        title: 'Note Added',
+                        content: note.content,
+                        timestamp: note.created_at,
+                        icon: FileText,
+                        color: 'text-blue-600',
+                        bgColor: 'bg-blue-50',
+                        borderColor: 'border-blue-200'
+                      });
+                    });
+                    
+                    // Add todos
+                    adminNotes.filter(note => note.note_type === 'todo').forEach(todo => {
+                      timelineItems.push({
+                        id: `todo-${todo.id}`,
+                        type: 'todo',
+                        title: todo.is_completed ? 'To-do Completed' : 'To-do Added',
+                        content: todo.content,
+                        timestamp: todo.created_at,
+                        icon: todo.is_completed ? CheckCircle : Circle,
+                        color: todo.is_completed ? 'text-green-600' : 'text-orange-600',
+                        bgColor: todo.is_completed ? 'bg-green-50' : 'bg-orange-50',
+                        borderColor: todo.is_completed ? 'border-green-200' : 'border-orange-200'
+                      });
+                    });
+                    
+                    // Add interviews from loaded data
+                    interviews.forEach(interview => {
+                      timelineItems.push({
+                        id: `interview-${interview.id}`,
+                        type: 'interview',
+                        title: 'Interview Scheduled',
+                        content: `${interview.interview_type} - ${formatDate(interview.scheduled_date)}`,
+                        timestamp: interview.scheduled_date,
+                        icon: CalendarDays,
+                        color: 'text-purple-600',
+                        bgColor: 'bg-purple-50',
+                        borderColor: 'border-purple-200'
+                      });
+                    });
+                    
+                    // Add stage transitions
+                    stageTransitions.forEach(transition => {
+                      timelineItems.push({
+                        id: `transition-${transition.id}`,
+                        type: 'stage',
+                        title: 'Stage Moved',
+                        content: `From ${transition.from_stage || 'Unknown'} to ${transition.to_stage}`,
+                        timestamp: transition.created_at,
+                        icon: Target,
+                        color: 'text-indigo-600',
+                        bgColor: 'bg-indigo-50',
+                        borderColor: 'border-indigo-200'
+                      });
+                    });
+                    
+                    // Sort by timestamp (newest first)
+                    timelineItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                    
+                    if (timelineItems.length === 0) {
+                      // Add basic user activity if no other activities
+                      timelineItems.push({
+                        id: 'user-created',
+                        type: 'user',
+                        title: 'User Added to System',
+                        content: `User ${user.full_name || user.email} was added to the system`,
+                        timestamp: user.stage_updated_at || user.last_activity_at || new Date().toISOString(),
+                        icon: User,
+                        color: 'text-gray-600',
+                        bgColor: 'bg-gray-50',
+                        borderColor: 'border-gray-200'
+                      });
+                    }
+                    
+                    return (
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {timelineItems.slice(0, 10).map((item, index) => {
+                          const IconComponent = item.icon;
+                          return (
+                            <div key={item.id} className="flex items-start gap-3">
+                              {/* Timeline line */}
+                              <div className="flex flex-col items-center">
+                                <div className={`w-8 h-8 rounded-full ${item.bgColor} ${item.borderColor} border-2 flex items-center justify-center`}>
+                                  <IconComponent className={`w-4 h-4 ${item.color}`} />
+                                </div>
+                                {index < timelineItems.slice(0, 10).length - 1 && (
+                                  <div className="w-0.5 h-6 bg-border mt-2"></div>
+                                )}
+                              </div>
+                              
+                              {/* Timeline content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium">{item.title}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDate(item.timestamp)}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {item.content}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        
+                        {timelineItems.length > 10 && (
+                          <div className="text-center pt-2">
+                            <p className="text-xs text-muted-foreground">
+                              +{timelineItems.length - 10} more activities
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="courses" className="space-y-4">
@@ -496,11 +663,11 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   <CardTitle className="text-sm font-medium">Notes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {notes.length === 0 ? (
+                  {adminNotes.filter(note => note.note_type === 'note').length === 0 ? (
                     <p className="text-muted-foreground text-sm">No notes yet.</p>
                   ) : (
                     <div className="space-y-2">
-                      {notes.map((note) => (
+                      {adminNotes.filter(note => note.note_type === 'note').map((note) => (
                         <div key={note.id} className="p-2 bg-muted rounded text-sm">
                           <p>{note.content}</p>
                           <p className="text-xs text-muted-foreground mt-1">
@@ -549,11 +716,11 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   <CardTitle className="text-sm font-medium">To-do Items</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {todos.length === 0 ? (
+                  {adminNotes.filter(note => note.note_type === 'todo').length === 0 ? (
                     <p className="text-muted-foreground text-sm">No to-do items yet.</p>
                   ) : (
                     <div className="space-y-2">
-                      {todos.map((todo) => (
+                      {adminNotes.filter(note => note.note_type === 'todo').map((todo) => (
                         <div key={todo.id} className="flex items-start gap-2 p-2 bg-muted rounded">
                           <Checkbox
                             checked={todo.is_completed}

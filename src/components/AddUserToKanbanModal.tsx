@@ -99,7 +99,7 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, full_name, role, created_at, last_login_at, total_session_time_minutes')
+        .select('id, email, full_name, role, position, created_at, last_login_at, total_session_time_minutes')
         .order('created_at', { ascending: false });
 
       console.log('📊 Users query result:', { data, error });
@@ -213,7 +213,7 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
 
       const { error: kanbanError } = await supabase.rpc('move_user_to_stage', {
         p_user_id: selectedUser.id,
-        p_new_stage: 'Interested',
+        p_new_stage_name: 'Interested',
         p_transitioned_by: currentUser?.id,
         p_notes: `User added to kanban board with position: ${selectedRole}`
       });
@@ -317,7 +317,12 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
                             <User className="w-4 h-4 text-primary" />
                           </div>
                           <div>
-                            <p className="font-medium">{user.full_name || 'No name'}</p>
+                            <p className="font-medium flex items-center gap-2">
+                              {user.full_name || 'No name'}
+                              <Badge variant="secondary" className="text-xs">
+                                {user.position && user.position.length > 6 ? `${user.position.substring(0, 6)}...` : user.position || 'No position'}
+                              </Badge>
+                            </p>
                             <p className="text-sm text-muted-foreground">{user.email}</p>
                             <p className="text-xs text-muted-foreground">
                               Joined: {formatDate(user.created_at)}

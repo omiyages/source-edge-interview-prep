@@ -24,10 +24,10 @@ export const CreateUserForm = () => {
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
-  const [generatedPassword, setGeneratedPassword] = useState("");
+  const [generatedPassword, setGeneratedPassword] = useState("SourceEdge2025!");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [useManualPassword, setUseManualPassword] = useState(false);
-  const [manualPassword, setManualPassword] = useState("");
+  const [useManualPassword, setUseManualPassword] = useState(true);
+  const [manualPassword, setManualPassword] = useState("SourceEdge2025!");
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [] });
   
   const { toast } = useToast();
@@ -39,6 +39,27 @@ export const CreateUserForm = () => {
     setGeneratedPassword(newPassword);
     if (!useManualPassword) {
       setManualPassword(newPassword);
+    }
+  };
+
+  // Auto-generate email from full name
+  const generateEmailFromName = (name: string) => {
+    if (!name.trim()) return "";
+    
+    // Remove spaces, convert to lowercase, and add @sourceedge.com
+    const emailPrefix = name
+      .toLowerCase()
+      .replace(/\s+/g, '') // Remove all spaces
+      .replace(/[^a-z0-9]/g, ''); // Remove special characters, keep only letters and numbers
+    
+    return `${emailPrefix}@source-edge.com`;
+  };
+
+  const handleFullNameChange = (value: string) => {
+    setFullName(value);
+    // Auto-populate email if it's empty or was previously auto-generated
+    if (!email || email.includes('@source-edge.com')) {
+      setEmail(generateEmailFromName(value));
     }
   };
 
@@ -132,9 +153,10 @@ export const CreateUserForm = () => {
       setEmail("");
       setFullName("");
       setRole("user");
-      setManualPassword("");
+      setGeneratedPassword("SourceEdge2025!");
+      setManualPassword("SourceEdge2025!");
       setPasswordStrength({ score: 0, feedback: [] });
-      setUseManualPassword(false);
+      setUseManualPassword(true);
     },
     onError: (error: any) => {
       console.error('User creation error:', error);
@@ -233,7 +255,7 @@ export const CreateUserForm = () => {
               id="fullName"
               type="text"
               value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              onChange={(e) => handleFullNameChange(e.target.value)}
               placeholder="John Doe"
               required
               disabled={createUserMutation.isPending}
