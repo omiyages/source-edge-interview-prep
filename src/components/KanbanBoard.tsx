@@ -3,33 +3,28 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { User, Clock, X, Eye, Plus, Calendar, EyeOff } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { User, Clock, X, Eye, Plus, Calendar, EyeOff, Filter, Search, Edit } from 'lucide-react';
 import { UserDetailModal } from './UserDetailModal';
 import { AddUserToKanbanModal } from './AddUserToKanbanModal';
 import { BulkAddUsersModal } from './BulkAddUsersModal';
+import { EditUserModal } from './EditUserModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { KanbanUser, KanbanColumn } from '@/types/kanban';
 
-interface KanbanUser {
-  user_id: string;
-  email: string;
-  full_name: string;
+interface FilterOptions {
   role: string;
-  last_activity_at: string;
-  total_session_time_minutes: number;
-  stage_updated_at: string;
-  last_updated_at: string;
-  upcoming_interview_name?: string;
-  upcoming_interview_date?: string;
-  is_rejected?: boolean;
-  incomplete_tasks_count?: number;
-}
-
-interface KanbanColumn {
-  id: string;
-  title: string;
-  users: KanbanUser[];
+  createdDateRange: string;
+  lastUpdatedRange: string;
+  hasToDo: boolean | null;
+  hasInterview: boolean | null;
+  searchTerm: string;
 }
 
 const KANBAN_STAGES = [
@@ -51,9 +46,76 @@ export const KanbanBoard: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isBulkAddModalOpen, setIsBulkAddModalOpen] = useState(false);
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<KanbanUser | null>(null);
   const [showRejected, setShowRejected] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({
+    role: 'all',
+    createdDateRange: 'all',
+    lastUpdatedRange: 'all',
+    hasToDo: null,
+    hasInterview: null,
+    searchTerm: ''
+  });
+  const [showFilters, setShowFilters] = useState(true);
+  const [availablePositions, setAvailablePositions] = useState<string[]>([]);
+  const [assignedPositions, setAssignedPositions] = useState<string[]>([]);
   const { user: currentUser, profile } = useAuth();
   const { toast } = useToast();
+
+  // Load available positions from dropdown_options
+  const loadAvailablePositions = async () => {
+    try {
+      // Use the correct column name: field_name = 'role' for job positions
+      const { data, error } = await supabase
+        .from('dropdown_options')
+        .select('value')
+        .eq('field_name', 'role')
+        .order('value');
+
+      if (error) {
+        console.error('Error loading positions:', error);
+        // Fallback: just use the assigned positions we already have
+        return;
+      }
+
+      const positions = data?.map(item => item.value) || [];
+      console.log('📋 Loaded available positions:', positions);
+      setAvailablePositions(positions);
+    } catch (error) {
+      console.error('Error loading positions:', error);
+    }
+  };
+
+  // Extract assigned positions from current users
+  const updateAssignedPositions = () => {
+    const positions = new Set<string>();
+    console.log('🔍 Updating assigned positions from columns:', columns);
+    console.log('🔍 Total columns:', columns.length);
+    
+    columns.forEach((column, columnIndex) => {
+      console.log(`🔍 Column ${columnIndex}: ${column.title} with ${column.users.length} users`);
+      column.users.forEach((user, userIndex) => {
+        console.log(`👤 User ${userIndex + 1} in ${column.title}: ${user.full_name}`);
+        console.log(`   - Position: "${user.position}" (type: ${typeof user.position})`);
+        console.log(`   - Role: "${user.role}"`);
+        console.log(`   - Email: "${user.email}"`);
+        
+        const userPosition = user.position || user.role; // Use position or fallback to role
+        if (userPosition && userPosition.trim()) {
+          console.log(`✅ Adding position: "${userPosition}"`);
+          positions.add(userPosition);
+        } else {
+          console.log(`❌ No position found for ${user.full_name}`);
+        }
+      });
+    });
+    
+    const positionArray = Array.from(positions).sort();
+    console.log('📋 Final assigned positions found:', positionArray);
+    console.log('📋 Number of unique positions:', positionArray.length);
+    setAssignedPositions(positionArray);
+  };
 
   // Load users for all stages
   const loadKanbanData = async () => {
@@ -85,9 +147,9 @@ export const KanbanBoard: React.FC = () => {
       for (const stage of KANBAN_STAGES) {
         console.log(`🔍 Loading users for stage: ${stage.id}`);
         
-        // Use the new function that handles rejected candidates
-        const { data, error } = await supabase.rpc('get_users_by_stage_with_rejected', {
-          p_stage_name: stage.id,  // stage.id is actually the stage name
+        // Use the RPC function (keep it simple)
+        const { data, error } = await supabase.rpc('get_users_by_stage_with_rejected' as any, {
+          p_stage_name: stage.id,
           p_show_rejected: showRejected
         });
 
@@ -107,17 +169,70 @@ export const KanbanBoard: React.FC = () => {
             users: []
           });
         } else {
-          console.log(`✅ Stage ${stage.id} loaded ${data?.length || 0} users`);
-          newColumns.push({
-            id: stage.id,
-            title: stage.title,
-            users: data || []
-          });
+        console.log(`✅ Stage ${stage.id} loaded ${data?.length || 0} users`);
+        console.log(`📊 Sample user data for ${stage.id}:`, data?.[0]);
+        if (data && data.length > 0) {
+          console.log(`🔍 User position data for ${stage.id}:`, data.map(user => ({ 
+            name: user.full_name, 
+            position: user.position,
+            role: user.role,
+            email: user.email
+          })));
+          console.log(`🔍 First user full data for ${stage.id}:`, data[0]);
+          
+          // Check if any users have position data
+          const usersWithPositions = data.filter(user => user.position && user.position.trim());
+          console.log(`📊 Users with positions in ${stage.id}: ${usersWithPositions.length}/${data.length}`);
+          if (usersWithPositions.length > 0) {
+            console.log(`✅ Sample positions:`, usersWithPositions.map(u => u.position));
+          } else {
+            console.log(`❌ No users have position data in ${stage.id}`);
+          }
+        }
+        // Aggressive deduplication to remove ghost duplicates
+        const finalUsers = data ? data.reduce((acc: KanbanUser[], user: KanbanUser) => {
+          // Check for duplicates by user_id
+          const existingById = acc.find(u => u.user_id === user.user_id);
+          if (existingById) {
+            console.log(`🔄 Duplicate user_id found: ${user.full_name} (${user.user_id}) - keeping first occurrence`);
+            return acc;
+          }
+          
+          // Check for duplicates by email
+          const existingByEmail = acc.find(u => u.email === user.email);
+          if (existingByEmail) {
+            console.log(`🔄 Duplicate email found: ${user.email} - keeping first occurrence`);
+            return acc;
+          }
+          
+          // Check for invalid/ghost users (missing essential data)
+          if (!user.user_id || !user.email || !user.full_name) {
+            console.log(`🔄 Invalid/ghost user found: ${JSON.stringify(user)} - skipping`);
+            return acc;
+          }
+          
+          // User is valid and unique, add to accumulator
+          acc.push(user);
+          return acc;
+        }, []) : [];
+        
+        console.log(`📊 Stage ${stage.id}: ${data?.length || 0} total users, ${finalUsers.length} valid unique users`);
+        
+        newColumns.push({
+          id: stage.id,
+          title: stage.title,
+          users: finalUsers
+        });
         }
       }
 
       console.log('📋 Final columns:', newColumns);
       setColumns(newColumns);
+      
+      // Update assigned positions after loading data
+      setTimeout(() => {
+        updateAssignedPositions();
+      }, 100);
     } catch (error) {
       console.error('❌ Error loading kanban data:', error);
       toast({
@@ -132,7 +247,33 @@ export const KanbanBoard: React.FC = () => {
 
   useEffect(() => {
     loadKanbanData();
+    loadAvailablePositions();
   }, [showRejected]);
+
+  // Hide standalone "0" text in user cards
+  useEffect(() => {
+    const hideZeroText = () => {
+      const userCards = document.querySelectorAll('.kanban-user-card');
+      userCards.forEach(card => {
+        const walker = document.createTreeWalker(
+          card,
+          NodeFilter.SHOW_TEXT
+        );
+        
+        let node;
+        while (node = walker.nextNode()) {
+          if (node.textContent?.trim() === '0') {
+            node.textContent = '';
+          }
+        }
+      });
+    };
+
+    // Run after a short delay to ensure DOM is updated
+    const timeoutId = setTimeout(hideZeroText, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [columns]);
 
   const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -160,7 +301,7 @@ export const KanbanBoard: React.FC = () => {
       });
 
       // Update database
-      const { error } = await supabase.rpc('move_user_to_stage', {
+      const { error } = await supabase.rpc('move_user_to_stage' as any, {
         p_user_id: user.user_id,
         p_new_stage_name: destColumn.id,  // destColumn.id is the stage name
         p_transitioned_by: currentUser?.id,
@@ -240,9 +381,9 @@ export const KanbanBoard: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase.rpc('reject_user', {
+      const { error } = await supabase.rpc('reject_user' as any, {
         p_user_id: userId,
-        p_rejected_by: user?.id,
+        p_rejected_by: currentUser?.id,
         p_reason: 'Rejected by admin'
       });
 
@@ -299,6 +440,101 @@ export const KanbanBoard: React.FC = () => {
     return `${diffInDays}d ago`;
   };
 
+  // Helper function to filter out "0" values
+  const filterZeroValues = (value: any) => {
+    if (value === 0 || value === '0' || value === null || value === undefined) {
+      return null;
+    }
+    return value;
+  };
+
+  // Filter users based on current filter settings
+  const filterUsers = (users: KanbanUser[]) => {
+    return users.filter(user => {
+      // Search term filter
+      if (filters.searchTerm) {
+        const searchLower = filters.searchTerm.toLowerCase();
+        const nameMatch = user.full_name?.toLowerCase().includes(searchLower);
+        const emailMatch = user.email.toLowerCase().includes(searchLower);
+        if (!nameMatch && !emailMatch) return false;
+      }
+
+    // Position filter (assigned position when added to Kanban)
+    if (filters.role !== 'all') {
+      const userPosition = user.position || user.role; // Fallback to role if no position
+      if (userPosition !== filters.role) {
+        return false;
+      }
+    }
+
+      // Created date filter
+      if (filters.createdDateRange !== 'all') {
+        const createdDate = new Date(user.stage_updated_at);
+        const now = new Date();
+        const daysDiff = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        switch (filters.createdDateRange) {
+          case 'today':
+            if (daysDiff > 0) return false;
+            break;
+          case 'week':
+            if (daysDiff > 7) return false;
+            break;
+          case 'month':
+            if (daysDiff > 30) return false;
+            break;
+          case 'quarter':
+            if (daysDiff > 90) return false;
+            break;
+        }
+      }
+
+      // Last updated filter
+      if (filters.lastUpdatedRange !== 'all') {
+        const updatedDate = new Date(user.last_updated_at || user.stage_updated_at);
+        const now = new Date();
+        const daysDiff = Math.floor((now.getTime() - updatedDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        switch (filters.lastUpdatedRange) {
+          case 'today':
+            if (daysDiff > 0) return false;
+            break;
+          case 'week':
+            if (daysDiff > 7) return false;
+            break;
+          case 'month':
+            if (daysDiff > 30) return false;
+            break;
+          case 'quarter':
+            if (daysDiff > 90) return false;
+            break;
+        }
+      }
+
+      // Has to-do filter
+      if (filters.hasToDo !== null) {
+        const hasTasks = !!(user.incomplete_tasks_count && user.incomplete_tasks_count > 0);
+        if (filters.hasToDo !== hasTasks) return false;
+      }
+
+      // Has interview filter
+      if (filters.hasInterview !== null) {
+        const hasInterview = !!(user.upcoming_interview_name && user.upcoming_interview_date);
+        if (filters.hasInterview !== hasInterview) return false;
+      }
+
+      return true;
+    });
+  };
+
+  // Apply filters to columns
+  const getFilteredColumns = () => {
+    return columns.map(column => ({
+      ...column,
+      users: filterUsers(column.users)
+    }));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -310,46 +546,228 @@ export const KanbanBoard: React.FC = () => {
 
   return (
     <div className="w-full">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">User Pipeline</h2>
-          <p className="text-muted-foreground">Drag and drop users between stages to track their progress.</p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">User Pipeline</h2>
+            <p className="text-muted-foreground">Drag and drop users between stages to track their progress.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant={showRejected ? "default" : "outline"}
+              onClick={() => setShowRejected(!showRejected)}
+              className="flex items-center gap-2"
+            >
+              {showRejected ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              {showRejected ? "Hide Rejected" : "Show Rejected"}
+            </Button>
+            <Button 
+              onClick={() => setIsAddUserModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add User
+            </Button>
+            <Button 
+              onClick={() => setIsBulkAddModalOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <User className="w-4 h-4" />
+              Bulk Add
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant={showRejected ? "default" : "outline"}
-            onClick={() => setShowRejected(!showRejected)}
-            className="flex items-center gap-2"
-          >
-            {showRejected ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            {showRejected ? "Hide Rejected" : "Show Rejected"}
-          </Button>
-          <Button 
-            onClick={() => setIsAddUserModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add User
-          </Button>
-          <Button 
-            onClick={() => setIsBulkAddModalOpen(true)}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <User className="w-4 h-4" />
-            Bulk Add
-          </Button>
+
+        {/* Filter Section */}
+        <div className="bg-gray-50 p-4 rounded-lg border">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Filters</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilters({
+                  role: 'all',
+                  createdDateRange: 'all',
+                  lastUpdatedRange: 'all',
+                  hasToDo: null,
+                  hasInterview: null,
+                  searchTerm: ''
+                })}
+              >
+                Clear All
+              </Button>
+            </div>
+          </div>
+
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {/* Search Term */}
+              <div className="space-y-2">
+                <Label htmlFor="search">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Name or email..."
+                    value={filters.searchTerm}
+                    onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Position Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="role">Position</Label>
+                <Select value={filters.role} onValueChange={(value) => setFilters(prev => ({ ...prev, role: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All positions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Positions</SelectItem>
+                    {assignedPositions.map((position) => (
+                      <SelectItem key={position} value={position}>
+                        {position}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Created Date Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="createdDate">Created</Label>
+                <Select value={filters.createdDateRange} onValueChange={(value) => setFilters(prev => ({ ...prev, createdDateRange: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="quarter">This Quarter</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Last Updated Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="lastUpdated">Last Updated</Label>
+                <Select value={filters.lastUpdatedRange} onValueChange={(value) => setFilters(prev => ({ ...prev, lastUpdatedRange: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="quarter">This Quarter</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Has To-Do Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="hasToDo">Has To-Do</Label>
+                <Select 
+                  value={filters.hasToDo === null ? 'all' : filters.hasToDo ? 'yes' : 'no'} 
+                  onValueChange={(value) => setFilters(prev => ({ 
+                    ...prev, 
+                    hasToDo: value === 'all' ? null : value === 'yes' 
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="yes">Has Tasks</SelectItem>
+                    <SelectItem value="no">No Tasks</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Has Interview Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="hasInterview">Has Interview</Label>
+                <Select 
+                  value={filters.hasInterview === null ? 'all' : filters.hasInterview ? 'yes' : 'no'} 
+                  onValueChange={(value) => setFilters(prev => ({ 
+                    ...prev, 
+                    hasInterview: value === 'all' ? null : value === 'yes' 
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="yes">Has Interview</SelectItem>
+                    <SelectItem value="no">No Interview</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Filter Summary */}
+        {showFilters && (
+          <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center gap-4">
+              <span>
+                Showing {getFilteredColumns().reduce((total, col) => total + col.users.length, 0)} users
+              </span>
+              <span>
+                Total: {columns.reduce((total, col) => total + col.users.length, 0)} users
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {filters.searchTerm && (
+                <Badge variant="secondary">Search: {filters.searchTerm}</Badge>
+              )}
+              {filters.role !== 'all' && (
+                <Badge variant="secondary">Position: {filters.role}</Badge>
+              )}
+              {filters.createdDateRange !== 'all' && (
+                <Badge variant="secondary">Created: {filters.createdDateRange}</Badge>
+              )}
+              {filters.lastUpdatedRange !== 'all' && (
+                <Badge variant="secondary">Updated: {filters.lastUpdatedRange}</Badge>
+              )}
+              {filters.hasToDo !== null && (
+                <Badge variant="secondary">To-Do: {filters.hasToDo ? 'Yes' : 'No'}</Badge>
+              )}
+              {filters.hasInterview !== null && (
+                <Badge variant="secondary">Interview: {filters.hasInterview ? 'Yes' : 'No'}</Badge>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {columns.map((column) => {
+          {getFilteredColumns().map((column) => {
             const stageConfig = KANBAN_STAGES.find(s => s.id === column.id);
             return (
               <div key={column.id} className="flex-shrink-0 w-80">
-                <Card className="h-full">
-                  <CardHeader className="pb-3">
+                <Card className="h-full flex flex-col max-h-[calc(100vh-200px)] border-2 border-gray-100">
+                  <CardHeader className="pb-3 flex-shrink-0">
                     <CardTitle className="flex items-center justify-between">
                       <span className="text-sm font-medium">{column.title}</span>
                       <Badge variant="secondary" className="text-xs">
@@ -357,15 +775,19 @@ export const KanbanBoard: React.FC = () => {
                       </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 flex-1 overflow-hidden">
                     <Droppable droppableId={column.id}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`min-h-[200px] space-y-2 ${
+                          className={`h-full overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 ${
                             snapshot.isDraggingOver ? 'bg-muted/50 rounded-md' : ''
                           }`}
+                          style={{ 
+                            maxHeight: 'calc(100vh - 300px)',
+                            minHeight: '200px'
+                          }}
                         >
                           {column.users.map((user, index) => (
                             <Draggable
@@ -378,7 +800,7 @@ export const KanbanBoard: React.FC = () => {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`p-3 ${getCardColor(user)} rounded-lg cursor-pointer hover:shadow-lg hover:border-gray-300 transition-all duration-200 ${
+                                  className={`kanban-user-card p-3 ${getCardColor(user)} rounded-lg cursor-pointer hover:shadow-lg hover:border-gray-300 transition-all duration-200 ${
                                     snapshot.isDragging ? 'shadow-xl scale-105' : ''
                                   }`}
                                   onClick={() => handleUserClick(user)}
@@ -387,35 +809,63 @@ export const KanbanBoard: React.FC = () => {
                                     <div className="flex items-center gap-2">
                                       <User className="w-4 h-4 text-muted-foreground" />
                                       <span className="font-medium text-sm">
-                                        {(user.full_name || user.email).replace(/0$/, '').trim()}
+                                        {user.full_name || user.email}
                                       </span>
                                       {user.is_rejected && (
                                         <Badge variant="destructive" className="text-xs">
                                           Rejected
                                         </Badge>
                                       )}
-                                      {user.incomplete_tasks_count && user.incomplete_tasks_count > 0 && (
-                                        <Badge variant="destructive" className="text-xs">
-                                          {user.incomplete_tasks_count}
-                                        </Badge>
-                                      )}
-                                      {user.upcoming_interview_name && user.upcoming_interview_date && (
-                                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                                          Interview
-                                        </Badge>
-                                      )}
                                     </div>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRejectUser(user.user_id, user.email);
-                                      }}
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </Button>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-blue-600"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingUser(user);
+                                          setIsEditUserModalOpen(true);
+                                        }}
+                                      >
+                                        <Edit className="w-3 h-3" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRejectUser(user.user_id, user.email);
+                                        }}
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Assigned role below the name */}
+                                  {user.position && (
+                                    <div className="text-xs text-gray-500 mb-1">
+                                      {user.position}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Task and Interview indicators below the role */}
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {/* Tasks counter - show in red if there are incomplete tasks */}
+                                    {user.incomplete_tasks_count && 
+                                     Number(user.incomplete_tasks_count) > 0 && (
+                                      <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
+                                        {user.incomplete_tasks_count} Task{Number(user.incomplete_tasks_count) !== 1 ? 's' : ''}
+                                      </Badge>
+                                    )}
+                                    {/* Interview counter - show in red if there are upcoming interviews */}
+                                    {user.upcoming_interview_name && user.upcoming_interview_date && (
+                                      <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
+                                        Interview
+                                      </Badge>
+                                    )}
                                   </div>
                                   
                                   <div className="space-y-1 text-xs text-muted-foreground">
@@ -479,6 +929,16 @@ export const KanbanBoard: React.FC = () => {
         isOpen={isBulkAddModalOpen}
         onClose={() => setIsBulkAddModalOpen(false)}
         onUpdate={loadKanbanData}
+      />
+
+      <EditUserModal
+        isOpen={isEditUserModalOpen}
+        onClose={() => {
+          setIsEditUserModalOpen(false);
+          setEditingUser(null);
+        }}
+        onUserUpdated={loadKanbanData}
+        user={editingUser}
       />
     </div>
   );

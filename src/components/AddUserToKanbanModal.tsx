@@ -31,6 +31,11 @@ interface RoleOption {
   label: string;
 }
 
+interface CompanyOption {
+  value: string;
+  label: string;
+}
+
 interface AddUserToKanbanModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -45,17 +50,20 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
+  const [companyOptions, setCompanyOptions] = useState<CompanyOption[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
-  // Load role options from dropdown_options table
+  // Load role and company options from dropdown_options table
   useEffect(() => {
     if (isOpen) {
       loadRoleOptions();
+      loadCompanyOptions();
       loadUsers();
     }
   }, [isOpen]);
@@ -89,6 +97,38 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
       }
     } catch (error) {
       console.error('❌ Unexpected error loading role options:', error);
+    }
+  };
+
+  const loadCompanyOptions = async () => {
+    try {
+      console.log('🔍 Loading company options from dropdown_options table...');
+      
+      const { data, error } = await supabase
+        .from('dropdown_options')
+        .select('value')
+        .eq('field_name', 'company')
+        .order('value');
+
+      console.log('📊 Company options query result:', { data, error });
+
+      if (error) {
+        console.error('❌ Error loading company options:', error);
+        toast({
+          title: "Error",
+          description: `Failed to load company options: ${error.message}`,
+          variant: "destructive",
+        });
+      } else {
+        const options = data?.map(item => ({
+          value: item.value,
+          label: item.value
+        })) || [];
+        console.log('✅ Loaded company options:', options.length);
+        setCompanyOptions(options);
+      }
+    } catch (error) {
+      console.error('❌ Unexpected error loading company options:', error);
     }
   };
 
@@ -146,10 +186,10 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
   });
 
   const handleAddUser = async () => {
-    if (!selectedUser || !selectedRole) {
+    if (!selectedUser || !selectedRole || !selectedCompany) {
       toast({
         title: "Missing Information",
-        description: "Please select a user and assign a role.",
+        description: "Please select a user, assign a role, and select a company.",
         variant: "destructive",
       });
       return;
@@ -185,11 +225,12 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
         return;
       }
 
-      // Update user's position in profiles table
+      // Update user's position and company in profiles table
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ 
           position: selectedRole,
+          company: selectedCompany,
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedUser.id);
@@ -234,13 +275,14 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
 
       toast({
         title: "Success",
-        description: `${selectedUser.email} has been added to the kanban board with position: ${selectedRole}`,
+        description: `${selectedUser.email} has been added to the kanban board with position: ${selectedRole} at ${selectedCompany}`,
       });
 
       onUserAdded();
       onClose();
       setSelectedUser(null);
       setSelectedRole('');
+      setSelectedCompany('');
       setSearchTerm('');
 
     } catch (error) {
@@ -370,6 +412,33 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
             </CardContent>
           </Card>
 
+          {/* Company Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Assign Company</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="company-select">Select a company for this user</Label>
+                <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a company..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This company will be associated with the user and displayed on their kanban card.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Selected User Summary */}
           {selectedUser && (
             <Card>
@@ -392,6 +461,11 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
                         → {selectedRole}
                       </Badge>
                     )}
+                    {selectedCompany && (
+                      <Badge variant="outline" className="ml-2">
+                        @ {selectedCompany}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -406,7 +480,7 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
               </Button>
               <Button
                 onClick={handleAddUser}
-                disabled={!selectedUser || !selectedRole || submitting}
+                disabled={!selectedUser || !selectedRole || !selectedCompany || submitting}
                 className="min-w-[120px]"
               >
                 {submitting ? (

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   User, 
   Clock, 
@@ -36,6 +37,7 @@ interface KanbanUser {
   email: string;
   full_name: string;
   role: string;
+  position?: string;
   last_activity_at: string;
   total_session_time_minutes: number;
   stage_updated_at: string;
@@ -43,6 +45,15 @@ interface KanbanUser {
   upcoming_interview_name?: string;
   upcoming_interview_date?: string;
   is_rejected?: boolean;
+  linkedin_url?: string;
+  current_salary?: string;
+  expected_salary?: string;
+  notice_period?: string;
+  current_company?: string;
+  current_job_title?: string;
+  location?: string;
+  japanese_proficiency?: string;
+  years_of_experience?: string;
 }
 
 interface CourseAssignment {
@@ -99,6 +110,19 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   const [newTodo, setNewTodo] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isAddingTodo, setIsAddingTodo] = useState(false);
+  
+  // Information fields state
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [currentSalary, setCurrentSalary] = useState('');
+  const [expectedSalary, setExpectedSalary] = useState('');
+  const [noticePeriod, setNoticePeriod] = useState('');
+  const [currentCompany, setCurrentCompany] = useState('');
+  const [currentJobTitle, setCurrentJobTitle] = useState('');
+  const [location, setLocation] = useState('');
+  const [japaneseProficiency, setJapaneseProficiency] = useState('');
+  const [yearsOfExperience, setYearsOfExperience] = useState('');
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -182,6 +206,49 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       } else {
         setInterviews(interviewData || []);
       }
+      
+      // Load information fields from the database
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('linkedin_url, current_salary, expected_salary, notice_period, current_company, current_job_title, location, japanese_proficiency, years_of_experience')
+          .eq('id', user.user_id)
+          .single();
+
+        if (profileError) {
+          console.error('Error loading profile information:', profileError);
+          // If columns don't exist, try loading without the new fields
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('profiles')
+            .select('linkedin_url, current_salary, expected_salary, notice_period, current_company, current_job_title')
+            .eq('id', user.user_id)
+            .single();
+
+          if (fallbackError) {
+            console.error('Error loading fallback profile information:', fallbackError);
+          } else {
+            setLinkedinUrl(fallbackData?.linkedin_url || '');
+            setCurrentSalary(fallbackData?.current_salary || '');
+            setExpectedSalary(fallbackData?.expected_salary || '');
+            setNoticePeriod(fallbackData?.notice_period || '');
+            setCurrentCompany(fallbackData?.current_company || '');
+            setCurrentJobTitle(fallbackData?.current_job_title || '');
+            // New fields will remain empty until columns are added
+          }
+        } else {
+          setLinkedinUrl(profileData?.linkedin_url || '');
+          setCurrentSalary(profileData?.current_salary || '');
+          setExpectedSalary(profileData?.expected_salary || '');
+          setNoticePeriod(profileData?.notice_period || '');
+          setCurrentCompany(profileData?.current_company || '');
+          setCurrentJobTitle(profileData?.current_job_title || '');
+          setLocation(profileData?.location || '');
+          setJapaneseProficiency(profileData?.japanese_proficiency || '');
+          setYearsOfExperience(profileData?.years_of_experience || '');
+        }
+      } catch (error) {
+        console.error('Unexpected error loading profile information:', error);
+      }
     } catch (error) {
       console.error('Error loading user details:', error);
       toast({
@@ -191,6 +258,101 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveInformation = async () => {
+    try {
+      // Create update object with only non-empty values
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      // Only include fields that have values
+      if (linkedinUrl.trim()) {
+        // Ensure LinkedIn URL has proper format
+        let url = linkedinUrl.trim();
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+        updateData.linkedin_url = url;
+      }
+      if (currentSalary.trim()) updateData.current_salary = currentSalary.trim();
+      if (expectedSalary.trim()) updateData.expected_salary = expectedSalary.trim();
+      if (noticePeriod.trim()) updateData.notice_period = noticePeriod.trim();
+      if (currentCompany.trim()) updateData.current_company = currentCompany.trim();
+      if (currentJobTitle.trim()) updateData.current_job_title = currentJobTitle.trim();
+      // Only include new fields if they have values (graceful handling if columns don't exist yet)
+      if (location.trim()) updateData.location = location.trim();
+      if (japaneseProficiency.trim()) updateData.japanese_proficiency = japaneseProficiency.trim();
+      if (yearsOfExperience.trim()) updateData.years_of_experience = yearsOfExperience.trim();
+
+      console.log('Updating with data:', updateData);
+      console.log('User ID:', user.user_id);
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', user.user_id)
+        .select();
+
+      console.log('Update result:', { data, error });
+
+      if (error) {
+        console.error('Error saving information:', error);
+        
+        // Check if it's a column not found error
+        if (error.message.includes('Could not find') && error.message.includes('column')) {
+          toast({
+            title: "Database Setup Required",
+            description: "Please run the SQL script to add the information fields to the database first.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: `Failed to save information: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Information updated successfully.",
+      });
+
+      setIsEditingInfo(false);
+      
+      // Reload the information fields specifically
+      const { data: updatedProfile, error: reloadError } = await supabase
+        .from('profiles')
+        .select('linkedin_url, current_salary, expected_salary, notice_period, current_company, current_job_title, location, japanese_proficiency, years_of_experience')
+        .eq('id', user.user_id)
+        .single();
+
+      if (reloadError) {
+        console.error('Error reloading profile information:', reloadError);
+      } else {
+        setLinkedinUrl(updatedProfile?.linkedin_url || '');
+        setCurrentSalary(updatedProfile?.current_salary || '');
+        setExpectedSalary(updatedProfile?.expected_salary || '');
+        setNoticePeriod(updatedProfile?.notice_period || '');
+        setCurrentCompany(updatedProfile?.current_company || '');
+        setCurrentJobTitle(updatedProfile?.current_job_title || '');
+        setLocation(updatedProfile?.location || '');
+        setJapaneseProficiency(updatedProfile?.japanese_proficiency || '');
+        setYearsOfExperience(updatedProfile?.years_of_experience || '');
+        console.log('Reloaded profile data:', updatedProfile);
+      }
+    } catch (error) {
+      console.error('Error saving information:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -362,7 +524,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
-            {user.full_name || user.email}
+            <div className="flex items-center gap-2">
+              <span>{user.full_name || user.email}</span>
+              {user.position && (
+                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                  {user.position}
+                </Badge>
+              )}
+            </div>
             <Button
               variant="destructive"
               size="sm"
@@ -412,7 +581,9 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-muted-foreground" />
-                      <Badge variant="outline">{user.role}</Badge>
+                      <Badge variant="outline">
+                        {user.position || 'Position not loaded - check database function'}
+                      </Badge>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-muted-foreground" />
@@ -455,6 +626,205 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Information Section */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center justify-between">
+                    <span>Information</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditingInfo(!isEditingInfo)}
+                    >
+                      {isEditingInfo ? 'Cancel' : 'Edit'}
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">LinkedIn URL</label>
+                      {isEditingInfo ? (
+                        <Input
+                          value={linkedinUrl}
+                          onChange={(e) => setLinkedinUrl(e.target.value)}
+                          placeholder="https://linkedin.com/in/username"
+                          className="text-sm"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {linkedinUrl ? (
+                            <a
+                              href={linkedinUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                            >
+                              View LinkedIn Profile
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">Not provided</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Current Company</label>
+                      {isEditingInfo ? (
+                        <Input
+                          value={currentCompany}
+                          onChange={(e) => setCurrentCompany(e.target.value)}
+                          placeholder="Current company name"
+                          className="text-sm"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {currentCompany || <span className="text-gray-400">Not provided</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Current Job Title</label>
+                      {isEditingInfo ? (
+                        <Input
+                          value={currentJobTitle}
+                          onChange={(e) => setCurrentJobTitle(e.target.value)}
+                          placeholder="Current job title"
+                          className="text-sm"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {currentJobTitle || <span className="text-gray-400">Not provided</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Notice Period</label>
+                      {isEditingInfo ? (
+                        <Input
+                          value={noticePeriod}
+                          onChange={(e) => setNoticePeriod(e.target.value)}
+                          placeholder="e.g., 2 weeks, 1 month"
+                          className="text-sm"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {noticePeriod || <span className="text-gray-400">Not provided</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Current Salary</label>
+                      {isEditingInfo ? (
+                        <Input
+                          value={currentSalary}
+                          onChange={(e) => setCurrentSalary(e.target.value)}
+                          placeholder="e.g., $80,000, Confidential"
+                          className="text-sm"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {currentSalary || <span className="text-gray-400">Not provided</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Expected Salary</label>
+                      {isEditingInfo ? (
+                        <Input
+                          value={expectedSalary}
+                          onChange={(e) => setExpectedSalary(e.target.value)}
+                          placeholder="e.g., $90,000, Negotiable"
+                          className="text-sm"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {expectedSalary || <span className="text-gray-400">Not provided</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Location</label>
+                      {isEditingInfo ? (
+                        <Input
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                          placeholder="e.g., Tokyo, Japan"
+                          className="text-sm"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {location || <span className="text-gray-400">Not provided</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Japanese Proficiency</label>
+                      {isEditingInfo ? (
+                        <Select value={japaneseProficiency || undefined} onValueChange={(value) => setJapaneseProficiency(value === 'clear' ? '' : value || '')}>
+                          <SelectTrigger className="text-sm">
+                            <SelectValue placeholder="Select proficiency level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="None">None</SelectItem>
+                            <SelectItem value="Basic">Basic</SelectItem>
+                            <SelectItem value="Conversational">Conversational</SelectItem>
+                            <SelectItem value="Business">Business</SelectItem>
+                            <SelectItem value="Fluent">Fluent</SelectItem>
+                            <SelectItem value="clear">Clear Selection</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {japaneseProficiency || <span className="text-gray-400">Not provided</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Years of Experience</label>
+                      {isEditingInfo ? (
+                        <Input
+                          value={yearsOfExperience}
+                          onChange={(e) => setYearsOfExperience(e.target.value)}
+                          placeholder="e.g., 5 years, 3-5 years"
+                          className="text-sm"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                          {yearsOfExperience || <span className="text-gray-400">Not provided</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {isEditingInfo && (
+                    <div className="flex justify-end gap-2 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditingInfo(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveInformation}
+                      >
+                        Save Information
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Activity Timeline */}
               <Card>

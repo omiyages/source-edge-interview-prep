@@ -17,8 +17,11 @@ import { AssignCourseForm } from "@/components/AssignCourseForm";
 import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
 import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
+import { BulkUserCreation } from "@/components/BulkUserCreation";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { KanbanBoard } from "@/components/KanbanBoard";
+import { UpcomingInterviews } from "@/components/UpcomingInterviews";
+import { PendingTasks } from "@/components/PendingTasks";
 
 interface InterviewQuestion {
   id: string;
@@ -44,6 +47,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showBulkUserCreation, setShowBulkUserCreation] = useState(false);
 
   console.log('🚀 AdminDashboard: Component mounted/rendered');
   console.log('🔧 AdminDashboard render - DETAILED:', {
@@ -263,10 +267,18 @@ const AdminDashboard = () => {
           {/* Users Tab with Subtabs */}
           <TabsContent value="users">
             <Tabs defaultValue="kanban" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsList className="grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="kanban">
                   <Users className="w-4 h-4 mr-2" />
                   Kanban Board
+                </TabsTrigger>
+                <TabsTrigger value="upcoming-interviews">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Upcoming Interviews
+                </TabsTrigger>
+                <TabsTrigger value="pending-tasks">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Pending Tasks
                 </TabsTrigger>
                 <TabsTrigger value="users-list">
                   <Users className="w-4 h-4 mr-2" />
@@ -282,13 +294,35 @@ const AdminDashboard = () => {
                 <KanbanBoard />
               </TabsContent>
 
+              <TabsContent value="upcoming-interviews">
+                <UpcomingInterviews />
+              </TabsContent>
+
+              <TabsContent value="pending-tasks">
+                <PendingTasks />
+              </TabsContent>
+
               <TabsContent value="users-list">
                 <UsersList />
               </TabsContent>
 
               <TabsContent value="create-user">
-                <div className="flex justify-center">
-                  <CreateUserForm />
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">User Management</h3>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => setShowBulkUserCreation(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Bulk Create Users
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <CreateUserForm />
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
@@ -425,6 +459,11 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Bulk User Creation Modal */}
+      {showBulkUserCreation && (
+        <BulkUserCreation onClose={() => setShowBulkUserCreation(false)} />
+      )}
     </div>
   );
 };
