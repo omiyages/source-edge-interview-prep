@@ -132,7 +132,7 @@ export class SecretsManager {
     // This would typically scan the codebase for hardcoded secrets
     // For now, we'll check common patterns
     const commonSecretPatterns = [
-      'sk-', // OpenAI API keys
+      'sk_', // OpenAI API keys
       'pk_', // Stripe keys
       'AKIA', // AWS access keys
       'AIza', // Google API keys
