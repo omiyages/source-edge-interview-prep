@@ -52,12 +52,27 @@ export const OptimizedResourcesList = memo(({
   }, [isFetching, onLoadMore, resetFetching]);
 
   const displayResources = useMemo(() => {
+    console.log('🔍 OptimizedResourcesList - Processing resources:', {
+      totalResources: resources.length,
+      enableInfiniteScroll,
+      currentPage,
+      itemsPerPage
+    });
+    
     if (enableInfiniteScroll) {
+      console.log('✅ Using infinite scroll - showing all resources:', resources.length);
       return resources;
     }
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return resources.slice(startIndex, endIndex);
+    const sliced = resources.slice(startIndex, endIndex);
+    console.log('✅ Using pagination - showing resources:', {
+      startIndex,
+      endIndex,
+      slicedCount: sliced.length,
+      totalCount: resources.length
+    });
+    return sliced;
   }, [resources, currentPage, itemsPerPage, enableInfiniteScroll]);
 
   if (loading && displayResources.length === 0) {

@@ -25,6 +25,14 @@ interface ResourceCardProps {
 
 export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) => {
   const { isAdmin } = useAuth();
+  
+  // Debug logging
+  console.log('ResourceCard render:', {
+    resourceId: resource.id,
+    isAdmin,
+    hasOnEdit: !!onEdit,
+    hasOnDelete: !!onDelete
+  });
 
   const getCategoryColor = (category: string) => {
     const colors = {
@@ -60,24 +68,30 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
             </Badge>
           </div>
           
-          {isAdmin && (
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit?.(resource)}
-                className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDelete?.(resource.id)}
-                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+          {isAdmin && (onEdit || onDelete) && (
+            <div className="flex gap-1">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(resource)}
+                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary"
+                  title="Edit resource"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(resource.id)}
+                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                  title="Delete resource"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           )}
         </div>

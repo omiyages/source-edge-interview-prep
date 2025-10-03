@@ -1,37 +1,42 @@
--- Debug Kanban Issue - Run these queries one by one in Supabase SQL Editor
+-- Debug script to check why users are not showing up on Kanban board
 
--- 1. Check if the function exists
+-- 1. Check if profiles table has company column
+SELECT column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_name = 'profiles' 
+AND column_name = 'company';
+
+-- 2. Check if get_users_by_stage_with_rejected function exists
 SELECT routine_name, routine_type 
 FROM information_schema.routines 
-WHERE routine_name = 'get_users_by_stage';
+WHERE routine_name = 'get_users_by_stage_with_rejected';
 
--- 2. Check if user_stages table has data
-SELECT COUNT(*) as total_user_stages FROM user_stages;
-SELECT stage, COUNT(*) as user_count FROM user_stages WHERE is_active = true GROUP BY stage;
+-- 3. Check if there are any users in user_stages
+SELECT COUNT(*) as total_user_stages,
+       COUNT(DISTINCT user_id) as unique_users,
+       COUNT(DISTINCT stage) as unique_stages
+FROM user_stages 
+WHERE is_active = true;
 
--- 3. Check if profiles table has data
-SELECT COUNT(*) as total_profiles FROM profiles;
-SELECT id, email, full_name, role, position FROM profiles LIMIT 5;
+-- 4. Check what stages exist
+SELECT stage, COUNT(*) as user_count
+FROM user_stages 
+WHERE is_active = true
+GROUP BY stage
+ORDER BY user_count DESC;
 
--- 4. Check if user_rejections table exists and has data
-SELECT COUNT(*) as total_rejections FROM user_rejections;
+-- 5. Test the function directly
+SELECT * FROM get_users_by_stage_with_rejected('Interested', true) LIMIT 5;
 
--- 5. Test the function manually with a specific stage
-SELECT * FROM get_users_by_stage('Interested');
+-- 6. Check if there are any profiles
+SELECT COUNT(*) as total_profiles,
+       COUNT(CASE WHEN "position" IS NOT NULL THEN 1 END) as profiles_with_position
+FROM profiles;
 
--- 6. Check if there are any users in the 'Interested' stage specifically
-SELECT 
-  p.id,
-  p.email,
-  p.full_name,
-  COALESCE(p.position, p.role::text) as role,
-  us.stage,
-  us.is_active
+-- 7. Check for any errors in the function by testing with a simple query
+SELECT p.id, p.email, p.full_name, p."position", p.company
 FROM profiles p
-JOIN user_stages us ON p.id = us.user_id
-WHERE us.stage = 'Interested' AND us.is_active = true;
-
--- 7. Check if there are any RLS policies blocking access
-SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
-FROM pg_policies 
-WHERE tablename IN ('user_stages', 'profiles', 'user_rejections');
+INNER JOIN user_stages us ON p.id = us.user_id
+WHERE us.stage = 'Interested' 
+AND us.is_active = true
+LIMIT 5;

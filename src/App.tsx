@@ -1,6 +1,7 @@
 
 // ABOUTME: Main application component with simplified routing and proper error handling
 // ABOUTME: Fixed routing to prevent blank pages and ensure proper authentication flow
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,7 @@ import { queryClient } from "@/lib/queryClient";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SessionTracker } from "@/components/SessionTracker";
+import { TIMEZONE_CONFIG } from "@/config/timezone";
 
 // Import components directly
 import Index from "./pages/Index";
@@ -25,6 +27,24 @@ import Track from "./pages/Track";
 import UserDashboard from "./pages/UserDashboard";
 
 function App() {
+  // Initialize timezone settings
+  React.useEffect(() => {
+    // Set timezone for the application
+    document.documentElement.setAttribute('data-timezone', TIMEZONE_CONFIG.timezone);
+    
+    // Set locale for date formatting
+    if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+      // Configure default locale
+      const originalToLocaleString = Date.prototype.toLocaleString;
+      Date.prototype.toLocaleString = function(...args) {
+        if (args.length === 0) {
+          return originalToLocaleString.call(this, TIMEZONE_CONFIG.locale, { timeZone: TIMEZONE_CONFIG.timezone });
+        }
+        return originalToLocaleString.apply(this, args);
+      };
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

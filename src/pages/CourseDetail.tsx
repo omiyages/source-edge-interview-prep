@@ -11,6 +11,8 @@ import { StageCompleteButton } from "@/components/StageCompleteButton";
 import { CourseContentSection } from "@/components/CourseContentSection";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm";
+import { ManageStageResourcesFormImproved } from "@/components/ManageStageResourcesFormImproved";
+import { ManageStageResourcesTable } from "@/components/ManageStageResourcesTable";
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
 import { CourseReviewForm } from "@/components/CourseReviewForm";
 import { useCourseData, useStageQuestions, useUserProgress } from "@/hooks/useCourseData";
@@ -161,7 +163,7 @@ const CourseDetail = () => {
               <DialogTitle>Manage Resources for {selectedStage?.title}</DialogTitle>
             </DialogHeader>
             {selectedStage && (
-              <ManageStageResourcesForm
+              <ManageStageResourcesTable
                 stageId={selectedStage.id}
                 onSuccess={() => setShowResourcesDialog(false)}
               />

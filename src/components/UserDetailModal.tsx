@@ -30,6 +30,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { JSTDateTime, JSTLiveClock } from './JSTDateTime';
 import { InterviewScheduler } from './InterviewScheduler';
 
 interface KanbanUser {
@@ -506,13 +507,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return <JSTDateTime date={dateString} format="dateTime" />;
   };
 
   const notes = adminNotes.filter(note => note.note_type === 'note');

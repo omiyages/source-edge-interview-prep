@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { User, Clock, X, Eye, Plus, Calendar, EyeOff, Filter, Search, Edit } from 'lucide-react';
+import { JSTDateTime } from './JSTDateTime';
 import { UserDetailModal } from './UserDetailModal';
 import { AddUserToKanbanModal } from './AddUserToKanbanModal';
 import { BulkAddUsersModal } from './BulkAddUsersModal';
@@ -882,7 +883,7 @@ export const KanbanBoard: React.FC = () => {
                                         <Calendar className="w-3 h-3" />
                                         <span>{user.upcoming_interview_name}</span>
                                         <span className="text-xs">
-                                          {new Date(user.upcoming_interview_date).toLocaleDateString()}
+                                          <JSTDateTime date={user.upcoming_interview_date} format="short" />
                                         </span>
                                       </div>
                                     )}

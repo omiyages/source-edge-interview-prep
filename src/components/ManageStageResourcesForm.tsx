@@ -22,12 +22,18 @@ export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageReso
   const { data: allResources, isLoading: isLoadingResources } = useQuery({
     queryKey: ['all-resources'],
     queryFn: async () => {
+      console.log('🔍 Fetching all resources for stage management...');
       const { data, error } = await supabase
         .from('resources')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching resources:', error);
+        throw error;
+      }
+      
+      console.log('✅ Resources fetched successfully:', data?.length || 0, 'resources');
       return data as Resource[];
     },
   });
@@ -126,10 +132,16 @@ export const ManageStageResourcesForm = ({ stageId, onSuccess }: ManageStageReso
       </div>
 
       <div className="max-h-96 overflow-y-auto">
+        <div className="mb-4 text-sm text-gray-600">
+          Showing {allResources?.length || 0} total resources ({selectedResources.size} selected)
+        </div>
         <OptimizedResourcesList
           resources={allResources || []}
           selectedResources={selectedResources}
           onToggleResource={toggleResource}
+          useInfiniteScroll={false}
+          currentPage={1}
+          itemsPerPage={1000}
         />
       </div>
 
