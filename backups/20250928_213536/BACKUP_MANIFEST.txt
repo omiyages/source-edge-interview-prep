@@ -1,0 +1,27 @@
+Website Backup Manifest
+======================
+
+Backup Date: Sun Sep 28 21:45:51 EEST 2025
+Project: source-edge-interview-prep
+GitHub Repository: https://github.com/omiyages/source-edge-interview-prep.git
+
+Backup Contents:
+- Source Code: backups/20250928_213536/code/
+- Git Repository: backups/20250928_213536/git-repo.git
+- Git Regular: backups/20250928_213536/git-regular/
+- Database Scripts: backups/20250928_213536/database/
+- Configuration: backups/20250928_213536/config/
+- Assets: backups/20250928_213536/assets/
+
+Restoration Instructions:
+1. To restore code: cp -r backups/20250928_213536/code/* /path/to/restore/
+2. To restore Git: git clone backups/20250928_213536/git-repo.git
+3. To restore database: Run scripts in backups/20250928_213536/database/
+4. To restore config: cp backups/20250928_213536/config/* /path/to/restore/
+
+Security Notes:
+- Environment files may contain sensitive data
+- Review before restoring
+- Update environment variables after restoration
+
+Backup Size: 9.2M

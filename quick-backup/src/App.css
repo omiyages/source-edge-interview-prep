@@ -1,0 +1,7 @@
+
+/* Only keeping essential styles, removing unused Vite defaults */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+}
