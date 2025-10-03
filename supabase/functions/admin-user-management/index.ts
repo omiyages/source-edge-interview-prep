@@ -178,6 +178,7 @@ Deno.serve(async (req) => {
     try {
       const bodyText = await req.text();
       console.log('📄 Request body received, length:', bodyText.length);
+      console.log('📄 Request body content:', bodyText);
       
       if (!bodyText || bodyText.trim() === '') {
         console.error('❌ Empty request body');
@@ -192,6 +193,7 @@ Deno.serve(async (req) => {
       
       requestData = JSON.parse(bodyText);
       console.log('📋 Parsed data keys:', Object.keys(requestData));
+      console.log('📋 Parsed data structure:', JSON.stringify(requestData, null, 2));
     } catch (parseError) {
       console.error('❌ JSON parse error:', parseError);
       return new Response(
@@ -211,11 +213,15 @@ Deno.serve(async (req) => {
     }
     
     // Default to CREATE_USER for backward compatibility
-    const { email, fullName, role = 'user', customPassword } = requestData;
+    // Handle both direct properties and nested body structure
+    const userData = requestData.body || requestData;
+    console.log('📋 User data extracted:', JSON.stringify(userData, null, 2));
+    
+    const { email, fullName, role = 'user', customPassword } = userData;
     
     // 7. Validate and sanitize inputs with enhanced security
     if (!email) {
-      console.error('❌ Missing email');
+      console.error('❌ Missing email in user data:', userData);
       return new Response(
         JSON.stringify({ error: 'Email is required' }),
         { 
