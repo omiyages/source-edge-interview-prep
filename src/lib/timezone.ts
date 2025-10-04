@@ -53,7 +53,8 @@ export const timezoneUtils = {
   // Parse date from database (assuming UTC, convert to JST)
   parseFromDatabase: (isoString: string): Date => {
     const utcDate = new Date(isoString);
-    return new Date(utcDate.toLocaleString("en-US", { timeZone: JST_TIMEZONE }));
+    // Return the UTC date directly - the formatting functions will handle JST conversion
+    return utcDate;
   },
 
   // Get JST date string for API calls

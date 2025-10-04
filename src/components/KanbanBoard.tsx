@@ -883,7 +883,7 @@ export const KanbanBoard: React.FC = () => {
                                         <Calendar className="w-3 h-3" />
                                         <span>{user.upcoming_interview_name}</span>
                                         <span className="text-xs">
-                                          <JSTDateTime date={user.upcoming_interview_date} format="short" />
+                                          <JSTDateTime date={user.upcoming_interview_date} format="dateTime" />
                                         </span>
                                       </div>
                                     )}
