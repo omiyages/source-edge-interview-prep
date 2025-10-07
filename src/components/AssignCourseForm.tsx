@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { UserProfile } from "@/types/user";
+import { Input } from "@/components/ui/input";
 
 interface AssignCourseFormProps {
   onSuccess?: () => void;
@@ -15,6 +16,7 @@ interface AssignCourseFormProps {
 export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [userSearch, setUserSearch] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -31,6 +33,15 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
       return data as UserProfile[];
     },
   });
+
+  const filteredUsers = useMemo(() => {
+    if (!users || !userSearch.trim()) return users || [];
+    const term = userSearch.toLowerCase();
+    return (users || []).filter((u) =>
+      (u.full_name || "").toLowerCase().includes(term) ||
+      (u.email || "").toLowerCase().includes(term)
+    );
+  }, [users, userSearch]);
 
   const { data: courses, isLoading: coursesLoading } = useQuery({
     queryKey: ['courses-for-assignment'],
@@ -112,12 +123,19 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-sm font-medium mb-2 block">Select User</label>
+            <div className="mb-2">
+              <Input
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder="Search users by name or email..."
+              />
+            </div>
             <Select value={selectedUser} onValueChange={setSelectedUser}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a user" />
               </SelectTrigger>
               <SelectContent>
-                {users?.map((user) => (
+                {filteredUsers?.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.full_name || user.email}
                   </SelectItem>
