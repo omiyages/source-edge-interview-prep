@@ -26,18 +26,17 @@ export const Company: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+      <div className="bg-gradient-to-r from-red-600 to-red-800 text-white py-20">
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl font-bold mb-6">Source Edge Technologies</h1>
+          <h1 className="text-5xl font-bold mb-6">Woven by Toyota</h1>
           <p className="text-xl mb-8 max-w-3xl mx-auto">
-            Pioneering the future of software development and digital innovation. 
-            We're building cutting-edge solutions that transform how businesses operate and grow.
+            Building the future of mobility through innovative software solutions and cutting-edge technology.
           </p>
           <div className="flex justify-center gap-4">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+            <Button size="lg" className="bg-white text-red-600 hover:bg-gray-100">
               Explore Our Culture
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-red-600">
               View Open Positions
             </Button>
           </div>
@@ -132,7 +131,7 @@ export const Company: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Collaborative Environment</h4>
-                    <p className="text-gray-600">Focus on diverse, talented teams working on cutting-edge software solutions.</p>
+                    <p className="text-gray-600">Focus on diverse, talented teams working on cutting-edge mobility solutions.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -141,7 +140,7 @@ export const Company: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Innovation Focus</h4>
-                    <p className="text-gray-600">Encouragement for creative thinking and breakthrough ideas in technology.</p>
+                    <p className="text-gray-600">Encouragement for creative thinking and breakthrough ideas in transportation.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -150,7 +149,7 @@ export const Company: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Continuous Learning</h4>
-                    <p className="text-gray-600">Access to training programs, conferences, and mentorship opportunities.</p>
+                    <p className="text-gray-600">Access to training programs, conferences, and mentorship.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -159,7 +158,7 @@ export const Company: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Work-Life Balance</h4>
-                    <p className="text-gray-600">Flexible schedules and remote work options to support your lifestyle.</p>
+                    <p className="text-gray-600">Flexible schedules and remote work options.</p>
                   </div>
                 </div>
               </div>
@@ -210,7 +209,7 @@ export const Company: React.FC = () => {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Open Positions</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Join our team and help shape the future of technology. We're looking for talented individuals to fill these exciting roles.
+              Join our team and help shape the future of mobility. We're looking for talented individuals to fill these exciting roles.
             </p>
           </div>
 
@@ -219,10 +218,9 @@ export const Company: React.FC = () => {
               <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
                 <Building2 className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-4">Backend Engineer</h3>
+              <h3 className="text-xl font-semibold mb-4">Embedded Software Engineer</h3>
               <p className="text-gray-600 mb-6">
-                Build scalable backend systems and APIs for our global platform. 
-                Work with cutting-edge technologies and cloud infrastructure.
+                Focus on low-level software for automotive systems and next-generation vehicles.
               </p>
               <Button className="w-full">Apply Now</Button>
             </Card>
@@ -233,8 +231,7 @@ export const Company: React.FC = () => {
               </div>
               <h3 className="text-xl font-semibold mb-4">Engineering Manager</h3>
               <p className="text-gray-600 mb-6">
-                Lead and mentor engineering teams while driving technical strategy. 
-                Shape the future of our engineering organization.
+                Focus on leading and mentoring teams, driving technical strategy.
               </p>
               <Button className="w-full">Apply Now</Button>
             </Card>
@@ -243,10 +240,9 @@ export const Company: React.FC = () => {
               <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
                 <Globe className="w-8 h-8 text-purple-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-4">Full Stack Engineer</h3>
+              <h3 className="text-xl font-semibold mb-4">Backend Engineer</h3>
               <p className="text-gray-600 mb-6">
-                Develop end-to-end solutions from frontend to backend. 
-                Work on diverse projects across our technology stack.
+                Focus on building scalable backend systems and APIs for a global mobility platform.
               </p>
               <Button className="w-full">Apply Now</Button>
             </Card>
@@ -286,9 +282,9 @@ export const Company: React.FC = () => {
       {/* Call to Action Section */}
       <div className="py-16 bg-red-600 text-white">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Shape the Future of Technology?</h2>
+          <h2 className="text-4xl font-bold mb-4">Ready to Shape the Future of Mobility?</h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto">
-            Join our team of innovators and help build the technologies that will transform how businesses operate.
+            Join our team of innovators and help build the technologies that will transform how the world moves.
           </p>
           <div className="flex justify-center gap-4">
             <Button size="lg" className="bg-white text-red-600 hover:bg-gray-100">
@@ -310,10 +306,10 @@ export const Company: React.FC = () => {
                 <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold">Source Edge Technologies</span>
+                <span className="text-xl font-bold">Woven by Toyota</span>
               </div>
               <p className="text-gray-400">
-                Building the future of software development through innovative solutions and cutting-edge technology.
+                Building the future of mobility through innovative software solutions.
               </p>
             </div>
 
@@ -328,12 +324,12 @@ export const Company: React.FC = () => {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Services</h4>
+              <h4 className="font-semibold mb-4">Products</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Software Development</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Cloud Solutions</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Data Analytics</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Consulting</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">ADAS</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Arene Platform</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Woven City</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Enterprise Tech</a></li>
               </ul>
             </div>
 
@@ -354,7 +350,7 @@ export const Company: React.FC = () => {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Source Edge Technologies. All rights reserved.</p>
+            <p>&copy; 2024 Woven by Toyota. All rights reserved.</p>
           </div>
         </div>
       </footer>
