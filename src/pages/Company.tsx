@@ -25,6 +25,13 @@ import {
 export const Company: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Top Section */}
+      <div className="bg-gray-100 py-4">
+        <div className="container mx-auto px-6">
+          <p className="text-center text-gray-600">Career and well-being opportunities at Woven by Toyota</p>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-red-600 to-red-800 text-white py-20">
         <div className="container mx-auto px-6 text-center">
@@ -43,7 +50,7 @@ export const Company: React.FC = () => {
         </div>
       </div>
 
-      {/* Benefits & Values Section */}
+      {/* Benefits Package & Salary Ranges Section */}
       <div className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12">
@@ -69,28 +76,28 @@ export const Company: React.FC = () => {
 
             {/* Salary Ranges */}
             <div>
-              <h2 className="text-3xl font-bold mb-8">Competitive Compensation</h2>
+              <h2 className="text-3xl font-bold mb-8">Salary Ranges</h2>
               <div className="space-y-4">
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold">Software Engineers</h3>
                     <Badge variant="outline">$120K - $180K</Badge>
                   </div>
-                  <p className="text-sm text-gray-600">Plus equity and performance bonuses</p>
+                  <p className="text-sm text-gray-600">Plus equity and bonuses</p>
                 </Card>
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold">Senior Engineers</h3>
                     <Badge variant="outline">$160K - $220K</Badge>
                   </div>
-                  <p className="text-sm text-gray-600">Plus equity and performance bonuses</p>
+                  <p className="text-sm text-gray-600">Plus equity and bonuses</p>
                 </Card>
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold">Engineering Managers</h3>
                     <Badge variant="outline">$180K - $250K</Badge>
                   </div>
-                  <p className="text-sm text-gray-600">Plus equity and performance bonuses</p>
+                  <p className="text-sm text-gray-600">Plus equity and bonuses</p>
                 </Card>
               </div>
             </div>
@@ -167,44 +174,9 @@ export const Company: React.FC = () => {
         </div>
       </div>
 
-      {/* Company Values Section */}
-      <div className="py-16 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Our Core Values</h2>
-            <p className="text-xl text-gray-600">The principles that guide everything we do</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Target className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">Excellence</h3>
-              <p className="text-gray-600">We strive for excellence in everything we do, delivering high-quality solutions that exceed expectations.</p>
-            </Card>
-
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Heart className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">Integrity</h3>
-              <p className="text-gray-600">We maintain the highest standards of integrity and transparency in all our business practices.</p>
-            </Card>
-
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Zap className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">Innovation</h3>
-              <p className="text-gray-600">We embrace innovation and creativity to solve complex challenges and drive progress.</p>
-            </Card>
-          </div>
-        </div>
-      </div>
 
       {/* Open Positions Section */}
-      <div className="py-16 bg-gray-50">
+      <div className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Open Positions</h2>
@@ -250,34 +222,6 @@ export const Company: React.FC = () => {
         </div>
       </div>
 
-      {/* Company Stats Section */}
-      <div className="py-16 bg-blue-600 text-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Our Impact</h2>
-            <p className="text-xl opacity-90">Numbers that tell our story</p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold mb-2">150+</div>
-              <div className="text-lg opacity-90">Team Members</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">50+</div>
-              <div className="text-lg opacity-90">Projects Delivered</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">25+</div>
-              <div className="text-lg opacity-90">Countries Served</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">5+</div>
-              <div className="text-lg opacity-90">Years of Excellence</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Call to Action Section */}
       <div className="py-16 bg-red-600 text-white">
@@ -297,63 +241,6 @@ export const Company: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">Woven by Toyota</span>
-              </div>
-              <p className="text-gray-400">
-                Building the future of mobility through innovative software solutions.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">News</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Products</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">ADAS</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Arene Platform</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Woven City</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Enterprise Tech</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Connect</h4>
-              <div className="flex gap-4">
-                <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
-                  <Users className="w-5 h-5" />
-                </a>
-                <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
-                  <Globe className="w-5 h-5" />
-                </a>
-                <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
-                  <Award className="w-5 h-5" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Woven by Toyota. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
