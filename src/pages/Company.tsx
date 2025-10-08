@@ -102,7 +102,7 @@ export const Company: React.FC = () => {
       {/* About Woven by Toyota Section */}
       <div id="about" className="py-16 bg-gray-50">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-6xl mx-auto text-center">
             <h2 className="text-4xl font-bold mb-8">About Woven by Toyota</h2>
             <p className="text-xl text-gray-600 leading-relaxed mb-8">
               Woven by Toyota is a subsidiary company of Toyota Group, focusing on software development around self/assisted driving, smart city, software defined vehicle, and other mobility fields.
@@ -141,7 +141,7 @@ export const Company: React.FC = () => {
             <h2 className="text-4xl font-bold mb-4">Our Divisions</h2>
             <p className="text-xl text-gray-600">Each division focuses on different aspects of mobility innovation, working together to create comprehensive solutions.</p>
           </div>
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-6xl mx-auto space-y-8">
             {/* ADAS Division */}
             <Card className="p-8 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-6">
@@ -287,7 +287,7 @@ export const Company: React.FC = () => {
             <h2 className="text-4xl font-bold mb-4">Interview Process</h2>
             <p className="text-xl text-gray-600">Our streamlined process to find the right fit</p>
           </div>
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-4 gap-8">
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -327,7 +327,7 @@ export const Company: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Office & Culture</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-6xl mx-auto">
               Experience our innovative workspace and collaborative culture that drives breakthrough innovations.
             </p>
           </div>
