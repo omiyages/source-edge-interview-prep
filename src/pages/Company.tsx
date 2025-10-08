@@ -2,6 +2,9 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { 
   CheckCircle, 
   Play, 
@@ -26,38 +29,31 @@ import {
 export const Company: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
-      {/* Top light grey banner */}
-      <div className="bg-gray-100 py-4">
+      {/* Breadcrumb Navigation */}
+      <div className="bg-white border-b border-gray-200 py-4">
         <div className="container mx-auto px-6">
-          <p className="text-center text-gray-600">Career and well-being opportunities at Woven by Toyota</p>
+          <div className="flex items-center justify-between">
+            <Breadcrumbs>
+              <Breadcrumbs.Item>
+                <Link to="/" className="text-blue-600 hover:text-blue-800">
+                  Home
+                </Link>
+              </Breadcrumbs.Item>
+              <Breadcrumbs.Separator />
+              <Breadcrumbs.Item>
+                <span className="text-gray-600">Company</span>
+              </Breadcrumbs.Item>
+            </Breadcrumbs>
+            
+            <Link to="/">
+              <Button variant="outline" className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Home
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
-
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-200 py-4">
-        <div className="container mx-auto px-6 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">Woven by Toyota</span>
-          </div>
-
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#about" className="text-gray-700 hover:text-red-600 font-medium">About</a>
-            <a href="#divisions" className="text-gray-700 hover:text-red-600 font-medium">Divisions</a>
-            <a href="#interview-process" className="text-gray-700 hover:text-red-600 font-medium">Interview Process</a>
-            <a href="#culture" className="text-gray-700 hover:text-red-600 font-medium">Culture</a>
-          </div>
-
-          {/* Apply Button */}
-          <Button className="bg-red-600 hover:bg-red-700 text-white">
-            Apply Now
-          </Button>
-        </div>
-      </nav>
 
       {/* Hero Section */}
       <div className="py-20 bg-white">
@@ -90,6 +86,20 @@ export const Company: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Page Navigation */}
+      <div className="bg-gray-50 py-6 border-b">
+        <div className="container mx-auto px-6">
+          <div className="flex justify-center">
+            <nav className="flex items-center gap-8">
+              <a href="#about" className="text-gray-700 hover:text-red-600 font-medium transition-colors">About</a>
+              <a href="#divisions" className="text-gray-700 hover:text-red-600 font-medium transition-colors">Divisions</a>
+              <a href="#interview-process" className="text-gray-700 hover:text-red-600 font-medium transition-colors">Interview Process</a>
+              <a href="#culture" className="text-gray-700 hover:text-red-600 font-medium transition-colors">Culture</a>
+            </nav>
           </div>
         </div>
       </div>
