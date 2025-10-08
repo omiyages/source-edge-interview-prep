@@ -141,120 +141,140 @@ export const Company: React.FC = () => {
             <h2 className="text-4xl font-bold mb-4">Our Divisions</h2>
             <p className="text-xl text-gray-600">Each division focuses on different aspects of mobility innovation, working together to create comprehensive solutions.</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-8">
             {/* ADAS Division */}
             <Card className="p-8 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-                <Shield className="w-8 h-8 text-blue-600" />
+              <div className="flex items-start gap-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-8 h-8 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold mb-4">ADAS</h3>
+                  <p className="text-gray-600 mb-6">Developing cutting-edge safety technologies that enhance driver awareness and vehicle control. Our ADAS team creates intelligent systems that help prevent accidents and make driving safer for everyone.</p>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Autonomous emergency braking</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Lane departure warning systems</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Adaptive cruise control</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-4">ADAS</h3>
-              <p className="text-gray-600 mb-6">Developing cutting-edge safety technologies that enhance driver awareness and vehicle control. Our ADAS team creates intelligent systems that help prevent accidents and make driving safer for everyone.</p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Autonomous emergency braking</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Lane departure warning systems</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Adaptive cruise control</span>
-                </li>
-              </ul>
             </Card>
 
             {/* Arene Division */}
             <Card className="p-8 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
-                <Globe className="w-8 h-8 text-purple-600" />
+              <div className="flex items-start gap-6">
+                <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Globe className="w-8 h-8 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold mb-4">Arene</h3>
+                  <p className="text-gray-600 mb-6">Our software-defined vehicle platform that enables rapid development and deployment of automotive applications. Arene provides the foundation for next-generation connected vehicles.</p>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Over-the-air updates</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Real-time vehicle analytics</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Connected services platform</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-4">Arene</h3>
-              <p className="text-gray-600 mb-6">Our software-defined vehicle platform that enables rapid development and deployment of automotive applications. Arene provides the foundation for next-generation connected vehicles.</p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Over-the-air updates</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Real-time vehicle analytics</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Connected services platform</span>
-                </li>
-              </ul>
             </Card>
 
             {/* Woven City Division */}
             <Card className="p-8 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
-                <Building2 className="w-8 h-8 text-green-600" />
+              <div className="flex items-start gap-6">
+                <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Building2 className="w-8 h-8 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold mb-4">Woven City</h3>
+                  <p className="text-gray-600 mb-6">Building a prototype city of the future at the base of Mt. Fuji. This living laboratory will test and develop technologies for autonomous vehicles, smart infrastructure, and sustainable living.</p>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Smart city infrastructure</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Autonomous vehicle testing</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Sustainable energy systems</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-4">Woven City</h3>
-              <p className="text-gray-600 mb-6">Building a prototype city of the future at the base of Mt. Fuji. This living laboratory will test and develop technologies for autonomous vehicles, smart infrastructure, and sustainable living.</p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Smart city infrastructure</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Autonomous vehicle testing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Sustainable energy systems</span>
-                </li>
-              </ul>
             </Card>
 
             {/* Enterprise Technology Division */}
             <Card className="p-8 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mb-6">
-                <TrendingUp className="w-8 h-8 text-orange-600" />
+              <div className="flex items-start gap-6">
+                <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-8 h-8 text-orange-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold mb-4">Enterprise Technology</h3>
+                  <p className="text-gray-600 mb-6">Providing enterprise-grade technology solutions that support Toyota's global operations and enable digital transformation across the organization.</p>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Cloud infrastructure</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Data analytics platforms</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Digital workplace solutions</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-4">Enterprise Technology</h3>
-              <p className="text-gray-600 mb-6">Providing enterprise-grade technology solutions that support Toyota's global operations and enable digital transformation across the organization.</p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Cloud infrastructure</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Data analytics platforms</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Digital workplace solutions</span>
-                </li>
-              </ul>
             </Card>
 
             {/* Dojo Division */}
             <Card className="p-8 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-6">
-                <Lightbulb className="w-8 h-8 text-red-600" />
+              <div className="flex items-start gap-6">
+                <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Lightbulb className="w-8 h-8 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold mb-4">Dojo</h3>
+                  <p className="text-gray-600 mb-6">Our machine learning and AI division that develops intelligent systems for autonomous driving and mobility services. Dojo creates the brain behind our smart vehicles.</p>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Computer vision systems</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Neural network training</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Real-time decision making</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-4">Dojo</h3>
-              <p className="text-gray-600 mb-6">Our machine learning and AI division that develops intelligent systems for autonomous driving and mobility services. Dojo creates the brain behind our smart vehicles.</p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Computer vision systems</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Neural network training</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-600">Real-time decision making</span>
-                </li>
-              </ul>
             </Card>
           </div>
         </div>
