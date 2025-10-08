@@ -105,22 +105,22 @@ export const Company: React.FC = () => {
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-4xl font-bold mb-8">About Woven by Toyota</h2>
             <p className="text-xl text-gray-600 leading-relaxed mb-8">
-              We are a global team of engineers, designers, and innovators working together to create the future of mobility. Our mission is to develop software solutions that make transportation safer, more efficient, and more accessible for everyone.
+              Woven by Toyota is a subsidiary company of Toyota Group, focusing on software development around self/assisted driving, smart city, software defined vehicle, and other mobility fields.
             </p>
             <div className="grid md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Users className="w-8 h-8 text-red-600" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Global Team</h3>
-                <p className="text-gray-600">Diverse talent from around the world</p>
+                <h3 className="text-xl font-semibold mb-2">Established in 2021</h3>
+                <p className="text-gray-600">Established as its own company in 2021, but Woven by Toyota first began in 2018 as TRI-AD, a subsidiary division of Toyota.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Lightbulb className="w-8 h-8 text-red-600" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Innovation Focus</h3>
-                <p className="text-gray-600">Cutting-edge technology and solutions</p>
+                <h3 className="text-xl font-semibold mb-2">Next-Gen Mobility</h3>
+                <p className="text-gray-600">Extending the value of the car, expanding mobility into new realms and integrating mobility with social systems, helping everyone move freely, happily, and comfortably</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
