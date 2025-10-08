@@ -33,17 +33,12 @@ export const Company: React.FC = () => {
       <div className="bg-white border-b border-gray-200 py-4">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between">
-            <Breadcrumbs>
-              <Breadcrumbs.Item>
-                <Link to="/" className="text-blue-600 hover:text-blue-800">
-                  Home
-                </Link>
-              </Breadcrumbs.Item>
-              <Breadcrumbs.Separator />
-              <Breadcrumbs.Item>
-                <span className="text-gray-600">Company</span>
-              </Breadcrumbs.Item>
-            </Breadcrumbs>
+            <Breadcrumbs 
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Company" }
+              ]}
+            />
             
             <Link to="/">
               <Button variant="outline" className="flex items-center gap-2">
