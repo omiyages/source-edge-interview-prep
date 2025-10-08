@@ -84,7 +84,7 @@ export const Company: React.FC = () => {
             <div className="relative">
               <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-lg">
                 <img 
-                  src="/woven-office.jpg" 
+                  src="/woven-office-image.jpg" 
                   alt="Woven by Toyota Modern Office - Dynamic workspace with collaborative areas and innovative design"
                   className="w-full h-full object-cover"
                 />
