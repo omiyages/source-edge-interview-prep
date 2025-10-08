@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { HeroSection } from '@/components/HeroSection';
 import { 
   CheckCircle, 
   Play, 
@@ -27,8 +26,38 @@ import {
 export const Company: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
-      {/* Use main page navigation */}
-      <HeroSection />
+      {/* Top light grey banner */}
+      <div className="bg-gray-100 py-4">
+        <div className="container mx-auto px-6">
+          <p className="text-center text-gray-600">Career and well-being opportunities at Woven by Toyota</p>
+        </div>
+      </div>
+
+      {/* Navigation Bar */}
+      <nav className="bg-white border-b border-gray-200 py-4">
+        <div className="container mx-auto px-6 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xl font-bold text-gray-900">Woven by Toyota</span>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#about" className="text-gray-700 hover:text-red-600 font-medium">About</a>
+            <a href="#divisions" className="text-gray-700 hover:text-red-600 font-medium">Divisions</a>
+            <a href="#interview-process" className="text-gray-700 hover:text-red-600 font-medium">Interview Process</a>
+            <a href="#culture" className="text-gray-700 hover:text-red-600 font-medium">Culture</a>
+          </div>
+
+          {/* Apply Button */}
+          <Button className="bg-red-600 hover:bg-red-700 text-white">
+            Apply Now
+          </Button>
+        </div>
+      </nav>
 
       {/* Hero Section */}
       <div className="py-20 bg-white">
@@ -51,16 +80,14 @@ export const Company: React.FC = () => {
               </div>
             </div>
 
-            {/* Right side - Image placeholder */}
+            {/* Right side - Office Image */}
             <div className="relative">
-              <div className="bg-gradient-to-br from-orange-100 to-pink-100 rounded-2xl aspect-[4/3] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-red-600 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                    <Building2 className="w-12 h-12 text-white" />
-                  </div>
-                  <p className="text-gray-600 font-medium">Woven by Toyota Headquarters</p>
-                  <p className="text-sm text-gray-500 mt-2">Modern glass building with TOYOTA branding</p>
-                </div>
+              <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-lg">
+                <img 
+                  src="/woven-office.jpg" 
+                  alt="Woven by Toyota Modern Office - Dynamic workspace with collaborative areas and innovative design"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -68,7 +95,7 @@ export const Company: React.FC = () => {
       </div>
 
       {/* About Woven by Toyota Section */}
-      <div className="py-16 bg-gray-50">
+      <div id="about" className="py-16 bg-gray-50">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-4xl font-bold mb-8">About Woven by Toyota</h2>
@@ -103,7 +130,7 @@ export const Company: React.FC = () => {
       </div>
 
       {/* Divisions Section */}
-      <div className="py-16 bg-white">
+      <div id="divisions" className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Our Divisions</h2>
@@ -229,7 +256,7 @@ export const Company: React.FC = () => {
       </div>
 
       {/* Interview Process Section */}
-      <div className="py-16 bg-gray-50">
+      <div id="interview-process" className="py-16 bg-gray-50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Interview Process</h2>
@@ -271,7 +298,7 @@ export const Company: React.FC = () => {
       </div>
 
       {/* Office & Culture Section */}
-      <div className="py-16 bg-white">
+      <div id="culture" className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Office & Culture</h2>
