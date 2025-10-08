@@ -313,15 +313,19 @@ export const Company: React.FC = () => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Video Placeholder */}
+            {/* YouTube Video */}
             <div className="relative">
-              <div className="bg-gray-200 rounded-lg aspect-video flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg">
-                    <Play className="w-8 h-8 text-red-600 ml-1" />
-                  </div>
-                  <p className="text-gray-600">Office Tour Video</p>
-                </div>
+              <div className="rounded-lg aspect-video overflow-hidden shadow-lg">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src="https://www.youtube.com/embed/2Euzdn8fPJo"
+                  title="Woven by Toyota Office Tour"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="rounded-lg"
+                ></iframe>
               </div>
             </div>
 
