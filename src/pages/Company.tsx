@@ -330,7 +330,7 @@ export const Company: React.FC = () => {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Culture and Why Woven by Toyota?</h2>
             <p className="text-xl text-gray-600 max-w-6xl mx-auto">
-              Experience our innovative workspace and collaborative culture that drives breakthrough innovations.
+              Woven by Toyota offers English-driven international environment modelled after Silicon Valley Tech startup culture.
             </p>
           </div>
 
