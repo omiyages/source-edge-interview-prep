@@ -64,7 +64,7 @@ export const Company: React.FC = () => {
                 <span className="text-red-600">Mobility</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Woven by Toyota is an automotive software company that develops and deploys mobility services to realize a world where everyone has the freedom to move.
+                <span className="font-bold text-red-600">Woven by Toyota</span> is an automotive software company that develops and deploys mobility services to realize a world where everyone has the freedom to move.
               </p>
               <div className="flex gap-4">
                 <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
