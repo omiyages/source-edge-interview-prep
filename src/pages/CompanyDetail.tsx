@@ -28,7 +28,7 @@ import {
   Code
 } from 'lucide-react';
 
-export const CompanyDetail: React.FC = () => {
+const CompanyDetail: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>();
 
   // For now, we only have Woven by Toyota
@@ -415,3 +415,5 @@ export const CompanyDetail: React.FC = () => {
     </div>
   );
 };
+
+export default CompanyDetail;

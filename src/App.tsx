@@ -25,8 +25,8 @@ import Resources from "./pages/Resources";
 import CourseDetail from "./pages/CourseDetail";
 import Track from "./pages/Track";
 import UserDashboard from "./pages/UserDashboard";
-import { Companies } from "./pages/Companies";
-import { CompanyDetail } from "./pages/CompanyDetail";
+import Companies from "./pages/Companies";
+import CompanyDetail from "./pages/CompanyDetail";
 
 function App() {
   // Initialize timezone settings
@@ -112,11 +112,19 @@ function App() {
               />
               <Route 
                 path="/company" 
-                element={<Companies />} 
+                element={
+                  <ProtectedRoute>
+                    <Companies />
+                  </ProtectedRoute>
+                } 
               />
               <Route 
                 path="/company/:companyId" 
-                element={<CompanyDetail />} 
+                element={
+                  <ProtectedRoute>
+                    <CompanyDetail />
+                  </ProtectedRoute>
+                } 
               />
                 <Route path="*" element={<NotFound />} />
               </Routes>

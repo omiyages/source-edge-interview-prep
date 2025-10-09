@@ -6,7 +6,7 @@ import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Building2, Globe, Users } from 'lucide-react';
 
-export const Companies: React.FC = () => {
+const Companies: React.FC = () => {
   const companies = [
     {
       id: 'woven',
@@ -120,3 +120,5 @@ export const Companies: React.FC = () => {
     </div>
   );
 };
+
+export default Companies;
