@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { 
   CheckCircle, 
@@ -28,35 +28,43 @@ import {
   Code
 } from 'lucide-react';
 
-export const Company: React.FC = () => {
+export const CompanyDetail: React.FC = () => {
+  const { companyId } = useParams<{ companyId: string }>();
+
+  // For now, we only have Woven by Toyota
+  const companyData = {
+    id: 'woven',
+    name: 'Woven by Toyota',
+    description: 'Toyota\'s mobility technology subsidiary, responsible for developing and integrating the software behind Toyota\'s vehicle operating systems, automated driving, advanced safety technologies, and smart city initiatives such as Woven City.',
+    industry: 'Automotive Software',
+    location: 'Global',
+    founded: '2021'
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Breadcrumb Navigation */}
       <div className="bg-white border-b border-gray-200 py-4">
         <div className="container mx-auto px-6">
-          <div className="flex items-center justify-between">
-            <Breadcrumbs 
-              items={[
-                { label: "Home", href: "/" },
-                { label: "Company" }
-              ]}
-            />
-            
-            <Link to="/">
-              <Button variant="outline" className="flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back to Home
-              </Button>
-            </Link>
-          </div>
+          <Breadcrumbs className="mb-4">
+            <Link to="/" className="text-gray-500 hover:text-gray-700">Home</Link>
+            <Link to="/company" className="text-gray-500 hover:text-gray-700">Companies</Link>
+            <span className="text-gray-900">{companyData.name}</span>
+          </Breadcrumbs>
+          <Link 
+            to="/company" 
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Companies
+          </Link>
         </div>
       </div>
 
       {/* Hero Section */}
-      <div className="py-20 bg-white">
+      <div className="bg-gradient-to-br from-gray-50 to-white py-16">
         <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left side - Text content */}
+          <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
             <div>
               <h1 className="text-6xl font-bold text-gray-900 mb-6">
                 Building the Future of

@@ -45,12 +45,11 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
           Resources
         </Button>
       </Link>
-{/* Company page temporarily hidden during development */}
-            {/* <Link to="/company">
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-                Company
-              </Button>
-            </Link> */}
+      <Link to="/company">
+        <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+          Companies
+        </Button>
+      </Link>
       {isAdmin && (
         <Link to="/admin">
           <Button 

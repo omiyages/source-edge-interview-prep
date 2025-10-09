@@ -25,7 +25,8 @@ import Resources from "./pages/Resources";
 import CourseDetail from "./pages/CourseDetail";
 import Track from "./pages/Track";
 import UserDashboard from "./pages/UserDashboard";
-import { Company } from "./pages/Company";
+import { Companies } from "./pages/Companies";
+import { CompanyDetail } from "./pages/CompanyDetail";
 
 function App() {
   // Initialize timezone settings
@@ -111,7 +112,11 @@ function App() {
               />
               <Route 
                 path="/company" 
-                element={<Company />} 
+                element={<Companies />} 
+              />
+              <Route 
+                path="/company/:companyId" 
+                element={<CompanyDetail />} 
               />
                 <Route path="*" element={<NotFound />} />
               </Routes>
