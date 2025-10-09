@@ -115,14 +115,14 @@ export const Company: React.FC = () => {
                   <Car className="w-8 h-8 text-red-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Building the Future of Mobility</h3>
-                <p className="text-gray-600">Woven by Toyota is Toyota's innovation arm focused on transforming mobility for a safer, more connected, and sustainable future. It develops advanced technologies that go beyond traditional vehicles, including automated driving, smart infrastructure, and software-defined mobility systems.</p>
+                <p className="text-gray-600"><span className="font-bold text-red-600">Woven by Toyota</span> is Toyota's innovation arm focused on transforming mobility for a safer, more connected, and sustainable future. It develops advanced technologies that go beyond traditional vehicles, including automated driving, smart infrastructure, and software-defined mobility systems.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Code className="w-8 h-8 text-red-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Software-First Vehicle Development</h3>
-                <p className="text-gray-600">At its core, Woven by Toyota is pioneering a "software-first" approach to cars. It creates platforms and tools that enable continuous updates and improvements to vehicle performance, safety, and user experience—much like how smartphones evolve through software updates.</p>
+                <p className="text-gray-600">At its core, <span className="font-bold text-red-600">Woven by Toyota</span> is pioneering a "software-first" approach to cars. It creates platforms and tools that enable continuous updates and improvements to vehicle performance, safety, and user experience—much like how smartphones evolve through software updates.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
