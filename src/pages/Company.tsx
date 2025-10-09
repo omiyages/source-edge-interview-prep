@@ -287,7 +287,7 @@ export const Company: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Interview Process</h2>
-            <p className="text-xl text-gray-600">Our streamlined process to find the right fit</p>
+            <p className="text-xl text-gray-600">Woven by Toyota's interview process takes between 5-7 weeks on average, taking 4~5 steps.</p>
           </div>
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-4 gap-8">
@@ -295,29 +295,29 @@ export const Company: React.FC = () => {
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white font-bold text-xl">1</span>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Application</h3>
-                <p className="text-gray-600">Submit your application and portfolio</p>
+                <h3 className="text-lg font-semibold mb-2">HR Call</h3>
+                <p className="text-gray-600">30 minute CV screening call with the HR team</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white font-bold text-xl">2</span>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Initial Screening</h3>
-                <p className="text-gray-600">Phone or video interview with HR</p>
+                <h3 className="text-lg font-semibold mb-2">Technical Interview</h3>
+                <p className="text-gray-600">2nd interview is usually a live coding session or a technical deep-dive for non-coding roles. Some roles may have technical challenge instead</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white font-bold text-xl">3</span>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Technical Interview</h3>
-                <p className="text-gray-600">Technical assessment with engineering team</p>
+                <h3 className="text-lg font-semibold mb-2">Cross Functional</h3>
+                <p className="text-gray-600">A behavioral-based discussion focusing on stakeholder management, leadership, communication, and collaboration skills</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white font-bold text-xl">4</span>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Final Interview</h3>
-                <p className="text-gray-600">Meet the team and discuss role fit</p>
+                <h3 className="text-lg font-semibold mb-2">Manager Interview</h3>
+                <p className="text-gray-600">A final interview with the senior management discussing culture fit, role scope, and any other concerns other interviewers may have raised</p>
               </div>
             </div>
           </div>
