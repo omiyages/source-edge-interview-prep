@@ -96,14 +96,16 @@ export const CompanyDetail: React.FC = () => {
         </div>
 
         {/* Page Navigation */}
-        <div className="bg-gray-50 py-6 rounded-lg mb-8">
-          <div className="flex justify-center">
-            <nav className="flex items-center gap-8">
-              <a href="#about" className="text-foreground hover:text-red-600 font-medium transition-colors">About</a>
-              <a href="#divisions" className="text-foreground hover:text-red-600 font-medium transition-colors">Divisions</a>
-              <a href="#interview-process" className="text-foreground hover:text-red-600 font-medium transition-colors">Interview Process</a>
-              <a href="#culture" className="text-foreground hover:text-red-600 font-medium transition-colors">Culture</a>
-            </nav>
+        <div className="bg-gray-50 py-6 mb-8 -mx-4 px-4">
+          <div className="container mx-auto">
+            <div className="flex justify-center">
+              <nav className="flex items-center gap-8">
+                <a href="#about" className="text-foreground hover:text-red-600 font-medium transition-colors">About</a>
+                <a href="#divisions" className="text-foreground hover:text-red-600 font-medium transition-colors">Divisions</a>
+                <a href="#interview-process" className="text-foreground hover:text-red-600 font-medium transition-colors">Interview Process</a>
+                <a href="#culture" className="text-foreground hover:text-red-600 font-medium transition-colors">Culture</a>
+              </nav>
+            </div>
           </div>
         </div>
 
@@ -287,8 +289,8 @@ export const CompanyDetail: React.FC = () => {
         </div>
 
         {/* Interview Process Section */}
-        <div id="interview-process" className="py-16 bg-gray-50">
-          <div className="container mx-auto px-6">
+        <div id="interview-process" className="py-16 bg-gray-50 -mx-4 px-4">
+          <div className="container mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">Interview Process</h2>
               <p className="text-xl text-muted-foreground">Woven by Toyota's interview process takes between 5-7 weeks on average, taking 4~5 steps.</p>
