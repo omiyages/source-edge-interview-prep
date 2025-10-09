@@ -233,19 +233,19 @@ export const Company: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">Enterprise Technology</h3>
-                  <p className="text-gray-600 mb-6">Providing enterprise-grade technology solutions that support Toyota's global operations and enable digital transformation across the organization.</p>
+                  <p className="text-gray-600 mb-6">Enterprise Technology team is the backbone of all the engineering projects within Woven, building a cloud-based platform to help engineers build AI/ML applications and software for the automotive industry.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Cloud infrastructure</span>
+                      <span className="text-sm text-gray-600">Cloud Platform for automotive industry</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Data analytics platforms</span>
+                      <span className="text-sm text-gray-600">Enterprise AI - AI/ML application</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Digital workplace solutions</span>
+                      <span className="text-sm text-gray-600">Engineering infrastructure and network</span>
                     </li>
                   </ul>
                 </div>
@@ -260,19 +260,19 @@ export const Company: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">Dojo</h3>
-                  <p className="text-gray-600 mb-6">Our machine learning and AI division that develops intelligent systems for autonomous driving and mobility services. Dojo creates the brain behind our smart vehicles.</p>
+                  <p className="text-gray-600 mb-6">Dojo is a EdTech platform that provides employee training around languages, programming, soft-skill, and other professional development. The platform is used by Toyota Group and other external partners.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Computer vision systems</span>
+                      <span className="text-sm text-gray-600">EdTech Platform</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Neural network training</span>
+                      <span className="text-sm text-gray-600">B2B Employee Training</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Real-time decision making</span>
+                      <span className="text-sm text-gray-600">Enabling spoken language & technical skill development</span>
                     </li>
                   </ul>
                 </div>
