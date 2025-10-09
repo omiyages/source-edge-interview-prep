@@ -17,8 +17,7 @@ export const Companies: React.FC = () => {
       founded: '2021',
       website: 'https://woven.toyota',
       divisions: ['ADAS', 'Arene', 'Woven City', 'Enterprise Technology', 'Dojo'],
-      image: '/woven-office-image.jpg',
-      featured: true
+      image: '/woven-office-image.jpg'
     }
   ];
 
@@ -61,11 +60,6 @@ export const Companies: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                {company.featured && (
-                  <Badge className="absolute top-3 left-3 bg-red-600 text-white">
-                    Featured
-                  </Badge>
-                )}
               </div>
               
               <CardContent className="p-6">
