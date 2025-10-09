@@ -324,11 +324,11 @@ export const Company: React.FC = () => {
         </div>
       </div>
 
-      {/* Office & Culture Section */}
+      {/* Culture and Why Woven by Toyota Section */}
       <div id="culture" className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Office & Culture</h2>
+            <h2 className="text-4xl font-bold mb-4">Culture and Why Woven by Toyota?</h2>
             <p className="text-xl text-gray-600 max-w-6xl mx-auto">
               Experience our innovative workspace and collaborative culture that drives breakthrough innovations.
             </p>
@@ -353,42 +353,51 @@ export const Company: React.FC = () => {
 
             {/* Culture Features */}
             <div>
-              <h3 className="text-2xl font-bold mb-6">Innovation-Driven Culture</h3>
+              <h3 className="text-2xl font-bold mb-6">Why Join Woven by Toyota?</h3>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Users className="w-6 h-6 text-blue-600" />
+                    <Award className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">Collaborative Environment</h4>
-                    <p className="text-gray-600">Focus on diverse, talented teams working on cutting-edge mobility solutions.</p>
+                    <h4 className="font-semibold mb-2">Purpose-Driven Talent</h4>
+                    <p className="text-gray-600">The best and brightest mobility industry pioneers</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Lightbulb className="w-6 h-6 text-yellow-600" />
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Car className="w-6 h-6 text-red-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">Innovation Focus</h4>
-                    <p className="text-gray-600">Encouragement for creative thinking and breakthrough ideas in transportation.</p>
+                    <h4 className="font-semibold mb-2">Toyota</h4>
+                    <p className="text-gray-600">Greater opportunities for scale and distribution</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <GraduationCap className="w-6 h-6 text-green-600" />
+                    <Zap className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">Continuous Learning</h4>
-                    <p className="text-gray-600">Access to training programs, conferences, and mentorship.</p>
+                    <h4 className="font-semibold mb-2">Agility</h4>
+                    <p className="text-gray-600">Our own governance and board of directors to remain agile</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Scale className="w-6 h-6 text-purple-600" />
+                    <Heart className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">Work-Life Balance</h4>
-                    <p className="text-gray-600">Flexible schedules and remote work options.</p>
+                    <h4 className="font-semibold mb-2">Unique Culture</h4>
+                    <p className="text-gray-600">Silicon Valley innovation with Japanese craftsmanship</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Globe className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Global Software Start-Up</h4>
+                    <p className="text-gray-600">The "full stack" needed for software-first mobility worldwide</p>
                   </div>
                 </div>
               </div>
