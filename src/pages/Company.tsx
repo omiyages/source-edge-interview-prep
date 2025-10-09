@@ -23,7 +23,9 @@ import {
   Calendar,
   MapPin,
   Clock,
-  Check
+  Check,
+  Car,
+  Code
 } from 'lucide-react';
 
 export const Company: React.FC = () => {
@@ -110,24 +112,24 @@ export const Company: React.FC = () => {
             <div className="grid md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-red-600" />
+                  <Car className="w-8 h-8 text-red-600" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Established in 2021</h3>
-                <p className="text-gray-600">Established as its own company in 2021, but Woven by Toyota first began in 2018 as TRI-AD, a subsidiary division of Toyota.</p>
+                <h3 className="text-xl font-semibold mb-2">Building the Future of Mobility</h3>
+                <p className="text-gray-600">Woven by Toyota is Toyota's innovation arm focused on transforming mobility for a safer, more connected, and sustainable future. It develops advanced technologies that go beyond traditional vehicles, including automated driving, smart infrastructure, and software-defined mobility systems.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Lightbulb className="w-8 h-8 text-red-600" />
+                  <Code className="w-8 h-8 text-red-600" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Next-Gen Mobility</h3>
-                <p className="text-gray-600">Extending the value of the car, expanding mobility into new realms and integrating mobility with social systems, helping everyone move freely, happily, and comfortably</p>
+                <h3 className="text-xl font-semibold mb-2">Software-First Vehicle Development</h3>
+                <p className="text-gray-600">At its core, Woven by Toyota is pioneering a "software-first" approach to cars. It creates platforms and tools that enable continuous updates and improvements to vehicle performance, safety, and user experience—much like how smartphones evolve through software updates.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Globe className="w-8 h-8 text-red-600" />
+                  <Building2 className="w-8 h-8 text-red-600" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Global Impact</h3>
-                <p className="text-gray-600">Transforming mobility worldwide</p>
+                <h3 className="text-xl font-semibold mb-2">The Woven City Vision</h3>
+                <p className="text-gray-600">One of its flagship projects, Woven City, is a prototype city in Japan designed as a living laboratory for mobility and smart technology. Here, companies tests autonomous vehicles, robotics, and renewable energy solutions in real-world conditions, shaping innovations that can scale to global communities.</p>
               </div>
             </div>
           </div>
