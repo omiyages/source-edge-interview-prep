@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Building2, Globe, Users } from 'lucide-react';
 
@@ -22,35 +23,33 @@ export const Companies: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-6 py-6">
-          <div className="flex items-center gap-4 mb-4">
-            <Link 
-              to="/" 
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Companies' }]} className="mb-4" />
+        
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <Link to="/">
+              <Button variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Home
+              </Button>
             </Link>
+            <h1 className="text-4xl font-black text-foreground">
+              Companies
+            </h1>
+            <div className="w-32"></div> {/* Spacer to center the title */}
           </div>
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">Companies</h1>
-              <p className="text-xl text-gray-600 mt-2">
-                Explore our portfolio of innovative companies driving the future of mobility and technology.
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Showing {companies.length} company{companies.length !== 1 ? 'ies' : ''}</p>
-            </div>
-          </div>
+          <p className="text-lg text-foreground font-semibold max-w-2xl mx-auto">
+            Explore our portfolio of innovative companies driving the future of mobility and technology.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Showing {companies.length} company{companies.length !== 1 ? 'ies' : ''}
+          </p>
         </div>
-      </div>
 
-      {/* Companies Grid */}
-      <div className="container mx-auto px-6 py-8">
+        {/* Companies Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {companies.map((company) => (
             <Card key={company.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
@@ -106,18 +105,11 @@ export const Companies: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="flex gap-2">
-                  <Button asChild className="flex-1">
-                    <Link to={`/company/${company.id}`}>
-                      Learn More
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline">
-                    <a href={company.website} target="_blank" rel="noopener noreferrer">
-                      Website
-                    </a>
-                  </Button>
-                </div>
+                <Button asChild className="w-full">
+                  <Link to={`/company/${company.id}`}>
+                    Learn More
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -125,9 +117,9 @@ export const Companies: React.FC = () => {
         
         {companies.length === 0 && (
           <div className="text-center py-12">
-            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-500 mb-2">No companies found</h3>
-            <p className="text-gray-400">Check back later for new company additions.</p>
+            <Building2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">No companies found</h3>
+            <p className="text-muted-foreground">Check back later for new company additions.</p>
           </div>
         )}
       </div>

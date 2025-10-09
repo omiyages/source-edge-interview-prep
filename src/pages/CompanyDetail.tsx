@@ -42,43 +42,39 @@ export const CompanyDetail: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Breadcrumb Navigation */}
-      <div className="bg-white border-b border-gray-200 py-4">
-        <div className="container mx-auto px-6">
-          <Breadcrumbs className="mb-4">
-            <Link to="/" className="text-gray-500 hover:text-gray-700">Home</Link>
-            <Link to="/company" className="text-gray-500 hover:text-gray-700">Companies</Link>
-            <span className="text-gray-900">{companyData.name}</span>
-          </Breadcrumbs>
-          <Link 
-            to="/company" 
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Companies
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs items={[
+          { label: 'Home', href: '/' }, 
+          { label: 'Companies', href: '/company' }, 
+          { label: companyData.name }
+        ]} className="mb-4" />
+        
+        <div className="flex items-center gap-4 mb-6">
+          <Link to="/company">
+            <Button variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Companies
+            </Button>
           </Link>
         </div>
-      </div>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-gray-50 to-white py-16">
-        <div className="container mx-auto px-6">
+        {/* Hero Section */}
+        <div className="bg-gradient-to-br from-muted/50 to-background py-16 rounded-lg mb-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
             <div>
-              <h1 className="text-6xl font-bold text-gray-900 mb-6">
+              <h1 className="text-6xl font-bold text-foreground mb-6">
                 Building the Future of
                 <br />
                 <span className="text-red-600">Mobility</span>
               </h1>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
                 <span className="font-bold text-red-600">Woven by Toyota</span> is an automotive software company that develops and deploys mobility services to realize a world where everyone has the freedom to move.
               </p>
               <div className="flex gap-4">
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
                   onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   Learn More
@@ -98,28 +94,24 @@ export const CompanyDetail: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Page Navigation */}
-      <div className="bg-gray-50 py-6 border-b">
-        <div className="container mx-auto px-6">
+        {/* Page Navigation */}
+        <div className="bg-muted/30 py-6 rounded-lg mb-8">
           <div className="flex justify-center">
             <nav className="flex items-center gap-8">
-              <a href="#about" className="text-gray-700 hover:text-red-600 font-medium transition-colors">About</a>
-              <a href="#divisions" className="text-gray-700 hover:text-red-600 font-medium transition-colors">Divisions</a>
-              <a href="#interview-process" className="text-gray-700 hover:text-red-600 font-medium transition-colors">Interview Process</a>
-              <a href="#culture" className="text-gray-700 hover:text-red-600 font-medium transition-colors">Culture</a>
+              <a href="#about" className="text-foreground hover:text-red-600 font-medium transition-colors">About</a>
+              <a href="#divisions" className="text-foreground hover:text-red-600 font-medium transition-colors">Divisions</a>
+              <a href="#interview-process" className="text-foreground hover:text-red-600 font-medium transition-colors">Interview Process</a>
+              <a href="#culture" className="text-foreground hover:text-red-600 font-medium transition-colors">Culture</a>
             </nav>
           </div>
         </div>
-      </div>
 
-      {/* About Woven by Toyota Section */}
-      <div id="about" className="py-16 bg-gray-50">
-        <div className="container mx-auto px-6">
+        {/* About Woven by Toyota Section */}
+        <div id="about" className="py-16 bg-muted/30 rounded-lg mb-8">
           <div className="max-w-6xl mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-8">About Woven by Toyota</h2>
-            <p className="text-xl text-gray-600 leading-relaxed mb-8">
+            <h2 className="text-4xl font-bold mb-8 text-foreground">About Woven by Toyota</h2>
+            <p className="text-xl text-muted-foreground leading-relaxed mb-8">
               <span className="font-bold text-red-600">Woven by Toyota</span> is Toyota's mobility technology subsidiary, responsible for developing and integrating the software behind Toyota's vehicle operating systems, automated driving, advanced safety technologies, and smart city initiatives such as Woven City.
             </p>
             <div className="grid md:grid-cols-3 gap-8 mt-12">
@@ -127,8 +119,8 @@ export const CompanyDetail: React.FC = () => {
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Car className="w-8 h-8 text-red-600" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Building the Future of Mobility</h3>
-                <p className="text-gray-600">Woven by Toyota is Toyota's innovation arm focused on transforming mobility for a safer, more connected, and sustainable future. It develops advanced technologies that go beyond traditional vehicles, including automated driving, smart infrastructure, and software-defined mobility systems.</p>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">Building the Future of Mobility</h3>
+                <p className="text-muted-foreground">Woven by Toyota is Toyota's innovation arm focused on transforming mobility for a safer, more connected, and sustainable future. It develops advanced technologies that go beyond traditional vehicles, including automated driving, smart infrastructure, and software-defined mobility systems.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
