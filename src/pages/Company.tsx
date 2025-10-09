@@ -152,7 +152,7 @@ export const Company: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">ADAS</h3>
-                  <p className="text-gray-600 mb-6">Developing cutting-edge safety technologies that enhance driver awareness and vehicle control. Our ADAS team creates intelligent systems that help prevent accidents and make driving safer for everyone.</p>
+                  <p className="text-gray-600 mb-6">Developing advanced driver-assistance systems that enhance safety and confidence on the road. Woven by Toyota designs intelligent features that support drivers, prevent accidents, and move Toyota closer to fully automated mobility.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
@@ -160,7 +160,7 @@ export const Company: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Lane departure warning systems</span>
+                      <span className="text-sm text-gray-600">Lane departure warning</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
@@ -179,19 +179,19 @@ export const Company: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">Arene</h3>
-                  <p className="text-gray-600 mb-6">Our software-defined vehicle platform that enables rapid development and deployment of automotive applications. Arene provides the foundation for next-generation connected vehicles.</p>
+                  <p className="text-gray-600 mb-6">Building Toyota's next-generation vehicle software platform and operating system. Arene enables developers to create, test, and deploy software seamlessly across vehicles, driving faster innovation and continuous improvement.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Vehicle OS and software platform</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-gray-600">Scalable development environment</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
                       <span className="text-sm text-gray-600">Over-the-air updates</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Real-time vehicle analytics</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Connected services platform</span>
                     </li>
                   </ul>
                 </div>
@@ -206,19 +206,19 @@ export const Company: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">Woven City</h3>
-                  <p className="text-gray-600 mb-6">Building a prototype city of the future at the base of Mt. Fuji. This living laboratory will test and develop technologies for autonomous vehicles, smart infrastructure, and sustainable living.</p>
+                  <p className="text-gray-600 mb-6">Creating a living laboratory for mobility and sustainability at the base of Mt. Fuji. In September 2025, residents moved into Woven City as part of Phase 1, marking the start of real-world testing for autonomous vehicles, robotics, and clean energy systems.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Smart city infrastructure</span>
+                      <span className="text-sm text-gray-600">Autonomous and connected mobility testing</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Autonomous vehicle testing</span>
+                      <span className="text-sm text-gray-600">Smart infrastructure integration</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Sustainable energy systems</span>
+                      <span className="text-sm text-gray-600">Sustainable community design</span>
                     </li>
                   </ul>
                 </div>
