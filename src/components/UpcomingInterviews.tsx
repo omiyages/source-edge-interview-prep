@@ -23,7 +23,6 @@ export const UpcomingInterviews: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [excludedTypes, setExcludedTypes] = useState<Set<string>>(new Set());
-  const [showTypeFilter, setShowTypeFilter] = useState(false);
   const { toast } = useToast();
 
   const loadUpcomingInterviews = async () => {
@@ -281,28 +280,27 @@ export const UpcomingInterviews: React.FC = () => {
               {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
             </Button>
           ))}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTypeFilter(!showTypeFilter)}
-            className="ml-auto"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filter by Type
-            {excludedTypes.size > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {excludedTypes.size} excluded
-              </Badge>
-            )}
-          </Button>
         </div>
 
-        {/* Interview Type Filter */}
-        {showTypeFilter && interviewTypes.length > 0 && (
+        {/* Interview Type Filter - Always Visible */}
+        {interviewTypes.length > 0 && (
           <Card className="p-4">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-semibold">Interview Types</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Filter by Interview Type
+                    {excludedTypes.size > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {excludedTypes.size} excluded
+                      </Badge>
+                    )}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Uncheck interview types to exclude them from the list
+                  </p>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -312,10 +310,7 @@ export const UpcomingInterviews: React.FC = () => {
                   Clear All
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Uncheck interview types to exclude them from the list
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="flex flex-wrap gap-4">
                 {interviewTypes.map((type) => (
                   <div key={type} className="flex items-center space-x-2">
                     <Checkbox
@@ -325,7 +320,7 @@ export const UpcomingInterviews: React.FC = () => {
                     />
                     <label
                       htmlFor={`type-${type}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer whitespace-nowrap"
                     >
                       {type}
                     </label>
