@@ -107,7 +107,7 @@ export const Company: React.FC = () => {
           <div className="max-w-6xl mx-auto text-center">
             <h2 className="text-4xl font-bold mb-8">About Woven by Toyota</h2>
             <p className="text-xl text-gray-600 leading-relaxed mb-8">
-              Woven by Toyota is a subsidiary company of Toyota Group, focusing on software development around self/assisted driving, smart city, software defined vehicle, and other mobility fields.
+              Woven by Toyota is Toyota's mobility technology subsidiary, responsible for developing and integrating the software behind Toyota's vehicle operating systems, automated driving, advanced safety technologies, and smart city initiatives such as Woven City.
             </p>
             <div className="grid md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
