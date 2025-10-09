@@ -140,8 +140,8 @@ export const Company: React.FC = () => {
       <div id="divisions" className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Our Divisions</h2>
-            <p className="text-xl text-gray-600">Each division focuses on different aspects of mobility innovation, working together to create comprehensive solutions.</p>
+            <h2 className="text-4xl font-bold mb-4">Divisions</h2>
+            <p className="text-xl text-gray-600">Woven by Toyota focuses on 5 main products, ranging from self-driving, smart city, Software-Defined Vehicle, and more.</p>
           </div>
           <div className="max-w-6xl mx-auto space-y-8">
             {/* ADAS Division */}
