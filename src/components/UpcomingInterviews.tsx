@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User, MapPin, Video, ExternalLink } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar, Clock, User, MapPin, Video, ExternalLink, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +22,8 @@ export const UpcomingInterviews: React.FC = () => {
   const [interviews, setInterviews] = useState<UpcomingInterview[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [excludedTypes, setExcludedTypes] = useState<Set<string>>(new Set());
+  const [showTypeFilter, setShowTypeFilter] = useState(false);
   const { toast } = useToast();
 
   const loadUpcomingInterviews = async () => {
@@ -139,6 +142,29 @@ export const UpcomingInterviews: React.FC = () => {
     loadUpcomingInterviews();
   }, []);
 
+  // Get unique interview types from all interviews
+  const interviewTypes = useMemo(() => {
+    const types = new Set<string>();
+    interviews.forEach(interview => {
+      if (interview.interview_name) {
+        types.add(interview.interview_name);
+      }
+    });
+    return Array.from(types).sort();
+  }, [interviews]);
+
+  const toggleInterviewType = (type: string) => {
+    setExcludedTypes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(type)) {
+        newSet.delete(type);
+      } else {
+        newSet.add(type);
+      }
+      return newSet;
+    });
+  };
+
   const getFilteredInterviews = () => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -147,6 +173,11 @@ export const UpcomingInterviews: React.FC = () => {
 
     return interviews.filter(interview => {
       const interviewDate = new Date(interview.scheduled_date);
+      
+      // Check if interview type is excluded
+      if (excludedTypes.has(interview.interview_name)) {
+        return false;
+      }
       
       switch (filter) {
         case 'today':
@@ -238,17 +269,72 @@ export const UpcomingInterviews: React.FC = () => {
       </div>
 
       {/* Filter Buttons */}
-      <div className="flex gap-2">
-        {(['all', 'today', 'week', 'month'] as const).map((filterOption) => (
+      <div className="space-y-3">
+        <div className="flex gap-2 flex-wrap">
+          {(['all', 'today', 'week', 'month'] as const).map((filterOption) => (
+            <Button
+              key={filterOption}
+              variant={filter === filterOption ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter(filterOption)}
+            >
+              {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
+            </Button>
+          ))}
           <Button
-            key={filterOption}
-            variant={filter === filterOption ? 'default' : 'outline'}
+            variant="outline"
             size="sm"
-            onClick={() => setFilter(filterOption)}
+            onClick={() => setShowTypeFilter(!showTypeFilter)}
+            className="ml-auto"
           >
-            {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
+            <Filter className="w-4 h-4 mr-2" />
+            Filter by Type
+            {excludedTypes.size > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {excludedTypes.size} excluded
+              </Badge>
+            )}
           </Button>
-        ))}
+        </div>
+
+        {/* Interview Type Filter */}
+        {showTypeFilter && interviewTypes.length > 0 && (
+          <Card className="p-4">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-semibold">Interview Types</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExcludedTypes(new Set())}
+                  disabled={excludedTypes.size === 0}
+                >
+                  Clear All
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Uncheck interview types to exclude them from the list
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {interviewTypes.map((type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`type-${type}`}
+                      checked={!excludedTypes.has(type)}
+                      onCheckedChange={() => toggleInterviewType(type)}
+                    />
+                    <label
+                      htmlFor={`type-${type}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {type}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Interviews List */}
