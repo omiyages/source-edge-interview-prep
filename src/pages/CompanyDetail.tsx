@@ -60,7 +60,7 @@ export const CompanyDetail: React.FC = () => {
         </div>
 
         {/* Hero Section */}
-        <div className="bg-gradient-to-br from-muted/50 to-background py-16 rounded-lg mb-8">
+        <div className="py-16 mb-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
             <div>
               <h1 className="text-6xl font-bold text-foreground mb-6">
@@ -96,7 +96,7 @@ export const CompanyDetail: React.FC = () => {
         </div>
 
         {/* Page Navigation */}
-        <div className="bg-muted/30 py-6 rounded-lg mb-8">
+        <div className="bg-gray-50 py-6 rounded-lg mb-8">
           <div className="flex justify-center">
             <nav className="flex items-center gap-8">
               <a href="#about" className="text-foreground hover:text-red-600 font-medium transition-colors">About</a>
@@ -108,7 +108,7 @@ export const CompanyDetail: React.FC = () => {
         </div>
 
         {/* About Woven by Toyota Section */}
-        <div id="about" className="py-16 bg-muted/30 rounded-lg mb-8">
+        <div id="about" className="py-16 mb-8">
           <div className="max-w-6xl mx-auto text-center">
             <h2 className="text-4xl font-bold mb-8 text-foreground">About Woven by Toyota</h2>
             <p className="text-xl text-muted-foreground leading-relaxed mb-8">
@@ -127,14 +127,14 @@ export const CompanyDetail: React.FC = () => {
                   <Code className="w-8 h-8 text-red-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Software-First Vehicle Development</h3>
-                <p className="text-gray-600">At its core, Woven by Toyota is pioneering a "software-first" approach to cars. It creates platforms and tools that enable continuous updates and improvements to vehicle performance, safety, and user experience—much like how smartphones evolve through software updates.</p>
+                <p className="text-muted-foreground">At its core, Woven by Toyota is pioneering a "software-first" approach to cars. It creates platforms and tools that enable continuous updates and improvements to vehicle performance, safety, and user experience—much like how smartphones evolve through software updates.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Building2 className="w-8 h-8 text-red-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">The Woven City Vision</h3>
-                <p className="text-gray-600">One of its flagship projects, Woven City, is a prototype city in Japan designed as a living laboratory for mobility and smart technology. Here, companies tests autonomous vehicles, robotics, and renewable energy solutions in real-world conditions, shaping innovations that can scale to global communities.</p>
+                <p className="text-muted-foreground">One of its flagship projects, Woven City, is a prototype city in Japan designed as a living laboratory for mobility and smart technology. Here, companies tests autonomous vehicles, robotics, and renewable energy solutions in real-world conditions, shaping innovations that can scale to global communities.</p>
               </div>
             </div>
           </div>
@@ -146,7 +146,7 @@ export const CompanyDetail: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Divisions</h2>
-            <p className="text-xl text-gray-600">Woven by Toyota focuses on 5 main products, ranging from self-driving, smart city, Software-Defined Vehicle, and more.</p>
+            <p className="text-xl text-muted-foreground">Woven by Toyota focuses on 5 main products, ranging from self-driving, smart city, Software-Defined Vehicle, and more.</p>
           </div>
           <div className="max-w-6xl mx-auto space-y-8">
             {/* ADAS Division */}
@@ -157,19 +157,19 @@ export const CompanyDetail: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">ADAS</h3>
-                  <p className="text-gray-600 mb-6">Developing advanced driver-assistance systems that enhance safety and confidence on the road. Woven by Toyota designs intelligent features that support drivers, prevent accidents, and move Toyota closer to fully automated mobility.</p>
+                  <p className="text-muted-foreground mb-6">Developing advanced driver-assistance systems that enhance safety and confidence on the road. Woven by Toyota designs intelligent features that support drivers, prevent accidents, and move Toyota closer to fully automated mobility.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Autonomous emergency braking</span>
+                      <span className="text-sm text-muted-foreground">Autonomous emergency braking</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Lane departure warning</span>
+                      <span className="text-sm text-muted-foreground">Lane departure warning</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Adaptive cruise control</span>
+                      <span className="text-sm text-muted-foreground">Adaptive cruise control</span>
                     </li>
                   </ul>
                 </div>
@@ -184,19 +184,19 @@ export const CompanyDetail: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">Arene</h3>
-                  <p className="text-gray-600 mb-6">Building Toyota's next-generation vehicle software platform and operating system. Arene enables developers to create, test, and deploy software seamlessly across vehicles, driving faster innovation and continuous improvement.</p>
+                  <p className="text-muted-foreground mb-6">Building Toyota's next-generation vehicle software platform and operating system. Arene enables developers to create, test, and deploy software seamlessly across vehicles, driving faster innovation and continuous improvement.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Vehicle OS and software platform</span>
+                      <span className="text-sm text-muted-foreground">Vehicle OS and software platform</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Scalable development environment</span>
+                      <span className="text-sm text-muted-foreground">Scalable development environment</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Over-the-air updates</span>
+                      <span className="text-sm text-muted-foreground">Over-the-air updates</span>
                     </li>
                   </ul>
                 </div>
@@ -211,19 +211,19 @@ export const CompanyDetail: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">Woven City</h3>
-                  <p className="text-gray-600 mb-6">Creating a living laboratory for mobility and sustainability at the base of Mt. Fuji. In September 2025, residents moved into Woven City as part of Phase 1, marking the start of real-world testing for autonomous vehicles, robotics, and clean energy systems.</p>
+                  <p className="text-muted-foreground mb-6">Creating a living laboratory for mobility and sustainability at the base of Mt. Fuji. In September 2025, residents moved into Woven City as part of Phase 1, marking the start of real-world testing for autonomous vehicles, robotics, and clean energy systems.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Autonomous and connected mobility testing</span>
+                      <span className="text-sm text-muted-foreground">Autonomous and connected mobility testing</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Smart infrastructure integration</span>
+                      <span className="text-sm text-muted-foreground">Smart infrastructure integration</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Sustainable community design</span>
+                      <span className="text-sm text-muted-foreground">Sustainable community design</span>
                     </li>
                   </ul>
                 </div>
@@ -238,19 +238,19 @@ export const CompanyDetail: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">Enterprise Technology</h3>
-                  <p className="text-gray-600 mb-6">Enterprise Technology team is the backbone of all the engineering projects within Woven, building a cloud-based platform to help engineers build AI/ML applications and software for the automotive industry.</p>
+                  <p className="text-muted-foreground mb-6">Enterprise Technology team is the backbone of all the engineering projects within Woven, building a cloud-based platform to help engineers build AI/ML applications and software for the automotive industry.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Cloud Platform for automotive industry</span>
+                      <span className="text-sm text-muted-foreground">Cloud Platform for automotive industry</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Enterprise AI - AI/ML application</span>
+                      <span className="text-sm text-muted-foreground">Enterprise AI - AI/ML application</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Engineering infrastructure and network</span>
+                      <span className="text-sm text-muted-foreground">Engineering infrastructure and network</span>
                     </li>
                   </ul>
                 </div>
@@ -265,19 +265,19 @@ export const CompanyDetail: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-4">Dojo</h3>
-                  <p className="text-gray-600 mb-6">Dojo is a EdTech platform that provides employee training around languages, programming, soft-skill, and other professional development. The platform is used by Toyota Group and other external partners.</p>
+                  <p className="text-muted-foreground mb-6">Dojo is a EdTech platform that provides employee training around languages, programming, soft-skill, and other professional development. The platform is used by Toyota Group and other external partners.</p>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">EdTech Platform</span>
+                      <span className="text-sm text-muted-foreground">EdTech Platform</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">B2B Employee Training</span>
+                      <span className="text-sm text-muted-foreground">B2B Employee Training</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">Enabling spoken language & technical skill development</span>
+                      <span className="text-sm text-muted-foreground">Enabling spoken language & technical skill development</span>
                     </li>
                   </ul>
                 </div>
@@ -292,7 +292,7 @@ export const CompanyDetail: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Interview Process</h2>
-            <p className="text-xl text-gray-600">Woven by Toyota's interview process takes between 5-7 weeks on average, taking 4~5 steps.</p>
+            <p className="text-xl text-muted-foreground">Woven by Toyota's interview process takes between 5-7 weeks on average, taking 4~5 steps.</p>
           </div>
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-4 gap-8">
@@ -301,28 +301,28 @@ export const CompanyDetail: React.FC = () => {
                   <span className="text-white font-bold text-xl">1</span>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">HR Call</h3>
-                <p className="text-gray-600">30 minute CV screening call with the HR team</p>
+                <p className="text-muted-foreground">30 minute CV screening call with the HR team</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white font-bold text-xl">2</span>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Technical Interview</h3>
-                <p className="text-gray-600">2nd interview is usually a live coding session or a technical deep-dive for non-coding roles. Some roles may have technical challenge instead</p>
+                <p className="text-muted-foreground">2nd interview is usually a live coding session or a technical deep-dive for non-coding roles. Some roles may have technical challenge instead</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white font-bold text-xl">3</span>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Cross Functional</h3>
-                <p className="text-gray-600">A behavioral-based discussion focusing on stakeholder management, leadership, communication, and collaboration skills</p>
+                <p className="text-muted-foreground">A behavioral-based discussion focusing on stakeholder management, leadership, communication, and collaboration skills</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white font-bold text-xl">4</span>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Manager Interview</h3>
-                <p className="text-gray-600">A final interview with the senior management discussing culture fit, role scope, and any other concerns other interviewers may have raised</p>
+                <p className="text-muted-foreground">A final interview with the senior management discussing culture fit, role scope, and any other concerns other interviewers may have raised</p>
               </div>
             </div>
           </div>
@@ -330,11 +330,10 @@ export const CompanyDetail: React.FC = () => {
       </div>
 
       {/* Culture and Why Woven by Toyota Section */}
-      <div id="culture" className="py-16 bg-white">
-        <div className="container mx-auto px-6">
+      <div id="culture" className="py-16">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Culture and Why Woven by Toyota?</h2>
-            <p className="text-xl text-gray-600 max-w-6xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-6xl mx-auto">
               Woven by Toyota offers English-driven international environment modelled after Silicon Valley Tech startup culture.
             </p>
           </div>
@@ -366,7 +365,7 @@ export const CompanyDetail: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Purpose-Driven Talent</h4>
-                    <p className="text-gray-600">The best and brightest mobility industry pioneers</p>
+                    <p className="text-muted-foreground">The best and brightest mobility industry pioneers</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -375,7 +374,7 @@ export const CompanyDetail: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Toyota</h4>
-                    <p className="text-gray-600">Greater opportunities for scale and distribution</p>
+                    <p className="text-muted-foreground">Greater opportunities for scale and distribution</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -384,7 +383,7 @@ export const CompanyDetail: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Agility</h4>
-                    <p className="text-gray-600">Our own governance and board of directors to remain agile</p>
+                    <p className="text-muted-foreground">Our own governance and board of directors to remain agile</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -393,7 +392,7 @@ export const CompanyDetail: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Unique Culture</h4>
-                    <p className="text-gray-600">Silicon Valley innovation with Japanese craftsmanship</p>
+                    <p className="text-muted-foreground">Silicon Valley innovation with Japanese craftsmanship</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -402,7 +401,7 @@ export const CompanyDetail: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Global Software Start-Up</h4>
-                    <p className="text-gray-600">The "full stack" needed for software-first mobility worldwide</p>
+                    <p className="text-muted-foreground">The "full stack" needed for software-first mobility worldwide</p>
                   </div>
                 </div>
               </div>
