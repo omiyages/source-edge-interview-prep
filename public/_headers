@@ -5,9 +5,8 @@
   X-Content-Type-Options: nosniff
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
-  Content-Security-Policy: default-src 'self'; connect-src 'self' https://*.supabase.co https://api.mapbox.com wss://*.supabase.co; img-src 'self' https://*.supabase.co data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; font-src 'self' data:; frame-src 'self' https://*.youtube.com https://youtube.com https://www.youtube.com; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; object-src 'none';
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://*.supabase.co https://api.mapbox.com wss://*.supabase.co https://*.youtube.com https://youtube.com https://www.youtube.com; img-src 'self' https://*.supabase.co data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline' data: https://*.youtube.com https://youtube.com https://www.youtube.com; font-src 'self' data:; frame-src 'self' https://*.youtube.com https://youtube.com https://www.youtube.com; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; object-src 'none';
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(*), accelerometer=(*)
-  Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
 
