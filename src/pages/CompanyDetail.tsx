@@ -409,7 +409,6 @@ export const CompanyDetail: React.FC = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };
