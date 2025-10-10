@@ -96,6 +96,21 @@ export const StageQuestions = ({
     return acc;
   }, {} as Record<string, InterviewQuestion[]>) || {};
 
+  // Expand all categories by default when questions are loaded
+  useEffect(() => {
+    if (questions && questions.length > 0) {
+      const allCategories = Object.keys(questionsByCategory);
+      setExpandedCategories(prev => {
+        // Only update if the categories have actually changed
+        const newCategories = new Set(allCategories);
+        if (prev.size !== newCategories.size || !allCategories.every(cat => prev.has(cat))) {
+          return newCategories;
+        }
+        return prev;
+      });
+    }
+  }, [questions]);
+
   const handleRemoveFromStage = (questionId: string) => {
     // Trigger questions update to refresh the view
     if (onQuestionsUpdate) {

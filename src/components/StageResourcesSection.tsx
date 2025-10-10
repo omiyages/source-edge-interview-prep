@@ -87,6 +87,21 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
     return acc;
   }, {} as Record<string, Resource[]>);
 
+  // Expand all categories by default when resources are loaded
+  useEffect(() => {
+    if (stageResources && stageResources.length > 0) {
+      const allCategories = Object.keys(resourcesByCategory);
+      setExpandedCategories(prev => {
+        // Only update if the categories have actually changed
+        const newCategories = new Set(allCategories);
+        if (prev.size !== newCategories.size || !allCategories.every(cat => prev.has(cat))) {
+          return newCategories;
+        }
+        return prev;
+      });
+    }
+  }, [stageResources]);
+
   const toggleCategoryExpansion = (category: string) => {
     setExpandedCategories(prev => {
       const newSet = new Set(prev);
