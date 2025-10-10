@@ -69,16 +69,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
     };
   }, [stageId, refetch]);
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center">Loading resources...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Calculate resourcesByCategory before early returns to maintain hook order
   const resourcesByCategory = (stageResources || []).reduce((acc, resource) => {
     if (!acc[resource.category]) {
       acc[resource.category] = [];
@@ -101,6 +92,16 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
       });
     }
   }, [stageResources]);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center">Loading resources...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const toggleCategoryExpansion = (category: string) => {
     setExpandedCategories(prev => {
