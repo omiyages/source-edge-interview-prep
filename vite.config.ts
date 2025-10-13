@@ -2,7 +2,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
 // Vite plugin to handle Supabase module issues
 const supabasePlugin = () => ({
@@ -38,7 +37,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     supabasePlugin(),
-    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
