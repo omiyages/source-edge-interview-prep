@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { timezoneUtils, JSTDateFormatter } from '@/lib/timezone';
 
 interface JSTDateTimeProps {
-  date: Date | string;
+  date?: Date | string | null;
+  dateTime?: string | null; // Alternative prop name for backward compatibility
   format?: 'short' | 'long' | 'time' | 'dateTime' | 'full' | 'relative';
   showTimezone?: boolean;
   className?: string;
@@ -11,6 +12,7 @@ interface JSTDateTimeProps {
 
 export const JSTDateTime: React.FC<JSTDateTimeProps> = ({
   date,
+  dateTime,
   format = 'dateTime',
   showTimezone = false,
   className = '',
@@ -20,9 +22,28 @@ export const JSTDateTime: React.FC<JSTDateTimeProps> = ({
   const [displayTime, setDisplayTime] = useState<Date>(new Date());
 
   useEffect(() => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    setDisplayTime(timezoneUtils.parseFromDatabase(dateObj.toISOString()));
-  }, [date]);
+    // Use dateTime prop if provided (backward compatibility), otherwise use date
+    const dateValue = dateTime || date;
+    
+    // Return early if no date provided
+    if (!dateValue) {
+      return;
+    }
+    
+    try {
+      const dateObj = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+      
+      // Check if date is valid
+      if (isNaN(dateObj.getTime())) {
+        console.warn('Invalid date provided to JSTDateTime:', dateValue);
+        return;
+      }
+      
+      setDisplayTime(timezoneUtils.parseFromDatabase(dateObj.toISOString()));
+    } catch (error) {
+      console.error('Error parsing date in JSTDateTime:', error, dateValue);
+    }
+  }, [date, dateTime]);
 
   useEffect(() => {
     if (live) {
@@ -54,6 +75,12 @@ export const JSTDateTime: React.FC<JSTDateTimeProps> = ({
   };
 
   const timezoneSuffix = showTimezone ? ' (JST)' : '';
+
+  // Return placeholder if no valid date
+  const dateValue = dateTime || date;
+  if (!dateValue) {
+    return <span className={className}>-</span>;
+  }
 
   return (
     <span className={className}>

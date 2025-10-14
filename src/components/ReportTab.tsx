@@ -18,6 +18,10 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
+  Area,
+  AreaChart,
 } from 'recharts';
 import { Calendar, Users, Clock, Phone, Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
@@ -25,7 +29,7 @@ import { JSTDateTime } from './JSTDateTime';
 
 interface ReportFilters {
   company: string;
-  role: string;
+  position: string; // Changed from role to position (job position, not system role)
   dateFrom: string;
   dateTo: string;
   hasUpcomingInterview: boolean | null;
@@ -82,11 +86,11 @@ export const ReportTab: React.FC = () => {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(true);
   const [companies, setCompanies] = useState<string[]>([]);
-  const [roles, setRoles] = useState<string[]>([]);
+  const [positions, setPositions] = useState<string[]>([]); // Changed from roles to positions
 
   const [filters, setFilters] = useState<ReportFilters>({
     company: 'all',
-    role: 'all',
+    position: 'all', // Changed from role to position
     dateFrom: '',
     dateTo: '',
     hasUpcomingInterview: null,
@@ -102,6 +106,18 @@ export const ReportTab: React.FC = () => {
     try {
       setLoading(true);
 
+      // Fetch rejected users first
+      const { data: rejectedData, error: rejectedError } = await supabase
+        .from('user_rejections')
+        .select('user_id');
+
+      if (rejectedError) {
+        console.error('Error fetching rejections:', rejectedError);
+      }
+
+      const rejectedUserIds = new Set((rejectedData || []).map((r: any) => r.user_id));
+      console.log('Rejected user IDs:', Array.from(rejectedUserIds));
+
       // Fetch users with stages
       const { data: usersData, error: usersError } = await supabase
         .from('user_stages')
@@ -109,7 +125,7 @@ export const ReportTab: React.FC = () => {
           user_id,
           stage,
           created_at,
-          profiles!inner(
+          profiles:user_id(
             id,
             email,
             full_name,
@@ -120,27 +136,37 @@ export const ReportTab: React.FC = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Error fetching user stages:', usersError);
+        throw usersError;
+      }
+
+      console.log('User stages data:', usersData);
 
       // Transform the data
-      const transformedUsers: KanbanUserData[] = (usersData || []).map((item: any) => ({
-        user_id: item.user_id,
-        email: item.profiles.email,
-        full_name: item.profiles.full_name,
-        role: item.profiles.role,
-        position: item.profiles.position,
-        company: item.profiles.company,
-        stage: item.stage,
-        created_at: item.created_at,
-        is_active: true, // You can add logic to determine if active
-      }));
+      const transformedUsers: KanbanUserData[] = (usersData || []).map((item: any) => {
+        // User is active if they are NOT in the rejections table
+        const isActive = !rejectedUserIds.has(item.user_id);
+        
+        return {
+          user_id: item.user_id,
+          email: item.profiles.email,
+          full_name: item.profiles.full_name,
+          role: item.profiles.role,
+          position: item.profiles.position,
+          company: item.profiles.company,
+          stage: item.stage,
+          created_at: item.created_at,
+          is_active: isActive,
+        };
+      });
 
       // Fetch interviews
       const { data: interviewsData, error: interviewsError } = await supabase
         .from('interviews')
         .select(`
           *,
-          profiles!inner(
+          profiles:user_id(
             full_name,
             company,
             role
@@ -149,7 +175,12 @@ export const ReportTab: React.FC = () => {
         .gte('scheduled_date', new Date().toISOString())
         .order('scheduled_date', { ascending: true });
 
-      if (interviewsError) throw interviewsError;
+      if (interviewsError) {
+        console.error('Error fetching interviews:', interviewsError);
+        throw interviewsError;
+      }
+
+      console.log('Interviews data:', interviewsData);
 
       const transformedInterviews: Interview[] = (interviewsData || []).map((item: any) => ({
         id: item.id,
@@ -163,15 +194,22 @@ export const ReportTab: React.FC = () => {
         user_role: item.profiles.role,
       }));
 
-      // Get unique companies and roles
+      // Get unique companies and positions (job roles)
       const uniqueCompanies = [...new Set(transformedUsers.map(u => u.company).filter(Boolean))] as string[];
-      const uniqueRoles = [...new Set(transformedUsers.map(u => u.role).filter(Boolean))] as string[];
+      const uniquePositions = [...new Set(transformedUsers.map(u => u.position).filter(Boolean))] as string[];
+
+      console.log('Transformed users:', transformedUsers);
+      console.log('Active users:', transformedUsers.filter(u => u.is_active).length);
+      console.log('Rejected users:', transformedUsers.filter(u => !u.is_active).length);
+      console.log('Companies:', uniqueCompanies);
+      console.log('Positions (job roles):', uniquePositions);
 
       setUsers(transformedUsers);
       setInterviews(transformedInterviews);
       setCompanies(uniqueCompanies.sort());
-      setRoles(uniqueRoles.sort());
+      setPositions(uniquePositions.sort()); // Changed from setRoles to setPositions
     } catch (error: any) {
+      console.error('Error in fetchData:', error);
       toast({
         title: 'Error loading report data',
         description: error.message,
@@ -190,8 +228,8 @@ export const ReportTab: React.FC = () => {
         return false;
       }
 
-      // Role filter
-      if (filters.role !== 'all' && user.role !== filters.role) {
+      // Position filter (job role, not system role)
+      if (filters.position !== 'all' && user.position !== filters.position) {
         return false;
       }
 
@@ -249,29 +287,58 @@ export const ReportTab: React.FC = () => {
     return data;
   }, [filteredUsers, companies]);
 
-  const stageByRoleData = useMemo(() => {
+  const stageByPositionData = useMemo(() => {
     const data: any[] = [];
     
     KANBAN_STAGES.forEach(stage => {
       const stageUsers = filteredUsers.filter(u => u.stage === stage);
       const dataPoint: any = { stage };
       
-      roles.forEach(role => {
-        dataPoint[role] = stageUsers.filter(u => u.role === role).length;
+      positions.forEach(position => {
+        dataPoint[position] = stageUsers.filter(u => u.position === position).length;
       });
       
       data.push(dataPoint);
     });
 
     return data;
-  }, [filteredUsers, roles]);
+  }, [filteredUsers, positions]);
 
-  const roleDistributionData = useMemo(() => {
-    return roles.map(role => ({
-      name: role,
-      value: filteredUsers.filter(u => u.role === role).length,
+  const positionDistributionData = useMemo(() => {
+    return positions.map(position => ({
+      name: position,
+      value: filteredUsers.filter(u => u.position === position).length,
     }));
-  }, [filteredUsers, roles]);
+  }, [filteredUsers, positions]);
+
+  // Calculate conversion rates through stages
+  const conversionRateData = useMemo(() => {
+    const totalUsers = filteredUsers.length;
+    if (totalUsers === 0) return [];
+
+    const data: any[] = [];
+    
+    KANBAN_STAGES.forEach((stage, index) => {
+      // Count users who reached this stage or beyond
+      const usersAtOrBeyondStage = filteredUsers.filter(user => {
+        const userStageIndex = KANBAN_STAGES.indexOf(user.stage);
+        return userStageIndex >= index;
+      }).length;
+
+      const conversionRate = (usersAtOrBeyondStage / totalUsers) * 100;
+      const usersAtStage = filteredUsers.filter(u => u.stage === stage).length;
+      
+      data.push({
+        stage,
+        conversionRate: parseFloat(conversionRate.toFixed(1)),
+        count: usersAtOrBeyondStage,
+        atStage: usersAtStage,
+        dropOffRate: index === 0 ? 0 : parseFloat((100 - conversionRate).toFixed(1)),
+      });
+    });
+
+    return data;
+  }, [filteredUsers]);
 
   // Filter interviews
   const upcomingInterviews = useMemo(() => {
@@ -295,7 +362,7 @@ export const ReportTab: React.FC = () => {
   const resetFilters = () => {
     setFilters({
       company: 'all',
-      role: 'all',
+      position: 'all', // Changed from role to position
       dateFrom: '',
       dateTo: '',
       hasUpcomingInterview: null,
@@ -356,21 +423,21 @@ export const ReportTab: React.FC = () => {
               </Select>
             </div>
 
-            {/* Role Filter */}
+            {/* Position Filter (Job Role) */}
             <div className="space-y-2">
-              <Label>Assigned Role</Label>
+              <Label>Assigned Role/Position</Label>
               <Select
-                value={filters.role}
-                onValueChange={(value) => setFilters({ ...filters, role: value })}
+                value={filters.position}
+                onValueChange={(value) => setFilters({ ...filters, position: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="All Roles" />
+                  <SelectValue placeholder="All Positions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  {roles.map(role => (
-                    <SelectItem key={role} value={role}>
-                      {role}
+                  <SelectItem value="all">All Positions</SelectItem>
+                  {positions.map(position => (
+                    <SelectItem key={position} value={position}>
+                      {position}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -468,34 +535,123 @@ export const ReportTab: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Summary Counters */}
-      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-4">
-        <Card className="col-span-2">
+      {/* Summary Counters + Position Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Summary Counters (50% width) - 3 Rows */}
+        <div className="space-y-4">
+          {/* First Row - Total Users + 3 Stages */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Users
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  <p className="text-2xl font-bold">{summaryData.total}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {KANBAN_STAGES.slice(0, 3).map((stage) => (
+              <Card key={stage}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground truncate" title={stage}>
+                    {stage}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{summaryData.stageCounts[stage] || 0}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Second Row - 3 Stages */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {KANBAN_STAGES.slice(3, 6).map((stage) => (
+              <Card key={stage}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground truncate" title={stage}>
+                    {stage}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{summaryData.stageCounts[stage] || 0}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Third Row - 3 Stages */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {KANBAN_STAGES.slice(6, 9).map((stage) => (
+              <Card key={stage}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground truncate" title={stage}>
+                    {stage}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{summaryData.stageCounts[stage] || 0}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Position Distribution Chart (50% width) */}
+        <Card className="flex flex-col">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Users
-            </CardTitle>
+            <CardTitle>By Position</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              <p className="text-2xl font-bold">{summaryData.total}</p>
-            </div>
+          <CardContent className="flex-1 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={positionDistributionData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => {
+                    const percentage = (percent * 100).toFixed(0);
+                    // Only show labels for segments with > 5% to avoid crowding
+                    if (parseFloat(percentage) >= 5) {
+                      return `${name}: ${percentage}%`;
+                    }
+                    return '';
+                  }}
+                  outerRadius={100}
+                  innerRadius={30}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {positionDistributionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: any, name: any) => [
+                    `${value} users (${((value / positionDistributionData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%)`,
+                    name
+                  ]}
+                />
+                <Legend 
+                  layout="vertical" 
+                  align="right" 
+                  verticalAlign="middle"
+                  wrapperStyle={{ fontSize: '12px' }}
+                  formatter={(value, entry) => {
+                    const percentage = ((entry.payload?.value / positionDistributionData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
+                    return `${value}: ${entry.payload?.value} (${percentage}%)`;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        {KANBAN_STAGES.map((stage, index) => (
-          <Card key={stage}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground truncate" title={stage}>
-                {stage}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold">{summaryData.stageCounts[stage] || 0}</p>
-            </CardContent>
-          </Card>
-        ))}
       </div>
 
       {/* Charts Section */}
@@ -511,7 +667,13 @@ export const ReportTab: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="stage" angle={-45} textAnchor="end" height={100} />
                 <YAxis />
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value: any, name: any) => [
+                    `${value} users`,
+                    name
+                  ]}
+                  labelFormatter={(label) => `Stage: ${label}`}
+                />
                 <Legend />
                 {companies.map((company, index) => (
                   <Bar
@@ -519,6 +681,13 @@ export const ReportTab: React.FC = () => {
                     dataKey={company}
                     stackId="a"
                     fill={CHART_COLORS[index % CHART_COLORS.length]}
+                    label={{ 
+                      position: 'center', 
+                      fill: 'white', 
+                      fontSize: 11, 
+                      fontWeight: 'bold',
+                      formatter: (value: any) => value > 0 ? value : ''
+                    }}
                   />
                 ))}
               </BarChart>
@@ -526,23 +695,23 @@ export const ReportTab: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Grouped Bar Chart - Users by Stage & Role */}
+        {/* Grouped Bar Chart - Users by Stage & Position */}
         <Card>
           <CardHeader>
-            <CardTitle>Users by Stage & Role</CardTitle>
+            <CardTitle>Users by Stage & Position</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={stageByRoleData}>
+              <BarChart data={stageByPositionData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="stage" angle={-45} textAnchor="end" height={100} />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                {roles.map((role, index) => (
+                {positions.map((position, index) => (
                   <Bar
-                    key={role}
-                    dataKey={role}
+                    key={position}
+                    dataKey={position}
                     fill={CHART_COLORS[index % CHART_COLORS.length]}
                   />
                 ))}
@@ -552,31 +721,91 @@ export const ReportTab: React.FC = () => {
         </Card>
       </div>
 
-      {/* Pie Chart - Users by Role */}
+      {/* Conversion Rate Funnel Chart - Full Width */}
       <Card>
         <CardHeader>
-          <CardTitle>Users Distribution by Role</CardTitle>
+          <CardTitle>Stage Conversion Funnel</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Percentage of candidates reaching each stage (100% = all candidates)
+          </p>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
-            <PieChart>
-              <Pie
-                data={roleDistributionData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={120}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {roleDistributionData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
+          <ResponsiveContainer width="100%" height={400}>
+            <AreaChart data={conversionRateData}>
+              <defs>
+                <linearGradient id="colorConversion" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="stage" 
+                angle={-45} 
+                textAnchor="end" 
+                height={100}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis 
+                label={{ value: 'Conversion Rate (%)', angle: -90, position: 'insideLeft' }}
+                domain={[0, 100]}
+              />
+              <Tooltip 
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
+                        <p className="font-semibold">{data.stage}</p>
+                        <p className="text-sm text-primary">
+                          Conversion: {data.conversionRate}%
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Users at/beyond: {data.count}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          At this stage: {data.atStage}
+                        </p>
+                        {data.dropOffRate > 0 && (
+                          <p className="text-sm text-red-600">
+                            Drop-off: {data.dropOffRate}%
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="conversionRate" 
+                stroke="#8b5cf6" 
+                strokeWidth={3}
+                fillOpacity={1} 
+                fill="url(#colorConversion)" 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="conversionRate" 
+                stroke="#8b5cf6" 
+                strokeWidth={3}
+                dot={{ r: 6, fill: '#8b5cf6', strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ r: 8 }}
+              />
+            </AreaChart>
           </ResponsiveContainer>
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-center">
+            {conversionRateData.map((stage, index) => (
+              <div key={stage.stage} className="p-2 bg-secondary rounded">
+                <div className="font-semibold truncate" title={stage.stage}>
+                  {stage.stage}
+                </div>
+                <div className="text-primary font-bold">{stage.conversionRate}%</div>
+                <div className="text-muted-foreground">{stage.count} users</div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
