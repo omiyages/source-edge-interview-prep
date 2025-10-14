@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, LogOut, Users, AlertCircle, Home, UserPlus } from "lucide-react";
+import { Check, X, Clock, LogOut, Users, AlertCircle, Home, UserPlus, BarChart } from "lucide-react";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { UpcomingInterviews } from "@/components/UpcomingInterviews";
 import { PendingTasks } from "@/components/PendingTasks";
+import { ReportTab } from "@/components/ReportTab";
 
 interface InterviewQuestion {
   id: string;
@@ -267,10 +268,14 @@ const AdminDashboard = () => {
           {/* Users Tab with Subtabs */}
           <TabsContent value="users">
             <Tabs defaultValue="kanban" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsList className="grid w-full grid-cols-6 mb-6">
                 <TabsTrigger value="kanban">
                   <Users className="w-4 h-4 mr-2" />
                   Kanban Board
+                </TabsTrigger>
+                <TabsTrigger value="report">
+                  <BarChart className="w-4 h-4 mr-2" />
+                  Report
                 </TabsTrigger>
                 <TabsTrigger value="upcoming-interviews">
                   <Clock className="w-4 h-4 mr-2" />
@@ -292,6 +297,10 @@ const AdminDashboard = () => {
 
               <TabsContent value="kanban">
                 <KanbanBoard />
+              </TabsContent>
+
+              <TabsContent value="report">
+                <ReportTab />
               </TabsContent>
 
               <TabsContent value="upcoming-interviews">
