@@ -611,24 +611,17 @@ export const ReportTab: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={positionDistributionData}
+                  data={positionDistributionData.filter(item => item.value > 0)}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => {
-                    const percentage = (percent * 100).toFixed(0);
-                    // Only show labels for segments with > 5% to avoid crowding
-                    if (parseFloat(percentage) >= 5) {
-                      return `${name}: ${percentage}%`;
-                    }
-                    return '';
-                  }}
+                  label={false}
                   outerRadius={100}
                   innerRadius={30}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {positionDistributionData.map((entry, index) => (
+                  {positionDistributionData.filter(item => item.value > 0).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
@@ -639,13 +632,21 @@ export const ReportTab: React.FC = () => {
                   ]}
                 />
                 <Legend 
-                  layout="vertical" 
-                  align="right" 
-                  verticalAlign="middle"
-                  wrapperStyle={{ fontSize: '12px' }}
+                  layout="horizontal" 
+                  align="center" 
+                  verticalAlign="bottom"
+                  wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }}
+                  payload={positionDistributionData.filter(item => item.value > 0).map((item, index) => ({
+                    value: item.name,
+                    type: 'rect',
+                    color: CHART_COLORS[index % CHART_COLORS.length]
+                  }))}
                   formatter={(value, entry) => {
-                    const percentage = ((entry.payload?.value / positionDistributionData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
-                    return `${value}: ${entry.payload?.value} (${percentage}%)`;
+                    const item = positionDistributionData.find(d => d.name === value);
+                    if (!item || item.value === 0) return null;
+                    const total = positionDistributionData.reduce((sum, i) => sum + i.value, 0);
+                    const percentage = ((item.value / total) * 100).toFixed(1);
+                    return `${value}: ${item.value} (${percentage}%)`;
                   }}
                 />
               </PieChart>
@@ -675,21 +676,27 @@ export const ReportTab: React.FC = () => {
                   labelFormatter={(label) => `Stage: ${label}`}
                 />
                 <Legend />
-                {companies.map((company, index) => (
-                  <Bar
-                    key={company}
-                    dataKey={company}
-                    stackId="a"
-                    fill={CHART_COLORS[index % CHART_COLORS.length]}
-                    label={{ 
-                      position: 'center', 
-                      fill: 'white', 
-                      fontSize: 11, 
-                      fontWeight: 'bold',
-                      formatter: (value: any) => value > 0 ? value : ''
-                    }}
-                  />
-                ))}
+                {companies.map((company, index) => {
+                  // Check if this company has any users in the current filtered data
+                  const hasUsers = stageByCompanyData.some(stage => stage[company] > 0);
+                  
+                  return (
+                    <Bar
+                      key={company}
+                      dataKey={company}
+                      stackId="a"
+                      fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      label={{ 
+                        position: 'center', 
+                        fill: 'white', 
+                        fontSize: 11, 
+                        fontWeight: 'bold',
+                        formatter: (value: any) => value > 0 ? value : ''
+                      }}
+                      hide={!hasUsers}
+                    />
+                  );
+                })}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -708,13 +715,19 @@ export const ReportTab: React.FC = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                {positions.map((position, index) => (
-                  <Bar
-                    key={position}
-                    dataKey={position}
-                    fill={CHART_COLORS[index % CHART_COLORS.length]}
-                  />
-                ))}
+                {positions.map((position, index) => {
+                  // Check if this position has any users in the current filtered data
+                  const hasUsers = stageByPositionData.some(stage => stage[position] > 0);
+                  
+                  return (
+                    <Bar
+                      key={position}
+                      dataKey={position}
+                      fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      hide={!hasUsers}
+                    />
+                  );
+                })}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
