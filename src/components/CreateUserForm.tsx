@@ -216,7 +216,7 @@ export const CreateUserForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4 pb-16">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-20 relative z-0">
           {validationErrors.length > 0 && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
@@ -265,7 +265,7 @@ export const CreateUserForm = () => {
           <div className="space-y-2">
             <Label htmlFor="role">User Role</Label>
             <Select value={role} onValueChange={setRole} disabled={createUserMutation.isPending}>
-              <SelectTrigger>
+              <SelectTrigger className="relative z-[11]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -363,7 +363,7 @@ export const CreateUserForm = () => {
             )}
           </div>
 
-          <StickyFormActions>
+          <StickyFormActions className="z-[12]">
             <Button 
               type="submit" 
               disabled={createUserMutation.isPending}
