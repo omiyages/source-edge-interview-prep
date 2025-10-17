@@ -265,10 +265,10 @@ export const CreateUserForm = () => {
           <div className="space-y-2">
             <Label htmlFor="role">User Role</Label>
             <Select value={role} onValueChange={setRole} disabled={createUserMutation.isPending}>
-              <SelectTrigger className="relative z-[11]">
+              <SelectTrigger className="relative z-[50]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[60]">
                 <SelectItem value="user">User</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
