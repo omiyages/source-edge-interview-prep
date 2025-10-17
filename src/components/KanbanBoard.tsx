@@ -12,6 +12,7 @@ import { User, Clock, X, Eye, Plus, Calendar, EyeOff, Filter, Search, Edit } fro
 import { JSTDateTime } from './JSTDateTime';
 import { UserDetailModal } from './UserDetailModal';
 import { AddUserToKanbanModal } from './AddUserToKanbanModal';
+import { CreateUserModal } from './CreateUserModal';
 import { BulkAddUsersModal } from './BulkAddUsersModal';
 import { EditUserModal } from './EditUserModal';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +48,7 @@ export const KanbanBoard: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isBulkAddModalOpen, setIsBulkAddModalOpen] = useState(false);
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<KanbanUser | null>(null);
   const [showRejected, setShowRejected] = useState(false);
@@ -570,6 +572,14 @@ export const KanbanBoard: React.FC = () => {
               Add User
             </Button>
             <Button 
+              onClick={() => setIsCreateUserModalOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <User className="w-4 h-4" />
+              Create User
+            </Button>
+            <Button 
               onClick={() => setIsBulkAddModalOpen(true)}
               variant="outline"
               className="flex items-center gap-2"
@@ -924,6 +934,11 @@ export const KanbanBoard: React.FC = () => {
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
         onUserAdded={loadKanbanData}
+      />
+
+      <CreateUserModal
+        isOpen={isCreateUserModalOpen}
+        onClose={() => setIsCreateUserModalOpen(false)}
       />
 
       <BulkAddUsersModal

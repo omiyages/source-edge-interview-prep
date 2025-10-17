@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { User, Clock, X, Eye, Plus, Calendar, EyeOff, Filter, Search, Edit } from 'lucide-react';
 import { UserDetailModal } from './UserDetailModal';
 import { AddUserToKanbanModal } from './AddUserToKanbanModal';
+import { CreateUserModal } from './CreateUserModal';
 import { BulkAddUsersModal } from './BulkAddUsersModal';
 import { EditUserModal } from './EditUserModal';
 import { supabase } from '@/integrations/supabase/client';
@@ -134,6 +135,7 @@ export const OptimizedKanbanBoard: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isBulkAddModalOpen, setIsBulkAddModalOpen] = useState(false);
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<KanbanUser | null>(null);
   const [showRejected, setShowRejected] = useState(false);
@@ -397,6 +399,10 @@ export const OptimizedKanbanBoard: React.FC = () => {
               <Plus className="w-4 h-4 mr-2" />
               Add User
             </Button>
+            <Button variant="outline" onClick={() => setIsCreateUserModalOpen(true)}>
+              <User className="w-4 h-4 mr-2" />
+              Create User
+            </Button>
             <Button variant="outline" onClick={() => setIsBulkAddModalOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Bulk Add
@@ -554,6 +560,13 @@ export const OptimizedKanbanBoard: React.FC = () => {
           onUserAdded={() => {
             queryClient.invalidateQueries({ queryKey: ['kanban-data'] });
           }}
+        />
+      )}
+
+      {isCreateUserModalOpen && (
+        <CreateUserModal
+          isOpen={isCreateUserModalOpen}
+          onClose={() => setIsCreateUserModalOpen(false)}
         />
       )}
 
