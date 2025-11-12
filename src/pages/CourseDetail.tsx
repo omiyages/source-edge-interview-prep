@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen, MessageSquare } from "lucide-react";
 import { CourseHeader } from "@/components/CourseHeader";
 import { StageNavigation } from "@/components/StageNavigation";
 import { CourseProgress } from "@/components/CourseProgress";
@@ -32,6 +32,7 @@ const CourseDetail = () => {
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
   const [showResourcesDialog, setShowResourcesDialog] = useState(false);
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
+  const [showCourseContent, setShowCourseContent] = useState(false);
 
   // Redirect to auth if not authenticated
   if (!loading && !user) {
@@ -129,15 +130,23 @@ const CourseDetail = () => {
         </div>
 
         {/* Selected Stage Content or Course Review */}
-        {allStagesCompleted ? (
+        {allStagesCompleted && !showCourseContent ? (
           <div className="space-y-8">
             <div className="text-center py-8 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 rounded-lg border border-green-200 dark:border-green-800">
               <h2 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">
                 🎉 Congratulations!
               </h2>
-              <p className="text-green-700 dark:text-green-400">
+              <p className="text-green-700 dark:text-green-400 mb-4">
                 You've completed all stages of this course. Please share your feedback below.
               </p>
+              <Button
+                onClick={() => setShowCourseContent(true)}
+                variant="outline"
+                className="mt-4"
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                View Course Again
+              </Button>
             </div>
             
             <CourseReviewForm
@@ -146,14 +155,27 @@ const CourseDetail = () => {
             />
           </div>
         ) : (
-          <CourseContentSection
-            selectedStage={selectedStage}
-            stageQuestions={stageQuestions}
-            isAdmin={isAdmin}
-            onManageResourcesClick={() => setShowResourcesDialog(true)}
-            onManageQuestionsClick={() => setShowQuestionsDialog(true)}
-            onQuestionsUpdate={refetchQuestions}
-          />
+          <div className="space-y-4">
+            {allStagesCompleted && showCourseContent && (
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => setShowCourseContent(false)}
+                  variant="outline"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  View Feedback
+                </Button>
+              </div>
+            )}
+            <CourseContentSection
+              selectedStage={selectedStage}
+              stageQuestions={stageQuestions}
+              isAdmin={isAdmin}
+              onManageResourcesClick={() => setShowResourcesDialog(true)}
+              onManageQuestionsClick={() => setShowQuestionsDialog(true)}
+              onQuestionsUpdate={refetchQuestions}
+            />
+          </div>
         )}
 
         {/* Manage Resources Dialog */}
