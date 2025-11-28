@@ -232,10 +232,20 @@ export const KanbanBoard: React.FC = () => {
       console.log('📋 Final columns:', newColumns);
       setColumns(newColumns);
       
-      // Update assigned positions after loading data
-      setTimeout(() => {
-        updateAssignedPositions();
-      }, 100);
+      // Update assigned positions immediately after setting columns
+      // Extract positions from the new columns data
+      const positions = new Set<string>();
+      newColumns.forEach(column => {
+        column.users.forEach(user => {
+          const userPosition = (user.position || user.role || '').trim();
+          if (userPosition) {
+            positions.add(userPosition);
+          }
+        });
+      });
+      const positionArray = Array.from(positions).sort();
+      console.log('📋 Final assigned positions found:', positionArray);
+      setAssignedPositions(positionArray);
     } catch (error) {
       console.error('❌ Error loading kanban data:', error);
       toast({
@@ -649,11 +659,18 @@ export const KanbanBoard: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Positions</SelectItem>
-                    {assignedPositions.map((position) => (
-                      <SelectItem key={position} value={position}>
-                        {position}
-                      </SelectItem>
-                    ))}
+                    {/* Combine available positions from dropdown_options with assigned positions from users */}
+                    {Array.from(new Set([
+                      ...availablePositions.map(p => p?.trim()).filter(Boolean),
+                      ...assignedPositions.map(p => p?.trim()).filter(Boolean)
+                    ]))
+                      .filter(pos => pos && pos.length > 0)
+                      .sort()
+                      .map((position) => (
+                        <SelectItem key={position} value={position}>
+                          {position}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
