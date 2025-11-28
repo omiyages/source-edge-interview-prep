@@ -104,8 +104,8 @@ export const KanbanBoard: React.FC = () => {
         console.log(`   - Role: "${user.role}"`);
         console.log(`   - Email: "${user.email}"`);
         
-        const userPosition = user.position || user.role; // Use position or fallback to role
-        if (userPosition && userPosition.trim()) {
+        const userPosition = (user.position || user.role || '').trim(); // Use position or fallback to role, normalize
+        if (userPosition) {
           console.log(`✅ Adding position: "${userPosition}"`);
           positions.add(userPosition);
         } else {
@@ -464,8 +464,9 @@ export const KanbanBoard: React.FC = () => {
 
     // Position filter (assigned position when added to Kanban)
     if (filters.role !== 'all') {
-      const userPosition = user.position || user.role; // Fallback to role if no position
-      if (userPosition !== filters.role) {
+      const userPosition = (user.position || user.role || '').trim(); // Fallback to role if no position, normalize
+      const filterPosition = filters.role.trim();
+      if (!userPosition || userPosition !== filterPosition) {
         return false;
       }
     }

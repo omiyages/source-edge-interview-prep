@@ -215,7 +215,9 @@ export const OptimizedKanbanBoard: React.FC = () => {
           user.full_name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
           user.email.toLowerCase().includes(filters.searchTerm.toLowerCase());
         
-        const matchesRole = filters.role === 'all' || user.position === filters.role;
+        const userPosition = (user.position || user.role || '').trim(); // Fallback to role if no position, normalize
+        const filterPosition = filters.role.trim();
+        const matchesRole = filters.role === 'all' || (userPosition && userPosition === filterPosition);
         
         const matchesToDo = filters.hasToDo === null || 
           (filters.hasToDo ? (user.incomplete_tasks_count && user.incomplete_tasks_count > 0) : 
