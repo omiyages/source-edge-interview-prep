@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calculator, Info, CircleDollarSign } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ResourceCard } from "@/components/ResourceCard";
