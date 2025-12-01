@@ -716,7 +716,7 @@ const Relo = () => {
                       <span className="text-sm text-muted-foreground">Dinner</span>
                       <span className="font-medium">{formatCurrency(peopleCount === "1" ? 30000 : 60000)}</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(1000)}</span>
+                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 1000 : 2000)}</span>
                   </div>
                   <div className="flex flex-col">
                     <div className="flex justify-between items-center">
@@ -730,7 +730,7 @@ const Relo = () => {
                       <span className="text-sm text-muted-foreground">Transportation</span>
                       <span className="font-medium">{formatCurrency(peopleCount === "1" ? 12000 : 24000)}</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(400)}</span>
+                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 400 : 800)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center font-semibold">
