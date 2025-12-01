@@ -23,6 +23,7 @@ import { KanbanBoard } from "@/components/KanbanBoard";
 import { UpcomingInterviews } from "@/components/UpcomingInterviews";
 import { PendingTasks } from "@/components/PendingTasks";
 import { ReportTab } from "@/components/ReportTab";
+import { ManageReloResources } from "@/components/ManageReloResources";
 
 interface InterviewQuestion {
   id: string;
@@ -249,7 +250,7 @@ const AdminDashboard = () => {
         )}
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -258,10 +259,7 @@ const AdminDashboard = () => {
               Course Management
             </TabsTrigger>
             <TabsTrigger value="questions">
-              Questions
-            </TabsTrigger>
-            <TabsTrigger value="pending">
-              Pending Questions ({pendingQuestions?.length || 0})
+              Questions ({pendingQuestions?.length || 0} pending)
             </TabsTrigger>
           </TabsList>
 
@@ -366,105 +364,133 @@ const AdminDashboard = () => {
             </Tabs>
           </TabsContent>
 
-          {/* Questions Tab */}
+          {/* Questions Tab with Subtabs */}
           <TabsContent value="questions">
-            <div className="text-center py-8">
-              <h3 className="text-lg font-semibold mb-2">Questions Management</h3>
-              <p className="text-muted-foreground">Question management features will be available here.</p>
-            </div>
-          </TabsContent>
+            <Tabs defaultValue="management" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="management">
+                  Questions Management
+                </TabsTrigger>
+                <TabsTrigger value="pending">
+                  Pending Questions ({pendingQuestions?.length || 0})
+                </TabsTrigger>
+                <TabsTrigger value="relo-resources">
+                  Relo Resources
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="pending">
-            {loadingPending && (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i}>
-                    <CardHeader className="pb-3">
-                      <LoadingSkeleton lines={1} className="mb-2" />
-                      <LoadingSkeleton lines={2} />
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <LoadingSkeleton lines={3} />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+              <TabsContent value="management">
+                <div className="text-center py-8">
+                  <h3 className="text-lg font-semibold mb-2">Questions Management</h3>
+                  <p className="text-muted-foreground">Question management features will be available here.</p>
+                </div>
+              </TabsContent>
 
-            {!loadingPending && pendingQuestions?.length === 0 && (
-              <EmptyState
-                title="No pending questions"
-                description="All questions have been reviewed."
-                icon={<Clock className="w-16 h-16 mx-auto text-gray-400" />}
-              />
-            )}
+              <TabsContent value="pending">
+                {loadingPending && (
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Card key={i}>
+                        <CardHeader className="pb-3">
+                          <LoadingSkeleton lines={1} className="mb-2" />
+                          <LoadingSkeleton lines={2} />
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <LoadingSkeleton lines={3} />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
 
-            {!loadingPending && (pendingQuestions?.length ?? 0) > 0 && (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {pendingQuestions?.map((question) => (
-                  <Card key={question.id} className="hover:shadow-lg transition-shadow duration-200">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <Badge className="bg-yellow-100 text-yellow-800">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Pending
-                        </Badge>
-                        <Badge className={getRoleTypeColor(question.role)}>
-                          {question.role}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg leading-tight">
-                        {question.question}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        <div className="text-sm text-gray-600">
-                          <strong>Company:</strong> {question.company}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <strong>Category:</strong> {question.category}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <strong>Stage:</strong> {question.interview_stage}
-                        </div>
-                        {question.additional_context && (
-                          <div className="p-3 bg-gray-50 rounded-md text-sm">
-                            {question.additional_context}
+                {!loadingPending && pendingQuestions?.length === 0 && (
+                  <EmptyState
+                    title="No pending questions"
+                    description="All questions have been reviewed."
+                    icon={<Clock className="w-16 h-16 mx-auto text-gray-400" />}
+                  />
+                )}
+
+                {!loadingPending && (pendingQuestions?.length ?? 0) > 0 && (
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {pendingQuestions?.map((question) => (
+                      <Card key={question.id} className="hover:shadow-lg transition-shadow duration-200">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <Badge className="bg-yellow-100 text-yellow-800">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Pending
+                            </Badge>
+                            <Badge className={getRoleTypeColor(question.role)}>
+                              {question.role}
+                            </Badge>
                           </div>
-                        )}
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
-                            onClick={() => approveQuestionMutation.mutate({ 
-                              questionId: question.id, 
-                              status: 'approved' 
-                            })}
-                            disabled={approveQuestionMutation.isPending}
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => approveQuestionMutation.mutate({ 
-                              questionId: question.id, 
-                              status: 'rejected' 
-                            })}
-                            disabled={approveQuestionMutation.isPending}
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+                          <CardTitle className="text-lg leading-tight">
+                            {question.question}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-3">
+                            <div className="text-sm text-gray-600">
+                              <strong>Company:</strong> {question.company}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              <strong>Category:</strong> {question.category}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              <strong>Stage:</strong> {question.interview_stage}
+                            </div>
+                            {question.additional_context && (
+                              <div className="p-3 bg-gray-50 rounded-md text-sm">
+                                {question.additional_context}
+                              </div>
+                            )}
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                size="sm"
+                                className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
+                                onClick={() => approveQuestionMutation.mutate({ 
+                                  questionId: question.id, 
+                                  status: 'approved' 
+                                })}
+                                disabled={approveQuestionMutation.isPending}
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => approveQuestionMutation.mutate({ 
+                                  questionId: question.id, 
+                                  status: 'rejected' 
+                                })}
+                                disabled={approveQuestionMutation.isPending}
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="relo-resources">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Manage Relo Page Resources</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Select which resources should be displayed on the Relocation to Tokyo Guide page.
+                    </p>
+                  </div>
+                  <ManageReloResources onSuccess={() => {}} />
+                </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </div>
