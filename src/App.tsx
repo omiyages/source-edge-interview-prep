@@ -27,6 +27,7 @@ import Track from "./pages/Track";
 import UserDashboard from "./pages/UserDashboard";
 import Companies from "./pages/Companies";
 import CompanyDetail from "./pages/CompanyDetail";
+import Relo from "./pages/Relo";
 
 function App() {
   // Initialize timezone settings
@@ -123,6 +124,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <CompanyDetail />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/relo" 
+                element={
+                  <ProtectedRoute>
+                    <Relo />
                   </ProtectedRoute>
                 } 
               />
