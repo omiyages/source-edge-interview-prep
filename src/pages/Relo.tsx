@@ -992,16 +992,26 @@ const Relo = () => {
                 const totalWithoutRelocation = totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS;
                 const showLevel4 = totalWithoutRelocation >= 8000000 && totalWithoutRelocation <= 14500000;
 
+                if (!showLevel4) {
+                  return (
+                    <Card>
+                      <CardContent className="py-8">
+                        <div className="text-center text-muted-foreground">
+                          <p className="text-lg">Calculation is only available for Level 4 at the moment</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+
                 return (
                   <Card>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-base">Total Compensation Breakdown</CardTitle>
-                        {showLevel4 && (
-                          <Badge variant="secondary" className="ml-auto">
-                            Level 4
-                          </Badge>
-                        )}
+                        <Badge variant="secondary" className="ml-auto">
+                          Level 4
+                        </Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
