@@ -1021,14 +1021,22 @@ const Relo = () => {
                             <span className="text-sm text-muted-foreground">Total Base</span>
                             <span className="font-medium">{formatCurrency(Math.round(totalBase))}</span>
                           </div>
-                          <div className="text-xs text-gray-400 text-right mt-1">
-                            Basic salary (80%): {formatCurrency(Math.round(basicSalaryPerMonth * 12))} • Discretionary (20%): {formatCurrency(Math.round(discretionaryPerMonth * 12))}
+                          <div className="text-xs text-right mt-1 space-y-0.5">
+                            <div className="text-purple-600">
+                              Basic salary (80%): {formatCurrency(Math.round(basicSalaryPerMonth * 12))}
+                            </div>
+                            <div className="text-gray-400">
+                              Discretionary (20%): {formatCurrency(Math.round(discretionaryPerMonth * 12))}
+                            </div>
                           </div>
                         </div>
                         <div className="flex flex-col">
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Annual Bonus</span>
                             <span className="font-medium">{formatCurrency(Math.round(annualBonus))}</span>
+                          </div>
+                          <div className="text-xs text-gray-400 text-right mt-1">
+                            20% of the basic salary, paid once a year
                           </div>
                         </div>
                         <div className="flex flex-col">
