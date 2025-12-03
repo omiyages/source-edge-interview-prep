@@ -235,12 +235,12 @@ const Relo = () => {
   // Woven by Toyota Salary Breakdown state
   const [isWovenSectionUnlocked, setIsWovenSectionUnlocked] = useState(false);
   const [wovenPassword, setWovenPassword] = useState("");
-  const [housingAllowance, setHousingAllowance] = useState(0);
-  const [retentionBonus, setRetentionBonus] = useState(0);
   const [annualBonusRate, setAnnualBonusRate] = useState(20);
-  const [pensionRate, setPensionRate] = useState(7.5);
-  const [basicRatio, setBasicRatio] = useState(80);
-  const [discretionaryRatio, setDiscretionaryRatio] = useState(20);
+  const HOUSING_ALLOWANCE = 600000;
+  const RETENTION_BONUS = 900000;
+  const BASIC_RATIO = 0.8;
+  const DISCRETIONARY_RATIO = 0.2;
+  const PENSION_RATE = 0.075;
   
   // Resources state
   const [resources, setResources] = useState<any[]>([]);
@@ -976,27 +976,7 @@ const Relo = () => {
               </div>
 
               {/* Inputs */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="housing-allowance">Housing Allowance (¥/year)</Label>
-                  <Input
-                    id="housing-allowance"
-                    type="number"
-                    value={housingAllowance || ""}
-                    onChange={(e) => setHousingAllowance(parseInt(e.target.value) || 0)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="retention-bonus">Retention Bonus (¥/year)</Label>
-                  <Input
-                    id="retention-bonus"
-                    type="number"
-                    value={retentionBonus || ""}
-                    onChange={(e) => setRetentionBonus(parseInt(e.target.value) || 0)}
-                    placeholder="0"
-                  />
-                </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="annual-bonus-rate">Annual Bonus Rate (%)</Label>
                   <Input
@@ -1006,36 +986,29 @@ const Relo = () => {
                     onChange={(e) => setAnnualBonusRate(parseFloat(e.target.value) || 0)}
                     placeholder="20"
                   />
+                  <p className="text-xs text-muted-foreground">Example: 20% of annual basic</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pension-rate">Pension Rate (%)</Label>
-                  <Input
-                    id="pension-rate"
-                    type="number"
-                    value={pensionRate || ""}
-                    onChange={(e) => setPensionRate(parseFloat(e.target.value) || 0)}
-                    placeholder="7.5"
-                  />
+                <div className="rounded-md border p-3 bg-muted/30">
+                  <p className="text-sm font-medium">Housing Allowance</p>
+                  <p className="text-lg font-semibold">{formatCurrency(HOUSING_ALLOWANCE)}</p>
+                  <p className="text-xs text-gray-500">Fixed: ¥50,000 per month</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="basic-ratio">Basic Ratio (%)</Label>
-                  <Input
-                    id="basic-ratio"
-                    type="number"
-                    value={basicRatio || ""}
-                    onChange={(e) => setBasicRatio(parseFloat(e.target.value) || 0)}
-                    placeholder="80"
-                  />
+                <div className="rounded-md border p-3 bg-muted/30">
+                  <p className="text-sm font-medium">Retention Bonus</p>
+                  <p className="text-lg font-semibold">{formatCurrency(RETENTION_BONUS)}</p>
+                  <p className="text-xs text-gray-500">¥2,700,000 vested across 3 years</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="discretionary-ratio">Discretionary Ratio (%)</Label>
-                  <Input
-                    id="discretionary-ratio"
-                    type="number"
-                    value={discretionaryRatio || ""}
-                    onChange={(e) => setDiscretionaryRatio(parseFloat(e.target.value) || 0)}
-                    placeholder="20"
-                  />
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="rounded-md border p-3 bg-muted/30">
+                  <p className="text-sm font-medium">Basic Salary</p>
+                  <p className="text-lg font-semibold">80% of Monthly Base</p>
+                  <p className="text-xs text-gray-500">Discretionary salary: 20% of Monthly Base</p>
+                </div>
+                <div className="rounded-md border p-3 bg-muted/30">
+                  <p className="text-sm font-medium">Toyota Pension</p>
+                  <p className="text-lg font-semibold">7.5% of annual basic salary</p>
+                  <p className="text-xs text-gray-500">Applied to (Basic × 12)</p>
                 </div>
               </div>
 
@@ -1045,26 +1018,15 @@ const Relo = () => {
               {(() => {
                 const totalAnnual = grossSalary;
                 const annualBonusDecimal = annualBonusRate / 100;
-                const pensionDecimal = pensionRate / 100;
-                const basicRatioDecimal = basicRatio / 100;
-                const discretionaryRatioDecimal = discretionaryRatio / 100;
-
-                // MB = (TotalAnnual - HousingAllowance - RetentionBonus) / (12 + AnnualBonus + Pension)
-                const monthlyBase = (totalAnnual - housingAllowance - retentionBonus) / (12 + annualBonusDecimal + pensionDecimal);
+                const denominator = 12 * (1 + BASIC_RATIO * annualBonusDecimal + BASIC_RATIO * PENSION_RATE);
+                const adjustedAnnual = totalAnnual - HOUSING_ALLOWANCE - RETENTION_BONUS;
+                const computedMonthlyBase = denominator > 0 ? adjustedAnnual / denominator : 0;
+                const monthlyBase = Math.max(computedMonthlyBase, 0);
                 
-                // Basic = BasicRatio × MB
-                const basicSalaryPerMonth = basicRatioDecimal * monthlyBase;
-                
-                // Discretionary = DiscretionaryRatio × MB
-                const discretionaryPerMonth = discretionaryRatioDecimal * monthlyBase;
-                
-                // AnnualBonus = AnnualBonusRate × (Basic × 12)
+                const basicSalaryPerMonth = BASIC_RATIO * monthlyBase;
+                const discretionaryPerMonth = DISCRETIONARY_RATIO * monthlyBase;
                 const annualBonus = annualBonusDecimal * (basicSalaryPerMonth * 12);
-                
-                // Pension = PensionRate × (Basic × 12)
-                const toyotaPension = pensionDecimal * (basicSalaryPerMonth * 12);
-                
-                // TotalBase = MB × 12
+                const toyotaPension = PENSION_RATE * (basicSalaryPerMonth * 12);
                 const totalBase = monthlyBase * 12;
 
                 return (
@@ -1110,11 +1072,11 @@ const Relo = () => {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Housing Allowance</span>
-                            <span className="font-medium">{formatCurrency(housingAllowance)}</span>
+                            <span className="font-medium">{formatCurrency(HOUSING_ALLOWANCE)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Retention Bonus</span>
-                            <span className="font-medium">{formatCurrency(retentionBonus)}</span>
+                            <span className="font-medium">{formatCurrency(RETENTION_BONUS)}</span>
                           </div>
                         </CardContent>
                       </Card>
@@ -1144,17 +1106,17 @@ const Relo = () => {
                           </div>
                           <div className="flex justify-between text-sm text-muted-foreground">
                             <span>Housing Allowance</span>
-                            <span>{formatCurrency(housingAllowance)}</span>
+                            <span>{formatCurrency(HOUSING_ALLOWANCE)}</span>
                           </div>
                           <div className="flex justify-between text-sm text-muted-foreground">
                             <span>Retention Bonus</span>
-                            <span>{formatCurrency(retentionBonus)}</span>
+                            <span>{formatCurrency(RETENTION_BONUS)}</span>
                           </div>
                           <Separator />
                           <div className="flex justify-between font-semibold">
                             <span>Total</span>
                             <span className="text-lg">
-                              {formatCurrency(Math.round(totalBase + annualBonus + toyotaPension + housingAllowance + retentionBonus))}
+                              {formatCurrency(Math.round(totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS))}
                             </span>
                           </div>
                         </div>
