@@ -235,8 +235,10 @@ const Relo = () => {
   // Woven by Toyota Salary Breakdown state
   const [isWovenSectionUnlocked, setIsWovenSectionUnlocked] = useState(false);
   const [wovenPassword, setWovenPassword] = useState("");
+  const [includeRelocationBonus, setIncludeRelocationBonus] = useState(false);
   const HOUSING_ALLOWANCE = 600000;
   const RETENTION_BONUS = 900000;
+  const RELOCATION_BONUS = 1000000;
   const BASIC_RATIO = 0.8;
   const DISCRETIONARY_RATIO = 0.2;
   const PENSION_RATE = 0.075;
@@ -1027,11 +1029,22 @@ const Relo = () => {
                             2,700,000 yen vested across 3 years
                           </div>
                         </div>
+                        {includeRelocationBonus && (
+                          <div className="flex flex-col">
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Relocation Bonus</span>
+                              <span className="font-medium">{formatCurrency(RELOCATION_BONUS)}</span>
+                            </div>
+                            <div className="text-xs text-gray-400 text-right mt-1">
+                              1 time bonus that is paid in the 2nd month paycheck
+                            </div>
+                          </div>
+                        )}
                         <Separator />
                         <div className="flex justify-between font-semibold">
                           <span>Total</span>
                           <span className="text-lg">
-                            {formatCurrency(Math.round(totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS))}
+                            {formatCurrency(Math.round(totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS + (includeRelocationBonus ? RELOCATION_BONUS : 0)))}
                           </span>
                         </div>
                       </div>
