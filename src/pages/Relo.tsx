@@ -989,10 +989,20 @@ const Relo = () => {
                 const toyotaPension = PENSION_RATE * (basicSalaryPerMonth * 12);
                 const totalBase = monthlyBase * 12;
 
+                const totalWithoutRelocation = totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS;
+                const showLevel4 = totalWithoutRelocation >= 8000000 && totalWithoutRelocation <= 14500000;
+
                 return (
-                  <Card className="bg-primary/10">
+                  <Card>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base">Total Compensation Breakdown</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">Total Compensation Breakdown</CardTitle>
+                        {showLevel4 && (
+                          <Badge variant="secondary" className="ml-auto">
+                            Level 4
+                          </Badge>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
@@ -1053,7 +1063,7 @@ const Relo = () => {
                         <div className="flex justify-between font-semibold">
                           <span>Total</span>
                           <span className="text-lg">
-                            {formatCurrency(Math.round(totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS + (includeRelocationBonus ? RELOCATION_BONUS : 0)))}
+                            {formatCurrency(Math.round(totalWithoutRelocation + (includeRelocationBonus ? RELOCATION_BONUS : 0)))}
                           </span>
                         </div>
                       </div>
