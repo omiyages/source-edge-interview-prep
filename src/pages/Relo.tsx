@@ -235,7 +235,6 @@ const Relo = () => {
   // Woven by Toyota Salary Breakdown state
   const [isWovenSectionUnlocked, setIsWovenSectionUnlocked] = useState(false);
   const [wovenPassword, setWovenPassword] = useState("");
-  const [annualBonusRate, setAnnualBonusRate] = useState(20);
   const HOUSING_ALLOWANCE = 600000;
   const RETENTION_BONUS = 900000;
   const BASIC_RATIO = 0.8;
@@ -346,7 +345,6 @@ const Relo = () => {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">💰</span>
             <Calculator className="w-5 h-5" />
             Take-home Salary Calculator
           </CardTitle>
@@ -917,7 +915,7 @@ const Relo = () => {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">🚗</span>
+            <span className="text-2xl">💰</span>
             Woven by Toyota Salary Breakdown
           </CardTitle>
           <CardDescription>Detailed salary breakdown for Woven by Toyota employees</CardDescription>
@@ -958,58 +956,9 @@ const Relo = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-green-600">
-                  <Unlock className="w-4 h-4" />
-                  <span className="text-sm">Section unlocked</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setIsWovenSectionUnlocked(false);
-                    setWovenPassword("");
-                  }}
-                >
-                  Lock Section
-                </Button>
-              </div>
-
-              {/* Inputs */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="annual-bonus-rate">Annual Bonus Rate (%)</Label>
-                  <Input
-                    id="annual-bonus-rate"
-                    type="number"
-                    value={annualBonusRate || ""}
-                    onChange={(e) => setAnnualBonusRate(parseFloat(e.target.value) || 0)}
-                    placeholder="20"
-                  />
-                  <p className="text-xs text-muted-foreground">Example: 20% of annual basic</p>
-                </div>
-                <div className="rounded-md border p-3 bg-muted/30">
-                  <p className="text-sm font-medium">Housing Allowance</p>
-                  <p className="text-lg font-semibold">{formatCurrency(HOUSING_ALLOWANCE)}</p>
-                  <p className="text-xs text-gray-500">Fixed: ¥50,000 per month</p>
-                </div>
-                <div className="rounded-md border p-3 bg-muted/30">
-                  <p className="text-sm font-medium">Retention Bonus</p>
-                  <p className="text-lg font-semibold">{formatCurrency(RETENTION_BONUS)}</p>
-                  <p className="text-xs text-gray-500">¥2,700,000 vested across 3 years</p>
-                </div>
-              </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="rounded-md border p-3 bg-muted/30">
-                  <p className="text-sm font-medium">Basic Salary</p>
-                  <p className="text-lg font-semibold">80% of Monthly Base</p>
-                  <p className="text-xs text-gray-500">Discretionary salary: 20% of Monthly Base</p>
-                </div>
-                <div className="rounded-md border p-3 bg-muted/30">
-                  <p className="text-sm font-medium">Toyota Pension</p>
-                  <p className="text-lg font-semibold">7.5% of annual basic salary</p>
-                  <p className="text-xs text-gray-500">Applied to (Basic × 12)</p>
-                </div>
+              <div className="flex items-center gap-2 text-green-600">
+                <Unlock className="w-4 h-4" />
+                <span className="text-sm">Section unlocked</span>
               </div>
 
               <Separator />
@@ -1017,7 +966,7 @@ const Relo = () => {
               {/* Calculations */}
               {(() => {
                 const totalAnnual = grossSalary;
-                const annualBonusDecimal = annualBonusRate / 100;
+                const annualBonusDecimal = 0.20;
                 const denominator = 12 * (1 + BASIC_RATIO * annualBonusDecimal + BASIC_RATIO * PENSION_RATE);
                 const adjustedAnnual = totalAnnual - HOUSING_ALLOWANCE - RETENTION_BONUS;
                 const computedMonthlyBase = denominator > 0 ? adjustedAnnual / denominator : 0;
