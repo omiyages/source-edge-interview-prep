@@ -2,9 +2,10 @@ import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, Info, CircleDollarSign } from "lucide-react";
+import { Calculator, Info, CircleDollarSign, Lock, Unlock } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -230,6 +231,16 @@ const Relo = () => {
   const [ageRange, setAgeRange] = useState("40-64");
   const [dependents, setDependents] = useState("0");
   const [peopleCount, setPeopleCount] = useState<"1" | "2">("1");
+  
+  // Woven by Toyota Salary Breakdown state
+  const [isWovenSectionUnlocked, setIsWovenSectionUnlocked] = useState(false);
+  const [wovenPassword, setWovenPassword] = useState("");
+  const [housingAllowance, setHousingAllowance] = useState(0);
+  const [retentionBonus, setRetentionBonus] = useState(0);
+  const [annualBonusRate, setAnnualBonusRate] = useState(20);
+  const [pensionRate, setPensionRate] = useState(7.5);
+  const [basicRatio, setBasicRatio] = useState(80);
+  const [discretionaryRatio, setDiscretionaryRatio] = useState(20);
   
   // Resources state
   const [resources, setResources] = useState<any[]>([]);
@@ -899,6 +910,261 @@ const Relo = () => {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Woven by Toyota Salary Breakdown */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-2xl">🚗</span>
+            Woven by Toyota Salary Breakdown
+          </CardTitle>
+          <CardDescription>Detailed salary breakdown for Woven by Toyota employees</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!isWovenSectionUnlocked ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Lock className="w-4 h-4" />
+                <span>This section is password protected</span>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  placeholder="Enter password"
+                  value={wovenPassword}
+                  onChange={(e) => setWovenPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && wovenPassword === "Namtae123!") {
+                      setIsWovenSectionUnlocked(true);
+                    }
+                  }}
+                  className="max-w-xs"
+                />
+                <Button
+                  onClick={() => {
+                    if (wovenPassword === "Namtae123!") {
+                      setIsWovenSectionUnlocked(true);
+                    } else {
+                      alert("Incorrect password");
+                      setWovenPassword("");
+                    }
+                  }}
+                >
+                  Unlock
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-green-600">
+                  <Unlock className="w-4 h-4" />
+                  <span className="text-sm">Section unlocked</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsWovenSectionUnlocked(false);
+                    setWovenPassword("");
+                  }}
+                >
+                  Lock Section
+                </Button>
+              </div>
+
+              {/* Inputs */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="housing-allowance">Housing Allowance (¥/year)</Label>
+                  <Input
+                    id="housing-allowance"
+                    type="number"
+                    value={housingAllowance || ""}
+                    onChange={(e) => setHousingAllowance(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="retention-bonus">Retention Bonus (¥/year)</Label>
+                  <Input
+                    id="retention-bonus"
+                    type="number"
+                    value={retentionBonus || ""}
+                    onChange={(e) => setRetentionBonus(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="annual-bonus-rate">Annual Bonus Rate (%)</Label>
+                  <Input
+                    id="annual-bonus-rate"
+                    type="number"
+                    value={annualBonusRate || ""}
+                    onChange={(e) => setAnnualBonusRate(parseFloat(e.target.value) || 0)}
+                    placeholder="20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pension-rate">Pension Rate (%)</Label>
+                  <Input
+                    id="pension-rate"
+                    type="number"
+                    value={pensionRate || ""}
+                    onChange={(e) => setPensionRate(parseFloat(e.target.value) || 0)}
+                    placeholder="7.5"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="basic-ratio">Basic Ratio (%)</Label>
+                  <Input
+                    id="basic-ratio"
+                    type="number"
+                    value={basicRatio || ""}
+                    onChange={(e) => setBasicRatio(parseFloat(e.target.value) || 0)}
+                    placeholder="80"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="discretionary-ratio">Discretionary Ratio (%)</Label>
+                  <Input
+                    id="discretionary-ratio"
+                    type="number"
+                    value={discretionaryRatio || ""}
+                    onChange={(e) => setDiscretionaryRatio(parseFloat(e.target.value) || 0)}
+                    placeholder="20"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Calculations */}
+              {(() => {
+                const totalAnnual = grossSalary;
+                const annualBonusDecimal = annualBonusRate / 100;
+                const pensionDecimal = pensionRate / 100;
+                const basicRatioDecimal = basicRatio / 100;
+                const discretionaryRatioDecimal = discretionaryRatio / 100;
+
+                // MB = (TotalAnnual - HousingAllowance - RetentionBonus) / (12 + AnnualBonus + Pension)
+                const monthlyBase = (totalAnnual - housingAllowance - retentionBonus) / (12 + annualBonusDecimal + pensionDecimal);
+                
+                // Basic = BasicRatio × MB
+                const basicSalaryPerMonth = basicRatioDecimal * monthlyBase;
+                
+                // Discretionary = DiscretionaryRatio × MB
+                const discretionaryPerMonth = discretionaryRatioDecimal * monthlyBase;
+                
+                // AnnualBonus = AnnualBonusRate × (Basic × 12)
+                const annualBonus = annualBonusDecimal * (basicSalaryPerMonth * 12);
+                
+                // Pension = PensionRate × (Basic × 12)
+                const toyotaPension = pensionDecimal * (basicSalaryPerMonth * 12);
+                
+                // TotalBase = MB × 12
+                const totalBase = monthlyBase * 12;
+
+                return (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Salary Breakdown</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Monthly Breakdown</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Monthly Base (MB)</span>
+                            <span className="font-medium">{formatCurrency(Math.round(monthlyBase))}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Basic Salary per month</span>
+                            <span className="font-medium">{formatCurrency(Math.round(basicSalaryPerMonth))}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Discretionary per month</span>
+                            <span className="font-medium">{formatCurrency(Math.round(discretionaryPerMonth))}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Annual Breakdown</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Total Base (MB × 12)</span>
+                            <span className="font-medium">{formatCurrency(Math.round(totalBase))}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Annual Bonus</span>
+                            <span className="font-medium">{formatCurrency(Math.round(annualBonus))}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Toyota Pension</span>
+                            <span className="font-medium">{formatCurrency(Math.round(toyotaPension))}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Housing Allowance</span>
+                            <span className="font-medium">{formatCurrency(housingAllowance)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Retention Bonus</span>
+                            <span className="font-medium">{formatCurrency(retentionBonus)}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Card className="bg-primary/10">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Total Compensation Breakdown</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm">Total Annual (from calculator)</span>
+                            <span className="font-medium">{formatCurrency(totalAnnual)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>Total Base</span>
+                            <span>{formatCurrency(Math.round(totalBase))}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>Annual Bonus</span>
+                            <span>{formatCurrency(Math.round(annualBonus))}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>Toyota Pension</span>
+                            <span>{formatCurrency(Math.round(toyotaPension))}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>Housing Allowance</span>
+                            <span>{formatCurrency(housingAllowance)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>Retention Bonus</span>
+                            <span>{formatCurrency(retentionBonus)}</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between font-semibold">
+                            <span>Total</span>
+                            <span className="text-lg">
+                              {formatCurrency(Math.round(totalBase + annualBonus + toyotaPension + housingAllowance + retentionBonus))}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
         </CardContent>
       </Card>
 
