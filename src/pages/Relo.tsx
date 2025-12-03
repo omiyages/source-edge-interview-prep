@@ -979,99 +979,64 @@ const Relo = () => {
                 const totalBase = monthlyBase * 12;
 
                 return (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Salary Breakdown</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-base">Monthly Breakdown</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
+                  <Card className="bg-primary/10">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Total Compensation Breakdown</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex flex-col">
                           <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Monthly Base (MB)</span>
-                            <span className="font-medium">{formatCurrency(Math.round(monthlyBase))}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Basic Salary per month</span>
-                            <span className="font-medium">{formatCurrency(Math.round(basicSalaryPerMonth))}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Discretionary per month</span>
-                            <span className="font-medium">{formatCurrency(Math.round(discretionaryPerMonth))}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-base">Annual Breakdown</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Total Base (MB × 12)</span>
+                            <span className="text-sm text-muted-foreground">Total Base</span>
                             <span className="font-medium">{formatCurrency(Math.round(totalBase))}</span>
                           </div>
+                          <div className="text-xs text-gray-400 text-right mt-1">
+                            Basic salary (80%): {formatCurrency(Math.round(basicSalaryPerMonth * 12))} • Discretionary (20%): {formatCurrency(Math.round(discretionaryPerMonth * 12))}
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Annual Bonus</span>
                             <span className="font-medium">{formatCurrency(Math.round(annualBonus))}</span>
                           </div>
+                        </div>
+                        <div className="flex flex-col">
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Toyota Pension</span>
                             <span className="font-medium">{formatCurrency(Math.round(toyotaPension))}</span>
                           </div>
+                          <div className="text-xs text-gray-400 text-right mt-1">
+                            7.5% of basic salary
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Housing Allowance</span>
                             <span className="font-medium">{formatCurrency(HOUSING_ALLOWANCE)}</span>
                           </div>
+                          <div className="text-xs text-gray-400 text-right mt-1">
+                            50,000 yen per month
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Retention Bonus</span>
                             <span className="font-medium">{formatCurrency(RETENTION_BONUS)}</span>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    <Card className="bg-primary/10">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Total Compensation Breakdown</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm">Total Annual (from calculator)</span>
-                            <span className="font-medium">{formatCurrency(totalAnnual)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Total Base</span>
-                            <span>{formatCurrency(Math.round(totalBase))}</span>
-                          </div>
-                          <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Annual Bonus</span>
-                            <span>{formatCurrency(Math.round(annualBonus))}</span>
-                          </div>
-                          <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Toyota Pension</span>
-                            <span>{formatCurrency(Math.round(toyotaPension))}</span>
-                          </div>
-                          <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Housing Allowance</span>
-                            <span>{formatCurrency(HOUSING_ALLOWANCE)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Retention Bonus</span>
-                            <span>{formatCurrency(RETENTION_BONUS)}</span>
-                          </div>
-                          <Separator />
-                          <div className="flex justify-between font-semibold">
-                            <span>Total</span>
-                            <span className="text-lg">
-                              {formatCurrency(Math.round(totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS))}
-                            </span>
+                          <div className="text-xs text-gray-400 text-right mt-1">
+                            2,700,000 yen vested across 3 years
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                        <Separator />
+                        <div className="flex justify-between font-semibold">
+                          <span>Total</span>
+                          <span className="text-lg">
+                            {formatCurrency(Math.round(totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS))}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 );
               })()}
             </div>
