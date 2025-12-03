@@ -958,9 +958,18 @@ const Relo = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center gap-2 text-green-600">
-                <Unlock className="w-4 h-4" />
-                <span className="text-sm">Section unlocked</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-green-600">
+                  <Unlock className="w-4 h-4" />
+                  <span className="text-sm">Section unlocked</span>
+                </div>
+                <Button
+                  variant={includeRelocationBonus ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIncludeRelocationBonus(!includeRelocationBonus)}
+                >
+                  International Relocation
+                </Button>
               </div>
 
               <Separator />
