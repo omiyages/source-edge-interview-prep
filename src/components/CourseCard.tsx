@@ -108,13 +108,6 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
     navigate(`/course/${slugify(course.title)}`);
   };
 
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 75) return "bg-green-500";
-    if (percentage >= 50) return "bg-blue-500";
-    if (percentage >= 25) return "bg-orange-500";
-    return "bg-gray-300";
-  };
-
   return (
     <Card className="bg-white border border-border shadow-sm hover:shadow-md transition-shadow h-full flex flex-col cursor-pointer" onClick={handleCardClick}>
       <CardContent className="p-6 flex flex-col h-full">
