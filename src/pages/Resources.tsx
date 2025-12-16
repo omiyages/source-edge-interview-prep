@@ -12,7 +12,6 @@ import { ResourcesLoading } from "@/components/ResourcesLoading";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FolderX } from "lucide-react";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { NavigationHeader } from "@/components/NavigationHeader";
 
 interface Resource {
@@ -31,6 +30,7 @@ const Resources = () => {
   const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
@@ -105,12 +105,25 @@ const Resources = () => {
   }, [selectedCategory]);
 
   useEffect(() => {
-    if (selectedCategory === "all") {
-      setFilteredResources(resources);
-    } else {
-      setFilteredResources(resources.filter(resource => resource.category === selectedCategory));
+    let filtered = resources;
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(resource => resource.category === selectedCategory);
     }
-  }, [selectedCategory, resources]);
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(resource => 
+        resource.title.toLowerCase().includes(searchLower) ||
+        resource.description?.toLowerCase().includes(searchLower) ||
+        resource.category.toLowerCase().includes(searchLower)
+      );
+    }
+
+    setFilteredResources(filtered);
+  }, [selectedCategory, searchTerm, resources]);
 
   const handleEdit = (resource: Resource) => {
     setEditingResource(resource);
@@ -160,17 +173,21 @@ const Resources = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <NavigationHeader />
         <div className="container mx-auto px-4 py-8 flex-1">
-          <ResourcesHeader />
-          <ResourcesFilters
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            isAdmin={isAdmin}
-            createDialogOpen={createDialogOpen}
-            onCreateDialogOpenChange={setCreateDialogOpen}
-            onCreateSuccess={handleCreateSuccess}
-          />
+        <ResourcesHeader 
+          isAdmin={isAdmin}
+          createDialogOpen={createDialogOpen}
+          onCreateDialogOpenChange={setCreateDialogOpen}
+          onCreateSuccess={handleCreateSuccess}
+        />
+        <ResourcesFilters
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          resources={resources}
+        />
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="p-4 rounded-lg border">
                 <LoadingSkeleton lines={1} className="mb-2" />
@@ -187,16 +204,18 @@ const Resources = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Resources' }]} className="mb-4" />
-        <ResourcesHeader />
-
-        <ResourcesFilters
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
+        <ResourcesHeader 
           isAdmin={isAdmin}
           createDialogOpen={createDialogOpen}
           onCreateDialogOpenChange={setCreateDialogOpen}
           onCreateSuccess={handleCreateSuccess}
+        />
+        <ResourcesFilters
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          resources={resources}
         />
 
         {filteredResources.length > 0 ? (

@@ -95,7 +95,7 @@ export const OptimizedResourcesList = memo(({
 
   return (
     <ErrorBoundary>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-16">
         {displayResources.map((resource, index) => (
           <div 
             key={resource.id}

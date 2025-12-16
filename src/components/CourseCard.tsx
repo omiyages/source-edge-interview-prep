@@ -5,11 +5,16 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { BookOpen, Calendar, Edit, Trash2, CheckCircle, Users, Clock } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical, Edit, Trash2, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
@@ -111,135 +116,111 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
   };
 
   return (
-    <Card className="group relative bg-card border border-border shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden" onClick={handleCardClick}>
-      {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-primary/10 pointer-events-none" />
-      
-      {/* Progress indicator bar at top */}
-      {!isAdmin && courseProgress && (
-        <div className="absolute top-0 left-0 right-0 h-1">
-          <div 
-            className={`h-full ${getProgressColor(courseProgress.progress_percentage)} transition-all duration-500`}
-            style={{ width: `${courseProgress.progress_percentage}%` }}
-          />
-        </div>
-      )}
-
-      <CardHeader className="relative pb-3">
-        <div className="flex items-start justify-between gap-3">
+    <Card className="bg-white border border-border shadow-sm hover:shadow-md transition-shadow h-full flex flex-col cursor-pointer" onClick={handleCardClick}>
+      <CardContent className="p-6 flex flex-col h-full">
+        {/* Header with ellipsis menu */}
+        <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold text-foreground line-clamp-2 mb-2 leading-tight">
+            <h3 className="text-lg font-semibold text-foreground mb-3 line-clamp-2">
               {course.title}
-            </CardTitle>
-            {course.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                {course.description}
-              </p>
-            )}
+            </h3>
           </div>
           {isAdmin && (
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick={(e) => e.stopPropagation()}>
-              {onEdit && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onEdit(course)}
-                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-              )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
+            <div onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
-                    size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-gray-100"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <MoreVertical className="h-4 w-4" />
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Course</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete this course? This will also delete all stages and questions associated with it. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteMutation.mutate()}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onEdit && (
+                    <DropdownMenuItem onClick={() => onEdit(course)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem 
+                        onSelect={(e) => e.preventDefault()}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this course? This will also delete all stages and questions associated with it. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteMutation.mutate()}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>
-      </CardHeader>
 
-      <CardContent className="relative space-y-4">
-        {/* Progress section for non-admin users */}
-        {!isAdmin && courseProgress && (
-          <div className="bg-secondary rounded-lg p-3 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Progress</span>
-              <span className="text-sm font-semibold text-foreground">{courseProgress.progress_percentage}%</span>
-            </div>
-            
-            {/* Custom progress bar */}
-            <div className="w-full bg-muted rounded-full h-2 mb-2">
-              <div 
-                className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(courseProgress.progress_percentage)}`}
-                style={{ width: `${courseProgress.progress_percentage}%` }}
-              />
-            </div>
-            
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 text-green-600" />
-                {courseProgress.completed_stages} completed
-              </span>
-              <span className="flex items-center gap-1">
-                <BookOpen className="h-3 w-3" />
-                {courseProgress.total_stages} total stages
-              </span>
-            </div>
-          </div>
+        {/* Description */}
+        {course.description && (
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">
+            {course.description}
+          </p>
         )}
-        
-        {/* Course metadata */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-4 text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              <span>{new Date(course.created_at).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric',
-                year: 'numeric'
-              })}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              <span>Course</span>
-            </div>
-          </div>
-          
-          {/* Company badge */}
-          <Badge 
-            variant="secondary" 
-            className="font-medium px-2 py-1 text-xs"
-          >
-            {course.company || "No Company"}
-          </Badge>
+
+        {/* Tags/Badges */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {course.company && (
+            <Badge
+              variant="secondary"
+              className="bg-gray-100 text-gray-700 hover:bg-gray-100 text-xs"
+            >
+              {course.company}
+            </Badge>
+          )}
+          {/* Show progress badge for non-admin users */}
+          {!isAdmin && courseProgress && (
+            <Badge
+              variant="secondary"
+              className="bg-gray-100 text-gray-700 hover:bg-gray-100 text-xs"
+            >
+              {courseProgress.progress_percentage}% Complete
+            </Badge>
+          )}
         </div>
 
-        {/* Bottom accent line */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary/20 via-primary/60 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {/* View Course Button */}
+        <div className="mt-auto pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCardClick();
+            }}
+            className="w-full bg-white hover:bg-gray-50"
+          >
+            View Course
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

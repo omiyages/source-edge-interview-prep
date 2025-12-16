@@ -61,12 +61,26 @@ export const ResourcesList = ({ resources, isAdmin, onEdit, onDelete, loading = 
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const pageNumber = i + 1;
+                // Show ellipsis if there are more pages
+                if (totalPages > 5 && pageNumber === 5 && currentPage < totalPages - 1) {
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink className="cursor-default">
+                        ...
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                }
                 return (
                   <PaginationItem key={pageNumber}>
                     <PaginationLink
                       onClick={() => handlePageChange(pageNumber)}
                       isActive={currentPage === pageNumber}
-                      className="cursor-pointer"
+                      className={`cursor-pointer ${
+                        currentPage === pageNumber 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                          : ""
+                      }`}
                     >
                       {pageNumber}
                     </PaginationLink>
