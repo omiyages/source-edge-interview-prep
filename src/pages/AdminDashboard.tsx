@@ -24,6 +24,7 @@ import { UpcomingInterviews } from "@/components/UpcomingInterviews";
 import { PendingTasks } from "@/components/PendingTasks";
 import { ReportTab } from "@/components/ReportTab";
 import { ManageReloResources } from "@/components/ManageReloResources";
+import { NavigationHeader } from "@/components/NavigationHeader";
 
 interface InterviewQuestion {
   id: string;
@@ -148,11 +149,14 @@ const AdminDashboard = () => {
   if (authLoading) {
     console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground font-semibold">Loading admin dashboard...</p>
-          <p className="text-sm text-muted-foreground mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
+      <div className="min-h-screen bg-gray-50">
+        <NavigationHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-foreground font-semibold">Loading admin dashboard...</p>
+            <p className="text-sm text-muted-foreground mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
+          </div>
         </div>
       </div>
     );
@@ -166,11 +170,14 @@ const AdminDashboard = () => {
   if (!profile) {
     console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground font-semibold">Loading user profile...</p>
-          <p className="text-sm text-muted-foreground mt-2">User: {user.email}</p>
+      <div className="min-h-screen bg-gray-50">
+        <NavigationHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-foreground font-semibold">Loading user profile...</p>
+            <p className="text-sm text-muted-foreground mt-2">User: {user.email}</p>
+          </div>
         </div>
       </div>
     );
@@ -208,8 +215,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <NavigationHeader />
+      <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Admin' }]} className="mb-4" />
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -499,6 +507,13 @@ const AdminDashboard = () => {
       {showBulkUserCreation && (
         <BulkUserCreation onClose={() => setShowBulkUserCreation(false)} />
       )}
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          © 2025 Source Edge Database. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };

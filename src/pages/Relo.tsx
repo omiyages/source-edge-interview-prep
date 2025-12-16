@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calculator, Info, CircleDollarSign, Lock, Unlock } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NavigationHeader } from "@/components/NavigationHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -332,8 +333,9 @@ const Relo = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-8 px-4 max-w-7xl">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <NavigationHeader />
+      <div className="container mx-auto py-8 px-4 max-w-7xl flex-1">
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Relocation to Tokyo Guide' }]} className="mb-4" />
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">
@@ -1131,6 +1133,13 @@ const Relo = () => {
         </CardContent>
       </Card>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          © 2025 Source Edge Database. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };

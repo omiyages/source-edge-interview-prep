@@ -12,6 +12,7 @@ import { CourseCard } from "@/components/CourseCard";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { NavigationHeader } from "@/components/NavigationHeader";
 
 interface Course {
   id: string;
@@ -54,18 +55,22 @@ const Track = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-foreground font-semibold">Loading...</p>
+      <div className="min-h-screen bg-gray-50">
+        <NavigationHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-foreground font-semibold">Loading...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <NavigationHeader />
+      <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tracks' }]} className="mb-4" />
         {/* Header */}
         <div className="text-center mb-8">
@@ -141,6 +146,13 @@ const Track = () => {
           />
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          © 2025 Source Edge Database. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };

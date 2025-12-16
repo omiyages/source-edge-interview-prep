@@ -13,6 +13,7 @@ import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FolderX } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { NavigationHeader } from "@/components/NavigationHeader";
 
 interface Resource {
   id: string;
@@ -156,8 +157,9 @@ const Resources = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <NavigationHeader />
+        <div className="container mx-auto px-4 py-8 flex-1">
           <ResourcesHeader />
           <ResourcesFilters
             selectedCategory={selectedCategory}
@@ -182,8 +184,9 @@ const Resources = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <NavigationHeader />
+      <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Resources' }]} className="mb-4" />
         <ResourcesHeader />
 
@@ -225,6 +228,13 @@ const Resources = () => {
           </Dialog>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          © 2025 Source Edge Database. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { NavigationHeader } from '@/components/NavigationHeader';
 import { 
   CheckCircle, 
   Play, 
@@ -42,8 +43,9 @@ const CompanyDetail: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <NavigationHeader />
+      <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[
           { label: 'Home', href: '/' }, 
           { label: 'Companies', href: '/company' }, 
@@ -412,6 +414,13 @@ const CompanyDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          © 2025 Source Edge Database. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };

@@ -17,6 +17,7 @@ import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm"
 import { CourseReviewForm } from "@/components/CourseReviewForm";
 import { useCourseData, useStageQuestions, useUserProgress } from "@/hooks/useCourseData";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { NavigationHeader } from "@/components/NavigationHeader";
 
 interface CourseStage {
   id: string;
@@ -59,10 +60,13 @@ const CourseDetail = () => {
 
   if (loading || isLoadingCourse) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading course...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <NavigationHeader />
+        <div className="flex items-center justify-center flex-1">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading course...</p>
+          </div>
         </div>
       </div>
     );
@@ -70,24 +74,28 @@ const CourseDetail = () => {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Course not found</h1>
-          <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist or may have been removed.</p>
-          <Link to="/tracks">
-            <Button>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Tracks
-            </Button>
-          </Link>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <NavigationHeader />
+        <div className="flex items-center justify-center flex-1">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Course not found</h1>
+            <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist or may have been removed.</p>
+            <Link to="/tracks">
+              <Button>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Tracks
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <NavigationHeader />
+      <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tracks', href: '/tracks' }, { label: course?.title || 'Course' }]} className="mb-4" />
         <CourseHeader
           course={course}
@@ -172,13 +180,6 @@ const CourseDetail = () => {
           </div>
         )}
 
-        {/* Footer */}
-        <footer className="bg-white border-t border-border/30 mt-16 py-6">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            © 2025 Source Edge Database. All rights reserved.
-          </div>
-        </footer>
-
         {/* Manage Resources Dialog */}
         <Dialog open={showResourcesDialog} onOpenChange={setShowResourcesDialog}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -209,6 +210,13 @@ const CourseDetail = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          © 2025 Source Edge Database. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };

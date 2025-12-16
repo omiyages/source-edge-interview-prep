@@ -16,6 +16,7 @@ import { slugify } from '@/utils/slugify';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { NavigationHeader } from '@/components/NavigationHeader';
 
 const UserDashboard = () => {
   const { user, profile, loading, isAdmin, signOut } = useAuth();
@@ -102,10 +103,13 @@ const UserDashboard = () => {
   // Show loading state while authentication is being resolved
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground font-semibold">Loading your dashboard...</p>
+      <div className="min-h-screen bg-gray-50">
+        <NavigationHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-foreground font-semibold">Loading your dashboard...</p>
+          </div>
         </div>
       </div>
     );
@@ -114,10 +118,13 @@ const UserDashboard = () => {
   // Don't render anything if user is admin (will redirect)
   if (isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground font-semibold">Redirecting to admin dashboard...</p>
+      <div className="min-h-screen bg-gray-50">
+        <NavigationHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-foreground font-semibold">Redirecting to admin dashboard...</p>
+          </div>
         </div>
       </div>
     );
@@ -125,8 +132,9 @@ const UserDashboard = () => {
 
   // Render user dashboard for regular users
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <NavigationHeader />
+      <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Dashboard' }]} className="mb-4" />
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -300,6 +308,13 @@ const UserDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          © 2025 Source Edge Database. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };
