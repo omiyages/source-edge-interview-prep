@@ -40,20 +40,26 @@ export const CourseHeader = ({
 }: CourseHeaderProps) => {
   return (
     <>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <Link to="/tracks">
-          <Button variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Tracks
-          </Button>
-        </Link>
-        
-        <div className="flex gap-2">
+      {/* Course Info Card */}
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-border mb-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <h1 className="text-3xl font-semibold text-foreground">{course.title}</h1>
+              {course.company && (
+                <Badge className="bg-primary text-primary-foreground px-3 py-1">
+                  {course.company}
+                </Badge>
+              )}
+            </div>
+            {course.description && (
+              <p className="text-base text-muted-foreground">{course.description}</p>
+            )}
+          </div>
           {isAdmin && (
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="whitespace-nowrap">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Course
                 </Button>
@@ -70,53 +76,25 @@ export const CourseHeader = ({
             </Dialog>
           )}
         </div>
-      </div>
-
-      {/* Course Info */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-4xl font-bold text-foreground">{course.title}</h1>
-          {/* Company Badge on the far right */}
-          {course.company && (
-            <div className="bg-primary/10 rounded-full border border-primary/20 px-4 py-2">
-              <span className="text-sm font-medium text-primary">{course.company}</span>
-            </div>
-          )}
-        </div>
         
-        {course.description && (
-          <p className="text-lg text-muted-foreground mb-6">{course.description}</p>
-        )}
-        
-        {/* Jobs Information Only */}
+        {/* Relevant Positions */}
         {course.attached_jobs && course.attached_jobs.length > 0 && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-xl p-6 border border-blue-100/50 dark:border-blue-800/50">
-            <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-lg mt-1">
-                <Briefcase className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              </div>
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+            <div className="flex items-center gap-3">
+              <Briefcase className="w-5 h-5 text-blue-600" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3">Relevant Positions</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">Relevant Positions</p>
                 <div className="flex flex-wrap gap-2">
                   {course.attached_jobs.map((job, index) => (
                     <Badge 
                       key={index} 
-                      variant="secondary" 
-                      className="bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-600/50 hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm transition-all duration-200 px-3 py-1"
+                      className="bg-blue-100 text-blue-700 border-blue-200 px-3 py-1"
                     >
                       {job}
                     </Badge>
                   ))}
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-        
-        {(!course.attached_jobs || course.attached_jobs.length === 0) && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-xl p-6 border border-blue-100/50 dark:border-blue-800/50">
-            <div className="text-center py-4">
-              <p className="text-gray-500 dark:text-gray-400 text-sm">No position information available</p>
             </div>
           </div>
         )}

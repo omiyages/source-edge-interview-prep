@@ -36,7 +36,7 @@ const Index = () => {
   // Show loading state
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-foreground font-semibold">Loading...</p>
@@ -46,7 +46,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <HeroSection 
         isAdmin={isAdmin}
         dialogOpen={dialogOpen}
@@ -88,6 +88,13 @@ const Index = () => {
           />
         </Suspense>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border/30 mt-16 py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          © 2025 Source Edge Database. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };

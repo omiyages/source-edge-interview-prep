@@ -156,7 +156,7 @@ const Resources = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8">
           <ResourcesHeader />
           <ResourcesFilters
@@ -182,7 +182,7 @@ const Resources = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Resources' }]} className="mb-4" />
         <ResourcesHeader />

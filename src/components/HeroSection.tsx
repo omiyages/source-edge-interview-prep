@@ -89,9 +89,9 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
   );
 
   return (
-    <div className="bg-background">
+    <div className="bg-gray-50">
       {/* Navigation Header */}
-      <div className="border-b border-border/30">
+      <div className="bg-white border-b border-border/30">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center py-4">
             <h1 className="text-xl font-semibold text-foreground">

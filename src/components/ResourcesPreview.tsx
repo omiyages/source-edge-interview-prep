@@ -1,7 +1,6 @@
 
 import { useState, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,51 +35,46 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
 
   if (loading) {
     return (
-      <Card className="mb-8 bg-card border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <BookOpen className="w-5 h-5" />
-            Learning Resources
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-1/2 mb-2"></div>
-                <div className="h-6 bg-muted rounded w-16"></div>
-              </div>
-            ))}
+      <div className="mb-12">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+          <div className="h-8 bg-muted rounded w-48 animate-pulse"></div>
+          <div className="flex gap-4">
+            <div className="h-10 bg-muted rounded w-64 animate-pulse"></div>
+            <div className="h-10 bg-muted rounded w-48 animate-pulse"></div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-lg p-4 border border-border animate-pulse">
+              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-muted rounded w-1/2 mb-2"></div>
+              <div className="h-6 bg-muted rounded w-16"></div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="mb-8 bg-card border-border">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-foreground">
-          <BookOpen className="w-5 h-5" />
-          Learning Resources ({filteredResources.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Search and Filters */}
-        <div className="space-y-4 mb-6">
+    <div className="mb-12">
+      {/* Header with title and filters */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <h2 className="text-2xl font-semibold text-foreground">
+          Learning Resources ({resources.length})
+        </h2>
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search resources..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full sm:w-64"
             />
           </div>
-          
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -91,18 +85,20 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
             </SelectContent>
           </Select>
         </div>
+      </div>
 
-        {filteredResources.length === 0 ? (
-          <div className="text-center py-8">
-            <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No resources found matching your filters.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredResources.length === 0 ? (
+        <div className="text-center py-8">
+          <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No resources found matching your filters.</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             {filteredResources.slice(0, 6).map((resource) => (
               <div 
                 key={resource.id} 
-                className="bg-card rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow border border-border"
+                className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow border border-border"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -123,21 +119,22 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
                 </div>
               </div>
             ))}
-            
-            {resources.length > 6 && (
-              <div className="col-span-full text-center pt-4">
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate('/resources')}
-                >
-                  View All Resources ({resources.length})
-                </Button>
-              </div>
-            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+          
+          {resources.length > 6 && (
+            <div className="text-center">
+              <Button 
+                variant="ghost"
+                onClick={() => navigate('/resources')}
+                className="text-primary hover:text-primary/80"
+              >
+                View All Resources ({resources.length}) →
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 });
 

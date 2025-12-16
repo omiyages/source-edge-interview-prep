@@ -148,7 +148,7 @@ const AdminDashboard = () => {
   if (authLoading) {
     console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-foreground font-semibold">Loading admin dashboard...</p>
@@ -166,7 +166,7 @@ const AdminDashboard = () => {
   if (!profile) {
     console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-foreground font-semibold">Loading user profile...</p>
@@ -208,7 +208,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Admin' }]} className="mb-4" />
         {/* Header */}

@@ -30,7 +30,8 @@ export const QuestionFilters = ({
   resultCount
 }: QuestionFiltersProps) => {
   return (
-    <div className="space-y-4">
+    <div className="bg-white rounded-lg p-4 space-y-4 shadow-sm border border-border">
+      {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
@@ -41,12 +42,13 @@ export const QuestionFilters = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-muted rounded-md">
+      {/* Filters Row */}
+      <div className="flex flex-nowrap gap-2 items-center">
         <Select 
-          value={filters.company} 
+          value={filters.company || "all"} 
           onValueChange={(value) => onFilterChange('company', value === "all" ? "" : value)}
         >
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger className="h-9 flex-1 min-w-[120px]">
             <SelectValue placeholder="Company" />
           </SelectTrigger>
           <SelectContent className="z-50">
@@ -58,10 +60,10 @@ export const QuestionFilters = ({
         </Select>
 
         <Select 
-          value={filters.role} 
+          value={filters.role || "all"} 
           onValueChange={(value) => onFilterChange('role', value === "all" ? "" : value)}
         >
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger className="h-9 flex-1 min-w-[120px]">
             <SelectValue placeholder="Role" />
           </SelectTrigger>
           <SelectContent className="z-50">
@@ -73,10 +75,10 @@ export const QuestionFilters = ({
         </Select>
 
         <Select 
-          value={filters.category} 
+          value={filters.category || "all"} 
           onValueChange={(value) => onFilterChange('category', value === "all" ? "" : value)}
         >
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger className="h-9 flex-1 min-w-[120px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent className="z-50">
@@ -88,10 +90,10 @@ export const QuestionFilters = ({
         </Select>
 
         <Select 
-          value={filters.interview_stage} 
+          value={filters.interview_stage || "all"} 
           onValueChange={(value) => onFilterChange('interview_stage', value === "all" ? "" : value)}
         >
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger className="h-9 flex-1 min-w-[120px]">
             <SelectValue placeholder="Stage" />
           </SelectTrigger>
           <SelectContent className="z-50">
@@ -102,20 +104,20 @@ export const QuestionFilters = ({
           </SelectContent>
         </Select>
 
-        <div className="md:col-span-4 flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">
-            {resultCount} {resultCount === 1 ? 'result' : 'results'}
-          </span>
-          <Button 
-            type="button"
-            variant="outline" 
-            onClick={onClearFilters} 
-            size="sm"
-            className="text-xs h-6"
-          >
-            Clear
-          </Button>
-        </div>
+        <Button 
+          type="button"
+          variant="outline" 
+          onClick={onClearFilters} 
+          size="sm"
+          className="h-9 whitespace-nowrap"
+        >
+          Clear
+        </Button>
+      </div>
+      
+      {/* Results Count */}
+      <div className="text-sm text-muted-foreground">
+        {resultCount} {resultCount === 1 ? 'result' : 'results'} found
       </div>
     </div>
   );

@@ -67,17 +67,21 @@ export const StageCompleteButton = ({
       onClick={() => completeStageMutation.mutate(selectedStage.id)}
       disabled={completeStageMutation.isPending || isStageCompleted(selectedStage.id)}
       variant={isStageCompleted(selectedStage.id) ? "outline" : "default"}
-      className="w-full md:w-auto flex items-center gap-2 justify-center"
+      className={`w-full flex items-center gap-2 justify-center ${
+        isStageCompleted(selectedStage.id) 
+          ? "" 
+          : "bg-primary hover:bg-primary/90 text-primary-foreground"
+      }`}
     >
       {isStageCompleted(selectedStage.id) ? (
         <>
           <CheckCircle className="h-4 w-4 text-green-600" />
-          Completed
+          Stage Completed
         </>
       ) : (
         <>
           <CheckCircle className="h-4 w-4" />
-          {completeStageMutation.isPending ? "Completing..." : "Complete Stage"}
+          {completeStageMutation.isPending ? "Completing..." : "Mark Stage as Complete"}
         </>
       )}
     </Button>

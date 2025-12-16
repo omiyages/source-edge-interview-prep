@@ -4,9 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ExternalLink, Plus, Settings2, ChevronDown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ExternalLink, Plus, Settings2 } from "lucide-react";
+import { useEffect } from "react";
 
 interface Resource {
   id: string;
@@ -23,7 +22,6 @@ interface StageResourcesSectionProps {
 }
 
 export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: StageResourcesSectionProps) => {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const { data: stageResources, isLoading, refetch } = useQuery({
     queryKey: ['stage-resources-display', stageId],
     queryFn: async () => {
@@ -69,33 +67,9 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
     };
   }, [stageId, refetch]);
 
-  // Calculate resourcesByCategory before early returns to maintain hook order
-  const resourcesByCategory = (stageResources || []).reduce((acc, resource) => {
-    if (!acc[resource.category]) {
-      acc[resource.category] = [];
-    }
-    acc[resource.category].push(resource);
-    return acc;
-  }, {} as Record<string, Resource[]>);
-
-  // Expand all categories by default when resources are loaded
-  useEffect(() => {
-    if (stageResources && stageResources.length > 0) {
-      const allCategories = Object.keys(resourcesByCategory);
-      setExpandedCategories(prev => {
-        // Only update if the categories have actually changed
-        const newCategories = new Set(allCategories);
-        if (prev.size !== newCategories.size || !allCategories.every(cat => prev.has(cat))) {
-          return newCategories;
-        }
-        return prev;
-      });
-    }
-  }, [stageResources]);
-
   if (isLoading) {
     return (
-      <Card>
+      <Card className="bg-white border-border shadow-sm h-full">
         <CardContent className="py-8">
           <div className="text-center">Loading resources...</div>
         </CardContent>
@@ -103,37 +77,26 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
     );
   }
 
-  const toggleCategoryExpansion = (category: string) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(category)) {
-        newSet.delete(category);
-      } else {
-        newSet.add(category);
-      }
-      return newSet;
-    });
-  };
-
   return (
-    <Card>
+    <Card className="bg-white border-border shadow-sm h-full">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Learning Resources</CardTitle>
           {isAdmin && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={onManageClick}
+              className="text-primary hover:text-primary/80"
             >
               <Settings2 className="w-4 h-4 mr-2" />
-              Manage Resources
+              Manage
             </Button>
           )}
         </div>
       </CardHeader>
       <CardContent>
-        {Object.keys(resourcesByCategory).length === 0 ? (
+        {!stageResources || stageResources.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">No resources assigned to this stage yet.</p>
             {isAdmin && (
@@ -147,49 +110,38 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
             )}
           </div>
         ) : (
-          <div className="space-y-6">
-            {Object.entries(resourcesByCategory).map(([category, resources]) => {
-              const isExpanded = expandedCategories.has(category);
-              
-              return (
-                <Collapsible key={category} open={isExpanded} onOpenChange={() => toggleCategoryExpansion(category)}>
-                  <CollapsibleTrigger className="flex items-center gap-2 w-full hover:text-muted-foreground transition-colors">
-                    <Badge variant="secondary">{category}</Badge>
-                    <span className="text-sm text-muted-foreground">({resources.length})</span>
-                    <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent>
-                    <div className="grid gap-3 md:grid-cols-2 mt-3">
-                      {resources.map((resource) => (
-                        <div
-                          key={resource.id}
-                          className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow bg-card"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <h5 className="font-medium text-sm mb-1 text-foreground">{resource.title}</h5>
-                              {resource.description && (
-                                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{resource.description}</p>
-                              )}
-                              <p className="text-sm text-blue-600 dark:text-blue-400 truncate">{resource.url}</p>
-                            </div>
-                            <a
-                              href={resource.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-shrink-0 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950 rounded-md transition-colors"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
-                          </div>
-                        </div>
-                      ))}
+          <div className="space-y-3">
+            {stageResources.map((resource) => (
+              <div
+                key={resource.id}
+                className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow bg-white shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge 
+                        variant="secondary"
+                        className="text-xs font-medium uppercase"
+                      >
+                        {resource.category}
+                      </Badge>
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              );
-            })}
+                    <h5 className="font-semibold text-sm mb-1 text-foreground">{resource.title}</h5>
+                    {resource.description && (
+                      <p className="text-sm text-muted-foreground mb-2">{resource.description}</p>
+                    )}
+                  </div>
+                  <a
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-shrink-0 p-2 text-muted-foreground hover:text-foreground rounded-md transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

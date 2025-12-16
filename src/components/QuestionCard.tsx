@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, Edit, Star, Eye, X } from "lucide-react";
+import { Trash2, Edit, Star, Eye, X, ThumbsUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EditQuestionForm } from "./EditQuestionForm";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
+import { useQuestionThumbsUp } from "@/hooks/useThumbsUp";
 
 interface InterviewQuestion {
   id: string;
@@ -53,6 +54,7 @@ const QuestionCard = ({
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const { count: thumbsUpCount, hasThumbsUp, toggleThumbsUp, isToggling } = useQuestionThumbsUp(question.id);
 
   console.log('🗑️ QuestionCard delete check:', {
     questionId: question.id,
@@ -171,7 +173,7 @@ const QuestionCard = ({
 
   return (
     <>
-      <Card className="group h-full flex flex-col bg-card hover:shadow-md transition-all duration-200 border border-border hover:border-border/80">
+      <Card className="group h-full flex flex-col bg-white hover:shadow-md transition-all duration-200 border border-border hover:border-border/80">
         <CardHeader className="pb-3 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap gap-1.5 items-center">
@@ -232,11 +234,28 @@ const QuestionCard = ({
             <div className="text-xs text-muted-foreground">
               <span className="font-medium text-foreground">Category:</span> {question.category}
             </div>
-            <div className="text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Stage:</span> {question.interview_stage}
+            <div className="text-xs text-muted-foreground flex items-center justify-between">
+              <span>
+                <span className="font-medium text-foreground">Stage:</span> {question.interview_stage}
+              </span>
+              <Button
+                variant={hasThumbsUp ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleThumbsUp()}
+                disabled={isToggling || !user}
+                className={`flex items-center gap-1.5 text-xs h-6 px-2 ${
+                  hasThumbsUp 
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                    : "border-border hover:bg-muted"
+                }`}
+                title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up this question") : "Login to thumbs up"}
+              >
+                <ThumbsUp className={`w-3 h-3 ${hasThumbsUp ? "fill-current" : ""}`} />
+                <span>{thumbsUpCount}</span>
+              </Button>
             </div>
           </div>
-          
+
           {/* View Question Button */}
           <div className="pt-2">
             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
@@ -255,16 +274,33 @@ const QuestionCard = ({
                   <DialogTitle className="text-lg font-semibold">Question Details</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {question.recommended && (
-                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                    )}
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
+                  <div className="flex flex-wrap gap-2 items-center justify-between">
+                    <div className="flex flex-wrap gap-2">
+                      {question.recommended && (
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
+                      >
+                        {question.role}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant={hasThumbsUp ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleThumbsUp()}
+                      disabled={isToggling || !user}
+                      className={`flex items-center gap-1.5 ${
+                        hasThumbsUp 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                          : ""
+                      }`}
+                      title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up this question") : "Login to thumbs up"}
                     >
-                      {question.role}
-                    </Badge>
+                      <ThumbsUp className={`w-4 h-4 ${hasThumbsUp ? "fill-current" : ""}`} />
+                      <span>{thumbsUpCount}</span>
+                    </Button>
                   </div>
                   
                   <div>

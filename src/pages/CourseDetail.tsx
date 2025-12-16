@@ -59,7 +59,7 @@ const CourseDetail = () => {
 
   if (loading || isLoadingCourse) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading course...</p>
@@ -70,7 +70,7 @@ const CourseDetail = () => {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Course not found</h1>
           <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist or may have been removed.</p>
@@ -86,7 +86,7 @@ const CourseDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tracks', href: '/tracks' }, { label: course?.title || 'Course' }]} className="mb-4" />
         <CourseHeader
@@ -107,26 +107,12 @@ const CourseDetail = () => {
           isAdmin={isAdmin}
         />
 
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex-1">
-              <StageNavigation
-                stages={stages || []}
-                selectedStage={selectedStage}
-                onStageSelect={setSelectedStage}
-              />
-            </div>
-            
-            {/* Complete Stage Button - always visible but responsive positioning */}
-            <div className="md:flex-shrink-0">
-              <StageCompleteButton
-                selectedStage={selectedStage}
-                courseId={course?.id!}
-                userProgress={userProgress}
-                isAdmin={isAdmin}
-              />
-            </div>
-          </div>
+        <div className="mb-6">
+          <StageNavigation
+            stages={stages || []}
+            selectedStage={selectedStage}
+            onStageSelect={setSelectedStage}
+          />
         </div>
 
         {/* Selected Stage Content or Course Review */}
@@ -155,7 +141,7 @@ const CourseDetail = () => {
             />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {allStagesCompleted && showCourseContent && (
               <div className="flex justify-end">
                 <Button
@@ -174,9 +160,24 @@ const CourseDetail = () => {
               onManageResourcesClick={() => setShowResourcesDialog(true)}
               onManageQuestionsClick={() => setShowQuestionsDialog(true)}
               onQuestionsUpdate={refetchQuestions}
+              stageCompleteButton={
+                <StageCompleteButton
+                  selectedStage={selectedStage}
+                  courseId={course?.id!}
+                  userProgress={userProgress}
+                  isAdmin={isAdmin}
+                />
+              }
             />
           </div>
         )}
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-border/30 mt-16 py-6">
+          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+            © 2025 Source Edge Database. All rights reserved.
+          </div>
+        </footer>
 
         {/* Manage Resources Dialog */}
         <Dialog open={showResourcesDialog} onOpenChange={setShowResourcesDialog}>

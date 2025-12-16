@@ -36,6 +36,7 @@ interface CourseContentSectionProps {
   onManageResourcesClick: () => void;
   onManageQuestionsClick: () => void;
   onQuestionsUpdate?: () => void;
+  stageCompleteButton?: React.ReactNode;
 }
 
 export const CourseContentSection = ({
@@ -45,26 +46,44 @@ export const CourseContentSection = ({
   onManageResourcesClick,
   onManageQuestionsClick,
   onQuestionsUpdate,
+  stageCompleteButton,
 }: CourseContentSectionProps) => {
   if (!selectedStage) return null;
 
   return (
     <div className="space-y-8">
-      <StageInformation information={selectedStage.information} />
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left Column: Stage Information (75%) */}
+        <div className="lg:col-span-3">
+          <StageInformation 
+            information={selectedStage.information} 
+            stageTitle={selectedStage.title}
+          >
+            {stageCompleteButton}
+          </StageInformation>
+        </div>
 
-      <StageResourcesSection
-        stageId={selectedStage.id}
-        isAdmin={isAdmin}
-        onManageClick={onManageResourcesClick}
-      />
+        {/* Right Column: Learning Resources (25%) */}
+        <div className="lg:col-span-1">
+          <StageResourcesSection
+            stageId={selectedStage.id}
+            isAdmin={isAdmin}
+            onManageClick={onManageResourcesClick}
+          />
+        </div>
+      </div>
 
-      <StageQuestions
-        questions={stageQuestions}
-        isAdmin={isAdmin}
-        onManageClick={onManageQuestionsClick}
-        stageId={selectedStage.id}
-        onQuestionsUpdate={onQuestionsUpdate}
-      />
+      {/* Full Width: Practice Questions */}
+      <div>
+        <StageQuestions
+          questions={stageQuestions}
+          isAdmin={isAdmin}
+          onManageClick={onManageQuestionsClick}
+          stageId={selectedStage.id}
+          onQuestionsUpdate={onQuestionsUpdate}
+        />
+      </div>
     </div>
   );
 };
