@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EditQuestionForm } from "./EditQuestionForm";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
-import { useQuestionThumbsUp } from "@/hooks/useThumbsUp";
+import { useQuestionThumbsUp } from "@/hooks/useThumbsUp.ts";
 
 interface InterviewQuestion {
   id: string;
