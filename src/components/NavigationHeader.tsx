@@ -54,6 +54,18 @@ export const NavigationHeader = memo(() => {
           Tracks
         </Button>
       </Link>
+      <Link to="/questions">
+        <Button 
+          variant="ghost" 
+          className={`transition-colors font-medium ${
+            isActive("/questions") 
+              ? "text-foreground font-semibold" 
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Questions
+        </Button>
+      </Link>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button 
@@ -179,6 +191,18 @@ export const NavigationHeader = memo(() => {
                     >
                       <BookOpen className="w-4 h-4 mr-2" />
                       Tracks
+                    </Button>
+                  </Link>
+                  <Link to="/questions" onClick={() => setMobileMenuOpen(false)}>
+                    <Button 
+                      variant="ghost" 
+                      className={`w-full justify-start transition-colors font-medium ${
+                        isActive("/questions") 
+                          ? "text-foreground font-semibold" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Questions
                     </Button>
                   </Link>
                   <div className="flex flex-col gap-1 pl-4">

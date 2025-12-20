@@ -42,74 +42,76 @@ export const QuestionFilters = ({
         />
       </div>
 
-      {/* Filters Row */}
-      <div className="flex flex-nowrap gap-2 items-center">
-        <Select 
-          value={filters.company || "all"} 
-          onValueChange={(value) => onFilterChange('company', value === "all" ? "" : value)}
-        >
-          <SelectTrigger className="h-9 flex-1 min-w-[120px]">
-            <SelectValue placeholder="Company" />
-          </SelectTrigger>
-          <SelectContent className="z-50">
-            <SelectItem value="all">All Companies</SelectItem>
-            {getUniqueValues('company').map((company) => (
-              <SelectItem key={company} value={company}>{company}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Filters Row - Responsive */}
+      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+        <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-2 flex-1">
+          <Select 
+            value={filters.company || "all"} 
+            onValueChange={(value) => onFilterChange('company', value === "all" ? "" : value)}
+          >
+            <SelectTrigger className="h-9 w-full sm:flex-1 sm:min-w-[120px]">
+              <SelectValue placeholder="Company" />
+            </SelectTrigger>
+            <SelectContent className="z-50">
+              <SelectItem value="all">All Companies</SelectItem>
+              {getUniqueValues('company').map((company) => (
+                <SelectItem key={company} value={company}>{company}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select 
-          value={filters.role || "all"} 
-          onValueChange={(value) => onFilterChange('role', value === "all" ? "" : value)}
-        >
-          <SelectTrigger className="h-9 flex-1 min-w-[120px]">
-            <SelectValue placeholder="Role" />
-          </SelectTrigger>
-          <SelectContent className="z-50">
-            <SelectItem value="all">All Roles</SelectItem>
-            {getUniqueValues('role').map((role) => (
-              <SelectItem key={role} value={role}>{role}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select 
+            value={filters.role || "all"} 
+            onValueChange={(value) => onFilterChange('role', value === "all" ? "" : value)}
+          >
+            <SelectTrigger className="h-9 w-full sm:flex-1 sm:min-w-[120px]">
+              <SelectValue placeholder="Role" />
+            </SelectTrigger>
+            <SelectContent className="z-50">
+              <SelectItem value="all">All Roles</SelectItem>
+              {getUniqueValues('role').map((role) => (
+                <SelectItem key={role} value={role}>{role}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select 
-          value={filters.category || "all"} 
-          onValueChange={(value) => onFilterChange('category', value === "all" ? "" : value)}
-        >
-          <SelectTrigger className="h-9 flex-1 min-w-[120px]">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent className="z-50">
-            <SelectItem value="all">All Categories</SelectItem>
-            {getUniqueValues('category').map((category) => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select 
+            value={filters.category || "all"} 
+            onValueChange={(value) => onFilterChange('category', value === "all" ? "" : value)}
+          >
+            <SelectTrigger className="h-9 w-full sm:flex-1 sm:min-w-[120px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent className="z-50">
+              <SelectItem value="all">All Categories</SelectItem>
+              {getUniqueValues('category').map((category) => (
+                <SelectItem key={category} value={category}>{category}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select 
-          value={filters.interview_stage || "all"} 
-          onValueChange={(value) => onFilterChange('interview_stage', value === "all" ? "" : value)}
-        >
-          <SelectTrigger className="h-9 flex-1 min-w-[120px]">
-            <SelectValue placeholder="Stage" />
-          </SelectTrigger>
-          <SelectContent className="z-50">
-            <SelectItem value="all">All Stages</SelectItem>
-            {getUniqueValues('interview_stage').map((stage) => (
-              <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select 
+            value={filters.interview_stage || "all"} 
+            onValueChange={(value) => onFilterChange('interview_stage', value === "all" ? "" : value)}
+          >
+            <SelectTrigger className="h-9 w-full sm:flex-1 sm:min-w-[120px]">
+              <SelectValue placeholder="Stage" />
+            </SelectTrigger>
+            <SelectContent className="z-50">
+              <SelectItem value="all">All Stages</SelectItem>
+              {getUniqueValues('interview_stage').map((stage) => (
+                <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <Button 
           type="button"
           variant="outline" 
           onClick={onClearFilters} 
           size="sm"
-          className="h-9 whitespace-nowrap"
+          className="h-9 whitespace-nowrap w-full sm:w-auto"
         >
           Clear
         </Button>

@@ -28,6 +28,7 @@ import UserDashboard from "./pages/UserDashboard";
 import Companies from "./pages/Companies";
 import CompanyDetail from "./pages/CompanyDetail";
 import Relo from "./pages/Relo";
+import Questions from "./pages/Questions";
 
 function App() {
   // Initialize timezone settings
@@ -132,6 +133,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Relo />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/questions" 
+                element={
+                  <ProtectedRoute>
+                    <Questions />
                   </ProtectedRoute>
                 } 
               />
