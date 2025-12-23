@@ -28,7 +28,7 @@ export const StageNavigation = ({ stages, selectedStage, onStageSelect }: StageN
             <button
               key={stage.id}
               onClick={() => onStageSelect(stage)}
-              className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg transition-all flex-1 ${
+              className={`flex flex-col items-center gap-2 px-2 md:px-4 py-3 rounded-lg transition-all flex-1 ${
                 isSelected 
                   ? "bg-primary text-primary-foreground shadow-md" 
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -43,7 +43,7 @@ export const StageNavigation = ({ stages, selectedStage, onStageSelect }: StageN
               >
                 {index + 1}
               </Badge>
-              <span className="text-sm font-medium text-center">{stage.title}</span>
+              <span className="text-sm font-medium text-center hidden md:block">{stage.title}</span>
             </button>
           );
         })}

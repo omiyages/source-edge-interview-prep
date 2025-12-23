@@ -431,6 +431,43 @@ export const KanbanBoard: React.FC = () => {
     }
   };
 
+  const handleUnrejectUser = async (userId: string, userEmail: string) => {
+    if (!window.confirm(`Are you sure you want to unreject ${userEmail}? They will be restored to the board.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.rpc('unreject_user' as any, {
+        p_user_id: userId
+      });
+
+      if (error) {
+        console.error('Error unrejecting user:', error);
+        toast({
+          title: "Error",
+          description: "Failed to unreject user. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Refetch data to update the board
+      await loadKanbanData();
+
+      toast({
+        title: "Success",
+        description: "User has been unrejected and restored to the board.",
+      });
+    } catch (error) {
+      console.error('Error unrejecting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unreject user. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleUserClick = (user: KanbanUser) => {
     setSelectedUser(user);
     setIsModalOpen(true);
@@ -859,17 +896,33 @@ export const KanbanBoard: React.FC = () => {
                                       >
                                         <Edit className="w-3 h-3" />
                                       </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleRejectUser(user.user_id, user.email);
-                                        }}
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </Button>
+                                      {user.is_rejected ? (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 w-6 p-0 text-muted-foreground hover:text-green-600"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleUnrejectUser(user.user_id, user.email);
+                                          }}
+                                          title="Unreject user"
+                                        >
+                                          <RotateCcw className="w-3 h-3" />
+                                        </Button>
+                                      ) : (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRejectUser(user.user_id, user.email);
+                                          }}
+                                          title="Reject user"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </Button>
+                                      )}
                                     </div>
                                   </div>
                                   

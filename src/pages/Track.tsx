@@ -90,7 +90,7 @@ const Track = () => {
             Structured interview preparation courses with organized stages and curated questions.
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Welcome back, {profile?.email} ({profile?.role})
+            Welcome back, {profile?.full_name || profile?.email} ({profile?.role})
             {isAdmin && <span className="text-primary font-semibold ml-2">👑 Admin</span>}
           </p>
         </div>

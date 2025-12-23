@@ -1,8 +1,9 @@
 import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, BookOpen, Settings, Menu, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { LogOut, BookOpen, Settings, Menu, ChevronDown, User, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,6 +14,8 @@ export const NavigationHeader = memo(() => {
   const { signOut, isAdmin } = useAuth();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileDashboardOpen, setMobileDashboardOpen] = useState(false);
+  const [dashboardDropdownOpen, setDashboardDropdownOpen] = useState(false);
   const { count: assignedCoursesCount } = useAssignedCoursesCount();
   const location = useLocation();
 
@@ -25,22 +28,6 @@ export const NavigationHeader = memo(() => {
 
   const NavigationItems = () => (
     <>
-      {!isAdmin && (
-        <Link to="/dashboard">
-          <Button 
-            variant="ghost" 
-            className={`transition-colors font-medium relative ${
-              isActive("/dashboard") 
-                ? "text-foreground font-semibold" 
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <BookOpen className="w-4 h-4 mr-2" />
-            My Dashboard
-            <NotificationBadge count={assignedCoursesCount} />
-          </Button>
-        </Link>
-      )}
       <Link to="/tracks">
         <Button 
           variant="ghost" 
@@ -126,14 +113,65 @@ export const NavigationHeader = memo(() => {
           </Button>
         </Link>
       )}
-      <Button 
-        variant="ghost" 
-        onClick={signOut} 
-        className="text-muted-foreground hover:text-foreground transition-colors font-medium"
-      >
-        <LogOut className="w-4 h-4 mr-2" />
-        Sign Out
-      </Button>
+      {!isAdmin && (
+        <div 
+          className="relative group"
+          onMouseEnter={() => setDashboardDropdownOpen(true)}
+          onMouseLeave={() => setDashboardDropdownOpen(false)}
+        >
+          <Link to="/dashboard">
+            <Button 
+              variant="ghost" 
+              className={`transition-colors font-medium relative ${
+                isActive("/dashboard") 
+                  ? "text-foreground font-semibold" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <User className="w-4 h-4 mr-2" />
+              My Dashboard
+              <NotificationBadge count={assignedCoursesCount} />
+            </Button>
+          </Link>
+          {dashboardDropdownOpen && (
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-md border bg-popover p-1 text-popover-foreground shadow-md z-50">
+              <button
+                onClick={signOut}
+                className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {isAdmin && (
+        <div 
+          className="relative group"
+          onMouseEnter={() => setDashboardDropdownOpen(true)}
+          onMouseLeave={() => setDashboardDropdownOpen(false)}
+        >
+          <Button 
+            variant="ghost" 
+            className="transition-colors font-medium text-muted-foreground hover:text-foreground"
+          >
+            <User className="w-4 h-4 mr-2" />
+            My Dashboard
+          </Button>
+          {dashboardDropdownOpen && (
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-md border bg-popover p-1 text-popover-foreground shadow-md z-50">
+              <button
+                onClick={signOut}
+                className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 
@@ -164,22 +202,6 @@ export const NavigationHeader = memo(() => {
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
                 <div className="flex flex-col gap-2 mt-8">
-                  {!isAdmin && (
-                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button 
-                        variant="ghost" 
-                        className={`w-full justify-start transition-colors font-medium relative ${
-                          isActive("/dashboard") 
-                            ? "text-foreground font-semibold" 
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        My Dashboard
-                        <NotificationBadge count={assignedCoursesCount} />
-                      </Button>
-                    </Link>
-                  )}
                   <Link to="/tracks" onClick={() => setMobileMenuOpen(false)}>
                     <Button 
                       variant="ghost" 
@@ -258,14 +280,83 @@ export const NavigationHeader = memo(() => {
                       </Button>
                     </Link>
                   )}
-                  <Button 
-                    variant="ghost" 
-                    onClick={signOut} 
-                    className="w-full justify-start text-muted-foreground hover:text-foreground transition-colors font-medium"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </Button>
+                  {!isAdmin && (
+                    <>
+                      <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                        <Button 
+                          variant="ghost" 
+                          className={`w-full justify-start transition-colors font-medium relative ${
+                            isActive("/dashboard") 
+                              ? "text-foreground font-semibold" 
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          My Dashboard
+                          <NotificationBadge count={assignedCoursesCount} />
+                        </Button>
+                      </Link>
+                      <Collapsible open={mobileDashboardOpen} onOpenChange={setMobileDashboardOpen}>
+                        <CollapsibleTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-between transition-colors font-medium text-muted-foreground hover:text-foreground pl-6"
+                          >
+                            <span className="text-sm">More</span>
+                            <ChevronRight className={`w-4 h-4 transition-transform ${mobileDashboardOpen ? 'rotate-90' : ''}`} />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="flex flex-col gap-1 pl-6">
+                            <Button 
+                              variant="ghost" 
+                              onClick={() => {
+                                setMobileMenuOpen(false);
+                                signOut();
+                              }} 
+                              className="w-full justify-start text-muted-foreground hover:text-foreground transition-colors font-medium text-sm"
+                            >
+                              <LogOut className="w-4 h-4 mr-2" />
+                              Sign Out
+                            </Button>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </>
+                  )}
+                  {isAdmin && (
+                    <>
+                      <Collapsible open={mobileDashboardOpen} onOpenChange={setMobileDashboardOpen}>
+                        <CollapsibleTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-between transition-colors font-medium text-muted-foreground hover:text-foreground"
+                          >
+                            <div className="flex items-center">
+                              <User className="w-4 h-4 mr-2" />
+                              My Dashboard
+                            </div>
+                            <ChevronRight className={`w-4 h-4 transition-transform ${mobileDashboardOpen ? 'rotate-90' : ''}`} />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="flex flex-col gap-1 pl-6">
+                            <Button 
+                              variant="ghost" 
+                              onClick={() => {
+                                setMobileMenuOpen(false);
+                                signOut();
+                              }} 
+                              className="w-full justify-start text-muted-foreground hover:text-foreground transition-colors font-medium text-sm"
+                            >
+                              <LogOut className="w-4 h-4 mr-2" />
+                              Sign Out
+                            </Button>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>

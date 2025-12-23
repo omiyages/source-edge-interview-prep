@@ -143,7 +143,7 @@ const UserDashboard = () => {
               Your Dashboard
             </h1>
             <p className="text-lg text-foreground font-semibold">
-              Welcome back, {profile?.email || user?.email}
+              Welcome back, {profile?.full_name || profile?.email || user?.email}
             </p>
           </div>
           <div className="flex gap-4">

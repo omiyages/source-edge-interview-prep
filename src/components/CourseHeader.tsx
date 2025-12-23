@@ -42,12 +42,12 @@ export const CourseHeader = ({
     <>
       {/* Course Info Card */}
       <div className="bg-white rounded-lg p-6 shadow-sm border border-border mb-6">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
-              <h1 className="text-3xl font-semibold text-foreground">{course.title}</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+              <h1 className="text-3xl font-semibold text-foreground text-center sm:text-left">{course.title}</h1>
               {course.company && (
-                <Badge className="bg-primary text-primary-foreground px-3 py-1">
+                <Badge className="bg-primary text-primary-foreground px-3 py-1 mx-auto sm:mx-0">
                   {course.company}
                 </Badge>
               )}
@@ -88,7 +88,7 @@ export const CourseHeader = ({
                   {course.attached_jobs.map((job, index) => (
                     <Badge 
                       key={index} 
-                      className="bg-blue-100 text-blue-700 border-blue-200 px-3 py-1"
+                      className="bg-blue-100 text-blue-700 border-blue-200 px-3 py-1 hover:bg-blue-100 hover:text-blue-700"
                     >
                       {job}
                     </Badge>

@@ -18,6 +18,11 @@ import { CourseReviewForm } from "@/components/CourseReviewForm";
 import { useCourseData, useStageQuestions, useUserProgress } from "@/hooks/useCourseData";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { NavigationHeader } from "@/components/NavigationHeader";
+import { useCourseAssignment } from "@/hooks/useCourseAssignment";
+import { CoursePaywall } from "@/components/CoursePaywall";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface CourseStage {
   id: string;
@@ -30,6 +35,8 @@ interface CourseStage {
 const CourseDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user, loading, isAdmin } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
   const [showResourcesDialog, setShowResourcesDialog] = useState(false);
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
@@ -44,6 +51,49 @@ const CourseDetail = () => {
   const { course, stages, refetchCourse, refetchStages, isLoadingCourse } = useCourseData(slug, user);
   const { stageQuestions, refetchQuestions } = useStageQuestions(selectedStage);
   const { userProgress } = useUserProgress(user, course?.id);
+  const { isAssigned, isLoading: isLoadingAssignment, startCourse, isStarting } = useCourseAssignment(course?.id);
+
+  // Count total questions across all stages
+  const { data: totalQuestionsCount = 0 } = useQuery({
+    queryKey: ['course-total-questions', course?.id],
+    queryFn: async () => {
+      if (!course?.id || !stages || stages.length === 0) return 0;
+      
+      const stageIds = stages.map(s => s.id);
+      const { count, error } = await supabase
+        .from('stage_questions')
+        .select('*', { count: 'exact', head: true })
+        .in('stage_id', stageIds);
+        
+      if (error) {
+        console.error('Error counting questions:', error);
+        return 0;
+      }
+      return count || 0;
+    },
+    enabled: !!course?.id && !!stages && stages.length > 0,
+  });
+
+  const handleStartCourse = async () => {
+    try {
+      await startCourse();
+      // Wait a bit for the database to update, then refetch
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await queryClient.invalidateQueries({ queryKey: ['course-assignment'] });
+      await queryClient.refetchQueries({ queryKey: ['course-assignment', course?.id, user?.id] });
+      toast({
+        title: "Course Started!",
+        description: "You can now access all course content.",
+      });
+    } catch (error: any) {
+      console.error('Error starting course:', error);
+      toast({
+        title: "Failed to Start Course",
+        description: error.message || "An error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Check if all stages are completed
   const allStagesCompleted = stages && userProgress && stages.length > 0 
@@ -58,7 +108,7 @@ const CourseDetail = () => {
     }
   }, [stages, selectedStage]);
 
-  if (loading || isLoadingCourse) {
+  if (loading || isLoadingCourse || isLoadingAssignment) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <NavigationHeader />
@@ -92,6 +142,9 @@ const CourseDetail = () => {
     );
   }
 
+  // Show paywall if course is not assigned and user is not admin
+  const showPaywall = !isAdmin && !isAssigned && course && stages;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavigationHeader />
@@ -108,20 +161,31 @@ const CourseDetail = () => {
           onQuestionsUpdate={refetchQuestions}
         />
 
-        {/* Progress Bar */}
-        <CourseProgress 
-          userProgress={userProgress}
-          stages={stages}
-          isAdmin={isAdmin}
-        />
-
-        <div className="mb-6">
-          <StageNavigation
-            stages={stages || []}
-            selectedStage={selectedStage}
-            onStageSelect={setSelectedStage}
+        {showPaywall ? (
+          <CoursePaywall
+            courseTitle={course.title}
+            companyName={course.company}
+            stagesCount={stages?.length || 0}
+            questionsCount={totalQuestionsCount}
+            onStartCourse={handleStartCourse}
+            isStarting={isStarting}
           />
-        </div>
+        ) : (
+          <>
+            {/* Progress Bar */}
+            <CourseProgress 
+              userProgress={userProgress}
+              stages={stages}
+              isAdmin={isAdmin}
+            />
+
+            <div className="mb-6">
+              <StageNavigation
+                stages={stages || []}
+                selectedStage={selectedStage}
+                onStageSelect={setSelectedStage}
+              />
+            </div>
 
         {/* Selected Stage Content or Course Review */}
         {allStagesCompleted && !showCourseContent ? (
@@ -178,6 +242,8 @@ const CourseDetail = () => {
               }
             />
           </div>
+        )}
+          </>
         )}
 
         {/* Manage Resources Dialog */}

@@ -226,7 +226,7 @@ const AdminDashboard = () => {
               Admin Dashboard
             </h1>
             <p className="text-lg text-foreground font-semibold">
-              Welcome back, {profile?.email} 
+              Welcome back, {profile?.full_name || profile?.email} 
               <span className="text-primary font-bold ml-2">👑 Admin</span>
             </p>
           </div>
