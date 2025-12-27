@@ -147,30 +147,14 @@ export const NavigationHeader = memo(() => {
         </div>
       )}
       {isAdmin && (
-        <div 
-          className="relative group"
-          onMouseEnter={() => setDashboardDropdownOpen(true)}
-          onMouseLeave={() => setDashboardDropdownOpen(false)}
+        <Button 
+          variant="ghost" 
+          onClick={signOut}
+          className="transition-colors font-medium text-muted-foreground hover:text-foreground"
         >
-          <Button 
-            variant="ghost" 
-            className="transition-colors font-medium text-muted-foreground hover:text-foreground"
-          >
-            <User className="w-4 h-4 mr-2" />
-            My Dashboard
-          </Button>
-          {dashboardDropdownOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-md border bg-popover p-1 text-popover-foreground shadow-md z-50">
-              <button
-                onClick={signOut}
-                className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </button>
-            </div>
-          )}
-        </div>
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </Button>
       )}
     </>
   );
@@ -325,37 +309,17 @@ export const NavigationHeader = memo(() => {
                     </>
                   )}
                   {isAdmin && (
-                    <>
-                      <Collapsible open={mobileDashboardOpen} onOpenChange={setMobileDashboardOpen}>
-                        <CollapsibleTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            className="w-full justify-between transition-colors font-medium text-muted-foreground hover:text-foreground"
-                          >
-                            <div className="flex items-center">
-                              <User className="w-4 h-4 mr-2" />
-                              My Dashboard
-                            </div>
-                            <ChevronRight className={`w-4 h-4 transition-transform ${mobileDashboardOpen ? 'rotate-90' : ''}`} />
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="flex flex-col gap-1 pl-6">
-                            <Button 
-                              variant="ghost" 
-                              onClick={() => {
-                                setMobileMenuOpen(false);
-                                signOut();
-                              }} 
-                              className="w-full justify-start text-muted-foreground hover:text-foreground transition-colors font-medium text-sm"
-                            >
-                              <LogOut className="w-4 h-4 mr-2" />
-                              Sign Out
-                            </Button>
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </>
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        signOut();
+                      }} 
+                      className="w-full justify-start text-muted-foreground hover:text-foreground transition-colors font-medium"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </Button>
                   )}
                 </div>
               </SheetContent>
