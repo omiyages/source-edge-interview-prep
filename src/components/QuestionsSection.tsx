@@ -1,8 +1,9 @@
 
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { OptimizedQuestionList } from "./OptimizedQuestionList";
 import { QuestionFilters } from "./QuestionFilters";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Button } from "@/components/ui/button";
 import type { InterviewQuestion } from "@/services/questionsService";
 
 interface QuestionsSectionProps {
@@ -14,7 +15,6 @@ interface QuestionsSectionProps {
 const ITEMS_PER_PAGE = 12;
 
 export const QuestionsSection = ({ questions, loading, error }: QuestionsSectionProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     company: "",
@@ -31,11 +31,9 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
     const role = params.get('role') || "";
     const category = params.get('category') || "";
     const interview_stage = params.get('stage') || "";
-    const page = parseInt(params.get('page') || '1', 10);
 
     if (q) setSearchTerm(q);
     setFilters({ company, role, category, interview_stage });
-    if (!Number.isNaN(page) && page > 0) setCurrentPage(page);
   }, []);
 
   // Persist state to URL params (replace, not push)
@@ -46,10 +44,9 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
     if (filters.role) params.set('role', filters.role); else params.delete('role');
     if (filters.category) params.set('category', filters.category); else params.delete('category');
     if (filters.interview_stage) params.set('stage', filters.interview_stage); else params.delete('stage');
-    if (currentPage > 1) params.set('page', String(currentPage)); else params.delete('page');
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState({}, '', newUrl);
-  }, [searchTerm, filters, currentPage]);
+  }, [searchTerm, filters]);
 
   // Filter questions based on search term and filters
   const filteredQuestions = useMemo(() => {
@@ -74,10 +71,6 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
       return matchesSearch && matchesCompany && matchesRole && matchesCategory && matchesStage;
     });
   }, [questions, searchTerm, filters]);
-
-  const totalPages = useMemo(() => {
-    return Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
-  }, [filteredQuestions.length]);
 
   // Get unique values for filter dropdowns
   const getUniqueValues = (field: string) => {
@@ -107,7 +100,6 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
 
   const handleFilterChange = (field: string, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
-    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handleClearFilters = () => {
@@ -118,12 +110,6 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
       category: "",
       interview_stage: ""
     });
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (error) {
@@ -157,48 +143,15 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
         questions={filteredQuestions}
         loading={loading}
         isAdmin={false}
-        currentPage={currentPage}
+        currentPage={1}
         itemsPerPage={ITEMS_PER_PAGE}
       />
 
-      {!loading && filteredQuestions.length > ITEMS_PER_PAGE && (
+      {!loading && filteredQuestions.length > 0 && (
         <div className="mt-8 flex justify-center">
-          <Pagination>
-            <PaginationContent>
-              {currentPage > 1 && (
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    className="cursor-pointer"
-                  />
-                </PaginationItem>
-              )}
-              
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNumber = i + 1;
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                      onClick={() => handlePageChange(pageNumber)}
-                      isActive={currentPage === pageNumber}
-                      className="cursor-pointer"
-                    >
-                      {pageNumber}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              
-              {currentPage < totalPages && (
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    className="cursor-pointer"
-                  />
-                </PaginationItem>
-              )}
-            </PaginationContent>
-          </Pagination>
+          <Button variant="outline" size="lg" asChild>
+            <Link to="/questions">View More Questions</Link>
+          </Button>
         </div>
       )}
     </section>
