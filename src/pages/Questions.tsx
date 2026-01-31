@@ -29,6 +29,11 @@ const Questions = () => {
   const [randomQuestionDialogOpen, setRandomQuestionDialogOpen] = useState(false);
   const [randomQuestion, setRandomQuestion] = useState<any>(null);
 
+  // Scroll to top when navigating to this page
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Initialize from URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
