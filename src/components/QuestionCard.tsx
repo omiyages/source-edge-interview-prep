@@ -38,6 +38,8 @@ interface InterviewQuestion {
 interface QuestionCardProps {
   question: InterviewQuestion;
   showDeleteButton?: boolean;
+  /** When provided, View Question uses the parent's dialog (e.g. QuestionDetailDialog) instead of the inline one */
+  onViewQuestion?: () => void;
   // Course-specific props for removal instead of deletion
   stageId?: string;
   onRemoveFromStage?: (questionId: string) => void;
@@ -46,6 +48,7 @@ interface QuestionCardProps {
 const QuestionCard = ({ 
   question, 
   showDeleteButton = true, 
+  onViewQuestion,
   stageId, 
   onRemoveFromStage 
 }: QuestionCardProps) => {
@@ -258,129 +261,141 @@ const QuestionCard = ({
 
           {/* View Question Button */}
           <div className="pt-2">
-            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs border-border hover:bg-muted"
-                >
-                  <Eye className="w-3 h-3 mr-1" />
-                  View Question
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
-                <DialogHeader>
-                  <DialogTitle className="text-lg font-semibold">Question Details</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2 items-center justify-between">
-                    <div className="flex flex-wrap gap-2">
-                      {question.recommended && (
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                      )}
-                      <Badge 
-                        variant="secondary" 
-                        className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
+            {onViewQuestion ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs border-border hover:bg-muted"
+                onClick={onViewQuestion}
+              >
+                <Eye className="w-3 h-3 mr-1" />
+                View Question
+              </Button>
+            ) : (
+              <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs border-border hover:bg-muted"
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    View Question
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
+                  <DialogHeader>
+                    <DialogTitle className="text-lg font-semibold">Question Details</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2 items-center justify-between">
+                      <div className="flex flex-wrap gap-2">
+                        {question.recommended && (
+                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        )}
+                        <Badge 
+                          variant="secondary" 
+                          className={`text-xs font-medium px-2 py-1 ${getRoleTypeColor(question.role)}`}
+                        >
+                          {question.role}
+                        </Badge>
+                      </div>
+                      <Button
+                        variant={hasThumbsUp ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleThumbsUp()}
+                        disabled={isToggling || !user}
+                        className={`flex items-center gap-1.5 ${
+                          hasThumbsUp 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                            : ""
+                        }`}
+                        title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up this question") : "Login to thumbs up"}
                       >
-                        {question.role}
-                      </Badge>
+                        <ThumbsUp className={`w-4 h-4 ${hasThumbsUp ? "fill-current" : ""}`} />
+                        <span>{thumbsUpCount}</span>
+                      </Button>
                     </div>
-                    <Button
-                      variant={hasThumbsUp ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => toggleThumbsUp()}
-                      disabled={isToggling || !user}
-                      className={`flex items-center gap-1.5 ${
-                        hasThumbsUp 
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                          : ""
-                      }`}
-                      title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up this question") : "Login to thumbs up"}
-                    >
-                      <ThumbsUp className={`w-4 h-4 ${hasThumbsUp ? "fill-current" : ""}`} />
-                      <span>{thumbsUpCount}</span>
-                    </Button>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium text-foreground mb-2">Question</h3>
-                    <p className="text-sm text-muted-foreground break-words">{question.question}</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
                     <div>
-                      <span className="font-medium text-foreground">Company:</span>
-                      <p className="text-sm text-muted-foreground break-words">{question.company}</p>
+                      <h3 className="font-medium text-foreground mb-2">Question</h3>
+                      <p className="text-sm text-muted-foreground break-words">{question.question}</p>
                     </div>
-                    <div>
-                      <span className="font-medium text-foreground">Category:</span>
-                      <p className="text-sm text-muted-foreground break-words">{question.category}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-foreground">Stage:</span>
-                      <p className="text-sm text-muted-foreground break-words">{question.interview_stage}</p>
-                    </div>
-                  </div>
-                  
-                  {question.additional_context && (
-                    <div>
-                      <h3 className="font-medium text-foreground mb-2">Additional Context</h3>
-                      <div className="p-3 bg-muted rounded-md border border-border overflow-hidden">
-                        <RichTextDisplay 
-                          content={question.additional_context} 
-                          className="text-sm break-words overflow-wrap-anywhere max-w-full [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-words [&_code]:whitespace-pre-wrap [&_pre]:bg-background [&_pre]:border [&_pre]:border-border [&_pre]:shadow-sm" 
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(question.team || question.position_name) && (
+                    
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {question.team && (
-                        <div>
-                          <span className="font-medium text-foreground">Team:</span>
-                          <p className="text-sm text-muted-foreground break-words">{question.team}</p>
-                        </div>
-                      )}
-                      {question.position_name && (
-                        <div>
-                          <span className="font-medium text-foreground">Position:</span>
-                          <p className="text-sm text-muted-foreground break-words">{question.position_name}</p>
-                        </div>
-                      )}
+                      <div>
+                        <span className="font-medium text-foreground">Company:</span>
+                        <p className="text-sm text-muted-foreground break-words">{question.company}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">Category:</span>
+                        <p className="text-sm text-muted-foreground break-words">{question.category}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">Stage:</span>
+                        <p className="text-sm text-muted-foreground break-words">{question.interview_stage}</p>
+                      </div>
                     </div>
-                  )}
-                  
-                  {(question.source_url || question.source_website) && (
-                    <div>
-                      <h3 className="font-medium text-foreground mb-2">Source Information</h3>
-                      <div className="space-y-1">
-                        {question.source_website && (
+                    
+                    {question.additional_context && (
+                      <div>
+                        <h3 className="font-medium text-foreground mb-2">Additional Context</h3>
+                        <div className="p-3 bg-muted rounded-md border border-border overflow-hidden">
+                          <RichTextDisplay 
+                            content={question.additional_context} 
+                            className="text-sm break-words overflow-wrap-anywhere max-w-full [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-words [&_code]:whitespace-pre-wrap [&_pre]:bg-background [&_pre]:border [&_pre]:border-border [&_pre]:shadow-sm" 
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(question.team || question.position_name) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {question.team && (
                           <div>
-                            <span className="font-medium text-foreground">Website:</span>
-                            <p className="text-sm text-muted-foreground break-words">{question.source_website}</p>
+                            <span className="font-medium text-foreground">Team:</span>
+                            <p className="text-sm text-muted-foreground break-words">{question.team}</p>
                           </div>
                         )}
-                        {question.source_url && (
+                        {question.position_name && (
                           <div>
-                            <span className="font-medium text-foreground">URL:</span>
-                            <a 
-                              href={question.source_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline break-all block"
-                            >
-                              {question.source_url}
-                            </a>
+                            <span className="font-medium text-foreground">Position:</span>
+                            <p className="text-sm text-muted-foreground break-words">{question.position_name}</p>
                           </div>
                         )}
                       </div>
-                    </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+                    )}
+                    
+                    {(question.source_url || question.source_website) && (
+                      <div>
+                        <h3 className="font-medium text-foreground mb-2">Source Information</h3>
+                        <div className="space-y-1">
+                          {question.source_website && (
+                            <div>
+                              <span className="font-medium text-foreground">Website:</span>
+                              <p className="text-sm text-muted-foreground break-words">{question.source_website}</p>
+                            </div>
+                          )}
+                          {question.source_url && (
+                            <div>
+                              <span className="font-medium text-foreground">URL:</span>
+                              <a 
+                                href={question.source_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:underline break-all block"
+                              >
+                                {question.source_url}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
           
           <div className="text-xs text-muted-foreground pt-2 border-t border-border">

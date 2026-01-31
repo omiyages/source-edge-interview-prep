@@ -13,6 +13,7 @@ interface OptimizedQuestionListProps {
   isAdmin: boolean;
   onEdit?: (question: InterviewQuestion) => void;
   onDelete?: (questionId: string) => void;
+  onSelectQuestion?: (index: number) => void;
   currentPage?: number;
   itemsPerPage?: number;
   hasNextPage?: boolean;
@@ -28,6 +29,7 @@ export const OptimizedQuestionList = memo(({
   isAdmin, 
   onEdit, 
   onDelete,
+  onSelectQuestion,
   currentPage = 1,
   itemsPerPage = 10,
   hasNextPage = false,
@@ -82,7 +84,10 @@ export const OptimizedQuestionList = memo(({
             style={{ animationDelay: `${index * 50}ms` }}
             className="animate-fade-in"
           >
-            <QuestionCard question={question} />
+            <QuestionCard
+              question={question}
+              onViewQuestion={onSelectQuestion ? () => onSelectQuestion(index) : undefined}
+            />
           </div>
         ))}
       </div>

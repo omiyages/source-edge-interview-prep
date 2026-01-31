@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
+import { QuestionDetailDialog } from "@/components/QuestionDetailDialog";
 import { Search, Shuffle } from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
@@ -28,6 +29,7 @@ const Questions = () => {
   });
   const [randomQuestionDialogOpen, setRandomQuestionDialogOpen] = useState(false);
   const [randomQuestion, setRandomQuestion] = useState<any>(null);
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
 
   // Scroll to top when navigating to this page
   useEffect(() => {
@@ -273,6 +275,43 @@ const Questions = () => {
               loading={loading}
               totalCount={filteredAndSortedQuestions.length}
               startIndex={startIndex}
+              onSelectQuestion={(index) => setSelectedQuestionIndex(index)}
+            />
+
+            {/* Question detail dialog (View Question) */}
+            <QuestionDetailDialog
+              open={selectedQuestionIndex !== null}
+              onOpenChange={(open) => !open && setSelectedQuestionIndex(null)}
+              question={selectedQuestionIndex !== null ? displayedQuestions[selectedQuestionIndex] ?? null : null}
+              currentDisplayNumber={selectedQuestionIndex !== null ? startIndex + selectedQuestionIndex + 1 : 1}
+              totalCount={filteredAndSortedQuestions.length}
+              onPrev={() => {
+                if (selectedQuestionIndex === null) return;
+                if (selectedQuestionIndex > 0) {
+                  setSelectedQuestionIndex(selectedQuestionIndex - 1);
+                } else if (currentPage > 1) {
+                  setCurrentPage(currentPage - 1);
+                  setSelectedQuestionIndex(ITEMS_PER_PAGE - 1);
+                }
+              }}
+              onNext={() => {
+                if (selectedQuestionIndex === null) return;
+                if (selectedQuestionIndex < displayedQuestions.length - 1) {
+                  setSelectedQuestionIndex(selectedQuestionIndex + 1);
+                } else if (currentPage < totalPages) {
+                  setCurrentPage(currentPage + 1);
+                  setSelectedQuestionIndex(0);
+                }
+              }}
+              canPrev={
+                selectedQuestionIndex !== null &&
+                (selectedQuestionIndex > 0 || currentPage > 1)
+              }
+              canNext={
+                selectedQuestionIndex !== null &&
+                (selectedQuestionIndex < displayedQuestions.length - 1 ||
+                  currentPage < totalPages)
+              }
             />
 
             {/* Pagination */}

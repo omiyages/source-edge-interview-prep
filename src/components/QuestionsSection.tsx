@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { OptimizedQuestionList } from "./OptimizedQuestionList";
 import { QuestionFilters } from "./QuestionFilters";
+import { QuestionDetailDialog } from "./QuestionDetailDialog";
 import { Button } from "@/components/ui/button";
 import type { InterviewQuestion } from "@/services/questionsService";
 
@@ -72,6 +73,12 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
     });
   }, [questions, searchTerm, filters]);
 
+  const displayedQuestions = useMemo(
+    () => filteredQuestions.slice(0, ITEMS_PER_PAGE),
+    [filteredQuestions]
+  );
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
+
   // Get unique values for filter dropdowns
   const getUniqueValues = (field: string) => {
     const values = questions.map((q: any) => q[field]).filter(Boolean);
@@ -140,11 +147,38 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
       </div>
       
       <OptimizedQuestionList
-        questions={filteredQuestions}
+        questions={displayedQuestions}
         loading={loading}
         isAdmin={false}
         currentPage={1}
         itemsPerPage={ITEMS_PER_PAGE}
+        onSelectQuestion={(index) => setSelectedQuestionIndex(index)}
+      />
+
+      <QuestionDetailDialog
+        open={selectedQuestionIndex !== null}
+        onOpenChange={(open) => !open && setSelectedQuestionIndex(null)}
+        question={selectedQuestionIndex !== null ? displayedQuestions[selectedQuestionIndex] ?? null : null}
+        currentDisplayNumber={selectedQuestionIndex !== null ? selectedQuestionIndex + 1 : 1}
+        totalCount={displayedQuestions.length}
+        onPrev={() => {
+          if (selectedQuestionIndex !== null && selectedQuestionIndex > 0) {
+            setSelectedQuestionIndex(selectedQuestionIndex - 1);
+          }
+        }}
+        onNext={() => {
+          if (
+            selectedQuestionIndex !== null &&
+            selectedQuestionIndex < displayedQuestions.length - 1
+          ) {
+            setSelectedQuestionIndex(selectedQuestionIndex + 1);
+          }
+        }}
+        canPrev={selectedQuestionIndex !== null && selectedQuestionIndex > 0}
+        canNext={
+          selectedQuestionIndex !== null &&
+          selectedQuestionIndex < displayedQuestions.length - 1
+        }
       />
 
       {!loading && filteredQuestions.length > 0 && (
