@@ -7,8 +7,6 @@ import { QuestionsList } from "@/components/QuestionsList";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RichTextDisplay } from "@/components/ui/rich-text-display";
 import { QuestionDetailDialog } from "@/components/QuestionDetailDialog";
 import { Search, Shuffle } from "lucide-react";
 
@@ -27,8 +25,6 @@ const Questions = () => {
     role: [] as string[],
     stage: [] as string[],
   });
-  const [randomQuestionDialogOpen, setRandomQuestionDialogOpen] = useState(false);
-  const [randomQuestion, setRandomQuestion] = useState<any>(null);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
 
   // Scroll to top when navigating to this page
@@ -124,14 +120,12 @@ const Questions = () => {
   const displayedQuestions = filteredAndSortedQuestions.slice(startIndex, endIndex);
 
   const handlePickRandom = () => {
-    if (filteredAndSortedQuestions.length === 0) {
-      // Show a toast or message that there are no questions
-      return;
-    }
+    if (filteredAndSortedQuestions.length === 0) return;
     const randomIndex = Math.floor(Math.random() * filteredAndSortedQuestions.length);
-    const selectedQuestion = filteredAndSortedQuestions[randomIndex];
-    setRandomQuestion(selectedQuestion);
-    setRandomQuestionDialogOpen(true);
+    const page = Math.floor(randomIndex / ITEMS_PER_PAGE) + 1;
+    const indexInPage = randomIndex % ITEMS_PER_PAGE;
+    setCurrentPage(page);
+    setSelectedQuestionIndex(indexInPage);
   };
 
   const handleFilterChange = (filterType: string, values: string[]) => {
@@ -374,52 +368,6 @@ const Questions = () => {
           </main>
         </div>
       </div>
-
-      {/* Random Question Dialog */}
-      <Dialog open={randomQuestionDialogOpen} onOpenChange={setRandomQuestionDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Random Question</DialogTitle>
-          </DialogHeader>
-          {randomQuestion && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium text-foreground mb-2">Question</h3>
-                <p className="text-sm text-muted-foreground break-words">{randomQuestion.question}</p>
-              </div>
-              {randomQuestion.additional_context && (
-                <div>
-                  <h3 className="font-medium text-foreground mb-2">Additional Context</h3>
-                  <div className="p-3 bg-muted rounded-md border border-border overflow-hidden">
-                    <RichTextDisplay 
-                      content={randomQuestion.additional_context} 
-                      className="text-sm break-words"
-                    />
-                  </div>
-                </div>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
-                <div>
-                  <span className="font-medium text-foreground">Company:</span>
-                  <p className="text-sm text-muted-foreground break-words">{randomQuestion.company}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-foreground">Role:</span>
-                  <p className="text-sm text-muted-foreground break-words">{randomQuestion.role}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-foreground">Category:</span>
-                  <p className="text-sm text-muted-foreground break-words">{randomQuestion.category || "N/A"}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-foreground">Stage:</span>
-                  <p className="text-sm text-muted-foreground break-words">{randomQuestion.interview_stage || "N/A"}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Footer */}
       <footer className="bg-white border-t border-border/30 mt-auto py-6">

@@ -73,6 +73,24 @@ export function QuestionDetailDialog({
       });
   }, [open, question?.id]);
 
+  // Keyboard: Left/Right arrows move to previous/next question
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("input") || target.closest("textarea") || target.closest("[contenteditable]")) return;
+      if (e.key === "ArrowLeft" && canPrev) {
+        e.preventDefault();
+        onPrev();
+      } else if (e.key === "ArrowRight" && canNext) {
+        e.preventDefault();
+        onNext();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, canPrev, canNext, onPrev, onNext]);
+
   if (!question) return null;
 
   return (
