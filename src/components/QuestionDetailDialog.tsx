@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { InterviewQuestion } from "@/services/questionsService";
+import { getOrGeneratePreparationNotes } from "@/services/questionsService";
 
 interface QuestionDetailDialogProps {
   open: boolean;
@@ -30,20 +32,7 @@ interface QuestionDetailDialogProps {
   canNext: boolean;
 }
 
-const PREPARATION_NOTES = [
-  {
-    icon: Lightbulb,
-    text: "Clarify edge cases (empty input, single character) before jumping into code.",
-  },
-  {
-    icon: Info,
-    text: "Consider time and space complexity and mention it when presenting your solution.",
-  },
-  {
-    icon: CheckCircle,
-    text: "Test your solution with a few examples before concluding.",
-  },
-];
+const PREP_NOTE_ICONS = [Lightbulb, Info, CheckCircle];
 
 export function QuestionDetailDialog({
   open,
@@ -56,6 +45,34 @@ export function QuestionDetailDialog({
   canPrev,
   canNext,
 }: QuestionDetailDialogProps) {
+  const [prepNotes, setPrepNotes] = useState<string[]>([]);
+  const [prepNotesLoading, setPrepNotesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !question) {
+      setPrepNotes([]);
+      setPrepNotesLoading(false);
+      return;
+    }
+    const existing = question.preparation_notes;
+    if (Array.isArray(existing) && existing.length > 0) {
+      setPrepNotes(existing);
+      setPrepNotesLoading(false);
+      return;
+    }
+    setPrepNotesLoading(true);
+    getOrGeneratePreparationNotes(question.id)
+      .then((notes) => {
+        setPrepNotes(notes);
+      })
+      .catch(() => {
+        setPrepNotes([]);
+      })
+      .finally(() => {
+        setPrepNotesLoading(false);
+      });
+  }, [open, question?.id]);
+
   if (!question) return null;
 
   return (
@@ -131,15 +148,24 @@ export function QuestionDetailDialog({
                   Preparation notes
                 </p>
                 <div className="space-y-2">
-                  {PREPARATION_NOTES.map((note, i) => (
-                    <div
-                      key={i}
-                      className="flex gap-2 rounded-lg border border-border/80 bg-background p-3 text-sm text-foreground shadow-sm"
-                    >
-                      <note.icon className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                      <span>{note.text}</span>
-                    </div>
-                  ))}
+                  {prepNotesLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading preparation notes…</p>
+                  ) : prepNotes.length > 0 ? (
+                    prepNotes.map((text, i) => {
+                      const Icon = PREP_NOTE_ICONS[i % PREP_NOTE_ICONS.length];
+                      return (
+                        <div
+                          key={i}
+                          className="flex gap-2 rounded-lg border border-border/80 bg-background p-3 text-sm text-foreground shadow-sm"
+                        >
+                          <Icon className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>{text}</span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No preparation notes available.</p>
+                  )}
                 </div>
               </div>
             </div>

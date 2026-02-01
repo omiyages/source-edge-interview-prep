@@ -23,13 +23,16 @@ export interface InterviewQuestion {
   source_website: string | null;
   scraped_at: string | null;
   status: string;
+  preparation_notes?: string[] | null;
+  preparation_notes_generated_at?: string | null;
+  preparation_notes_prompt_hash?: string | null;
 }
 
 export const fetchQuestions = async (isAdmin: boolean = false, page?: number, limit?: number): Promise<InterviewQuestion[]> => {
   try {
     let query = supabase
       .from('interview_questions')
-      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status')
+      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status, preparation_notes, preparation_notes_generated_at, preparation_notes_prompt_hash')
       .order('created_at', { ascending: false });
 
     // Only filter out pending questions for non-admin users
@@ -54,5 +57,30 @@ export const fetchQuestions = async (isAdmin: boolean = false, page?: number, li
   } catch (error) {
     console.error('❌ Service error fetching questions:', error);
     throw error;
+  }
+};
+
+/**
+ * Get or generate preparation notes for a question (server-side generation, cached per question).
+ * Call this when question.preparation_notes is missing or empty; returns existing notes or triggers generation.
+ */
+export const getOrGeneratePreparationNotes = async (questionId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase.functions.invoke<{
+      preparation_notes?: string[];
+      error?: string;
+    }>('generate-prep-notes', {
+      body: { question_id: questionId },
+    });
+
+    if (error) {
+      console.warn('getOrGeneratePreparationNotes error:', error);
+      return [];
+    }
+    const notes = data?.preparation_notes;
+    return Array.isArray(notes) ? notes : [];
+  } catch (err) {
+    console.warn('getOrGeneratePreparationNotes failed:', err);
+    return [];
   }
 };

@@ -55,3 +55,6 @@ verify_jwt = true
 
 [functions.dropdown-options]
 verify_jwt = true
+
+[functions.generate-prep-notes]
+verify_jwt = true
