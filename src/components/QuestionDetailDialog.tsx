@@ -4,7 +4,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
 import {
@@ -17,7 +16,6 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
-  X,
 } from "lucide-react";
 import type { InterviewQuestion } from "@/services/questionsService";
 import { getOrGeneratePreparationNotes } from "@/services/questionsService";
@@ -98,19 +96,10 @@ export function QuestionDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] overflow-hidden flex flex-col p-0 gap-0 rounded-xl border-0 shadow-xl">
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-border/50 flex items-center justify-between space-y-0">
-          <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
+        <DialogHeader className="px-6 pt-6 pb-4 text-left space-y-0 border-b border-border/50">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             Question Details
           </DialogTitle>
-          <DialogClose asChild>
-            <button
-              type="button"
-              aria-label="Close"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </DialogClose>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
