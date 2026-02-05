@@ -1,13 +1,10 @@
 // ABOUTME: Displays an AI-generated summary for a course stage
-// ABOUTME: Shows TL;DR points, testing focus, and common pitfalls
+// ABOUTME: Auto-generates on first view, regenerates only when content changes
 
-import { memo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { memo, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 
 interface StageSummaryData {
   id: string;
@@ -25,7 +22,6 @@ interface StageSummaryProps {
   stageTitle: string;
   stageDescription: string | null;
   stageInformation: string | null;
-  isAdmin?: boolean;
 }
 
 export const StageSummary = memo(({ 
@@ -33,13 +29,12 @@ export const StageSummary = memo(({
   stageTitle,
   stageDescription,
   stageInformation,
-  isAdmin 
 }: StageSummaryProps) => {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isGenerating, setIsGenerating] = useState(false);
+  const hasTriggeredGeneration = useRef(false);
 
-  const { data: summary, isLoading } = useQuery({
+  // Fetch existing summary
+  const { data: summary, isLoading, isFetched } = useQuery({
     queryKey: ['stage-summary', stageId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,84 +51,58 @@ export const StageSummary = memo(({
       return data as StageSummaryData | null;
     },
     enabled: !!stageId,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  const generateSummary = async (force: boolean = false) => {
-    setIsGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-stage-summary', {
-        body: { stage_id: stageId, force },
-      });
+  // Auto-generate summary when stage is viewed and no summary exists
+  // The Edge Function handles content hash comparison for regeneration
+  useEffect(() => {
+    if (!isFetched || hasTriggeredGeneration.current) return;
+    if (!stageId || !stageInformation) return; // Don't generate if no content
 
-      if (error) throw error;
+    // Trigger generation (Edge Function will return cached if content unchanged)
+    const generateSummary = async () => {
+      hasTriggeredGeneration.current = true;
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-stage-summary', {
+          body: { stage_id: stageId, force: false },
+        });
 
-      if (data.error) {
-        toast({
-          title: 'Generation Issue',
-          description: data.error,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: data.generated ? 'Summary Generated' : 'Summary Retrieved',
-          description: data.generated 
-            ? 'AI summary has been created successfully.' 
-            : 'Using cached summary.',
-        });
-        queryClient.invalidateQueries({ queryKey: ['stage-summary', stageId] });
+        if (error) {
+          console.error('Error generating summary:', error);
+          return;
+        }
+
+        // Only invalidate if new content was generated
+        if (data.generated) {
+          queryClient.invalidateQueries({ queryKey: ['stage-summary', stageId] });
+          queryClient.invalidateQueries({ queryKey: ['stage-summary-exists', stageId] });
+        }
+      } catch (err) {
+        console.error('Error calling generate-stage-summary:', err);
       }
-    } catch (err: any) {
-      console.error('Error generating summary:', err);
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to generate summary.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+    };
 
-  if (isLoading) {
-    return null; // Don't show loading state to avoid layout shift
+    generateSummary();
+  }, [stageId, stageInformation, isFetched, queryClient]);
+
+  // Reset generation flag when stage changes
+  useEffect(() => {
+    hasTriggeredGeneration.current = false;
+  }, [stageId]);
+
+  // Show loading state while generating for the first time
+  if (isLoading || (!summary && stageInformation && !hasTriggeredGeneration.current)) {
+    return (
+      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span>Generating summary...</span>
+      </div>
+    );
   }
 
-  // No summary exists yet - show generate button for admins
+  // No summary and no content to generate from
   if (!summary) {
-    if (isAdmin) {
-      return (
-        <div className="mb-6 p-4 bg-gradient-to-r from-primary/5 to-violet-50 rounded-xl border border-primary/10 border-dashed">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">AI Summary Available</p>
-                <p className="text-sm text-gray-500">Generate a TL;DR for this stage</p>
-              </div>
-            </div>
-            <Button 
-              onClick={() => generateSummary(false)} 
-              disabled={isGenerating}
-              className="rounded-lg"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Summarize by AI
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      );
-    }
     return null;
   }
 
@@ -147,36 +116,16 @@ export const StageSummary = memo(({
 
   return (
     <div className="mb-6">
-      {/* Admin regenerate button */}
-      {isAdmin && (
-        <div className="flex justify-end mb-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => generateSummary(true)}
-            disabled={isGenerating}
-            className="text-xs text-gray-500 hover:text-primary"
-          >
-            {isGenerating ? (
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-            ) : (
-              <Sparkles className="w-3 h-3 mr-1" />
-            )}
-            Regenerate
-          </Button>
-        </div>
-      )}
-
       {/* TL;DR Section */}
       {hasTldr && (
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="mb-5 bg-gray-50 rounded-xl p-5 border border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
             <span className="w-2 h-2 rounded-full bg-primary"></span>
             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               At a Glance (TL;DR)
             </h4>
           </div>
-          <ul className="space-y-2.5">
+          <ul className="space-y-3">
             {summary.tldr_points.map((point, index) => (
               <li key={index} className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
@@ -193,9 +142,9 @@ export const StageSummary = memo(({
       {/* Bottom Two-Column Section */}
       {(hasTestingFocus || hasPitfalls) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
-          {/* Real Testing Focus */}
+          {/* Interviewer is Looking for */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-2">Real Testing Focus</h4>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Interviewer is Looking for...</h4>
             {summary.testing_focus_quote && (
               <p className="text-gray-500 italic text-sm leading-relaxed mb-2">
                 "{summary.testing_focus_quote}"

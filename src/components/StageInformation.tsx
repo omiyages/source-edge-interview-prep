@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
 import { StageSummary } from "@/components/StageSummary";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,7 +11,6 @@ interface StageInformationProps {
   stageTitle?: string;
   stageId?: string;
   stageDescription?: string | null;
-  isAdmin?: boolean;
   children?: React.ReactNode;
 }
 
@@ -20,9 +19,10 @@ export const StageInformation = ({
   stageTitle, 
   stageId,
   stageDescription,
-  isAdmin,
   children 
 }: StageInformationProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   // Check if summary exists for the badge
   const { data: hasSummary } = useQuery({
     queryKey: ['stage-summary-exists', stageId],
@@ -47,7 +47,6 @@ export const StageInformation = ({
             stageTitle={stageTitle || 'Stage'}
             stageDescription={stageDescription || null}
             stageInformation={information}
-            isAdmin={isAdmin}
           />
         )}
         <div className="text-center py-8 text-muted-foreground">
@@ -85,13 +84,28 @@ export const StageInformation = ({
           stageTitle={stageTitle || 'Stage'}
           stageDescription={stageDescription || null}
           stageInformation={information}
-          isAdmin={isAdmin}
         />
       )}
       
-      {/* Original content */}
+      {/* Collapsible Detailed Content */}
       <div className="flex-1">
-        <RichTextDisplay content={information} />
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full py-3 px-4 bg-primary/5 border border-primary/20 rounded-xl text-primary hover:bg-primary/10 hover:border-primary/30 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+        >
+          View Detailed Explanation
+          {isExpanded ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </button>
+        
+        {isExpanded && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <RichTextDisplay content={information} />
+          </div>
+        )}
       </div>
       
       {children && (

@@ -61,7 +61,6 @@ export const CourseContentSection = ({
             stageTitle={selectedStage.title}
             stageId={selectedStage.id}
             stageDescription={selectedStage.description}
-            isAdmin={isAdmin}
           >
             {stageCompleteButton}
           </StageInformation>

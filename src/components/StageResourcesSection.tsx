@@ -1,10 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Plus, Settings2 } from "lucide-react";
+import { ExternalLink, Plus } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 interface Resource {
@@ -25,7 +22,6 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
   const { data: stageResources, isLoading, refetch } = useQuery({
     queryKey: ['stage-resources-display', stageId],
     queryFn: async () => {
-      console.log('Fetching stage resources for stage:', stageId);
       const { data, error } = await supabase
         .from('stage_resources')
         .select(`
@@ -35,7 +31,6 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
         .eq('stage_id', stageId);
       
       if (error) throw error;
-      console.log('Stage resources fetched:', data?.length || 0);
       return data.map(item => item.resources) as Resource[];
     },
   });
@@ -45,8 +40,6 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
 
   // Set up real-time subscription for stage resources with debouncing
   useEffect(() => {
-    console.log('Setting up real-time subscription for stage resources:', stageId);
-    
     const channel = supabase
       .channel(`stage-resources-${stageId}`)
       .on(
@@ -57,9 +50,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
           table: 'stage_resources',
           filter: `stage_id=eq.${stageId}`
         },
-        (payload) => {
-          console.log('Stage resources changed:', payload);
-          // Debounce the update to prevent rapid refetches
+        () => {
           if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
           }
@@ -71,7 +62,6 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscription for stage resources');
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
@@ -81,82 +71,81 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
 
   if (isLoading) {
     return (
-      <Card className="bg-white border-border shadow-sm h-full">
-        <CardContent className="py-8">
-          <div className="text-center">Loading resources...</div>
-        </CardContent>
-      </Card>
+      <div className="h-full">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">Learning Resources</h3>
+        </div>
+        <div className="text-center py-8 text-gray-500">Loading resources...</div>
+      </div>
     );
   }
 
   return (
-    <Card className="bg-white border-border shadow-sm h-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Learning Resources</CardTitle>
+    <div className="h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900">Learning Resources</h3>
+        {isAdmin && (
+          <button
+            onClick={onManageClick}
+            className="text-sm font-semibold text-primary hover:text-primary/80 uppercase tracking-wide"
+          >
+            Manage
+          </button>
+        )}
+      </div>
+
+      {/* Resources List */}
+      {!stageResources || stageResources.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500 mb-4">No resources assigned to this stage yet.</p>
           {isAdmin && (
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={onManageClick}
-              className="text-primary hover:text-primary/80"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
             >
-              <Settings2 className="w-4 h-4 mr-2" />
-              Manage
-            </Button>
+              <Plus className="w-4 h-4" />
+              Add Resources
+            </button>
           )}
         </div>
-      </CardHeader>
-      <CardContent>
-        {!stageResources || stageResources.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">No resources assigned to this stage yet.</p>
-            {isAdmin && (
-              <Button
-                variant="outline"
-                onClick={onManageClick}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Resources
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {stageResources.map((resource) => (
-                        <div
-                          key={resource.id}
-                className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow bg-white shadow-sm"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge 
-                        variant="secondary"
-                        className="text-xs font-medium uppercase"
-                      >
-                        {resource.category}
-                      </Badge>
-                    </div>
-                    <h5 className="font-semibold text-sm mb-1 text-foreground">{resource.title}</h5>
-                              {resource.description && (
-                      <p className="text-sm text-muted-foreground mb-2">{resource.description}</p>
-                              )}
-                            </div>
-                            <a
-                              href={resource.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                    className="flex-shrink-0 p-2 text-muted-foreground hover:text-foreground rounded-md transition-colors"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
-                          </div>
-                        </div>
-                      ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      ) : (
+        <div className="space-y-3">
+          {stageResources.map((resource) => (
+            <a
+              key={resource.id}
+              href={resource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md hover:border-gray-200 transition-all group"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  {/* Category Label */}
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                    {resource.category}
+                  </span>
+                  
+                  {/* Title */}
+                  <h4 className="font-bold text-gray-900 mt-2 mb-1 group-hover:text-primary transition-colors">
+                    {resource.title}
+                  </h4>
+                  
+                  {/* Description */}
+                  {resource.description && (
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                      {resource.description}
+                    </p>
+                  )}
+                </div>
+                
+                {/* External Link Icon */}
+                <ExternalLink className="w-5 h-5 text-gray-300 group-hover:text-primary flex-shrink-0 mt-1 transition-colors" />
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
