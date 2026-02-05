@@ -2,9 +2,8 @@ import { memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Clock, User, ChevronRight, BookOpen, ArrowRight } from "lucide-react";
+import { Star, ChevronRight, ArrowRight } from "lucide-react";
 import { slugify } from "@/utils/slugify";
 
 interface Course {
@@ -16,21 +15,11 @@ interface Course {
 }
 
 // Generate consistent placeholder data based on course id
-const getPlaceholderData = (courseId: string, title: string) => {
+const getPlaceholderData = (courseId: string) => {
   // Use course id hash for consistent random-like values
   const hash = courseId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   
-  const durations = [8, 10, 12, 14, 16, 20, 24];
   const ratings = [4.5, 4.6, 4.7, 4.8, 4.9, 5.0];
-  const prices = [49, 59, 69, 79, 89, 99, 120, 149];
-  const instructors = [
-    { name: "Marcus Chen", role: "Lead Architect" },
-    { name: "Elena Petrov", role: "OS Engineer" },
-    { name: "Sarah Jenkins", role: "Ex-Google EM" },
-    { name: "David Kim", role: "Staff Engineer" },
-    { name: "Lisa Wang", role: "Principal SWE" },
-    { name: "James Miller", role: "Tech Lead" },
-  ];
   
   // Generate placeholder image gradient colors
   const gradients = [
@@ -42,16 +31,9 @@ const getPlaceholderData = (courseId: string, title: string) => {
     'from-slate-400 to-gray-500',
   ];
   
-  // Icons/shapes for placeholder images
-  const icons = ['thumbs-up', 'leaf', 'cursor', 'code', 'lightbulb', 'rocket'];
-  
   return {
-    duration: durations[hash % durations.length],
     rating: ratings[hash % ratings.length],
-    price: prices[hash % prices.length],
-    instructor: instructors[hash % instructors.length],
     gradient: gradients[hash % gradients.length],
-    icon: icons[hash % icons.length],
   };
 };
 
@@ -201,7 +183,7 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
       {/* Course Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayCourses.map((course) => {
-          const placeholder = getPlaceholderData(course.id, course.title);
+          const placeholder = getPlaceholderData(course.id);
           
           return (
             <div
@@ -212,11 +194,6 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
               {/* Course Image */}
               <div className="relative">
                 <CoursePlaceholderImage gradient={placeholder.gradient} title={course.title} />
-                {/* Duration Badge */}
-                <Badge className="absolute top-3 right-3 bg-slate-800/80 text-white hover:bg-slate-800/80 text-xs font-medium">
-                  <Clock className="w-3 h-3 mr-1" />
-                  {placeholder.duration} hours
-                </Badge>
               </div>
 
               {/* Course Content */}
@@ -238,17 +215,15 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
                   {course.title}
                 </h3>
 
-                {/* Instructor */}
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
-                  <User className="w-3.5 h-3.5" />
-                  <span>By {placeholder.instructor.name}, {placeholder.instructor.role}</span>
-                </div>
+                {/* Description */}
+                {course.description && (
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {course.description}
+                  </p>
+                )}
 
-                {/* Price and Enrol */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                  <span className="text-lg font-bold text-primary">
-                    ${placeholder.price}.00
-                  </span>
+                {/* Start Learning Button */}
+                <div className="flex items-center justify-end pt-2 border-t border-slate-100">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -258,7 +233,7 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
                       navigate(`/course/${slugify(course.title)}`);
                     }}
                   >
-                    Enrol Now
+                    Start Learning
                     <ChevronRight className="w-4 h-4 ml-0.5" />
                   </Button>
                 </div>
