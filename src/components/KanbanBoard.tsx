@@ -802,7 +802,7 @@ export const KanbanBoard: React.FC = () => {
           <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
             <div className="flex items-center gap-4">
               <span>
-                Showing {getFilteredColumns().reduce((total, col) => total + col.users.length, 0)} users
+                Showing {filteredColumns.reduce((total, col) => total + col.users.length, 0)} users
               </span>
               <span>
                 Total: {columns.reduce((total, col) => total + col.users.length, 0)} users
