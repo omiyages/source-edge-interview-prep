@@ -59,6 +59,9 @@ export const CourseContentSection = ({
           <StageInformation 
             information={selectedStage.information} 
             stageTitle={selectedStage.title}
+            stageId={selectedStage.id}
+            stageDescription={selectedStage.description}
+            isAdmin={isAdmin}
           >
             {stageCompleteButton}
           </StageInformation>

@@ -523,6 +523,50 @@ export type Database = {
           },
         ]
       }
+      stage_summaries: {
+        Row: {
+          id: string
+          stage_id: string
+          tldr_points: Json
+          testing_focus_quote: string | null
+          testing_focus_points: Json
+          common_pitfalls: Json
+          content_hash: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          stage_id: string
+          tldr_points?: Json
+          testing_focus_quote?: string | null
+          testing_focus_points?: Json
+          common_pitfalls?: Json
+          content_hash?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          stage_id?: string
+          tldr_points?: Json
+          testing_focus_quote?: string | null
+          testing_focus_points?: Json
+          common_pitfalls?: Json
+          content_hash?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_summaries_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: true
+            referencedRelation: "course_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stage_resources: {
         Row: {
           created_at: string
