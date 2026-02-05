@@ -222,25 +222,32 @@ export const StageQuestions = ({
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {displayedQuestions.map((question, index) => (
-              <Card key={question.id} className="bg-white border-border shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
+              <Card key={question.id} className="bg-white border-border shadow-sm hover:shadow-md transition-shadow h-full">
+                <CardContent className="p-4 h-full flex flex-col">
+                  {/* Category Badge */}
                   <div className="flex items-center gap-2 mb-3">
                     <Badge className={`text-xs font-medium ${getCategoryColor(question.category)}`}>
                       {question.category || "Technical"}
                     </Badge>
                   </div>
-                  <h3 className="font-semibold text-sm mb-2 text-foreground line-clamp-2">
+                  
+                  {/* Question Title - Fixed height area */}
+                  <h3 className="font-semibold text-sm mb-2 text-foreground line-clamp-2 min-h-[2.5rem]">
                     {question.question}
                   </h3>
-                  {question.additional_context && (
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
-                      {stripHtml(question.additional_context)}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{question.company}</span>
-                    </div>
+                  
+                  {/* Description - Flexible area */}
+                  <div className="flex-1 min-h-[4.5rem]">
+                    {question.additional_context && (
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {stripHtml(question.additional_context)}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Footer - Always at bottom */}
+                  <div className="flex items-center justify-between pt-4 mt-auto border-t border-border/50">
+                    <span className="text-xs text-muted-foreground">{question.company}</span>
                     <Button
                       size="sm"
                       className="bg-primary text-primary-foreground hover:bg-primary/90"
