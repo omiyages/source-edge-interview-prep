@@ -102,17 +102,29 @@ const GradientColors = [
 
 const LeafTypes = Object.keys(LeafDesigns) as (keyof typeof LeafDesigns)[];
 
+// Better hash function that produces more unique values
+const hashString = (str: string): number => {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+  }
+  return Math.abs(hash);
+};
+
 // Generate consistent placeholder data based on course id
 const getPlaceholderData = (courseId: string) => {
-  // Use course id hash for consistent random-like values
-  const hash = courseId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  // Use improved hash for better distribution
+  const hash = hashString(courseId);
+  // Use different prime multipliers to avoid same combinations
+  const colorHash = hashString(courseId + '_color');
+  const leafHash = hashString(courseId + '_leaf');
   
   const ratings = [4.5, 4.6, 4.7, 4.8, 4.9, 5.0];
   
   return {
     rating: ratings[hash % ratings.length],
-    colorIndex: hash % GradientColors.length,
-    leafIndex: hash % LeafTypes.length,
+    colorIndex: colorHash % GradientColors.length,
+    leafIndex: leafHash % LeafTypes.length,
   };
 };
 

@@ -97,11 +97,22 @@ const GradientColors = [
 
 const LeafTypes = Object.keys(LeafDesigns) as (keyof typeof LeafDesigns)[];
 
+// Better hash function that produces more unique values
+const hashString = (str: string): number => {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+  }
+  return Math.abs(hash);
+};
+
 const getLeafData = (courseId: string) => {
-  const hash = courseId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  // Use different salts to ensure different leaf/color combinations
+  const colorHash = hashString(courseId + '_color');
+  const leafHash = hashString(courseId + '_leaf');
   return {
-    colorIndex: hash % GradientColors.length,
-    leafIndex: hash % LeafTypes.length,
+    colorIndex: colorHash % GradientColors.length,
+    leafIndex: leafHash % LeafTypes.length,
   };
 };
 
