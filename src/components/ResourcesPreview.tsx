@@ -146,7 +146,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
             Learning Resources
           </h2>
           <p className="text-muted-foreground">
-            Hand-picked guides to master the technical landscape.
+            Hand-picked guides to support you through every stage of the interview process, from interviewing to your first day.
           </p>
         </div>
         <div className="flex items-center gap-3">

@@ -239,7 +239,7 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
             Featured Courses
           </h2>
           <p className="text-muted-foreground">
-            Deep-dive technical training led by industry experts.
+            A course designed using real-world data and feedback tailored to the specific role and company you're interviewing for.
           </p>
         </div>
         <Button 
