@@ -13,7 +13,7 @@ interface QuestionsSectionProps {
   error: string | null;
 }
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 9;
 
 export const QuestionsSection = ({ questions, loading, error }: QuestionsSectionProps) => {
   const [searchTerm, setSearchTerm] = useState("");

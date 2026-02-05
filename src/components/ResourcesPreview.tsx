@@ -184,7 +184,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            {filteredResources.slice(0, 6).map((resource) => {
+            {filteredResources.slice(0, 3).map((resource) => {
               const { icon: IconComponent, bgColor, iconColor } = getIconAndColor(resource.category, resource.title);
               const tags = getTags(resource.category);
               
@@ -231,7 +231,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
             })}
           </div>
             
-          {resources.length > 6 && (
+          {resources.length > 3 && (
             <div className="text-center">
               <Button 
                 variant="link"
