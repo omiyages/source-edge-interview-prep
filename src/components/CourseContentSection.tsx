@@ -2,6 +2,7 @@
 import { StageInformation } from "@/components/StageInformation";
 import { StageResourcesSection } from "@/components/StageResourcesSection";
 import { StageQuestions } from "@/components/StageQuestions";
+import { StageSummary } from "@/components/StageSummary";
 
 interface CourseStage {
   id: string;
@@ -36,6 +37,7 @@ interface CourseContentSectionProps {
   onManageResourcesClick: () => void;
   onManageQuestionsClick: () => void;
   onQuestionsUpdate?: () => void;
+  onManageSummaryClick?: () => void;
   stageCompleteButton?: React.ReactNode;
 }
 
@@ -46,12 +48,20 @@ export const CourseContentSection = ({
   onManageResourcesClick,
   onManageQuestionsClick,
   onQuestionsUpdate,
+  onManageSummaryClick,
   stageCompleteButton,
 }: CourseContentSectionProps) => {
   if (!selectedStage) return null;
 
   return (
     <div className="space-y-8">
+      {/* Stage Summary - At a Glance TL;DR */}
+      <StageSummary 
+        stageId={selectedStage.id} 
+        isAdmin={isAdmin}
+        onGenerateSummary={onManageSummaryClick}
+      />
+
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Column: Stage Information (75%) */}
