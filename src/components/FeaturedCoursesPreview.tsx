@@ -14,6 +14,94 @@ interface Course {
   created_at: string;
 }
 
+// Different leaf SVG designs
+const LeafDesigns = {
+  // Simple oval leaf with curved vein (like the screenshot)
+  simple: (
+    <svg viewBox="0 0 64 64" className="w-20 h-20" fill="currentColor">
+      <path d="M32 4C20 4 10 20 10 36C10 52 20 60 32 60C44 60 54 52 54 36C54 20 44 4 32 4Z" fillOpacity="0.9"/>
+      <path d="M32 12C32 12 28 28 32 48" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M32 24C28 22 24 24 22 28" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 32C36 30 40 32 42 36" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  // Rounded leaf
+  rounded: (
+    <svg viewBox="0 0 64 64" className="w-20 h-20" fill="currentColor">
+      <ellipse cx="32" cy="34" rx="20" ry="24" fillOpacity="0.9"/>
+      <path d="M32 14V54" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M32 26C26 24 20 28 18 34" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 38C38 36 44 40 46 46" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  // Pointed leaf
+  pointed: (
+    <svg viewBox="0 0 64 64" className="w-20 h-20" fill="currentColor">
+      <path d="M32 4L12 40C12 52 20 60 32 60C44 60 52 52 52 40L32 4Z" fillOpacity="0.9"/>
+      <path d="M32 8V56" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M32 28L22 34" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 40L42 46" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  // Heart-shaped leaf
+  heart: (
+    <svg viewBox="0 0 64 64" className="w-20 h-20" fill="currentColor">
+      <path d="M32 58C32 58 8 40 8 24C8 14 16 8 24 8C28 8 32 12 32 12C32 12 36 8 40 8C48 8 56 14 56 24C56 40 32 58 32 58Z" fillOpacity="0.9"/>
+      <path d="M32 16V54" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+    </svg>
+  ),
+  // Maple-style leaf
+  maple: (
+    <svg viewBox="0 0 64 64" className="w-20 h-20" fill="currentColor">
+      <path d="M32 4L28 16L16 12L24 24L8 28L24 32L16 44L28 40L32 60L36 40L48 44L40 32L56 28L40 24L48 12L36 16L32 4Z" fillOpacity="0.9"/>
+      <path d="M32 8V56" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+    </svg>
+  ),
+  // Ginkgo-style fan leaf
+  ginkgo: (
+    <svg viewBox="0 0 64 64" className="w-20 h-20" fill="currentColor">
+      <path d="M32 56V36C32 36 8 32 8 16C8 8 16 4 24 8C28 10 32 16 32 16C32 16 36 10 40 8C48 4 56 8 56 16C56 32 32 36 32 36" fillOpacity="0.9"/>
+      <path d="M32 56V20" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M20 16C24 18 28 18 32 16" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M44 16C40 18 36 18 32 16" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  // Fern/elongated leaf
+  fern: (
+    <svg viewBox="0 0 64 64" className="w-20 h-20" fill="currentColor">
+      <path d="M32 4C24 8 20 20 20 36C20 52 26 60 32 60C38 60 44 52 44 36C44 20 40 8 32 4Z" fillOpacity="0.9"/>
+      <path d="M32 8V56" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M32 20L24 24" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 28L40 32" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 36L24 40" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 44L40 48" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  // Clover/trefoil leaf
+  clover: (
+    <svg viewBox="0 0 64 64" className="w-20 h-20" fill="currentColor">
+      <circle cx="32" cy="18" r="12" fillOpacity="0.9"/>
+      <circle cx="20" cy="34" r="12" fillOpacity="0.9"/>
+      <circle cx="44" cy="34" r="12" fillOpacity="0.9"/>
+      <path d="M32 30V58" stroke="currentColor" strokeWidth="3" fill="none" strokeOpacity="0.6" strokeLinecap="round"/>
+    </svg>
+  ),
+};
+
+// Background gradient colors for course cards
+const GradientColors = [
+  { gradient: 'from-amber-400 to-orange-500', leafColor: 'text-amber-100' },
+  { gradient: 'from-emerald-400 to-teal-600', leafColor: 'text-emerald-100' },
+  { gradient: 'from-cyan-400 to-blue-500', leafColor: 'text-cyan-100' },
+  { gradient: 'from-purple-400 to-indigo-600', leafColor: 'text-purple-100' },
+  { gradient: 'from-pink-400 to-rose-500', leafColor: 'text-pink-100' },
+  { gradient: 'from-lime-400 to-green-600', leafColor: 'text-lime-100' },
+  { gradient: 'from-red-400 to-rose-600', leafColor: 'text-red-100' },
+  { gradient: 'from-sky-400 to-indigo-500', leafColor: 'text-sky-100' },
+];
+
+const LeafTypes = Object.keys(LeafDesigns) as (keyof typeof LeafDesigns)[];
+
 // Generate consistent placeholder data based on course id
 const getPlaceholderData = (courseId: string) => {
   // Use course id hash for consistent random-like values
@@ -21,19 +109,10 @@ const getPlaceholderData = (courseId: string) => {
   
   const ratings = [4.5, 4.6, 4.7, 4.8, 4.9, 5.0];
   
-  // Generate placeholder image gradient colors
-  const gradients = [
-    'from-cyan-400 to-blue-500',
-    'from-emerald-400 to-teal-500',
-    'from-amber-400 to-orange-500',
-    'from-purple-400 to-indigo-500',
-    'from-pink-400 to-rose-500',
-    'from-slate-400 to-gray-500',
-  ];
-  
   return {
     rating: ratings[hash % ratings.length],
-    gradient: gradients[hash % gradients.length],
+    colorIndex: hash % GradientColors.length,
+    leafIndex: hash % LeafTypes.length,
   };
 };
 
@@ -61,37 +140,18 @@ const StarRating = ({ rating }: { rating: number }) => {
   );
 };
 
-// Course placeholder image component
-const CoursePlaceholderImage = ({ gradient, title }: { gradient: string; title: string }) => {
-  // Get first letter or icon based on title
-  const getIcon = () => {
-    const lower = title.toLowerCase();
-    if (lower.includes('system') || lower.includes('design')) {
-      return (
-        <svg viewBox="0 0 24 24" className="w-16 h-16 text-white/80" fill="currentColor">
-          <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
-        </svg>
-      );
-    }
-    if (lower.includes('rust') || lower.includes('embedded')) {
-      return (
-        <svg viewBox="0 0 24 24" className="w-16 h-16 text-white/80" fill="currentColor">
-          <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/>
-        </svg>
-      );
-    }
-    // Default cursor/text icon
-    return (
-      <div className="text-4xl font-serif italic text-white/80 border-2 border-white/60 px-4 py-2 rounded">
-        Cure
-      </div>
-    );
-  };
+// Course placeholder image component with leaf design
+const CoursePlaceholderImage = ({ colorIndex, leafIndex }: { colorIndex: number; leafIndex: number }) => {
+  const colorScheme = GradientColors[colorIndex];
+  const leafType = LeafTypes[leafIndex];
+  const LeafSvg = LeafDesigns[leafType];
 
   return (
-    <div className={`w-full h-40 bg-gradient-to-br ${gradient} rounded-t-xl flex items-center justify-center relative overflow-hidden`}>
-      <div className="absolute inset-0 bg-white/10"></div>
-      {getIcon()}
+    <div className={`w-full h-40 bg-gradient-to-br ${colorScheme.gradient} rounded-t-xl flex items-center justify-center relative overflow-hidden`}>
+      <div className="absolute inset-0 bg-white/5"></div>
+      <div className={colorScheme.leafColor}>
+        {LeafSvg}
+      </div>
     </div>
   );
 };
@@ -193,7 +253,7 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
             >
               {/* Course Image */}
               <div className="relative">
-                <CoursePlaceholderImage gradient={placeholder.gradient} title={course.title} />
+                <CoursePlaceholderImage colorIndex={placeholder.colorIndex} leafIndex={placeholder.leafIndex} />
               </div>
 
               {/* Course Content */}

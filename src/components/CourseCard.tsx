@@ -5,7 +5,6 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -14,12 +13,97 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Edit, Trash2, ArrowRight } from "lucide-react";
+import { MoreVertical, Edit, Trash2, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 import type { Course } from "@/types/course";
 import { slugify } from "@/utils/slugify";
+
+// Different leaf SVG designs
+const LeafDesigns = {
+  simple: (
+    <svg viewBox="0 0 64 64" className="w-16 h-16" fill="currentColor">
+      <path d="M32 4C20 4 10 20 10 36C10 52 20 60 32 60C44 60 54 52 54 36C54 20 44 4 32 4Z" fillOpacity="0.9"/>
+      <path d="M32 12C32 12 28 28 32 48" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M32 24C28 22 24 24 22 28" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 32C36 30 40 32 42 36" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  rounded: (
+    <svg viewBox="0 0 64 64" className="w-16 h-16" fill="currentColor">
+      <ellipse cx="32" cy="34" rx="20" ry="24" fillOpacity="0.9"/>
+      <path d="M32 14V54" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M32 26C26 24 20 28 18 34" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 38C38 36 44 40 46 46" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  pointed: (
+    <svg viewBox="0 0 64 64" className="w-16 h-16" fill="currentColor">
+      <path d="M32 4L12 40C12 52 20 60 32 60C44 60 52 52 52 40L32 4Z" fillOpacity="0.9"/>
+      <path d="M32 8V56" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M32 28L22 34" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 40L42 46" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  heart: (
+    <svg viewBox="0 0 64 64" className="w-16 h-16" fill="currentColor">
+      <path d="M32 58C32 58 8 40 8 24C8 14 16 8 24 8C28 8 32 12 32 12C32 12 36 8 40 8C48 8 56 14 56 24C56 40 32 58 32 58Z" fillOpacity="0.9"/>
+      <path d="M32 16V54" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+    </svg>
+  ),
+  maple: (
+    <svg viewBox="0 0 64 64" className="w-16 h-16" fill="currentColor">
+      <path d="M32 4L28 16L16 12L24 24L8 28L24 32L16 44L28 40L32 60L36 40L48 44L40 32L56 28L40 24L48 12L36 16L32 4Z" fillOpacity="0.9"/>
+      <path d="M32 8V56" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+    </svg>
+  ),
+  ginkgo: (
+    <svg viewBox="0 0 64 64" className="w-16 h-16" fill="currentColor">
+      <path d="M32 56V36C32 36 8 32 8 16C8 8 16 4 24 8C28 10 32 16 32 16C32 16 36 10 40 8C48 4 56 8 56 16C56 32 32 36 32 36" fillOpacity="0.9"/>
+      <path d="M32 56V20" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+    </svg>
+  ),
+  fern: (
+    <svg viewBox="0 0 64 64" className="w-16 h-16" fill="currentColor">
+      <path d="M32 4C24 8 20 20 20 36C20 52 26 60 32 60C38 60 44 52 44 36C44 20 40 8 32 4Z" fillOpacity="0.9"/>
+      <path d="M32 8V56" stroke="currentColor" strokeWidth="2" fill="none" strokeOpacity="0.4" strokeLinecap="round"/>
+      <path d="M32 20L24 24" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 28L40 32" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 36L24 40" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+      <path d="M32 44L40 48" stroke="currentColor" strokeWidth="1.5" fill="none" strokeOpacity="0.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  clover: (
+    <svg viewBox="0 0 64 64" className="w-16 h-16" fill="currentColor">
+      <circle cx="32" cy="18" r="12" fillOpacity="0.9"/>
+      <circle cx="20" cy="34" r="12" fillOpacity="0.9"/>
+      <circle cx="44" cy="34" r="12" fillOpacity="0.9"/>
+      <path d="M32 30V58" stroke="currentColor" strokeWidth="3" fill="none" strokeOpacity="0.6" strokeLinecap="round"/>
+    </svg>
+  ),
+};
+
+const GradientColors = [
+  { gradient: 'from-amber-400 to-orange-500', leafColor: 'text-amber-100' },
+  { gradient: 'from-emerald-400 to-teal-600', leafColor: 'text-emerald-100' },
+  { gradient: 'from-cyan-400 to-blue-500', leafColor: 'text-cyan-100' },
+  { gradient: 'from-purple-400 to-indigo-600', leafColor: 'text-purple-100' },
+  { gradient: 'from-pink-400 to-rose-500', leafColor: 'text-pink-100' },
+  { gradient: 'from-lime-400 to-green-600', leafColor: 'text-lime-100' },
+  { gradient: 'from-red-400 to-rose-600', leafColor: 'text-red-100' },
+  { gradient: 'from-sky-400 to-indigo-500', leafColor: 'text-sky-100' },
+];
+
+const LeafTypes = Object.keys(LeafDesigns) as (keyof typeof LeafDesigns)[];
+
+const getLeafData = (courseId: string) => {
+  const hash = courseId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return {
+    colorIndex: hash % GradientColors.length,
+    leafIndex: hash % LeafTypes.length,
+  };
+};
 
 interface CourseCardProps {
   course: Course;
@@ -108,113 +192,123 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
     navigate(`/course/${slugify(course.title)}`);
   };
 
+  const leafData = getLeafData(course.id);
+  const colorScheme = GradientColors[leafData.colorIndex];
+  const leafType = LeafTypes[leafData.leafIndex];
+  const LeafSvg = LeafDesigns[leafType];
+
   return (
-    <Card className="bg-white border border-border shadow-sm hover:shadow-md transition-shadow h-full flex flex-col cursor-pointer" onClick={handleCardClick}>
-      <CardContent className="p-6 flex flex-col h-full">
-        {/* Header with ellipsis menu */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-foreground mb-3 line-clamp-2">
-              {course.title}
-            </h3>
-          </div>
-          {isAdmin && (
-            <div onClick={(e) => e.stopPropagation()}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {onEdit && (
-                    <DropdownMenuItem onClick={() => onEdit(course)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                  )}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem 
-                        onSelect={(e) => e.preventDefault()}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Course</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this course? This will also delete all stages and questions associated with it. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => deleteMutation.mutate()}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
+    <div 
+      className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group h-full flex flex-col"
+      onClick={handleCardClick}
+    >
+      {/* Leaf Image Header */}
+      <div className={`w-full h-36 bg-gradient-to-br ${colorScheme.gradient} flex items-center justify-center relative overflow-hidden`}>
+        <div className="absolute inset-0 bg-white/5"></div>
+        <div className={colorScheme.leafColor}>
+          {LeafSvg}
         </div>
+        {/* Admin Menu */}
+        {isAdmin && (
+          <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-white/20 hover:bg-white/40 text-white"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(course)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem 
+                      onSelect={(e) => e.preventDefault()}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this course? This will also delete all stages and questions associated with it. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteMutation.mutate()}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </div>
+
+      {/* Card Content */}
+      <div className="p-5 flex flex-col flex-1">
+        {/* Company Tag */}
+        {course.company && (
+          <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+            {course.company}
+          </span>
+        )}
+
+        {/* Title */}
+        <h3 className="text-lg font-semibold text-foreground mt-2 mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+          {course.title}
+        </h3>
 
         {/* Description */}
         {course.description && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-1">
             {course.description}
           </p>
         )}
 
-        {/* Tags/Badges */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {course.company && (
-            <Badge
-              variant="secondary"
-              className="bg-gray-100 text-gray-700 hover:bg-gray-100 text-xs"
-            >
-              {course.company}
-            </Badge>
-          )}
-          {/* Show progress badge for non-admin users */}
-          {!isAdmin && courseProgress && (
-            <Badge
-              variant="secondary"
-              className="bg-gray-100 text-gray-700 hover:bg-gray-100 text-xs"
-            >
-              {courseProgress.progress_percentage}% Complete
-            </Badge>
-          )}
-        </div>
+        {/* Progress badge for non-admin users */}
+        {!isAdmin && courseProgress && courseProgress.progress_percentage > 0 && (
+          <Badge
+            variant="secondary"
+            className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-xs w-fit mb-3"
+          >
+            {courseProgress.progress_percentage}% Complete
+          </Badge>
+        )}
 
-        {/* View Course Button */}
-        <div className="mt-auto pt-4">
+        {/* Start Learning Button */}
+        <div className="flex items-center justify-end pt-2 border-t border-slate-100 mt-auto">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
+            className="text-foreground hover:text-primary font-medium p-0 h-auto"
             onClick={(e) => {
               e.stopPropagation();
               handleCardClick();
             }}
-            className="w-full bg-white hover:bg-gray-50"
           >
-            View Course
-            <ArrowRight className="h-4 w-4 ml-2" />
+            Start Learning
+            <ChevronRight className="w-4 h-4 ml-0.5" />
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
