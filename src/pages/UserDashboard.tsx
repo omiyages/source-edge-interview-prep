@@ -374,20 +374,20 @@ const UserDashboard = () => {
 
         {/* Current Course Card */}
         {coursesLoading ? (
-          <Card className="mb-8">
+          <Card className="mb-8 border-gray-200">
             <CardContent className="p-6">
               <LoadingSkeleton lines={3} />
             </CardContent>
           </Card>
         ) : (
-          <Card className="mb-8 overflow-hidden">
+          <Card className="mb-8 overflow-hidden border-gray-200 bg-white rounded-2xl shadow-sm">
             <CardContent className="p-0">
               <div className="flex flex-col md:flex-row">
-                {/* Course Image */}
-                <div className="md:w-48 h-40 md:h-auto bg-gradient-to-br from-slate-800 to-slate-900 flex-shrink-0">
-                  <div className="w-full h-full flex items-center justify-center p-4">
-                    <div className="text-xs font-mono text-green-400 opacity-80 leading-relaxed">
-                      {`def learn():\n  practice()\n  succeed()`}
+                {/* Course Image - Softer design */}
+                <div className="md:w-52 h-36 md:h-auto bg-gradient-to-br from-gray-50 to-gray-100 flex-shrink-0 border-r border-gray-100">
+                  <div className="w-full h-full flex items-center justify-center p-6">
+                    <div className="w-16 h-16 rounded-xl bg-white shadow-sm border border-gray-200 flex items-center justify-center">
+                      <BookOpen className="w-8 h-8 text-primary/70" />
                     </div>
                   </div>
                 </div>
@@ -400,37 +400,38 @@ const UserDashboard = () => {
                         <>
                           <div className="flex items-center gap-2 mb-2">
                             {primaryCourse.progressPercentage > 0 ? (
-                              <span className="text-xs font-semibold text-primary uppercase tracking-wide flex items-center gap-1">
-                                IN PROGRESS <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                              </span>
+                              <Badge className="bg-emerald-50 text-emerald-700 border-0 px-2.5 py-0.5 text-xs font-medium">
+                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 inline-block"></span>
+                                In Progress
+                              </Badge>
                             ) : (
-                              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                NOT STARTED
-                              </span>
+                              <Badge className="bg-gray-100 text-gray-600 border-0 px-2.5 py-0.5 text-xs font-medium">
+                                Not Started
+                              </Badge>
                             )}
                           </div>
-                          <h2 className="text-xl font-semibold text-foreground mb-3">
+                          <h2 className="text-xl font-bold text-gray-900 mb-3">
                             {primaryCourse.courses?.title || 'Course'}
                           </h2>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">Course Progress</span>
-                              <span className="text-primary font-medium">
+                              <span className="text-gray-500">Course Progress</span>
+                              <span className="text-gray-700 font-medium">
                                 {primaryCourse.progressPercentage}% ({primaryCourse.completedStages}/{primaryCourse.totalStages} lessons)
                               </span>
                             </div>
-                            <Progress value={primaryCourse.progressPercentage} className="h-2" />
+                            <Progress value={primaryCourse.progressPercentage} className="h-2 bg-gray-100" />
                           </div>
                         </>
                       ) : (
                         <>
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
-                            NO COURSE ASSIGNED
-                          </span>
-                          <h2 className="text-xl font-semibold text-foreground mb-2">
+                          <Badge className="bg-gray-100 text-gray-600 border-0 px-2.5 py-0.5 text-xs font-medium mb-2">
+                            No Course Assigned
+                          </Badge>
+                          <h2 className="text-xl font-bold text-gray-900 mb-2">
                             Get Started with Your Interview Prep
                           </h2>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-gray-500">
                             Browse available courses to begin your journey.
                           </p>
                         </>
@@ -439,7 +440,7 @@ const UserDashboard = () => {
                     
                     <Button 
                       size="lg" 
-                      className="bg-primary hover:bg-primary/90 text-white px-6"
+                      className="bg-primary hover:bg-primary/90 text-white px-6 rounded-xl shadow-sm"
                       onClick={courseButton.action}
                     >
                       <courseButton.icon className="w-4 h-4 mr-2" />
@@ -704,7 +705,7 @@ const UserDashboard = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © 2025 Source Edge Database. All rights reserved.
+          © 2026 Source Edge Database. All rights reserved.
         </div>
       </footer>
 
