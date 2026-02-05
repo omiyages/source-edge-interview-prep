@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 // Lazy load non-critical components
 const ResourcesPreview = React.lazy(() => import("@/components/ResourcesPreview").then(module => ({ default: module.ResourcesPreview })));
+const FeaturedCoursesPreview = React.lazy(() => import("@/components/FeaturedCoursesPreview").then(module => ({ default: module.FeaturedCoursesPreview })));
 const QuestionsSection = React.lazy(() => import("@/components/QuestionsSection").then(module => ({ default: module.QuestionsSection })));
 
 const Index = () => {
@@ -69,6 +70,26 @@ const Index = () => {
             resources={resources}
             loading={resourcesLoading}
           />
+        </Suspense>
+
+        <Suspense fallback={
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-48 mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl overflow-hidden">
+                  <div className="h-40 bg-muted"></div>
+                  <div className="p-5 space-y-3">
+                    <div className="h-4 bg-muted rounded w-24"></div>
+                    <div className="h-5 bg-muted rounded w-full"></div>
+                    <div className="h-4 bg-muted rounded w-32"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        }>
+          <FeaturedCoursesPreview enabled={shouldFetchData} />
         </Suspense>
 
         <Suspense fallback={
