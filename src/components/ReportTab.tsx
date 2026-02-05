@@ -83,8 +83,26 @@ const CHART_COLORS = [
 
 // Colors matching the mockup
 const DONUT_COLORS = ['#6366f1', '#22d3ee', '#22c55e', '#f59e0b'];
-const BAR_COLORS = { primary: '#6366f1', secondary: '#a5b4fc' };
 const LINE_COLOR = '#6366f1';
+
+// Company-specific colors for bar charts
+const COMPANY_COLORS: Record<string, string> = {
+  'Woven': '#78350f', // Dark brown for Woven
+  'LexxPluss': '#6366f1', // Indigo for LexxPluss
+  'Lexxpluss': '#6366f1', // Handle case variation
+  'default_primary': '#6366f1',
+  'default_secondary': '#a5b4fc',
+};
+
+// Helper to get company color
+const getCompanyColor = (company: string, index: number): string => {
+  if (COMPANY_COLORS[company]) {
+    return COMPANY_COLORS[company];
+  }
+  // Fallback colors for other companies
+  const fallbackColors = ['#6366f1', '#a5b4fc', '#22c55e', '#f59e0b', '#ef4444'];
+  return fallbackColors[index % fallbackColors.length];
+};
 
 export const ReportTab: React.FC = () => {
   const { toast } = useToast();
@@ -401,15 +419,58 @@ export const ReportTab: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 print:space-y-4" id="report-content">
-      {/* Print Styles */}
+    <div className="space-y-6 print:space-y-1" id="report-content">
+      {/* Print Styles - Optimized for single page */}
       <style>{`
         @media print {
+          @page { 
+            size: A4 landscape; 
+            margin: 8mm;
+          }
           body * { visibility: hidden; }
+          body { font-size: 9px !important; }
           #report-content, #report-content * { visibility: visible; }
-          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          #report-content { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            padding: 0 !important;
+          }
           .no-print { display: none !important; }
           .print\\:break-inside-avoid { break-inside: avoid; }
+          
+          /* Reduce all spacing */
+          #report-content > div { margin-bottom: 4px !important; gap: 4px !important; }
+          #report-content .space-y-6 { gap: 4px !important; }
+          
+          /* Compact cards */
+          #report-content [class*="CardContent"] { padding: 6px !important; }
+          #report-content [class*="CardHeader"] { padding: 6px !important; padding-bottom: 2px !important; }
+          
+          /* Reduce chart heights */
+          #report-content .recharts-wrapper { max-height: 120px !important; }
+          #report-content .recharts-responsive-container { height: 120px !important; max-height: 120px !important; }
+          
+          /* Smaller text for print */
+          #report-content h2 { font-size: 14px !important; margin-bottom: 4px !important; }
+          #report-content [class*="CardTitle"] { font-size: 10px !important; }
+          #report-content p, #report-content span, #report-content td, #report-content th { font-size: 8px !important; }
+          #report-content .text-3xl { font-size: 16px !important; }
+          #report-content .text-2xl { font-size: 14px !important; }
+          
+          /* Tables - more compact */
+          #report-content table { font-size: 7px !important; }
+          #report-content th, #report-content td { padding: 2px 4px !important; }
+          #report-content .max-h-\\[250px\\] { max-height: 80px !important; overflow: hidden !important; }
+          
+          /* Grid gaps */
+          #report-content .grid { gap: 6px !important; }
+          #report-content .gap-6 { gap: 6px !important; }
+          #report-content .gap-4 { gap: 4px !important; }
+          
+          /* Hide stage counts section to save space */
+          #report-content .mt-4.flex.justify-between { display: none !important; }
         }
       `}</style>
 
@@ -620,7 +681,7 @@ export const ReportTab: React.FC = () => {
                     </Pie>
                     <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
                       <tspan x="50%" dy="-0.3em" className="text-2xl font-bold fill-current">{summaryData.total}</tspan>
-                      <tspan x="50%" dy="1.4em" className="text-xs fill-muted-foreground">TOTAL ROLES</tspan>
+                      <tspan x="50%" dy="1.4em" className="text-xs fill-muted-foreground">Total Candidates</tspan>
                     </text>
                   </PieChart>
                 </ResponsiveContainer>
@@ -650,11 +711,11 @@ export const ReportTab: React.FC = () => {
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-base font-semibold">Users by Stage & Company</CardTitle>
             <div className="flex items-center gap-4 text-xs">
-              {companies.slice(0, 2).map((company, index) => (
+              {companies.slice(0, 3).map((company, index) => (
                 <div key={company} className="flex items-center gap-1">
                   <div 
                     className="w-3 h-3 rounded" 
-                    style={{ backgroundColor: index === 0 ? BAR_COLORS.primary : BAR_COLORS.secondary }}
+                    style={{ backgroundColor: getCompanyColor(company, index) }}
                   />
                   <span>{company}</span>
                 </div>
@@ -672,11 +733,11 @@ export const ReportTab: React.FC = () => {
                 />
                 <YAxis hide />
                 <Tooltip />
-                {companies.slice(0, 2).map((company, index) => (
+                {companies.slice(0, 3).map((company, index) => (
                   <Bar
                     key={company}
                     dataKey={company}
-                    fill={index === 0 ? BAR_COLORS.primary : BAR_COLORS.secondary}
+                    fill={getCompanyColor(company, index)}
                     radius={[4, 4, 0, 0]}
                   />
                 ))}

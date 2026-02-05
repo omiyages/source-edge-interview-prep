@@ -189,22 +189,25 @@
 /* Print Styles for Reports Dashboard */
 @media print {
   /* Hide navigation and non-essential elements */
-  nav, header, aside, .no-print {
+  nav, header, aside, .no-print, [class*="Sidebar"], [class*="sidebar"] {
     display: none !important;
   }
 
-  /* Reset page margins */
+  /* Reset page margins - optimized for single page */
   @page {
     size: A4 landscape;
-    margin: 15mm;
+    margin: 6mm;
   }
 
-  /* Ensure content fits on page */
-  body {
-    font-size: 12px;
+  /* Ensure content fits on single page */
+  html, body {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+    overflow: visible !important;
+    height: auto !important;
   }
 
   /* Preserve background colors and shadows in print */
@@ -212,6 +215,7 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+    box-shadow: none !important;
   }
 
   /* Cards should not break across pages */
@@ -220,7 +224,7 @@
     page-break-inside: avoid;
   }
 
-  /* Ensure charts are visible */
+  /* Ensure charts are visible but compact */
   .recharts-wrapper {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -228,12 +232,46 @@
 
   /* Adjust table styles for print */
   table {
-    font-size: 11px;
+    font-size: 8px !important;
   }
 
   /* Ensure badges print correctly */
   [class*="Badge"], .badge {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* Reduce padding globally */
+  .p-4, .p-6 {
+    padding: 4px !important;
+  }
+  
+  .px-4, .px-6 {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+  
+  .py-4, .py-6 {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Reduce margins and gaps */
+  .space-y-6 > * + * {
+    margin-top: 4px !important;
+  }
+  
+  .gap-6 {
+    gap: 6px !important;
+  }
+  
+  .gap-4 {
+    gap: 4px !important;
+  }
+
+  /* Main content should fill page */
+  main, [role="main"] {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
