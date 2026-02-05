@@ -122,7 +122,10 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
   if (error) {
     return (
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-foreground mb-6">Interview Questions</h2>
+        <div className="mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">Interview Questions</h2>
+          <p className="text-muted-foreground">Real-life interview questions based on previous candidates' experiences, carefully tailored and curated.</p>
+        </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-600">Failed to load questions: {error}</p>
         </div>
@@ -132,7 +135,10 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
 
   return (
     <section className="mb-12">
-      <h2 className="text-2xl font-semibold text-foreground mb-6">Interview Questions</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">Interview Questions</h2>
+        <p className="text-muted-foreground">Real-life interview questions based on previous candidates' experiences, carefully tailored and curated.</p>
+      </div>
       
       <div className="mb-6">
         <QuestionFilters
