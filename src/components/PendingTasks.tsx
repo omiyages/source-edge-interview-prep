@@ -64,7 +64,7 @@ export const PendingTasks: React.FC = () => {
       // Use a simple query without any joins
       const { data: tasksData, error: tasksError } = await supabase
         .from('admin_notes')
-        .select('id, user_id, note, note_type, created_by, created_at, due_date, is_completed')
+        .select('id, user_id, content, note_type, created_by, created_at, due_date, is_completed')
         .eq('note_type', 'todo')
         .order('created_at', { ascending: false });
 

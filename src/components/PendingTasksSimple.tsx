@@ -62,7 +62,7 @@ export const PendingTasksSimple: React.FC = () => {
       // Simple query - just get tasks without any user joins
       const { data, error } = await supabase
         .from('admin_notes')
-        .select('id, user_id, note, note_type, created_by, created_at, due_date, is_completed')
+        .select('id, user_id, content, note_type, created_by, created_at, due_date, is_completed')
         .eq('note_type', 'todo')
         .order('created_at', { ascending: false });
 
