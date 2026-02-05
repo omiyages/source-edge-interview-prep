@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { slugify } from "@/utils/slugify";
 
 interface Course {
   id: string;
@@ -38,61 +37,64 @@ interface InterviewQuestion {
 }
 
 export const useCourseData = (slug: string | undefined, user: any) => {
-  const { data: course, refetch: refetchCourse, isLoading: isLoadingCourse } = useQuery({
-    queryKey: ['course', slug],
+  // Fetch course AND stages together using direct slug lookup
+  const { data: courseData, refetch: refetchCourseData, isLoading: isLoadingCourse } = useQuery({
+    queryKey: ['course-with-stages', slug],
     queryFn: async () => {
-      console.log('🔄 Fetching course with slug:', slug);
+      console.log('🔄 Fetching course with stages for slug:', slug);
       
-      // First get all courses to find the one with matching slug
-      const { data: courses, error } = await supabase
+      // Direct lookup by slug - much faster than fetching all courses
+      const { data: course, error } = await supabase
         .from('courses')
-        .select('*');
+        .select(`
+          id,
+          title,
+          description,
+          company,
+          attached_jobs,
+          created_at,
+          course_stages (
+            id,
+            title,
+            description,
+            information,
+            stage_order
+          )
+        `)
+        .eq('slug', slug)
+        .order('stage_order', { referencedTable: 'course_stages' })
+        .maybeSingle();
       
       if (error) {
-        console.error('❌ Error fetching courses:', error);
+        console.error('❌ Error fetching course:', error);
         throw error;
       }
-      
-      // Find course by matching slug
-      const course = courses?.find(c => slugify(c.title) === slug);
       
       if (!course) {
         throw new Error('Course not found');
       }
       
-      console.log('✅ Course fetched:', course);
-      return course as Course;
+      // Extract stages and sort them
+      const stages = (course.course_stages || []).sort((a, b) => a.stage_order - b.stage_order);
+      
+      console.log('✅ Course and stages fetched:', course.title, stages.length, 'stages');
+      
+      // Return course without the nested stages (to match expected interface)
+      const { course_stages, ...courseWithoutStages } = course;
+      return {
+        course: courseWithoutStages as Course,
+        stages: stages as CourseStage[]
+      };
     },
     enabled: !!user && !!slug,
-  });
-
-  const { data: stages, refetch: refetchStages } = useQuery({
-    queryKey: ['course-stages', course?.id],
-    queryFn: async () => {
-      if (!course?.id) return [];
-      
-      console.log('🔄 Fetching stages for course:', course.id);
-      const { data, error } = await supabase
-        .from('course_stages')
-        .select('*')
-        .eq('course_id', course.id)
-        .order('stage_order');
-      
-      if (error) {
-        console.error('❌ Error fetching stages:', error);
-        throw error;
-      }
-      console.log('✅ Stages fetched:', data?.length || 0);
-      return data as CourseStage[];
-    },
-    enabled: !!user && !!course?.id,
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   return {
-    course,
-    stages,
-    refetchCourse,
-    refetchStages,
+    course: courseData?.course,
+    stages: courseData?.stages,
+    refetchCourse: refetchCourseData,
+    refetchStages: refetchCourseData,
     isLoadingCourse,
   };
 };
@@ -133,7 +135,7 @@ export const useUserProgress = (user: any, courseId: string | undefined) => {
       
       const { data, error } = await supabase
         .from('user_progress')
-        .select('*')
+        .select('id, stage_id, completed_at')
         .eq('user_id', user.id)
         .eq('course_id', courseId);
       
@@ -144,6 +146,7 @@ export const useUserProgress = (user: any, courseId: string | undefined) => {
       return data;
     },
     enabled: !!user && !!courseId,
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   return { userProgress };

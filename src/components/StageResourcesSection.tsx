@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Plus, Settings2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface Resource {
   id: string;
@@ -40,7 +40,10 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
     },
   });
 
-  // Set up real-time subscription for stage resources
+  // Debounce timer ref for real-time updates
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Set up real-time subscription for stage resources with debouncing
   useEffect(() => {
     console.log('Setting up real-time subscription for stage resources:', stageId);
     
@@ -56,13 +59,22 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
         },
         (payload) => {
           console.log('Stage resources changed:', payload);
-          refetch();
+          // Debounce the update to prevent rapid refetches
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+          }
+          debounceTimerRef.current = setTimeout(() => {
+            refetch();
+          }, 300);
         }
       )
       .subscribe();
 
     return () => {
       console.log('Cleaning up real-time subscription for stage resources');
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
   }, [stageId, refetch]);
@@ -112,12 +124,12 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
         ) : (
           <div className="space-y-3">
             {stageResources.map((resource) => (
-              <div
-                key={resource.id}
+                        <div
+                          key={resource.id}
                 className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow bg-white shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge 
                         variant="secondary"
@@ -127,21 +139,21 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
                       </Badge>
                     </div>
                     <h5 className="font-semibold text-sm mb-1 text-foreground">{resource.title}</h5>
-                    {resource.description && (
+                              {resource.description && (
                       <p className="text-sm text-muted-foreground mb-2">{resource.description}</p>
-                    )}
-                  </div>
-                  <a
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                              )}
+                            </div>
+                            <a
+                              href={resource.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
                     className="flex-shrink-0 p-2 text-muted-foreground hover:text-foreground rounded-md transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              </div>
-            ))}
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
           </div>
         )}
       </CardContent>

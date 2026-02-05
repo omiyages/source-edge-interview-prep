@@ -305,7 +305,7 @@ const Relo = () => {
         const resourceIds = pageResources.map(pr => pr.resource_id);
         const { data, error } = await supabase
           .from('resources')
-          .select('*')
+          .select('id, title, description, url, category, created_at')
           .in('id', resourceIds)
           .order('created_at', { ascending: false });
 

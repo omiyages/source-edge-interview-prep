@@ -52,7 +52,7 @@ export const EditCourseForm = ({ course, onSuccess }: EditCourseFormProps) => {
     try {
       const { data, error } = await supabase
         .from('course_stages')
-        .select('*')
+        .select('id, course_id, title, description, information, stage_order, created_at')
         .eq('course_id', course.id)
         .order('stage_order');
       

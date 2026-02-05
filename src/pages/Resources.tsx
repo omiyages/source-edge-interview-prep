@@ -53,7 +53,7 @@ const Resources = () => {
 
       const { data, error } = await supabase
         .from('resources')
-        .select('*')
+        .select('id, title, description, url, category, created_at')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -174,11 +174,11 @@ const Resources = () => {
         <NavigationHeader />
         <div className="container mx-auto px-4 py-8 flex-1">
         <ResourcesHeader 
-          isAdmin={isAdmin}
-          createDialogOpen={createDialogOpen}
-          onCreateDialogOpenChange={setCreateDialogOpen}
-          onCreateSuccess={handleCreateSuccess}
-        />
+            isAdmin={isAdmin}
+            createDialogOpen={createDialogOpen}
+            onCreateDialogOpenChange={setCreateDialogOpen}
+            onCreateSuccess={handleCreateSuccess}
+          />
         <ResourcesFilters
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
@@ -187,7 +187,7 @@ const Resources = () => {
           resources={resources}
         />
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="p-4 rounded-lg border">
                 <LoadingSkeleton lines={1} className="mb-2" />

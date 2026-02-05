@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +40,12 @@ const KANBAN_STAGES = [
   { id: 'Offer', title: 'Offer', color: 'bg-green-100 text-green-800' },
   { id: 'Offer Accepted', title: 'Offer Accepted', color: 'bg-emerald-100 text-emerald-800' },
 ];
+
+// Extracted constant style to prevent re-creation on each render
+const DROPPABLE_STYLE = { 
+  maxHeight: 'calc(100vh - 300px)',
+  minHeight: '200px'
+};
 
 export const KanbanBoard: React.FC = () => {
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
@@ -498,8 +504,8 @@ export const KanbanBoard: React.FC = () => {
     return value;
   };
 
-  // Filter users based on current filter settings
-  const filterUsers = (users: KanbanUser[]) => {
+  // Filter users based on current filter settings - memoized with useCallback
+  const filterUsers = useCallback((users: KanbanUser[]) => {
     return users.filter(user => {
       // Search term filter
       if (filters.searchTerm) {
@@ -576,15 +582,15 @@ export const KanbanBoard: React.FC = () => {
 
       return true;
     });
-  };
+  }, [filters]);
 
-  // Apply filters to columns
-  const getFilteredColumns = () => {
+  // Apply filters to columns - memoized to prevent recalculation on every render
+  const filteredColumns = useMemo(() => {
     return columns.map(column => ({
       ...column,
       users: filterUsers(column.users)
     }));
-  };
+  }, [columns, filterUsers]);
 
   if (loading) {
     return (
@@ -828,7 +834,7 @@ export const KanbanBoard: React.FC = () => {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {getFilteredColumns().map((column) => {
+          {filteredColumns.map((column) => {
             const stageConfig = KANBAN_STAGES.find(s => s.id === column.id);
             return (
               <div key={column.id} className="flex-shrink-0 w-80">
@@ -850,10 +856,7 @@ export const KanbanBoard: React.FC = () => {
                           className={`h-full overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 ${
                             snapshot.isDraggingOver ? 'bg-muted/50 rounded-md' : ''
                           }`}
-                          style={{ 
-                            maxHeight: 'calc(100vh - 300px)',
-                            minHeight: '200px'
-                          }}
+                          style={DROPPABLE_STYLE}
                         >
                           {column.users.map((user, index) => (
                             <Draggable
@@ -910,18 +913,18 @@ export const KanbanBoard: React.FC = () => {
                                           <RotateCcw className="w-3 h-3" />
                                         </Button>
                                       ) : (
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRejectUser(user.user_id, user.email);
-                                          }}
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRejectUser(user.user_id, user.email);
+                                        }}
                                           title="Reject user"
-                                        >
-                                          <X className="w-3 h-3" />
-                                        </Button>
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </Button>
                                       )}
                                     </div>
                                   </div>

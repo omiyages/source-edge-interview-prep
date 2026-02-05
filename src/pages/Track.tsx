@@ -38,7 +38,7 @@ const Track = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('courses')
-        .select('*')
+        .select('id, title, description, company, created_at')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -58,9 +58,9 @@ const Track = () => {
       <div className="min-h-screen bg-gray-50">
         <NavigationHeader />
         <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-foreground font-semibold">Loading...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-foreground font-semibold">Loading...</p>
           </div>
         </div>
       </div>

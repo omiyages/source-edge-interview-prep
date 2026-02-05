@@ -8,11 +8,13 @@ const sanitizeConfig = {
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 
     'code', 'pre', 'span', 'div', 'img', 'kbd', 'samp', 'var'
   ],
-  ALLOWED_ATTR: ['class', 'style', 'src', 'alt', 'width', 'height', 'data-*'],
-  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
-  FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link', 'meta', 'iframe'],
-  ALLOW_DATA_ATTR: true,
-  ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+  // Removed 'style' to prevent CSS injection attacks
+  ALLOWED_ATTR: ['class', 'src', 'alt', 'width', 'height'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
+  FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link', 'meta', 'iframe', 'form', 'input'],
+  ALLOW_DATA_ATTR: false, // Disabled data attributes for stricter security
+  // Stricter URI regexp - only allow http(s) and blob for images
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|blob):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
 };
 
 export const sanitizeHtml = (html: string): string => {

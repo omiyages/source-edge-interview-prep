@@ -45,7 +45,7 @@ export const CopyCourseForm = ({ onSuccess }: CopyCourseFormProps) => {
     try {
       const { data, error } = await supabase
         .from('courses')
-        .select('*')
+        .select('id, title, description, company, created_at')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -68,7 +68,7 @@ export const CopyCourseForm = ({ onSuccess }: CopyCourseFormProps) => {
       // Fetch stages for the selected course
       const { data: stages, error } = await supabase
         .from('course_stages')
-        .select('*')
+        .select('id, course_id, title, description, information, stage_order')
         .eq('course_id', course.id)
         .order('stage_order');
       

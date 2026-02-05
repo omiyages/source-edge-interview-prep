@@ -25,7 +25,7 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, email, role, is_active')
         .eq('role', 'user')
         .eq('is_active', true);
       
@@ -48,7 +48,7 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('courses')
-        .select('*')
+        .select('id, title, description')
         .order('title');
       
       if (error) throw error;

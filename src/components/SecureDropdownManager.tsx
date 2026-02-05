@@ -41,7 +41,7 @@ export const SecureDropdownManager: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('dropdown_options')
-        .select('*')
+        .select('id, field_name, value, created_at')
         .order('field_name', { ascending: true })
         .order('value', { ascending: true });
 

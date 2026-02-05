@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuestions } from "@/hooks/useQuestions";
 import { NavigationHeader } from "@/components/NavigationHeader";
@@ -8,13 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { QuestionDetailDialog } from "@/components/QuestionDetailDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EditQuestionForm } from "@/components/EditQuestionForm";
+import type { InterviewQuestion } from "@/services/questionsService";
 import { Search, Shuffle } from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
 
 const Questions = () => {
   const { isAdmin, user } = useAuth();
-  const { questions, loading, error } = useQuestions(isAdmin, !!user);
+  const { questions, loading, error, refetch } = useQuestions(isAdmin, !!user);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,6 +29,8 @@ const Questions = () => {
     stage: [] as string[],
   });
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
+  const [editQuestion, setEditQuestion] = useState<InterviewQuestion | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Scroll to top when navigating to this page
   useEffect(() => {
@@ -119,21 +124,26 @@ const Questions = () => {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const displayedQuestions = filteredAndSortedQuestions.slice(startIndex, endIndex);
 
-  const handlePickRandom = () => {
+  const handleOpenEditFromDialog = useCallback((question: InterviewQuestion) => {
+    setEditQuestion(question);
+    setEditDialogOpen(true);
+  }, []);
+
+  const handlePickRandom = useCallback(() => {
     if (filteredAndSortedQuestions.length === 0) return;
     const randomIndex = Math.floor(Math.random() * filteredAndSortedQuestions.length);
     const page = Math.floor(randomIndex / ITEMS_PER_PAGE) + 1;
     const indexInPage = randomIndex % ITEMS_PER_PAGE;
     setCurrentPage(page);
     setSelectedQuestionIndex(indexInPage);
-  };
+  }, [filteredAndSortedQuestions.length]);
 
-  const handleFilterChange = (filterType: string, values: string[]) => {
+  const handleFilterChange = useCallback((filterType: string, values: string[]) => {
     setFilters(prev => ({ ...prev, [filterType]: values }));
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
       company: [],
       category: [],
@@ -142,15 +152,15 @@ const Questions = () => {
     });
     setSearchTerm("");
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
-  // Get unique values for filters
-  const getUniqueCompanies = () => {
+  // Memoize unique values for filters to prevent recalculation on every render
+  const uniqueCompanies = useMemo(() => {
     const companies = questions?.map(q => q.company).filter(Boolean) || [];
     const counts: Record<string, number> = {};
     companies.forEach(company => {
@@ -159,14 +169,14 @@ const Questions = () => {
     return Object.entries(counts)
       .map(([company, count]) => ({ company, count }))
       .sort((a, b) => b.count - a.count);
-  };
+  }, [questions]);
 
-  const getUniqueCategories = () => {
+  const uniqueCategories = useMemo(() => {
     const categories = questions?.map(q => q.category).filter(Boolean) || [];
     return [...new Set(categories)].sort();
-  };
+  }, [questions]);
 
-  const getUniqueRoles = () => {
+  const uniqueRoles = useMemo(() => {
     const roles = questions?.map(q => q.role).filter(Boolean) || [];
     const counts: Record<string, number> = {};
     roles.forEach(role => {
@@ -175,9 +185,9 @@ const Questions = () => {
     return Object.entries(counts)
       .map(([role, count]) => ({ role, count }))
       .sort((a, b) => b.count - a.count);
-  };
+  }, [questions]);
 
-  const getUniqueStages = () => {
+  const uniqueStages = useMemo(() => {
     const stages = questions?.map(q => q.interview_stage).filter(Boolean) || [];
     const counts: Record<string, number> = {};
     stages.forEach(stage => {
@@ -186,7 +196,7 @@ const Questions = () => {
     return Object.entries(counts)
       .map(([stage, count]) => ({ stage, count }))
       .sort((a, b) => b.count - a.count);
-  };
+  }, [questions]);
 
   if (error) {
     return (
@@ -212,10 +222,10 @@ const Questions = () => {
               filters={filters}
               onFilterChange={handleFilterChange}
               onClearFilters={handleClearFilters}
-              companies={getUniqueCompanies()}
-              categories={getUniqueCategories()}
-              roles={getUniqueRoles()}
-              stages={getUniqueStages()}
+              companies={uniqueCompanies}
+              categories={uniqueCategories}
+              roles={uniqueRoles}
+              stages={uniqueStages}
             />
           </aside>
 
@@ -306,6 +316,8 @@ const Questions = () => {
                 (selectedQuestionIndex < displayedQuestions.length - 1 ||
                   currentPage < totalPages)
               }
+              showEditButton={isAdmin}
+              onEditQuestion={handleOpenEditFromDialog}
             />
 
             {/* Pagination */}
@@ -368,6 +380,24 @@ const Questions = () => {
           </main>
         </div>
       </div>
+
+      {/* Edit Question Dialog (admin only) */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Question</DialogTitle>
+          </DialogHeader>
+          {editQuestion && (
+            <EditQuestionForm
+              question={editQuestion}
+              onSuccess={() => {
+                setEditDialogOpen(false);
+                refetch();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <footer className="bg-white border-t border-border/30 mt-auto py-6">

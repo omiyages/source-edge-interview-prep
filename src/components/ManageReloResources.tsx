@@ -26,7 +26,7 @@ export const ManageReloResources = ({ onSuccess }: { onSuccess?: () => void }) =
       console.log('🔍 Fetching all resources for Relo page management...');
       const { data, error } = await supabase
         .from('resources')
-        .select('*')
+        .select('id, title, description, url, category, created_at')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -287,4 +287,7 @@ export const ManageReloResources = ({ onSuccess }: { onSuccess?: () => void }) =
     </div>
   );
 };
+
+
+
 

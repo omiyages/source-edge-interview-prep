@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,12 +19,21 @@ import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
 import { BulkUserCreation } from "@/components/BulkUserCreation";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { KanbanBoard } from "@/components/KanbanBoard";
-import { UpcomingInterviews } from "@/components/UpcomingInterviews";
-import { PendingTasks } from "@/components/PendingTasks";
-import { ReportTab } from "@/components/ReportTab";
-import { ManageReloResources } from "@/components/ManageReloResources";
 import { NavigationHeader } from "@/components/NavigationHeader";
+
+// Lazy load heavy tab components to reduce initial bundle
+const KanbanBoard = lazy(() => import("@/components/KanbanBoard").then(m => ({ default: m.KanbanBoard })));
+const UpcomingInterviews = lazy(() => import("@/components/UpcomingInterviews").then(m => ({ default: m.UpcomingInterviews })));
+const PendingTasks = lazy(() => import("@/components/PendingTasks").then(m => ({ default: m.PendingTasks })));
+const ReportTab = lazy(() => import("@/components/ReportTab").then(m => ({ default: m.ReportTab })));
+const ManageReloResources = lazy(() => import("@/components/ManageReloResources").then(m => ({ default: m.ManageReloResources })));
+
+// Loading fallback for lazy components
+const TabLoader = () => (
+  <div className="flex items-center justify-center py-8">
+    <LoadingSkeleton className="w-full h-64" />
+  </div>
+);
 
 interface InterviewQuestion {
   id: string;
@@ -74,7 +83,7 @@ const AdminDashboard = () => {
       console.log('📥 Fetching pending questions...');
       const { data, error } = await supabase
         .from('interview_questions')
-        .select('*')
+        .select('id, question, company, role, interview_stage, category, submitted_by, additional_context, created_at, question_type, source_url, source_website, scraped_at, status, approved_by, approved_at')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       
@@ -96,7 +105,7 @@ const AdminDashboard = () => {
       console.log('📥 Fetching all questions...');
       const { data, error } = await supabase
         .from('interview_questions')
-        .select('*')
+        .select('id, question, company, role, interview_stage, category, submitted_by, additional_context, created_at, question_type, source_url, source_website, scraped_at, status, approved_by, approved_at')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -152,10 +161,10 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-gray-50">
         <NavigationHeader />
         <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-foreground font-semibold">Loading admin dashboard...</p>
-            <p className="text-sm text-muted-foreground mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground font-semibold">Loading admin dashboard...</p>
+          <p className="text-sm text-muted-foreground mt-2">Auth loading: {authLoading ? 'true' : 'false'}</p>
           </div>
         </div>
       </div>
@@ -173,10 +182,10 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-gray-50">
         <NavigationHeader />
         <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-foreground font-semibold">Loading user profile...</p>
-            <p className="text-sm text-muted-foreground mt-2">User: {user.email}</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground font-semibold">Loading user profile...</p>
+          <p className="text-sm text-muted-foreground mt-2">User: {user.email}</p>
           </div>
         </div>
       </div>
@@ -302,19 +311,27 @@ const AdminDashboard = () => {
               </TabsList>
 
               <TabsContent value="kanban">
-                <KanbanBoard />
+                <Suspense fallback={<TabLoader />}>
+                  <KanbanBoard />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="report">
-                <ReportTab />
+                <Suspense fallback={<TabLoader />}>
+                  <ReportTab />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="upcoming-interviews">
-                <UpcomingInterviews />
+                <Suspense fallback={<TabLoader />}>
+                  <UpcomingInterviews />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="pending-tasks">
-                <PendingTasks />
+                <Suspense fallback={<TabLoader />}>
+                  <PendingTasks />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="users-list">
@@ -495,7 +512,9 @@ const AdminDashboard = () => {
                       Select which resources should be displayed on the Relocation to Tokyo Guide page.
                     </p>
                   </div>
-                  <ManageReloResources onSuccess={() => {}} />
+                  <Suspense fallback={<TabLoader />}>
+                    <ManageReloResources onSuccess={() => {}} />
+                  </Suspense>
                 </div>
               </TabsContent>
             </Tabs>

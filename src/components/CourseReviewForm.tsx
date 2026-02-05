@@ -70,7 +70,7 @@ export const CourseReviewForm = ({ courseId, stages, onReviewSubmitted }: Course
 
       const { data, error } = await supabase
         .from('course_reviews')
-        .select('*')
+        .select('id, user_id, course_id, overall_rating, stage_ratings, comments, would_recommend, created_at, updated_at')
         .eq('user_id', user.id)
         .eq('course_id', courseId)
         .maybeSingle();

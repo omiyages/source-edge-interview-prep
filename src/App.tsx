@@ -1,7 +1,7 @@
 
 // ABOUTME: Main application component with simplified routing and proper error handling
 // ABOUTME: Fixed routing to prevent blank pages and ensure proper authentication flow
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,21 +13,31 @@ import { queryClient } from "@/lib/queryClient";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SessionTracker } from "@/components/SessionTracker";
 import { TIMEZONE_CONFIG } from "@/config/timezone";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-// Import components directly
-import Index from "./pages/Index";
+// Critical path components - imported directly for fast initial load
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import PublicSignup from "./pages/PublicSignup";
-import AdminDashboard from "./pages/AdminDashboard";
-import Resources from "./pages/Resources";
-import CourseDetail from "./pages/CourseDetail";
-import Track from "./pages/Track";
-import UserDashboard from "./pages/UserDashboard";
-import Companies from "./pages/Companies";
-import CompanyDetail from "./pages/CompanyDetail";
-import Relo from "./pages/Relo";
-import Questions from "./pages/Questions";
+
+// Lazy loaded components - reduces initial bundle size
+const Index = lazy(() => import("./pages/Index"));
+const Track = lazy(() => import("./pages/Track"));
+const UserDashboard = lazy(() => import("./pages/UserDashboard"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Resources = lazy(() => import("./pages/Resources"));
+const CourseDetail = lazy(() => import("./pages/CourseDetail"));
+const Companies = lazy(() => import("./pages/Companies"));
+const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
+const Relo = lazy(() => import("./pages/Relo"));
+const Questions = lazy(() => import("./pages/Questions"));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <LoadingSpinner size="lg" />
+  </div>
+);
 
 function App() {
   // Initialize timezone settings
@@ -64,7 +74,9 @@ function App() {
                 path="/" 
                 element={
                   <ProtectedRoute>
-                    <Index />
+                    <Suspense fallback={<PageLoader />}>
+                      <Index />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -72,7 +84,9 @@ function App() {
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
-                    <UserDashboard />
+                    <Suspense fallback={<PageLoader />}>
+                      <UserDashboard />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -80,7 +94,9 @@ function App() {
                 path="/admin" 
                 element={
                   <ProtectedRoute requireAdmin={true}>
-                    <AdminDashboard />
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminDashboard />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -88,7 +104,9 @@ function App() {
                 path="/resources" 
                 element={
                   <ProtectedRoute>
-                    <Resources />
+                    <Suspense fallback={<PageLoader />}>
+                      <Resources />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -96,7 +114,9 @@ function App() {
                 path="/course/:slug" 
                 element={
                   <ProtectedRoute>
-                    <CourseDetail />
+                    <Suspense fallback={<PageLoader />}>
+                      <CourseDetail />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -104,7 +124,9 @@ function App() {
                 path="/tracks" 
                 element={
                   <ProtectedRoute>
-                    <Track />
+                    <Suspense fallback={<PageLoader />}>
+                      <Track />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -112,7 +134,9 @@ function App() {
                 path="/company" 
                 element={
                   <ProtectedRoute>
-                    <Companies />
+                    <Suspense fallback={<PageLoader />}>
+                      <Companies />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -120,7 +144,9 @@ function App() {
                 path="/company/:companyId" 
                 element={
                   <ProtectedRoute>
-                    <CompanyDetail />
+                    <Suspense fallback={<PageLoader />}>
+                      <CompanyDetail />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -128,7 +154,9 @@ function App() {
                 path="/relo" 
                 element={
                   <ProtectedRoute>
-                    <Relo />
+                    <Suspense fallback={<PageLoader />}>
+                      <Relo />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />
@@ -136,7 +164,9 @@ function App() {
                 path="/questions" 
                 element={
                   <ProtectedRoute>
-                    <Questions />
+                    <Suspense fallback={<PageLoader />}>
+                      <Questions />
+                    </Suspense>
                   </ProtectedRoute>
                 } 
               />

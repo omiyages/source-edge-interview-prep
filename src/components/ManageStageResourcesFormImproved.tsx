@@ -28,7 +28,7 @@ export const ManageStageResourcesFormImproved = ({ stageId, onSuccess }: ManageS
       console.log('🔍 Fetching all resources for stage management...');
       const { data, error } = await supabase
         .from('resources')
-        .select('*')
+        .select('id, title, description, url, category, created_at')
         .order('created_at', { ascending: false });
       
       if (error) {

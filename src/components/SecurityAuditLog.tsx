@@ -39,7 +39,7 @@ export const SecurityAuditLog: React.FC = () => {
 
       let query = supabase
         .from('security_audit_log')
-        .select('*')
+        .select('id, event_type, user_id, user_email, ip_address, user_agent, details, created_at')
         .order('created_at', { ascending: false });
 
       // Apply time filter

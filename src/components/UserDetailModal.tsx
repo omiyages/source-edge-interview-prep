@@ -170,7 +170,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       // Load admin notes
       const { data: notes, error: notesError } = await supabase
         .from('admin_notes')
-        .select('*')
+        .select('id, user_id, note, note_type, created_by, created_at, due_date, is_completed')
         .eq('user_id', user.user_id)
         .order('created_at', { ascending: false });
 
@@ -185,7 +185,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       // Load stage transitions
       const { data: transitions, error: transitionsError } = await supabase
         .from('stage_transitions')
-        .select('*')
+        .select('id, user_id, from_stage, to_stage, transitioned_at, transitioned_by')
         .eq('user_id', user.user_id)
         .order('transitioned_at', { ascending: false });
 
@@ -198,7 +198,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       // Load interviews
       const { data: interviewData, error: interviewError } = await supabase
         .from('interviews')
-        .select('*')
+        .select('id, user_id, interview_type, scheduled_date, status, notes, created_at')
         .eq('user_id', user.user_id)
         .order('scheduled_date', { ascending: false });
 

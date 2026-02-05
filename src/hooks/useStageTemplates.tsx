@@ -32,7 +32,7 @@ export const useStageTemplates = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stage_templates")
-        .select("*")
+        .select("id, name, title, description, information, created_at")
         .order("name");
 
       if (error) throw error;
