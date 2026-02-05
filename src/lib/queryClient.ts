@@ -6,8 +6,8 @@ export const queryClient = new QueryClient({
     queries: {
       // Cache data for 5 minutes by default
       staleTime: 5 * 60 * 1000, // 5 minutes
-      // Keep data in cache for 10 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      // Keep data in garbage collection for 10 minutes (gcTime replaces deprecated cacheTime)
+      gcTime: 10 * 60 * 1000, // 10 minutes
       // Don't refetch on window focus for better UX
       refetchOnWindowFocus: false,
       // Don't refetch on mount if data is fresh

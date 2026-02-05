@@ -14,14 +14,14 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEnhancedSecureInput } from "@/hooks/useEnhancedSecureInput";
-import { Plus, Shield } from "lucide-react";
+import { Plus, FileText, User, Check, Sparkles, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface DropdownOptions {
   companies: string[];
@@ -32,9 +32,17 @@ interface DropdownOptions {
 
 interface SubmitQuestionFormProps {
   onSuccess: () => void;
+  onCancel?: () => void;
 }
 
-export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
+const SectionHeader = ({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) => (
+  <div className="flex items-center gap-2 mb-3">
+    <Icon className="h-4 w-4 text-primary shrink-0" />
+    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{children}</span>
+  </div>
+);
+
+export const SubmitQuestionForm = ({ onSuccess, onCancel }: SubmitQuestionFormProps) => {
   // Regular state for question input to prevent overwriting issues
   const [question, setQuestion] = useState("");
   const [questionError, setQuestionError] = useState("");
@@ -252,170 +260,150 @@ export const SubmitQuestionForm = ({ onSuccess }: SubmitQuestionFormProps) => {
     setIsLoading(false);
   };
 
+  const addOptionButtonClass = "h-9 w-9 shrink-0 rounded-full border border-input bg-background p-0 hover:bg-accent hover:text-accent-foreground";
+
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <Label htmlFor="question" className="flex items-center gap-2">
-            <Shield className="w-4 h-4" />
-            Question *
-          </Label>
-          <Textarea
-            id="question"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Enter the interview question..."
-            required
-            className={`mt-1 ${questionError ? 'border-red-500' : ''}`}
-            rows={3}
-          />
-          {questionError && (
-            <p className="text-sm text-red-600 mt-1">
-              {questionError}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="company">Company *</Label>
-          <div className="flex gap-2 mt-1">
-            <Select value={company} onValueChange={setCompany} required>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select company" />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownOptions.companies.map((comp) => (
-                  <SelectItem key={comp} value={comp}>
-                    {comp}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => openNewOptionDialog('company')}
-              className="px-3"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* Section 1: Question Information */}
+        <div className="space-y-4">
+          <SectionHeader icon={FileText}>Question Information</SectionHeader>
+          <div>
+            <Label htmlFor="question">The Question *</Label>
+            <div className="relative mt-1">
+              <Textarea
+                id="question"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="e.g. How would you design a scalable notification system?"
+                required
+                className={cn("min-h-[100px] pr-20 resize-none rounded-md", questionError && "border-destructive")}
+                rows={4}
+              />
+              <div className="absolute bottom-2 right-2 flex items-center gap-1 text-muted-foreground">
+                {question.trim().length > 0 && (
+                  <Check className="h-4 w-4 text-green-600" aria-hidden />
+                )}
+                <Sparkles className="h-4 w-4 opacity-70" aria-hidden />
+              </div>
+            </div>
+            {questionError && (
+              <p className="text-sm text-destructive mt-1">{questionError}</p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="company">Company *</Label>
+            <div className="flex gap-2 mt-1">
+              <Select value={company} onValueChange={setCompany} required>
+                <SelectTrigger className="flex-1 rounded-md">
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions.companies.map((comp) => (
+                    <SelectItem key={comp} value={comp}>{comp}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="outline" size="icon" onClick={() => openNewOptionDialog('company')} className={addOptionButtonClass}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <div className="flex gap-2 mt-1">
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="flex-1 rounded-md">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions.categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="outline" size="icon" onClick={() => openNewOptionDialog('category')} className={addOptionButtonClass}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Section 2: Interview Details */}
+        <div className="space-y-4">
+          <SectionHeader icon={User}>Interview Details</SectionHeader>
           <div>
             <Label htmlFor="role">Role *</Label>
             <div className="flex gap-2 mt-1">
               <Select value={role} onValueChange={setRole} required>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="flex-1 rounded-md">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
                   {dropdownOptions.roles.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => openNewOptionDialog('role')}
-                className="px-3"
-              >
+              <Button type="button" variant="outline" size="icon" onClick={() => openNewOptionDialog('role')} className={addOptionButtonClass}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
-
           <div>
             <Label htmlFor="interview_stage">Interview Stage</Label>
             <div className="flex gap-2 mt-1">
               <Select value={interviewStage} onValueChange={setInterviewStage}>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="flex-1 rounded-md">
                   <SelectValue placeholder="Select stage" />
                 </SelectTrigger>
                 <SelectContent>
                   {dropdownOptions.interview_stages.map((stage) => (
-                    <SelectItem key={stage} value={stage}>
-                      {stage}
-                    </SelectItem>
+                    <SelectItem key={stage} value={stage}>{stage}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => openNewOptionDialog('interview_stage')}
-                className="px-3"
-              >
+              <Button type="button" variant="outline" size="icon" onClick={() => openNewOptionDialog('interview_stage')} className={addOptionButtonClass}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </div>
-
-        <div>
-          <Label htmlFor="category">Category</Label>
-          <div className="flex gap-2 mt-1">
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownOptions.categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => openNewOptionDialog('category')}
-              className="px-3"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-transparent py-1">
+            <div className="space-y-0.5">
+              <Label htmlFor="featured" className="text-base font-normal cursor-pointer">Mark as featured question</Label>
+              <p className="text-sm text-muted-foreground">High-quality questions will be highlighted to other candidates.</p>
+            </div>
+            <Switch id="featured" checked={isFeatured} onCheckedChange={setIsFeatured} />
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="featured"
-            checked={isFeatured}
-            onCheckedChange={setIsFeatured}
-          />
-          <Label htmlFor="featured">Mark as featured question</Label>
-        </div>
-
-        <div>
-          <Label htmlFor="additional-context">Additional Context</Label>
-          <div className="mt-1">
+        {/* Section 3: Additional Context */}
+        <div className="space-y-4">
+          <SectionHeader icon={FileText}>Additional Context</SectionHeader>
+          <div>
             <RichTextEditor
               value={contextInput.value}
               onChange={contextInput.setValue}
               placeholder="Add any additional context, code snippets, or images..."
               enableImagePaste={true}
-              className={`overflow-hidden ${!contextInput.isValid ? 'border-red-500' : ''}`}
+              className={cn("overflow-hidden rounded-md", !contextInput.isValid && "border-destructive")}
             />
             {contextInput.errors.length > 0 && (
-              <p className="text-sm text-red-600 mt-1">
-                {contextInput.errors.join(', ')}
-              </p>
+              <p className="text-sm text-destructive mt-1">{contextInput.errors.join(", ")}</p>
             )}
           </div>
         </div>
 
-        <div className="pt-4">
-          <Button type="submit" disabled={isLoading} className="w-full">
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 pt-2 border-t">
+          {onCancel && (
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90">
             {isLoading ? "Submitting..." : "Submit Question"}
+            {!isLoading && <Send className="ml-2 h-4 w-4" />}
           </Button>
         </div>
       </form>

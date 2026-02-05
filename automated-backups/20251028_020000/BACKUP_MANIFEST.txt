@@ -1,0 +1,22 @@
+Automated Backup Manifest
+========================
+
+Backup Date: Tue Oct 28 02:00:02 KST 2025
+Project: source-edge-interview-prep
+Backup Type: Automated (Every 3 Days)
+Retention: 21 days
+
+Backup Contents:
+- Source Code: automated-backups/20251028_020000/src/
+- Configuration: automated-backups/20251028_020000/*.json, *.ts
+- Git Info: automated-backups/20251028_020000/git-*.txt
+- Database Scripts: automated-backups/20251028_020000/database/
+- Assets: automated-backups/20251028_020000/public/
+
+Restoration Instructions:
+1. Extract backup: tar -xzf automated-backup-20251028_020000.tar.gz
+2. Restore code: cp -r automated-backups/20251028_020000/src /path/to/restore/
+3. Restore config: cp automated-backups/20251028_020000/*.json /path/to/restore/
+4. Restore database: Run scripts in automated-backups/20251028_020000/database/
+
+Backup Size: 3.0M

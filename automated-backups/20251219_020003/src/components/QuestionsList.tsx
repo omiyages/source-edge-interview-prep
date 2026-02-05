@@ -1,0 +1,151 @@
+import { memo } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RichTextDisplay } from "@/components/ui/rich-text-display";
+import type { InterviewQuestion } from "@/services/questionsService";
+
+interface QuestionsListProps {
+  questions: InterviewQuestion[];
+  loading: boolean;
+  totalCount: number;
+  startIndex?: number;
+}
+
+const QuestionsListItem = memo(({ question, displayNumber }: { question: InterviewQuestion; displayNumber: number }) => {
+  // For now, we'll use category as difficulty since we don't have a difficulty field
+  // You can add difficulty field later if needed
+  const getDifficultyColor = (category?: string) => {
+    if (!category) return "bg-gray-100 text-gray-700";
+    const cat = category.toLowerCase();
+    if (cat.includes('behavioral') || cat.includes('easy')) return "bg-green-100 text-green-700";
+    if (cat.includes('system') || cat.includes('hard')) return "bg-red-100 text-red-700";
+    return "bg-orange-100 text-orange-700";
+  };
+
+  const difficultyLabel = question.category || "Medium";
+  const difficultyColor = getDifficultyColor(question.category);
+
+  return (
+    <div
+      id={`question-${question.id}`}
+      className="bg-white border border-border rounded-lg p-4 mb-4 hover:shadow-md transition-shadow"
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-sm font-medium text-muted-foreground">{displayNumber}.</span>
+            <h3 className="text-base font-semibold text-foreground">{question.question}</h3>
+            {/* Solved indicator - we don't have this data, so leaving it out for now */}
+          </div>
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            <Badge className={`text-xs ${difficultyColor}`}>
+              {difficultyLabel}
+            </Badge>
+            {question.company && (
+              <span className="text-xs text-muted-foreground">{question.company}</span>
+            )}
+            {question.category && (
+              <span className="text-xs text-muted-foreground">{question.category}</span>
+            )}
+          </div>
+        </div>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Question
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Question Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-foreground mb-2">Question</h3>
+                <p className="text-sm text-muted-foreground break-words">{question.question}</p>
+              </div>
+              {question.additional_context && (
+                <div>
+                  <h3 className="font-medium text-foreground mb-2">Additional Context</h3>
+                  <div className="p-3 bg-muted rounded-md border border-border overflow-hidden">
+                    <RichTextDisplay 
+                      content={question.additional_context} 
+                      className="text-sm break-words"
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span className="font-medium text-foreground">Company:</span>
+                  <p className="text-sm text-muted-foreground break-words">{question.company}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Role:</span>
+                  <p className="text-sm text-muted-foreground break-words">{question.role}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Category:</span>
+                  <p className="text-sm text-muted-foreground break-words">{question.category || "N/A"}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Stage:</span>
+                  <p className="text-sm text-muted-foreground break-words">{question.interview_stage || "N/A"}</p>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
+});
+
+QuestionsListItem.displayName = 'QuestionsListItem';
+
+export const QuestionsList = memo(({ questions, loading, totalCount, startIndex = 0 }: QuestionsListProps) => {
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="bg-white border border-border rounded-lg p-4 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="bg-white border border-border rounded-lg p-8 text-center">
+        <p className="text-muted-foreground">No questions found matching your filters.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {questions.map((question, index) => (
+        <QuestionsListItem
+          key={question.id}
+          question={question}
+          displayNumber={startIndex + index + 1}
+        />
+      ))}
+    </div>
+  );
+});
+
+QuestionsList.displayName = 'QuestionsList';
+

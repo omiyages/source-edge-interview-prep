@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-09-26T14:49:34.322Z",
+  "files": {
+    "vercel": {
+      "status": "valid",
+      "score": 100
+    },
+    "publicHeaders": {
+      "status": "valid",
+      "score": 100
+    },
+    "nginx": {
+      "status": "valid",
+      "score": 100
+    },
+    "sslScript": {
+      "status": "warning",
+      "score": 75
+    },
+    "packageJson": {
+      "status": "valid",
+      "score": 100
+    }
+  },
+  "overall": {
+    "valid": true,
+    "errors": [],
+    "warnings": [
+      "Missing components in SSL script"
+    ]
+  }
+}

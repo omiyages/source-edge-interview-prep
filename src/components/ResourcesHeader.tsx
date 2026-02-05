@@ -22,7 +22,7 @@ export const ResourcesHeader = ({
         <div className="flex-1">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
             Interview Resources
-          </h1>
+        </h1>
           <p className="text-base text-muted-foreground">
             Curated guides, videos, and articles to help you ace your next technical or behavioral interview.
           </p>

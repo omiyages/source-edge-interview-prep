@@ -4,6 +4,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+export interface WinningAnswerFramework {
+  situation: string;
+  task: string;
+  action: string[];
+  result: string;
+}
+
 export interface InterviewQuestion {
   id: string;
   question: string;
@@ -26,13 +33,17 @@ export interface InterviewQuestion {
   preparation_notes?: string[] | null;
   preparation_notes_generated_at?: string | null;
   preparation_notes_prompt_hash?: string | null;
+  interviewer_intent?: string[] | null;
+  winning_answer_framework?: WinningAnswerFramework | null;
+  coaching_generated_at?: string | null;
+  coaching_prompt_hash?: string | null;
 }
 
 export const fetchQuestions = async (isAdmin: boolean = false, page?: number, limit?: number): Promise<InterviewQuestion[]> => {
   try {
     let query = supabase
       .from('interview_questions')
-      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status, preparation_notes, preparation_notes_generated_at, preparation_notes_prompt_hash')
+      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status, preparation_notes, preparation_notes_generated_at, preparation_notes_prompt_hash, interviewer_intent, winning_answer_framework, coaching_generated_at, coaching_prompt_hash')
       .order('created_at', { ascending: false });
 
     // Only filter out pending questions for non-admin users
@@ -82,5 +93,39 @@ export const getOrGeneratePreparationNotes = async (questionId: string): Promise
   } catch (err) {
     console.warn('getOrGeneratePreparationNotes failed:', err);
     return [];
+  }
+};
+
+export interface QuestionCoaching {
+  interviewer_intent: string[];
+  winning_answer_framework: WinningAnswerFramework | null;
+}
+
+/**
+ * Get or generate interviewer intent and STAR winning answer framework (server-side, cached per question).
+ */
+export const getOrGenerateQuestionCoaching = async (
+  questionId: string
+): Promise<QuestionCoaching> => {
+  try {
+    const { data, error } = await supabase.functions.invoke<{
+      interviewer_intent?: string[];
+      winning_answer_framework?: WinningAnswerFramework | null;
+      error?: string;
+    }>('generate-question-coaching', {
+      body: { question_id: questionId },
+    });
+
+    if (error) {
+      console.warn('getOrGenerateQuestionCoaching error:', error);
+      return { interviewer_intent: [], winning_answer_framework: null };
+    }
+    return {
+      interviewer_intent: Array.isArray(data?.interviewer_intent) ? data.interviewer_intent : [],
+      winning_answer_framework: data?.winning_answer_framework ?? null,
+    };
+  } catch (err) {
+    console.warn('getOrGenerateQuestionCoaching failed:', err);
+    return { interviewer_intent: [], winning_answer_framework: null };
   }
 };

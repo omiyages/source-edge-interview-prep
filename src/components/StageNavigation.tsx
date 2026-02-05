@@ -1,7 +1,3 @@
-
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
 interface CourseStage {
   id: string;
   title: string;
@@ -21,29 +17,33 @@ export const StageNavigation = ({ stages, selectedStage, onStageSelect }: StageN
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 overflow-x-auto">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {stages.map((stage, index) => {
           const isSelected = selectedStage?.id === stage.id;
           return (
             <button
               key={stage.id}
               onClick={() => onStageSelect(stage)}
-              className={`flex flex-col items-center gap-2 px-2 md:px-4 py-3 rounded-lg transition-all flex-1 ${
+              className={`flex items-center gap-3 px-4 py-4 rounded-xl transition-all border ${
                 isSelected 
-                  ? "bg-primary text-primary-foreground shadow-md" 
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
+                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:shadow-sm"
               }`}
             >
-              <Badge 
-                className={`text-xs font-bold min-w-[24px] h-6 flex items-center justify-center rounded-full ${
+              <span 
+                className={`flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold flex-shrink-0 ${
                   isSelected 
                     ? "bg-white/20 text-white" 
-                    : "bg-primary text-white"
+                    : "bg-gray-100 text-gray-500"
                 }`}
               >
                 {index + 1}
-              </Badge>
-              <span className="text-sm font-medium text-center hidden md:block">{stage.title}</span>
+              </span>
+              <span className={`text-sm font-medium text-left leading-tight ${
+                isSelected ? "text-white" : "text-gray-700"
+              }`}>
+                {stage.title}
+              </span>
             </button>
           );
         })}

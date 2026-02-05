@@ -41,25 +41,25 @@ export const CourseHeader = ({
   return (
     <>
       {/* Course Info Card */}
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-border mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-              <h1 className="text-3xl font-semibold text-foreground text-center sm:text-left">{course.title}</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
               {course.company && (
-                <Badge className="bg-primary text-primary-foreground px-3 py-1 mx-auto sm:mx-0">
+                <Badge className="bg-primary/10 text-primary border-0 px-3 py-1 w-fit text-xs font-semibold uppercase tracking-wide">
                   {course.company}
                 </Badge>
               )}
             </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{course.title}</h1>
             {course.description && (
-              <p className="text-base text-muted-foreground">{course.description}</p>
+              <p className="text-base text-gray-500 leading-relaxed">{course.description}</p>
             )}
           </div>
           {isAdmin && (
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" className="whitespace-nowrap">
+                <Button variant="outline" className="whitespace-nowrap rounded-lg border-gray-200 hover:bg-gray-50">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Course
                 </Button>
@@ -76,25 +76,18 @@ export const CourseHeader = ({
             </Dialog>
           )}
         </div>
-        
-        {/* Relevant Positions */}
+
+        {/* Relevant Roles */}
         {course.attached_jobs && course.attached_jobs.length > 0 && (
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center gap-3">
-              <Briefcase className="w-5 h-5 text-blue-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700 mb-2">Relevant Positions</p>
-                <div className="flex flex-wrap gap-2">
-                  {course.attached_jobs.map((job, index) => (
-                    <Badge 
-                      key={index} 
-                      className="bg-blue-100 text-blue-700 border-blue-200 px-3 py-1 hover:bg-blue-100 hover:text-blue-700"
-                    >
-                      {job}
-                    </Badge>
-                  ))}
-                </div>
+              <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
+                <Briefcase className="w-4 h-4 text-gray-500" />
               </div>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold text-gray-700">Relevant Roles:</span>{" "}
+                {course.attached_jobs.join(", ")}
+              </p>
             </div>
           </div>
         )}

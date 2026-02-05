@@ -22,7 +22,7 @@ interface ResourcesFiltersProps {
 
 export const ResourcesFilters = ({ 
   selectedCategory, 
-  onCategoryChange,
+  onCategoryChange, 
   searchTerm,
   onSearchChange,
   resources

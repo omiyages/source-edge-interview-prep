@@ -58,3 +58,6 @@ verify_jwt = true
 
 [functions.generate-prep-notes]
 verify_jwt = true
+
+[functions.generate-question-coaching]
+verify_jwt = true

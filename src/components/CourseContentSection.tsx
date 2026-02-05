@@ -66,23 +66,23 @@ export const CourseContentSection = ({
 
         {/* Right Column: Learning Resources (25%) */}
         <div className="lg:col-span-1">
-          <StageResourcesSection
-            stageId={selectedStage.id}
-            isAdmin={isAdmin}
-            onManageClick={onManageResourcesClick}
-          />
+      <StageResourcesSection
+        stageId={selectedStage.id}
+        isAdmin={isAdmin}
+        onManageClick={onManageResourcesClick}
+      />
         </div>
       </div>
 
       {/* Full Width: Practice Questions */}
       <div>
-        <StageQuestions
-          questions={stageQuestions}
-          isAdmin={isAdmin}
-          onManageClick={onManageQuestionsClick}
-          stageId={selectedStage.id}
-          onQuestionsUpdate={onQuestionsUpdate}
-        />
+      <StageQuestions
+        questions={stageQuestions}
+        isAdmin={isAdmin}
+        onManageClick={onManageQuestionsClick}
+        stageId={selectedStage.id}
+        onQuestionsUpdate={onQuestionsUpdate}
+      />
       </div>
     </div>
   );

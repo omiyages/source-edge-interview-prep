@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { LazyImage } from '@/components/ui/lazy-image';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Building2, Globe, Users } from 'lucide-react';
 import { NavigationHeader } from '@/components/NavigationHeader';
@@ -56,7 +57,7 @@ const Companies: React.FC = () => {
             <Card key={company.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
               <div className="relative">
                 <div className="aspect-video overflow-hidden">
-                  <img 
+                  <LazyImage 
                     src={company.image} 
                     alt={`${company.name} office`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

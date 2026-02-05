@@ -113,9 +113,9 @@ const CourseDetail = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <NavigationHeader />
         <div className="flex items-center justify-center flex-1">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading course...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading course...</p>
           </div>
         </div>
       </div>
@@ -127,15 +127,15 @@ const CourseDetail = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <NavigationHeader />
         <div className="flex items-center justify-center flex-1">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Course not found</h1>
-            <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist or may have been removed.</p>
-            <Link to="/tracks">
-              <Button>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Tracks
-              </Button>
-            </Link>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Course not found</h1>
+          <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist or may have been removed.</p>
+          <Link to="/tracks">
+            <Button>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Tracks
+            </Button>
+          </Link>
           </div>
         </div>
       </div>
@@ -172,12 +172,12 @@ const CourseDetail = () => {
           />
         ) : (
           <>
-            {/* Progress Bar */}
-            <CourseProgress 
-              userProgress={userProgress}
-              stages={stages}
-              isAdmin={isAdmin}
-            />
+        {/* Progress Bar */}
+        <CourseProgress 
+          userProgress={userProgress}
+          stages={stages}
+          isAdmin={isAdmin}
+        />
 
             <div className="mb-6">
               <StageNavigation
@@ -185,7 +185,7 @@ const CourseDetail = () => {
                 selectedStage={selectedStage}
                 onStageSelect={setSelectedStage}
               />
-            </div>
+        </div>
 
         {/* Selected Stage Content or Course Review */}
         {allStagesCompleted && !showCourseContent ? (

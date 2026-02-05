@@ -1,0 +1,10 @@
+55417dc UI: resolve dropdown/blur overlap in Create User modal by elevating z-index for Select trigger/content and sticky actions
+372bb8b Fix overlap: raise sticky actions z-index and dropdown trigger z-index; ensure form content stays below
+5351ffe CreateUserModal: remove dialog header and tighten padding to fix left-side visual glitch in kanban modal
+dc3e899 Kanban: add Create User button and modal; add CreateUserModal; wire into boards
+87bfff5 Improve chart readability: hide zero-value items and clean up pie chart
+f042f61 Fix Report tab charts: add bar labels and improve pie chart readability
+c1336c1 Add comprehensive Report tab to Kanban dashboard
+f9abc5f Update favicon to new pixelated gradient design
+d0c6241 Remove lovable branding and update to Source Edge branding
+9f55177 🐛 Fix React Hooks order violation in StageResourcesSection

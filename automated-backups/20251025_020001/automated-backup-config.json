@@ -1,0 +1,20 @@
+{
+  "backup": {
+    "enabled": true,
+    "schedule": "every 3 days",
+    "time": "2:00 AM",
+    "retention_days": 21,
+    "compression": true,
+    "encryption": false
+  },
+  "monitoring": {
+    "enabled": true,
+    "log_file": "automated-backups/backup.log",
+    "alert_threshold_days": 4
+  },
+  "directories": {
+    "backup_dir": "automated-backups/",
+    "source_dir": "./",
+    "exclude": ["node_modules", ".git", ".vite", "dist", "backups"]
+  }
+}

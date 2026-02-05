@@ -1,0 +1,29 @@
+Alternative Database Backup Manifest
+===================================
+
+Backup Date: Sun Sep 28 21:51:29 EEST 2025
+Project: source-edge-interview-prep
+Database: Supabase PostgreSQL
+Backup Type: Alternative (SQL Scripts + API)
+
+Backup Contents:
+- SQL Scripts: backup-all-tables.sql, backup-*.sql
+- API Script: backup-via-api.js
+- Restoration: restore-database.sh
+- Tables: profiles user_stages stage_transitions admin_notes user_rejections dropdown_options interviews jobs user_jobs
+
+Database Tables:
+
+
+Restoration Instructions:
+1. SQL Method: Run backup-all-tables.sql in Supabase SQL Editor
+2. API Method: Run backup-via-api.js with proper credentials
+3. Individual Tables: Run backup-*.sql scripts as needed
+
+Security Notes:
+- Database backups may contain sensitive data
+- Store backups securely and encrypt if necessary
+- Test restoration in a development environment first
+- Never restore production data to development
+
+Backup Size:  48K

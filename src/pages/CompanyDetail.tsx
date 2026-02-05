@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { LazyImage } from '@/components/ui/lazy-image';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { NavigationHeader } from '@/components/NavigationHeader';
@@ -87,7 +88,7 @@ const CompanyDetail: React.FC = () => {
             {/* Right side - Office Image */}
             <div className="relative">
               <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-lg">
-                <img 
+                <LazyImage 
                   src="/woven-office-image.jpg" 
                   alt="Woven by Toyota Modern Office - Dynamic workspace with collaborative areas and innovative design"
                   className="w-full h-full object-cover"

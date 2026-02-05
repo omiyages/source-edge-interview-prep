@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
 import {
   Building2,
@@ -16,9 +17,12 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
+  Bookmark,
 } from "lucide-react";
-import type { InterviewQuestion } from "@/services/questionsService";
-import { getOrGeneratePreparationNotes } from "@/services/questionsService";
+import type { InterviewQuestion, WinningAnswerFramework } from "@/services/questionsService";
+import { getOrGeneratePreparationNotes, getOrGenerateQuestionCoaching } from "@/services/questionsService";
+import { useQuestionBookmark } from "@/hooks/useQuestionBookmark";
+import { useAuth } from "@/hooks/useAuth";
 
 interface QuestionDetailDialogProps {
   open: boolean;
@@ -30,6 +34,8 @@ interface QuestionDetailDialogProps {
   onNext: () => void;
   canPrev: boolean;
   canNext: boolean;
+   showEditButton?: boolean;
+   onEditQuestion?: (question: InterviewQuestion) => void;
 }
 
 const PREP_NOTE_ICONS = [Lightbulb, Info, CheckCircle];
@@ -44,9 +50,16 @@ export function QuestionDetailDialog({
   onNext,
   canPrev,
   canNext,
+  showEditButton,
+  onEditQuestion,
 }: QuestionDetailDialogProps) {
   const [prepNotes, setPrepNotes] = useState<string[]>([]);
   const [prepNotesLoading, setPrepNotesLoading] = useState(false);
+  const [interviewerIntent, setInterviewerIntent] = useState<string[]>([]);
+  const [winningFramework, setWinningFramework] = useState<WinningAnswerFramework | null>(null);
+  const [coachingLoading, setCoachingLoading] = useState(false);
+  const { user } = useAuth();
+  const { isBookmarked, toggleBookmark, isToggling: isBookmarkToggling } = useQuestionBookmark(question?.id || '');
 
   useEffect(() => {
     if (!open || !question) {
@@ -71,6 +84,34 @@ export function QuestionDetailDialog({
       .finally(() => {
         setPrepNotesLoading(false);
       });
+  }, [open, question?.id]);
+
+  useEffect(() => {
+    if (!open || !question) {
+      setInterviewerIntent([]);
+      setWinningFramework(null);
+      setCoachingLoading(false);
+      return;
+    }
+    const hasIntent = Array.isArray(question.interviewer_intent) && question.interviewer_intent.length > 0;
+    const hasFramework = question.winning_answer_framework && typeof question.winning_answer_framework === "object";
+    if (hasIntent && hasFramework) {
+      setInterviewerIntent(question.interviewer_intent);
+      setWinningFramework(question.winning_answer_framework as WinningAnswerFramework);
+      setCoachingLoading(false);
+      return;
+    }
+    setCoachingLoading(true);
+    getOrGenerateQuestionCoaching(question.id)
+      .then(({ interviewer_intent, winning_answer_framework }) => {
+        setInterviewerIntent(interviewer_intent);
+        setWinningFramework(winning_answer_framework);
+      })
+      .catch(() => {
+        setInterviewerIntent([]);
+        setWinningFramework(null);
+      })
+      .finally(() => setCoachingLoading(false));
   }, [open, question?.id]);
 
   // Keyboard: Left/Right arrows move to previous/next question
@@ -106,15 +147,32 @@ export function QuestionDetailDialog({
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-0">
             {/* Left: Question content */}
             <div className="p-6 space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
-                  <Building2 className="h-3.5 w-3.5" />
-                  {question.company.toUpperCase()}
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                  <User className="h-3.5 w-3.5" />
-                  {question.role.toUpperCase()}
-                </span>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {question.company.toUpperCase()}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    <User className="h-3.5 w-3.5" />
+                    {question.role.toUpperCase()}
+                  </span>
+                </div>
+                <Button
+                  variant={isBookmarked ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleBookmark()}
+                  disabled={isBookmarkToggling || !user}
+                  className={`flex items-center gap-1.5 ${
+                    isBookmarked 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                      : ""
+                  }`}
+                  title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Login to save"}
+                >
+                  <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""}`} />
+                  {isBookmarked ? "Saved" : "Save"}
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground">
                 QUESTION #{currentDisplayNumber}
@@ -139,6 +197,83 @@ export function QuestionDetailDialog({
                   </p>
                 )}
               </div>
+
+              {/* Interviewer's Intent */}
+              {coachingLoading ? (
+                <p className="text-sm text-muted-foreground">Loading coaching…</p>
+              ) : interviewerIntent.length > 0 ? (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                    The interviewer&apos;s intent
+                  </p>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                    <ul className="list-disc list-inside space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+                      {interviewerIntent.map((bullet, i) => (
+                        <li key={i}>{bullet}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Winning Answer Framework (STAR) */}
+              {!coachingLoading && winningFramework && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                    Winning answer framework
+                  </p>
+                  <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                    <div className="flex gap-2">
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Situation</p>
+                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{winningFramework.situation || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Task</p>
+                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{winningFramework.task || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Action</p>
+                        {winningFramework.action?.length ? (
+                          <ul className="mt-1 list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                            {winningFramework.action.map((a, i) => (
+                              <li key={i}>{a}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">—</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-green-500" aria-hidden />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-green-600 dark:text-green-400">Result</p>
+                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{winningFramework.result || "—"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showEditButton && onEditQuestion && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => onEditQuestion(question)}
+                    className="inline-flex items-center rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    Edit Question
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Right: Sidebar */}
