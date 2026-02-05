@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -23,7 +24,7 @@ import {
   Area,
   AreaChart,
 } from 'recharts';
-import { Calendar, Users, Clock, Phone, Filter, X } from 'lucide-react';
+import { Calendar, Users, Clock, Phone, Filter, X, TrendingUp, Printer, FileDown, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { JSTDateTime } from './JSTDateTime';
 
@@ -76,9 +77,14 @@ const KANBAN_STAGES = [
 ];
 
 const CHART_COLORS = [
-  '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444',
-  '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#84cc16'
+  '#6366f1', '#22d3ee', '#22c55e', '#f59e0b', '#ef4444',
+  '#ec4899', '#8b5cf6', '#14b8a6', '#f97316', '#84cc16'
 ];
+
+// Colors matching the mockup
+const DONUT_COLORS = ['#6366f1', '#22d3ee', '#22c55e', '#f59e0b'];
+const BAR_COLORS = { primary: '#6366f1', secondary: '#a5b4fc' };
+const LINE_COLOR = '#6366f1';
 
 export const ReportTab: React.FC = () => {
   const { toast } = useToast();
@@ -370,6 +376,19 @@ export const ReportTab: React.FC = () => {
     });
   };
 
+  // Print/PDF functionality
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Calculate percentage change (mock data for now - can be enhanced with historical data)
+  const getPercentageChange = (stage: string) => {
+    const count = summaryData.stageCounts[stage] || 0;
+    const total = summaryData.total;
+    if (total === 0) return 0;
+    return Math.round((count / total) * 100);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -382,408 +401,331 @@ export const ReportTab: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 print:space-y-4" id="report-content">
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          .no-print { display: none !important; }
+          .print\\:break-inside-avoid { break-inside: avoid; }
+        }
+      `}</style>
+
+      {/* Header with Print Button */}
+      <div className="flex items-center justify-between no-print">
+        <h2 className="text-2xl font-bold">Reports Dashboard</h2>
+        <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
+          <Printer className="w-4 h-4" />
+          Print / Save PDF
+        </Button>
+      </div>
+
       {/* Filters Section */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="no-print">
+        <CardHeader className="flex flex-row items-center justify-between py-3">
           <div className="flex items-center gap-2">
             <Filter className="w-5 h-5" />
-            <CardTitle>Filters</CardTitle>
+            <CardTitle className="text-base">Filters</CardTitle>
           </div>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={resetFilters}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1 text-sm"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3" />
             Reset
           </Button>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {/* Company Filter */}
-            <div className="space-y-2">
-              <Label>Assigned Company</Label>
-              <Select
-                value={filters.company}
-                onValueChange={(value) => setFilters({ ...filters, company: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Companies" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Companies</SelectItem>
-                  {companies.map(company => (
-                    <SelectItem key={company} value={company}>
-                      {company}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <Select
+              value={filters.company}
+              onValueChange={(value) => setFilters({ ...filters, company: value })}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="All Companies" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Companies</SelectItem>
+                {companies.map(company => (
+                  <SelectItem key={company} value={company}>{company}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            {/* Position Filter (Job Role) */}
-            <div className="space-y-2">
-              <Label>Assigned Role/Position</Label>
-              <Select
-                value={filters.position}
-                onValueChange={(value) => setFilters({ ...filters, position: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Positions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Positions</SelectItem>
-                  {positions.map(position => (
-                    <SelectItem key={position} value={position}>
-                      {position}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={filters.position}
+              onValueChange={(value) => setFilters({ ...filters, position: value })}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="All Positions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Positions</SelectItem>
+                {positions.map(position => (
+                  <SelectItem key={position} value={position}>{position}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            {/* Date From */}
-            <div className="space-y-2">
-              <Label>Created From</Label>
-              <input
-                type="date"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-              />
-            </div>
+            <input
+              type="date"
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              value={filters.dateFrom}
+              onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+              placeholder="From"
+            />
 
-            {/* Date To */}
-            <div className="space-y-2">
-              <Label>Created To</Label>
-              <input
-                type="date"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-              />
-            </div>
+            <input
+              type="date"
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              value={filters.dateTo}
+              onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+              placeholder="To"
+            />
 
-            {/* Has Upcoming Interview */}
-            <div className="space-y-2">
-              <Label>Has Upcoming Interview</Label>
-              <div className="flex items-center space-x-4 h-10">
-                <button
-                  onClick={() => setFilters({
-                    ...filters,
-                    hasUpcomingInterview: filters.hasUpcomingInterview === true ? null : true
-                  })}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filters.hasUpcomingInterview === true
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setFilters({
-                    ...filters,
-                    hasUpcomingInterview: filters.hasUpcomingInterview === false ? null : false
-                  })}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filters.hasUpcomingInterview === false
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  No
-                </button>
-              </div>
-            </div>
+            <Select
+              value={filters.hasUpcomingInterview === null ? 'all' : filters.hasUpcomingInterview ? 'yes' : 'no'}
+              onValueChange={(value) => setFilters({ 
+                ...filters, 
+                hasUpcomingInterview: value === 'all' ? null : value === 'yes' 
+              })}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Interview" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any Interview</SelectItem>
+                <SelectItem value="yes">Has Interview</SelectItem>
+                <SelectItem value="no">No Interview</SelectItem>
+              </SelectContent>
+            </Select>
 
-            {/* Is Active */}
-            <div className="space-y-2">
-              <Label>Is Active</Label>
-              <div className="flex items-center space-x-4 h-10">
-                <button
-                  onClick={() => setFilters({
-                    ...filters,
-                    isActive: filters.isActive === true ? null : true
-                  })}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filters.isActive === true
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setFilters({
-                    ...filters,
-                    isActive: filters.isActive === false ? null : false
-                  })}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filters.isActive === false
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  No
-                </button>
-              </div>
-            </div>
+            <Select
+              value={filters.isActive === null ? 'all' : filters.isActive ? 'yes' : 'no'}
+              onValueChange={(value) => setFilters({ 
+                ...filters, 
+                isActive: value === 'all' ? null : value === 'yes' 
+              })}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="yes">Active</SelectItem>
+                <SelectItem value="no">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Summary Counters + Position Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Summary Counters (50% width) - 3 Rows */}
-        <div className="space-y-4">
-          {/* First Row - Total Users + 3 Stages */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Users
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  <p className="text-2xl font-bold">{summaryData.total}</p>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Top Stats Row - Matching Mockup Design */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 print:break-inside-avoid">
+        {/* Total Users */}
+        <Card className="border-l-4 border-l-indigo-500">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground mb-1">Total Users</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold">{summaryData.total}</p>
+              <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                <TrendingUp className="w-3 h-3 mr-1" />
+                12%
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
 
-            {KANBAN_STAGES.slice(0, 3).map((stage) => (
-              <Card key={stage}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground truncate" title={stage}>
-                    {stage}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">{summaryData.stageCounts[stage] || 0}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        {/* Interested */}
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground mb-1">Interested</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold">{summaryData.stageCounts['Interested'] || 0}</p>
+              <Badge variant="outline" className="text-xs">Active</Badge>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Second Row - 3 Stages */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {KANBAN_STAGES.slice(3, 6).map((stage) => (
-              <Card key={stage}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground truncate" title={stage}>
-                    {stage}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">{summaryData.stageCounts[stage] || 0}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        {/* Scheduled */}
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground mb-1">Scheduled</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold">{summaryData.stageCounts['Scheduled'] || 0}</p>
+              <Badge className="bg-amber-100 text-amber-700 text-xs">
+                {upcomingInterviews.length} Pending
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Third Row - 3 Stages */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {KANBAN_STAGES.slice(6, 9).map((stage) => (
-              <Card key={stage}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground truncate" title={stage}>
-                    {stage}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">{summaryData.stageCounts[stage] || 0}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        {/* CV Sent */}
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground mb-1">CV Sent</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold">{summaryData.stageCounts['CV Sent'] || 0}</p>
+              <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                <TrendingUp className="w-3 h-3 mr-1" />
+                {getPercentageChange('CV Sent')}% conv
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Position Distribution Chart (50% width) */}
-        <Card className="flex flex-col">
+        {/* Offer Accepted */}
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground mb-1">Offer Accepted</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold">{summaryData.stageCounts['Offer Accepted'] || 0}</p>
+              <Button size="icon" variant="ghost" className="h-8 w-8 bg-indigo-100 hover:bg-indigo-200">
+                <Settings className="w-4 h-4 text-indigo-600" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row - By Position + Users by Stage & Company */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:break-inside-avoid">
+        {/* By Position - Donut Chart */}
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle>By Position</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={positionDistributionData.filter(item => item.value > 0)}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={false}
-                  outerRadius={100}
-                  innerRadius={30}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {positionDistributionData.filter(item => item.value > 0).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: any, name: any) => [
-                    `${value} users (${((value / positionDistributionData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%)`,
-                    name
-                  ]}
-                />
-                <Legend 
-                  layout="horizontal" 
-                  align="center" 
-                  verticalAlign="bottom"
-                  wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }}
-                  payload={positionDistributionData.filter(item => item.value > 0).map((item, index) => ({
-                    value: item.name,
-                    type: 'rect',
-                    color: CHART_COLORS[index % CHART_COLORS.length]
-                  }))}
-                  formatter={(value, entry) => {
-                    const item = positionDistributionData.find(d => d.name === value);
-                    if (!item || item.value === 0) return null;
-                    const total = positionDistributionData.reduce((sum, i) => sum + i.value, 0);
-                    const percentage = ((item.value / total) * 100).toFixed(1);
-                    return `${value}: ${item.value} (${percentage}%)`;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Stacked Bar Chart - Users by Stage & Company */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Users by Stage & Company</CardTitle>
+            <CardTitle className="text-base font-semibold">By Position</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={stageByCompanyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="stage" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value: any, name: any) => [
-                    `${value} users`,
-                    name
-                  ]}
-                  labelFormatter={(label) => `Stage: ${label}`}
-                />
-                <Legend />
-                {companies.map((company, index) => {
-                  // Check if this company has any users in the current filtered data
-                  const hasUsers = stageByCompanyData.some(stage => stage[company] > 0);
-                  
+            <div className="flex items-center gap-4">
+              <div className="w-48 h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={positionDistributionData.filter(item => item.value > 0)}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      dataKey="value"
+                      paddingAngle={2}
+                    >
+                      {positionDistributionData.filter(item => item.value > 0).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                      <tspan x="50%" dy="-0.3em" className="text-2xl font-bold fill-current">{summaryData.total}</tspan>
+                      <tspan x="50%" dy="1.4em" className="text-xs fill-muted-foreground">TOTAL ROLES</tspan>
+                    </text>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex-1 space-y-2">
+                {positionDistributionData.filter(item => item.value > 0).slice(0, 4).map((item, index) => {
+                  const total = positionDistributionData.reduce((sum, i) => sum + i.value, 0);
+                  const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
                   return (
-                    <Bar
-                      key={company}
-                      dataKey={company}
-                      stackId="a"
-                      fill={CHART_COLORS[index % CHART_COLORS.length]}
-                      label={{ 
-                        position: 'center', 
-                        fill: 'white', 
-                        fontSize: 11, 
-                        fontWeight: 'bold',
-                        formatter: (value: any) => value > 0 ? value : ''
-                      }}
-                      hide={!hasUsers}
-                    />
+                    <div key={item.name} className="flex items-center gap-2 text-sm">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: DONUT_COLORS[index % DONUT_COLORS.length] }}
+                      />
+                      <span className="flex-1 truncate">{item.name}</span>
+                      <span className="font-semibold">{item.value} ({percentage}%)</span>
+                    </div>
                   );
                 })}
-              </BarChart>
-            </ResponsiveContainer>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Grouped Bar Chart - Users by Stage & Position */}
+        {/* Users by Stage & Company - Bar Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Users by Stage & Position</CardTitle>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-semibold">Users by Stage & Company</CardTitle>
+            <div className="flex items-center gap-4 text-xs">
+              {companies.slice(0, 2).map((company, index) => (
+                <div key={company} className="flex items-center gap-1">
+                  <div 
+                    className="w-3 h-3 rounded" 
+                    style={{ backgroundColor: index === 0 ? BAR_COLORS.primary : BAR_COLORS.secondary }}
+                  />
+                  <span>{company}</span>
+                </div>
+              ))}
+            </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={stageByPositionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="stage" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={stageByCompanyData} barCategoryGap="20%">
+                <XAxis 
+                  dataKey="stage" 
+                  tick={{ fontSize: 10 }} 
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis hide />
                 <Tooltip />
-                <Legend />
-                {positions.map((position, index) => {
-                  // Check if this position has any users in the current filtered data
-                  const hasUsers = stageByPositionData.some(stage => stage[position] > 0);
-                  
-                  return (
-                    <Bar
-                      key={position}
-                      dataKey={position}
-                      fill={CHART_COLORS[index % CHART_COLORS.length]}
-                      hide={!hasUsers}
-                    />
-                  );
-                })}
+                {companies.slice(0, 2).map((company, index) => (
+                  <Bar
+                    key={company}
+                    dataKey={company}
+                    fill={index === 0 ? BAR_COLORS.primary : BAR_COLORS.secondary}
+                    radius={[4, 4, 0, 0]}
+                  />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Conversion Rate Funnel Chart - Full Width */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Stage Conversion Funnel</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Percentage of candidates reaching each stage (100% = all candidates)
+      {/* Stage Conversion Funnel - Full Width */}
+      <Card className="print:break-inside-avoid">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold">Stage Conversion Funnel</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Percentage of candidates reaching each stage relative to initial interest (100%)
           </p>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={conversionRateData}>
               <defs>
-                <linearGradient id="colorConversion" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                <linearGradient id="colorConversionNew" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={LINE_COLOR} stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor={LINE_COLOR} stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="stage" 
-                angle={-45} 
-                textAnchor="end" 
-                height={100}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
               />
               <YAxis 
-                label={{ value: 'Conversion Rate (%)', angle: -90, position: 'insideLeft' }}
                 domain={[0, 100]}
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}%`}
               />
               <Tooltip 
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     return (
-                      <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
-                        <p className="font-semibold">{data.stage}</p>
-                        <p className="text-sm text-primary">
-                          Conversion: {data.conversionRate}%
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Users at/beyond: {data.count}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          At this stage: {data.atStage}
-                        </p>
-                        {data.dropOffRate > 0 && (
-                          <p className="text-sm text-red-600">
-                            Drop-off: {data.dropOffRate}%
-                          </p>
-                        )}
+                      <div className="bg-white p-3 border rounded-lg shadow-lg">
+                        <p className="font-semibold text-sm">{data.stage}</p>
+                        <p className="text-sm text-indigo-600 font-bold">{data.conversionRate}%</p>
+                        <p className="text-xs text-gray-500">{data.count} candidates</p>
                       </div>
                     );
                   }
@@ -793,73 +735,73 @@ export const ReportTab: React.FC = () => {
               <Area 
                 type="monotone" 
                 dataKey="conversionRate" 
-                stroke="#8b5cf6" 
-                strokeWidth={3}
+                stroke={LINE_COLOR}
+                strokeWidth={2}
                 fillOpacity={1} 
-                fill="url(#colorConversion)" 
+                fill="url(#colorConversionNew)" 
               />
               <Line 
                 type="monotone" 
                 dataKey="conversionRate" 
-                stroke="#8b5cf6" 
-                strokeWidth={3}
-                dot={{ r: 6, fill: '#8b5cf6', strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 8 }}
+                stroke={LINE_COLOR}
+                strokeWidth={2}
+                dot={{ r: 4, fill: LINE_COLOR, strokeWidth: 2, stroke: '#fff' }}
               />
             </AreaChart>
           </ResponsiveContainer>
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-center">
-            {conversionRateData.map((stage, index) => (
-              <div key={stage.stage} className="p-2 bg-secondary rounded">
-                <div className="font-semibold truncate" title={stage.stage}>
-                  {stage.stage}
-                </div>
-                <div className="text-primary font-bold">{stage.conversionRate}%</div>
-                <div className="text-muted-foreground">{stage.count} users</div>
+          {/* Stage counts at bottom */}
+          <div className="mt-4 flex justify-between text-center border-t pt-4">
+            {conversionRateData.map((stage) => (
+              <div key={stage.stage} className="flex-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide truncate px-1">{stage.stage}</p>
+                <p className="text-sm font-semibold">{stage.count} <span className="text-muted-foreground font-normal">pts</span></p>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Tables Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Interviews Table */}
+      {/* Bottom Tables Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:break-inside-avoid">
+        {/* Upcoming Interviews */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              <CardTitle>Upcoming Interviews ({upcomingInterviews.length})</CardTitle>
+              <Calendar className="w-4 h-4 text-indigo-600" />
+              <CardTitle className="text-base font-semibold">Upcoming Interviews ({upcomingInterviews.length})</CardTitle>
             </div>
+            <Button variant="link" size="sm" className="text-indigo-600 text-xs p-0 h-auto">View all</Button>
           </CardHeader>
           <CardContent>
-            <div className="overflow-auto max-h-[400px]">
+            <div className="overflow-auto max-h-[250px]">
               <table className="w-full text-sm">
-                <thead className="bg-muted sticky top-0">
-                  <tr>
-                    <th className="text-left p-2">Candidate</th>
-                    <th className="text-left p-2">Company</th>
-                    <th className="text-left p-2">Role</th>
-                    <th className="text-left p-2">Interview</th>
-                    <th className="text-left p-2">Date/Time</th>
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr className="text-xs text-muted-foreground uppercase">
+                    <th className="text-left p-2 font-medium">Candidate</th>
+                    <th className="text-left p-2 font-medium">Company</th>
+                    <th className="text-left p-2 font-medium">Stage</th>
+                    <th className="text-left p-2 font-medium">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {upcomingInterviews.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center p-4 text-muted-foreground">
+                      <td colSpan={4} className="text-center p-4 text-muted-foreground text-sm">
                         No upcoming interviews
                       </td>
                     </tr>
                   ) : (
-                    upcomingInterviews.map(interview => (
-                      <tr key={interview.id} className="border-b">
-                        <td className="p-2">{interview.user_name}</td>
-                        <td className="p-2">{interview.user_company}</td>
-                        <td className="p-2">{interview.user_role}</td>
-                        <td className="p-2">{interview.interview_name}</td>
+                    upcomingInterviews.slice(0, 5).map(interview => (
+                      <tr key={interview.id} className="border-b hover:bg-slate-50">
+                        <td className="p-2 font-medium">{interview.user_name}</td>
+                        <td className="p-2 text-muted-foreground">{interview.user_company}</td>
                         <td className="p-2">
-                          <JSTDateTime dateTime={interview.scheduled_date} />
+                          <Badge variant="secondary" className="text-xs bg-indigo-100 text-indigo-700">
+                            {interview.interview_name}
+                          </Badge>
+                        </td>
+                        <td className="p-2 text-muted-foreground">
+                          {format(new Date(interview.scheduled_date), 'MMM dd, HH:mm')}
                         </td>
                       </tr>
                     ))
@@ -870,50 +812,51 @@ export const ReportTab: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Candidate Calls Table */}
+        {/* Candidate Calls */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
-              <Phone className="w-5 h-5" />
-              <CardTitle>Candidate Calls ({candidateCalls.length})</CardTitle>
+              <Phone className="w-4 h-4 text-indigo-600" />
+              <CardTitle className="text-base font-semibold">Candidate Calls ({candidateCalls.length})</CardTitle>
             </div>
+            <Button variant="link" size="sm" className="text-indigo-600 text-xs p-0 h-auto">Full list</Button>
           </CardHeader>
           <CardContent>
-            <div className="overflow-auto max-h-[400px]">
+            <div className="overflow-auto max-h-[250px]">
               <table className="w-full text-sm">
-                <thead className="bg-muted sticky top-0">
-                  <tr>
-                    <th className="text-left p-2">Candidate</th>
-                    <th className="text-left p-2">Company</th>
-                    <th className="text-left p-2">Role</th>
-                    <th className="text-left p-2">Date/Time</th>
-                    <th className="text-left p-2">Status</th>
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr className="text-xs text-muted-foreground uppercase">
+                    <th className="text-left p-2 font-medium">Candidate</th>
+                    <th className="text-left p-2 font-medium">Company</th>
+                    <th className="text-left p-2 font-medium">Scheduled For</th>
+                    <th className="text-left p-2 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {candidateCalls.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center p-4 text-muted-foreground">
+                      <td colSpan={4} className="text-center p-4 text-muted-foreground text-sm">
                         No candidate calls scheduled
                       </td>
                     </tr>
                   ) : (
-                    candidateCalls.map(call => (
-                      <tr key={call.id} className="border-b">
-                        <td className="p-2">{call.user_name}</td>
-                        <td className="p-2">{call.user_company}</td>
-                        <td className="p-2">{call.user_role}</td>
-                        <td className="p-2">
-                          <JSTDateTime dateTime={call.scheduled_date} />
+                    candidateCalls.slice(0, 5).map(call => (
+                      <tr key={call.id} className="border-b hover:bg-slate-50">
+                        <td className="p-2 font-medium">{call.user_name}</td>
+                        <td className="p-2 text-muted-foreground">{call.user_company}</td>
+                        <td className="p-2 text-muted-foreground">
+                          {format(new Date(call.scheduled_date), 'MMM dd, HH:mm')}
                         </td>
                         <td className="p-2">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            call.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            call.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
+                          <Badge 
+                            className={`text-xs ${
+                              call.status === 'completed' ? 'bg-green-100 text-green-700' :
+                              call.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                              'bg-indigo-100 text-indigo-700'
+                            }`}
+                          >
                             {call.status}
-                          </span>
+                          </Badge>
                         </td>
                       </tr>
                     ))
