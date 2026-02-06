@@ -174,7 +174,7 @@ const QuestionCard = ({
             {question.recommended && (
               <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             )}
-            <Badge className="bg-primary/10 text-primary border-0 text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 text-center">
+            <Badge className="bg-primary/10 text-primary border-0 text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 whitespace-nowrap">
               {question.role}
             </Badge>
           </div>
@@ -292,7 +292,7 @@ const QuestionCard = ({
                       {question.recommended && (
                         <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                       )}
-                      <Badge className="bg-primary/10 text-primary border-0 text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 text-center">
+                      <Badge className="bg-primary/10 text-primary border-0 text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 whitespace-nowrap">
                         {question.role}
                       </Badge>
                     </div>
