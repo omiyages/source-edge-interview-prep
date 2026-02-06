@@ -939,7 +939,7 @@ const Relo = () => {
                   value={wovenPassword}
                   onChange={(e) => setWovenPassword(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && wovenPassword === "Namtae123!") {
+                    if (e.key === 'Enter' && wovenPassword === "Namtae") {
                       setIsWovenSectionUnlocked(true);
                     }
                   }}
@@ -947,7 +947,7 @@ const Relo = () => {
                 />
                 <Button
                   onClick={() => {
-                    if (wovenPassword === "Namtae123!") {
+                    if (wovenPassword === "Namtae") {
                       setIsWovenSectionUnlocked(true);
                     } else {
                       alert("Incorrect password");
