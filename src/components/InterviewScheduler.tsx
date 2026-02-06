@@ -74,7 +74,7 @@ export const InterviewScheduler: React.FC<InterviewSchedulerProps> = ({
       setLoading(true);
       const { data, error } = await supabase
         .from('interviews')
-        .select('id, user_id, interview_type, scheduled_date, status, notes, created_at')
+        .select('*')
         .eq('user_id', userId)
         .order('scheduled_date', { ascending: true });
 

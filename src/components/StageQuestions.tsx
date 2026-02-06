@@ -170,21 +170,26 @@ export const StageQuestions = ({
             variant={selectedCategory === "ALL" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedCategory("ALL")}
-            className={selectedCategory === "ALL" ? "bg-primary text-primary-foreground" : ""}
+            className={`rounded-lg ${selectedCategory === "ALL" ? "bg-primary text-primary-foreground" : ""}`}
           >
-            ALL
+            All
           </Button>
           {uniqueCategories.map((category) => {
             const categoryKey = category.toUpperCase();
-              return (
+            // Format category for display (Title Case)
+            const displayName = category
+              .split(/[-_\s]+/)
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(' ');
+            return (
               <Button
                 key={category}
                 variant={selectedCategory === categoryKey ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedCategory(categoryKey)}
-                className={selectedCategory === categoryKey ? "bg-primary text-primary-foreground" : ""}
+                className={`rounded-lg ${selectedCategory === categoryKey ? "bg-primary text-primary-foreground" : ""}`}
               >
-                {categoryKey}
+                {displayName}
               </Button>
             );
           })}
