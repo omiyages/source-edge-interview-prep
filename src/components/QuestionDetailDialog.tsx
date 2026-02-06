@@ -136,7 +136,7 @@ export function QuestionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] overflow-hidden flex flex-col p-0 gap-0 rounded-xl border-0 shadow-xl top-[8vh] translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[96vh] overflow-hidden flex flex-col p-0 gap-0 rounded-xl border-0 shadow-xl top-[2vh] translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
         <DialogHeader className="px-6 pt-6 pb-4 text-left space-y-0 border-b border-border/50">
           <DialogTitle className="text-lg font-semibold text-foreground">
             Question Details
