@@ -1,2 +1,0 @@
-origin	https://github.com/omiyages/source-edge-interview-prep.git (fetch)
-origin	https://github.com/omiyages/source-edge-interview-prep.git (push)

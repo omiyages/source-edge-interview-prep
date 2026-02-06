@@ -12,6 +12,18 @@ dist
 dist-ssr
 *.local
 
+# Environment files (except example)
+.env
+.env.local
+.env.*.local
+.env.local.backup
+!.env.example
+
+# Backup folders - may contain sensitive data
+backups/
+automated-backups/
+quick-backup/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +34,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Cursor/IDE specific
+.cursor/
