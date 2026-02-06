@@ -190,11 +190,11 @@ const CourseDetail = () => {
         {/* Selected Stage Content or Course Review */}
         {allStagesCompleted && !showCourseContent ? (
           <div className="space-y-8">
-            <div className="text-center py-8 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 rounded-lg border border-green-200 dark:border-green-800">
-              <h2 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">
+            <div className="text-center py-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+              <h2 className="text-2xl font-bold text-green-800 mb-2">
                 🎉 Congratulations!
               </h2>
-              <p className="text-green-700 dark:text-green-400 mb-4">
+              <p className="text-green-700 mb-4">
                 You've completed all stages of this course. Please share your feedback below.
               </p>
               <Button

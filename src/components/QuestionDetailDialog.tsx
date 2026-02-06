@@ -153,7 +153,7 @@ export function QuestionDetailDialog({
                     <Building2 className="h-3.5 w-3.5" />
                     {question.company.toUpperCase()}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700">
                     <User className="h-3.5 w-3.5" />
                     {question.role.toUpperCase()}
                   </span>
@@ -206,8 +206,8 @@ export function QuestionDetailDialog({
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
                     The interviewer&apos;s intent
                   </p>
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-                    <ul className="list-disc list-inside space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <ul className="list-disc list-inside space-y-1.5 text-sm text-gray-700">
                       {interviewerIntent.map((bullet, i) => (
                         <li key={i}>{bullet}</li>
                       ))}
@@ -222,41 +222,41 @@ export function QuestionDetailDialog({
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
                     Winning answer framework
                   </p>
-                  <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                  <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <div className="flex gap-2">
                       <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Situation</p>
-                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{winningFramework.situation || "—"}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">Situation</p>
+                        <p className="mt-1 text-sm text-gray-700">{winningFramework.situation || "—"}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Task</p>
-                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{winningFramework.task || "—"}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">Task</p>
+                        <p className="mt-1 text-sm text-gray-700">{winningFramework.task || "—"}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Action</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">Action</p>
                         {winningFramework.action?.length ? (
-                          <ul className="mt-1 list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                          <ul className="mt-1 list-disc list-inside space-y-1 text-sm text-gray-700">
                             {winningFramework.action.map((a, i) => (
                               <li key={i}>{a}</li>
                             ))}
                           </ul>
                         ) : (
-                          <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">—</p>
+                          <p className="mt-1 text-sm text-gray-700">—</p>
                         )}
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-green-500" aria-hidden />
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-green-600 dark:text-green-400">Result</p>
-                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{winningFramework.result || "—"}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-green-600">Result</p>
+                        <p className="mt-1 text-sm text-gray-700">{winningFramework.result || "—"}</p>
                       </div>
                     </div>
                   </div>

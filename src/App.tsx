@@ -10,7 +10,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { queryClient } from "@/lib/queryClient";
-import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SessionTracker } from "@/components/SessionTracker";
 import { TIMEZONE_CONFIG } from "@/config/timezone";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -40,8 +39,14 @@ const PageLoader = () => (
 );
 
 function App() {
-  // Initialize timezone settings
+  // Initialize timezone settings and clear dark mode
   React.useEffect(() => {
+    // Clear any stored dark mode preferences to fix users stuck in dark mode
+    localStorage.removeItem('theme');
+    localStorage.removeItem('vite-ui-theme');
+    document.documentElement.classList.remove('dark');
+    document.documentElement.removeAttribute('data-theme');
+    
     // Set timezone for the application
     document.documentElement.setAttribute('data-timezone', TIMEZONE_CONFIG.timezone);
     
@@ -64,116 +69,114 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <BrowserRouter>
-              <SessionTracker />
-              <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/signup" element={<PublicSignup />} />
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <Index />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <UserDashboard />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute requireAdmin={true}>
-                    <Suspense fallback={<PageLoader />}>
-                      <AdminDashboard />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/resources" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <Resources />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/course/:slug" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <CourseDetail />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/tracks" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <Track />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/company" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <Companies />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/company/:companyId" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <CompanyDetail />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/relo" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <Relo />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/questions" 
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <Questions />
-                    </Suspense>
-                  </ProtectedRoute>
-                } 
-              />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </ThemeProvider>
+          <BrowserRouter>
+            <SessionTracker />
+            <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/signup" element={<PublicSignup />} />
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <Index />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <UserDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <Suspense fallback={<PageLoader />}>
+                    <AdminDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/resources" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <Resources />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/course/:slug" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <CourseDetail />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/tracks" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <Track />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/company" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <Companies />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/company/:companyId" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <CompanyDetail />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/relo" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <Relo />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/questions" 
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <Questions />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
