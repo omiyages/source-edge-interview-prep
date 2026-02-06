@@ -55,36 +55,49 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         format: 'es',
-        manualChunks: (id) => {
-          // React core
-          if (id.includes('react') || id.includes('react-dom')) {
-            return 'react-vendor';
-          }
-          // Router
-          if (id.includes('react-router')) {
-            return 'router';
-          }
-          // Radix UI components
-          if (id.includes('@radix-ui')) {
-            return 'ui-components';
-          }
-          // Supabase
-          if (id.includes('@supabase')) {
-            return 'supabase';
-          }
-          // React Query
-          if (id.includes('@tanstack/react-query')) {
-            return 'query';
-          }
-          // Large libraries
-          if (id.includes('node_modules')) {
-            if (id.includes('recharts') || id.includes('mapbox')) {
-              return 'charts-maps';
-            }
-            if (id.includes('date-fns') || id.includes('zod')) {
-              return 'utils';
-            }
-          }
+        manualChunks: {
+          'react-vendor': [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            'scheduler'
+          ],
+          'supabase': [
+            '@supabase/supabase-js',
+            '@supabase/postgrest-js',
+            '@supabase/realtime-js',
+            '@supabase/storage-js',
+            '@supabase/functions-js',
+            '@supabase/auth-js'
+          ],
+          'ui-vendor': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-label',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-progress',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-collapsible'
+          ],
+          'query': [
+            '@tanstack/react-query'
+          ],
+          'utils': [
+            'date-fns',
+            'zod',
+            'clsx',
+            'class-variance-authority',
+            'tailwind-merge'
+          ]
         },
         // Optimize chunk names for better caching
         chunkFileNames: 'assets/js/[name]-[hash].js',
