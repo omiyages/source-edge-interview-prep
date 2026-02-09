@@ -26,7 +26,11 @@ interface SignupFormData {
   agreeTerms: boolean;
 }
 
-export const PublicSignupForm = () => {
+interface PublicSignupFormProps {
+  onSwitchToSignIn?: () => void;
+}
+
+export const PublicSignupForm = ({ onSwitchToSignIn }: PublicSignupFormProps = {}) => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -481,9 +485,19 @@ export const PublicSignupForm = () => {
             {/* Sign In Link */}
             <p className="text-center text-sm text-gray-500">
               Already have an account?{" "}
-              <Link to="/auth" className="text-primary font-medium hover:underline">
-                Sign in
-              </Link>
+              {onSwitchToSignIn ? (
+                <button 
+                  type="button" 
+                  onClick={onSwitchToSignIn} 
+                  className="text-primary font-medium hover:underline"
+                >
+                  Sign in
+                </button>
+              ) : (
+                <Link to="/auth" className="text-primary font-medium hover:underline">
+                  Sign in
+                </Link>
+              )}
             </p>
           </form>
         </Form>

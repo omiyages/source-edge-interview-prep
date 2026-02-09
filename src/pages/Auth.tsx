@@ -1,19 +1,26 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, LogIn, Mail, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { PublicSignupForm } from "@/components/PublicSignupForm";
+import { Turnstile } from "@marsidev/react-turnstile";
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || "";
 
 const Auth = () => {
   const { user, signIn, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"signup" | "signin">("signup");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<any>(null);
 
   // Redirect if already authenticated
   if (!loading && user) {
@@ -23,8 +30,13 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await signIn(email, password);
+    await signIn(email, password, captchaToken || undefined);
     setIsLoading(false);
+    // Reset captcha after attempt
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+      setCaptchaToken(null);
+    }
   };
 
   if (loading) {
@@ -114,10 +126,22 @@ const Auth = () => {
               />
             </div>
 
+            {TURNSTILE_SITE_KEY && (
+              <div className="flex justify-center">
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={(token) => setCaptchaToken(token)}
+                  onError={() => setCaptchaToken(null)}
+                  onExpire={() => setCaptchaToken(null)}
+                />
+              </div>
+            )}
+
             <Button 
               type="submit" 
               className="w-full py-3 btn-purple-gradient rounded-lg font-semibold" 
-              disabled={isLoading}
+              disabled={isLoading || (!!TURNSTILE_SITE_KEY && !captchaToken)}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Login Now
@@ -128,7 +152,7 @@ const Auth = () => {
             Don't have an account?{" "}
             <button 
               type="button"
-              onClick={() => setShowSignup(true)} 
+              onClick={() => { setDialogMode("signup"); setShowDialog(true); }} 
               className="text-primary font-medium hover:underline"
             >
               Register Now
@@ -137,14 +161,142 @@ const Auth = () => {
         </div>
       </div>
 
-      {/* Signup Dialog */}
-      <Dialog open={showSignup} onOpenChange={setShowSignup}>
-        <DialogContent className="max-w-md p-0 border-0 rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-          <DialogTitle className="sr-only">Create Account</DialogTitle>
-          <PublicSignupForm />
+      {/* Auth Dialog (Signup / Sign In) */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className={`max-w-md p-0 border-0 rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto gap-0 bg-transparent [&>button]:z-10 ${dialogMode === "signup" ? "[&>button]:text-white [&>button]:hover:text-white/80" : "[&>button]:text-gray-400 [&>button]:hover:text-gray-600"}`}>
+          <DialogTitle className="sr-only">{dialogMode === "signup" ? "Create Account" : "Sign In"}</DialogTitle>
+          {dialogMode === "signup" ? (
+            <PublicSignupForm onSwitchToSignIn={() => setDialogMode("signin")} />
+          ) : (
+            <DialogSignInForm 
+              onSwitchToSignUp={() => setDialogMode("signup")} 
+              onSuccess={() => setShowDialog(false)} 
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
+  );
+};
+
+// Sign-in form for use inside the dialog
+const DialogSignInForm = ({ onSwitchToSignUp, onSuccess }: { onSwitchToSignUp: () => void; onSuccess: () => void }) => {
+  const { signIn } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReady, setCaptchaReady] = useState(false);
+  const turnstileRef = useRef<any>(null);
+
+  // Delay Turnstile rendering inside dialog
+  useEffect(() => {
+    const timer = setTimeout(() => setCaptchaReady(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    await signIn(email, password, captchaToken || undefined);
+    setIsLoading(false);
+    // Reset captcha after attempt
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+      setCaptchaToken(null);
+    }
+    onSuccess();
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto rounded-2xl border-0 shadow-xl overflow-hidden">
+      <CardHeader className="bg-gradient-to-br from-gray-700 to-gray-900 p-8 text-center space-y-2">
+        <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto">
+          <LogIn className="w-7 h-7 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Welcome Back</h2>
+        <p className="text-white/80 text-sm">
+          Sign in to your account
+        </p>
+      </CardHeader>
+      <CardContent className="p-8">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="pl-10 h-11 rounded-lg"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="pl-10 pr-10 h-11 rounded-lg"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {TURNSTILE_SITE_KEY && captchaReady && (
+            <div className="flex justify-center">
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onError={() => setCaptchaToken(null)}
+                onExpire={() => setCaptchaToken(null)}
+              />
+            </div>
+          )}
+
+          <Button 
+            type="submit" 
+            disabled={isLoading || (!!TURNSTILE_SITE_KEY && !captchaToken)} 
+            className="w-full h-11 rounded-lg font-medium text-base"
+          >
+            {isLoading ? "Signing in..." : "Sign In"}
+          </Button>
+
+          <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Protected by Cloudflare Turnstile</span>
+          </div>
+
+          <p className="text-center text-sm text-gray-500">
+            Don't have an account?{" "}
+            <button 
+              type="button" 
+              onClick={onSwitchToSignUp} 
+              className="text-primary font-medium hover:underline"
+            >
+              Register Now
+            </button>
+          </p>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -5,7 +5,7 @@
   X-Content-Type-Options: nosniff
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
-  Content-Security-Policy: default-src 'self'; connect-src 'self' https://*.supabase.co https://api.mapbox.com wss://*.supabase.co https://*.youtube.com https://youtube.com https://www.youtube.com; img-src 'self' https://*.supabase.co data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; font-src 'self' data: https:; frame-src 'self' https://*.youtube.com https://youtube.com https://www.youtube.com; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; object-src 'none'; worker-src 'self' blob:; manifest-src 'self';
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.youtube.com https://youtube.com https://www.youtube.com; img-src 'self' https://*.supabase.co data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com; font-src 'self' data: https:; frame-src 'self' https://*.youtube.com https://youtube.com https://www.youtube.com https://challenges.cloudflare.com; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; object-src 'none'; worker-src 'self' blob:; manifest-src 'self';
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(*), accelerometer=(*)
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin

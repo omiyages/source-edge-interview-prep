@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, captchaToken?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -53,13 +53,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, captchaToken?: string) => {
     try {
       setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: captchaToken ? { captchaToken } : undefined,
       });
 
       if (error) throw error;
