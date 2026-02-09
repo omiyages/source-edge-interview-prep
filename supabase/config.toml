@@ -61,3 +61,9 @@ verify_jwt = true
 
 [functions.generate-question-coaching]
 verify_jwt = true
+
+[functions.generate-stage-summary]
+verify_jwt = true
+
+[functions.send-email]
+verify_jwt = true

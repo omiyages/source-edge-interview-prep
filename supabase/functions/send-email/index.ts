@@ -104,6 +104,42 @@ function courseAssignedEmail(fullName: string, courseName: string, courseDescrip
   }
 }
 
+const ADMIN_EMAIL = 'namtaelee@source-edge.com'
+
+function adminNewRegistrationEmail(fullName: string, email: string): { subject: string; html: string } {
+  return {
+    subject: `New Registration Pending Approval: ${fullName}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:32px;text-align:center;">
+      <h1 style="color:#ffffff;font-size:24px;margin:0;">New Registration</h1>
+      <p style="color:rgba(255,255,255,0.85);font-size:14px;margin:8px 0 0;">A new user is waiting for approval</p>
+    </div>
+    <div style="padding:32px;">
+      <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 20px;">A new user has registered on Source Edge and is pending your approval.</p>
+      <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:0 0 20px;">
+        <p style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 12px;">Registration Details</p>
+        <p style="color:#374151;font-size:14px;margin:0 0 8px;"><strong>Name:</strong> ${fullName}</p>
+        <p style="color:#374151;font-size:14px;margin:0;"><strong>Email:</strong> ${email}</p>
+      </div>
+      <div style="text-align:center;margin:0 0 24px;">
+        <a href="https://www.omiyages.com/admin" style="display:inline-block;background:#f59e0b;color:#ffffff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;">Review in Admin Dashboard</a>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0;">Please review and approve or reject this registration.</p>
+    </div>
+    <div style="background:#f8fafc;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+      <p style="color:#9ca3af;font-size:12px;margin:0;">&copy; 2026 Source Edge. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+  }
+}
+
 // ─── Main Handler ───────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -119,27 +155,31 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Parse request
+    // Parse request first to check type
     const body = await req.json()
     const { type, data } = body
+
+    // Allow unauthenticated calls for admin_new_registration (called during public signup)
+    const allowUnauthenticated = type === 'admin_new_registration'
+
+    if (!allowUnauthenticated) {
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'Authorization required' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
 
     if (!type) {
       return new Response(JSON.stringify({ error: 'Email type is required' }), {
@@ -200,6 +240,21 @@ Deno.serve(async (req) => {
 
         to = profile.email
         const template = courseAssignedEmail(profile.full_name || 'there', courseName, courseDescription || null)
+        subject = template.subject
+        html = template.html
+        break
+      }
+
+      case 'admin_new_registration': {
+        const { fullName, email } = data
+        if (!fullName || !email) {
+          return new Response(JSON.stringify({ error: 'Missing required fields: fullName, email' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+        to = ADMIN_EMAIL
+        const template = adminNewRegistrationEmail(fullName, email)
         subject = template.subject
         html = template.html
         break
