@@ -61,18 +61,6 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const [showBulkUserCreation, setShowBulkUserCreation] = useState(false);
 
-  console.log('🚀 AdminDashboard: Component mounted/rendered');
-  console.log('🔧 AdminDashboard render - DETAILED:', {
-    hasUser: !!user,
-    userEmail: user?.email,
-    hasProfile: !!profile,
-    profileRole: profile?.role,
-    isAdmin,
-    authLoading,
-    currentUrl: window.location.href,
-    timestamp: new Date().toISOString()
-  });
-
   // Move ALL hooks to the top - this is critical for React's Rules of Hooks
   const shouldFetchData = !!user && isAdmin && !authLoading;
 
@@ -80,7 +68,6 @@ const AdminDashboard = () => {
   const { data: pendingQuestions, isLoading: loadingPending, error: pendingError } = useQuery({
     queryKey: ['admin-pending-questions'],
     queryFn: async () => {
-      console.log('📥 Fetching pending questions...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, interview_stage, category, submitted_by, additional_context, created_at, question_type, source_url, source_website, scraped_at, status, approved_by, approved_at')
@@ -88,11 +75,9 @@ const AdminDashboard = () => {
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ Error fetching pending questions:', error);
         throw error;
       }
       
-      console.log('✅ Pending questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
     enabled: shouldFetchData,
@@ -102,18 +87,15 @@ const AdminDashboard = () => {
   const { data: allQuestions, isLoading: loadingAll, error: allError } = useQuery({
     queryKey: ['admin-all-questions'],
     queryFn: async () => {
-      console.log('📥 Fetching all questions...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, interview_stage, category, submitted_by, additional_context, created_at, question_type, source_url, source_website, scraped_at, status, approved_by, approved_at')
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ Error fetching all questions:', error);
         throw error;
       }
       
-      console.log('✅ All questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
     enabled: shouldFetchData,
@@ -122,7 +104,6 @@ const AdminDashboard = () => {
   // Question approval mutation - always call this hook
   const approveQuestionMutation = useMutation({
     mutationFn: async ({ questionId, status }: { questionId: string; status: 'approved' | 'rejected' }) => {
-      console.log('🔄 Updating question status:', { questionId, status });
       const { error } = await supabase
         .from('interview_questions')
         .update({
@@ -144,8 +125,7 @@ const AdminDashboard = () => {
         description: `The question has been ${status}.`,
       });
     },
-    onError: (error) => {
-      console.error('❌ Error updating question status:', error);
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to update question status.",
@@ -156,7 +136,6 @@ const AdminDashboard = () => {
 
   // NOW do conditional rendering after all hooks are called
   if (authLoading) {
-    console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
     return (
       <div className="min-h-screen bg-gray-50">
         <NavigationHeader />
@@ -172,12 +151,10 @@ const AdminDashboard = () => {
   }
 
   if (!user) {
-    console.log('🚫 AdminDashboard: No user found, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
   if (!profile) {
-    console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
     return (
       <div className="min-h-screen bg-gray-50">
         <NavigationHeader />
@@ -193,16 +170,8 @@ const AdminDashboard = () => {
   }
 
   if (!isAdmin) {
-    console.log('🚫 AdminDashboard: User is not admin, redirecting home:', { 
-      hasUser: !!user, 
-      email: user.email, 
-      role: profile?.role,
-      isAdmin
-    });
     return <Navigate to="/" replace />;
   }
-
-  console.log('✅ AdminDashboard: All checks passed, rendering dashboard');
 
   const getStatusColor = (status: string) => {
     switch (status) {

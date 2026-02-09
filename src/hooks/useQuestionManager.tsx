@@ -34,7 +34,6 @@ export const useQuestionManager = (stageId: string) => {
   const { data: stageExists } = useQuery({
     queryKey: ['stage-exists', stageId],
     queryFn: async () => {
-      console.log('Verifying stage exists:', stageId);
       const { data, error } = await supabase
         .from('course_stages')
         .select('id')
@@ -42,10 +41,8 @@ export const useQuestionManager = (stageId: string) => {
         .single();
       
       if (error) {
-        console.error('Error checking stage existence:', error);
         return false;
       }
-      console.log('Stage exists:', !!data);
       return !!data;
     },
   });
@@ -54,17 +51,14 @@ export const useQuestionManager = (stageId: string) => {
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
     queryKey: ['all-questions-for-stage'],
     queryFn: async () => {
-      console.log('Fetching all questions for stage management...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, category, interview_stage, additional_context, team, position_name, source_website')
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching questions:', error);
         throw error;
       }
-      console.log('Fetched questions:', data?.length);
       return data as InterviewQuestion[];
     },
   });
@@ -73,17 +67,14 @@ export const useQuestionManager = (stageId: string) => {
   const { data: currentQuestions, isLoading: isLoadingCurrent } = useQuery({
     queryKey: ['current-stage-questions', stageId],
     queryFn: async () => {
-      console.log('Fetching current stage questions for stage:', stageId);
       const { data, error } = await supabase
         .from('stage_questions')
         .select('question_id')
         .eq('stage_id', stageId);
       
       if (error) {
-        console.error('Error fetching current stage questions:', error);
         throw error;
       }
-      console.log('Current stage questions:', data);
       return new Set(data.map(item => item.question_id));
     },
     enabled: !!stageExists, // Only fetch if stage exists
@@ -147,7 +138,6 @@ export const useQuestionManager = (stageId: string) => {
 
   const handleSave = async (onSuccess: () => void) => {
     if (!stageExists) {
-      console.error('Cannot save questions: Stage does not exist');
       toast({
         title: "Error",
         description: "Invalid stage. Please refresh the page and try again.",
@@ -158,10 +148,6 @@ export const useQuestionManager = (stageId: string) => {
 
     setIsSaving(true);
     try {
-      console.log('Starting to save stage questions...');
-      console.log('Stage ID:', stageId);
-      console.log('Selected questions:', Array.from(selectedQuestions));
-
       // First, remove all existing questions for this stage
       const { error: deleteError } = await supabase
         .from('stage_questions')
@@ -169,10 +155,8 @@ export const useQuestionManager = (stageId: string) => {
         .eq('stage_id', stageId);
 
       if (deleteError) {
-        console.error('Error deleting existing stage questions:', deleteError);
         throw deleteError;
       }
-      console.log('Successfully deleted existing stage questions');
 
       // Then, add the selected questions
       if (selectedQuestions.size > 0) {
@@ -181,17 +165,13 @@ export const useQuestionManager = (stageId: string) => {
           question_id: questionId,
         }));
 
-        console.log('Inserting new stage questions:', questionsToInsert);
-
         const { error: insertError } = await supabase
           .from('stage_questions')
           .insert(questionsToInsert);
 
         if (insertError) {
-          console.error('Error inserting stage questions:', insertError);
           throw insertError;
         }
-        console.log('Successfully inserted new stage questions');
       }
 
       // Invalidate queries to trigger refetch
@@ -205,7 +185,6 @@ export const useQuestionManager = (stageId: string) => {
 
       onSuccess();
     } catch (error) {
-      console.error('Error updating stage questions:', error);
       
       // Provide more specific error messages
       let errorMessage = "Failed to update questions. Please try again.";

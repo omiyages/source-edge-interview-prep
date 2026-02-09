@@ -37,11 +37,8 @@ const Resources = () => {
 
   const fetchResources = async () => {
     try {
-      console.log('🔄 Fetching resources...');
-      
       // Check if user is authenticated before making requests
       if (!user) {
-        console.log('❌ No authenticated user found');
         toast({
           title: "Authentication Required",
           description: "Please log in to access resources.",
@@ -57,15 +54,12 @@ const Resources = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching resources:', error);
         throw error;
       }
 
-      console.log('✅ Resources fetched successfully:', data?.length || 0);
       setResources(data || []);
       setFilteredResources(data || []);
     } catch (error) {
-      console.error('❌ Error fetching resources:', error);
       toast({
         title: "Error",
         description: "Failed to load resources. Please try refreshing the page.",
@@ -148,7 +142,6 @@ const Resources = () => {
 
       fetchResources();
     } catch (error) {
-      console.error('Error deleting resource:', error);
       toast({
         title: "Error",
         description: "Failed to delete resource. Please try again.",

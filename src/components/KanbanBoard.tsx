@@ -83,46 +83,32 @@ export const KanbanBoard: React.FC = () => {
         .order('value');
 
       if (error) {
-        console.error('Error loading positions:', error);
-        // Fallback: just use the assigned positions we already have
+        // Silently handle
         return;
       }
 
       const positions = data?.map(item => item.value) || [];
-      console.log('📋 Loaded available positions:', positions);
       setAvailablePositions(positions);
     } catch (error) {
-      console.error('Error loading positions:', error);
+      // Silently handle
     }
   };
 
   // Extract assigned positions from current users
   const updateAssignedPositions = () => {
     const positions = new Set<string>();
-    console.log('🔍 Updating assigned positions from columns:', columns);
-    console.log('🔍 Total columns:', columns.length);
     
     columns.forEach((column, columnIndex) => {
-      console.log(`🔍 Column ${columnIndex}: ${column.title} with ${column.users.length} users`);
       column.users.forEach((user, userIndex) => {
-        console.log(`👤 User ${userIndex + 1} in ${column.title}: ${user.full_name}`);
-        console.log(`   - Position: "${user.position}" (type: ${typeof user.position})`);
-        console.log(`   - Role: "${user.role}"`);
-        console.log(`   - Email: "${user.email}"`);
-        
         const userPosition = (user.position || user.role || '').trim(); // Use position or fallback to role, normalize
         if (userPosition) {
-          console.log(`✅ Adding position: "${userPosition}"`);
           positions.add(userPosition);
         } else {
-          console.log(`❌ No position found for ${user.full_name}`);
         }
       });
     });
     
     const positionArray = Array.from(positions).sort();
-    console.log('📋 Final assigned positions found:', positionArray);
-    console.log('📋 Number of unique positions:', positionArray.length);
     setAssignedPositions(positionArray);
   };
 
@@ -130,19 +116,13 @@ export const KanbanBoard: React.FC = () => {
   const loadKanbanData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Loading kanban data...');
       
-      // First, let's test if we can access the database at all
-      console.log('🔍 Testing database connection...');
       const { data: testData, error: testError } = await supabase
         .from('profiles')
         .select('id, email, full_name')
         .limit(5);
       
-      console.log('📊 Database test result:', { testData, testError });
-      
       if (testError) {
-        console.error('❌ Database connection failed:', testError);
         toast({
           title: "Database Error",
           description: `Cannot connect to database: ${testError.message}`,
@@ -154,69 +134,39 @@ export const KanbanBoard: React.FC = () => {
       const newColumns: KanbanColumn[] = [];
 
       for (const stage of KANBAN_STAGES) {
-        console.log(`🔍 Loading users for stage: ${stage.id}`);
-        
         // Use the RPC function (keep it simple)
         const { data, error } = await supabase.rpc('get_users_by_stage_with_rejected' as any, {
           p_stage_name: stage.id,
           p_show_rejected: showRejected
         });
 
-        console.log(`📊 Stage ${stage.id} result:`, { data, error });
-
         if (error) {
-          console.error(`❌ Error loading users for stage ${stage.id}:`, error);
-          console.error(`❌ Error details:`, {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-            hint: error.hint
-          });
           newColumns.push({
             id: stage.id,
             title: stage.title,
             users: []
           });
         } else {
-        console.log(`✅ Stage ${stage.id} loaded ${data?.length || 0} users`);
-        console.log(`📊 Sample user data for ${stage.id}:`, data?.[0]);
         if (data && data.length > 0) {
-          console.log(`🔍 User position data for ${stage.id}:`, data.map(user => ({ 
-            name: user.full_name, 
-            position: user.position,
-            role: user.role,
-            email: user.email
-          })));
-          console.log(`🔍 First user full data for ${stage.id}:`, data[0]);
-          
           // Check if any users have position data
           const usersWithPositions = data.filter(user => user.position && user.position.trim());
-          console.log(`📊 Users with positions in ${stage.id}: ${usersWithPositions.length}/${data.length}`);
-          if (usersWithPositions.length > 0) {
-            console.log(`✅ Sample positions:`, usersWithPositions.map(u => u.position));
-          } else {
-            console.log(`❌ No users have position data in ${stage.id}`);
-          }
         }
         // Aggressive deduplication to remove ghost duplicates
         const finalUsers = data ? data.reduce((acc: KanbanUser[], user: KanbanUser) => {
           // Check for duplicates by user_id
           const existingById = acc.find(u => u.user_id === user.user_id);
           if (existingById) {
-            console.log(`🔄 Duplicate user_id found: ${user.full_name} (${user.user_id}) - keeping first occurrence`);
             return acc;
           }
           
           // Check for duplicates by email
           const existingByEmail = acc.find(u => u.email === user.email);
           if (existingByEmail) {
-            console.log(`🔄 Duplicate email found: ${user.email} - keeping first occurrence`);
             return acc;
           }
           
           // Check for invalid/ghost users (missing essential data)
           if (!user.user_id || !user.email || !user.full_name) {
-            console.log(`🔄 Invalid/ghost user found: ${JSON.stringify(user)} - skipping`);
             return acc;
           }
           
@@ -224,8 +174,6 @@ export const KanbanBoard: React.FC = () => {
           acc.push(user);
           return acc;
         }, []) : [];
-        
-        console.log(`📊 Stage ${stage.id}: ${data?.length || 0} total users, ${finalUsers.length} valid unique users`);
         
         newColumns.push({
           id: stage.id,
@@ -235,7 +183,6 @@ export const KanbanBoard: React.FC = () => {
         }
       }
 
-      console.log('📋 Final columns:', newColumns);
       setColumns(newColumns);
       
       // Update assigned positions immediately after setting columns
@@ -250,10 +197,8 @@ export const KanbanBoard: React.FC = () => {
         });
       });
       const positionArray = Array.from(positions).sort();
-      console.log('📋 Final assigned positions found:', positionArray);
       setAssignedPositions(positionArray);
     } catch (error) {
-      console.error('❌ Error loading kanban data:', error);
       toast({
         title: "Error",
         description: "Failed to load kanban data. Please try again.",
@@ -306,19 +251,7 @@ export const KanbanBoard: React.FC = () => {
 
     if (!user || !destColumn) return;
 
-    console.log('🔍 Current user:', currentUser);
-    console.log('🔍 User ID:', currentUser?.id);
-    console.log('🔍 Profile:', profile);
-    console.log('🔍 Profile role:', profile?.role);
-
     try {
-      console.log('🔄 Moving user:', {
-        user_id: user.user_id,
-        from_stage: sourceColumn.title,
-        to_stage: destColumn.title,
-        transitioned_by: currentUser?.id
-      });
-
       // Update database
       const { error } = await supabase.rpc('move_user_to_stage' as any, {
         p_user_id: user.user_id,
@@ -327,16 +260,7 @@ export const KanbanBoard: React.FC = () => {
         p_notes: `Moved from ${sourceColumn.title} to ${destColumn.title}`
       });
 
-      console.log('📊 Move user result:', { error });
-
       if (error) {
-        console.error('❌ Error moving user:', error);
-        console.error('❌ Error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
         toast({
           title: "Error",
           description: `Failed to move user: ${error.message}`,
@@ -369,7 +293,6 @@ export const KanbanBoard: React.FC = () => {
         description: `User moved to ${destColumn.title}`,
       });
     } catch (error) {
-      console.error('Error moving user:', error);
       toast({
         title: "Error",
         description: "Failed to move user. Please try again.",
@@ -407,7 +330,6 @@ export const KanbanBoard: React.FC = () => {
       });
 
       if (error) {
-        console.error('Error rejecting user:', error);
         toast({
           title: "Error",
           description: "Failed to reject user. Please try again.",
@@ -428,7 +350,6 @@ export const KanbanBoard: React.FC = () => {
         description: "User has been rejected and hidden from the board.",
       });
     } catch (error) {
-      console.error('Error rejecting user:', error);
       toast({
         title: "Error",
         description: "Failed to reject user. Please try again.",
@@ -448,7 +369,6 @@ export const KanbanBoard: React.FC = () => {
       });
 
       if (error) {
-        console.error('Error unrejecting user:', error);
         toast({
           title: "Error",
           description: "Failed to unreject user. Please try again.",
@@ -465,7 +385,6 @@ export const KanbanBoard: React.FC = () => {
         description: "User has been unrejected and restored to the board.",
       });
     } catch (error) {
-      console.error('Error unrejecting user:', error);
       toast({
         title: "Error",
         description: "Failed to unreject user. Please try again.",

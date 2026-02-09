@@ -42,9 +42,6 @@ export const validateGoogleConfig = (): { isValid: boolean; errors: string[] } =
 // Security: Get Google configuration for API calls (only expose non-sensitive data)
 export const getGoogleAPIConfig = () => {
   const validation = validateGoogleConfig();
-  if (!validation.isValid) {
-    console.warn('⚠️ Google configuration validation failed:', validation.errors);
-  }
   
   return {
     clientId: googleConfig.client_id,

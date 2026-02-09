@@ -85,13 +85,11 @@ export const getOrGeneratePreparationNotes = async (questionId: string): Promise
     });
 
     if (error) {
-      console.warn('getOrGeneratePreparationNotes error:', error);
       return [];
     }
     const notes = data?.preparation_notes;
     return Array.isArray(notes) ? notes : [];
   } catch (err) {
-    console.warn('getOrGeneratePreparationNotes failed:', err);
     return [];
   }
 };
@@ -117,7 +115,6 @@ export const getOrGenerateQuestionCoaching = async (
     });
 
     if (error) {
-      console.warn('getOrGenerateQuestionCoaching error:', error);
       return { interviewer_intent: [], winning_answer_framework: null };
     }
     return {
@@ -125,7 +122,6 @@ export const getOrGenerateQuestionCoaching = async (
       winning_answer_framework: data?.winning_answer_framework ?? null,
     };
   } catch (err) {
-    console.warn('getOrGenerateQuestionCoaching failed:', err);
     return { interviewer_intent: [], winning_answer_framework: null };
   }
 };

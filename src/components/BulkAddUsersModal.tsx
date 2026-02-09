@@ -73,7 +73,6 @@ export const BulkAddUsersModal = ({ isOpen, onClose, onUpdate }) => {
       if (error) throw error;
       setUsers(data || []);
     } catch (error) {
-      console.error('Error loading users:', error);
       toast({
         title: "Error",
         description: "Failed to load users. Please try again.",
@@ -98,7 +97,7 @@ export const BulkAddUsersModal = ({ isOpen, onClose, onUpdate }) => {
       ];
       setStages(kanbanStages);
     } catch (error) {
-      console.error('Error loading stages:', error);
+      // Silently handle stage loading error
     }
   };
 
@@ -118,7 +117,7 @@ export const BulkAddUsersModal = ({ isOpen, onClose, onUpdate }) => {
       }));
       setRoleOptions(options);
     } catch (error) {
-      console.error('Error loading role options:', error);
+      // Silently handle role options loading error
     }
   };
 
@@ -140,8 +139,6 @@ export const BulkAddUsersModal = ({ isOpen, onClose, onUpdate }) => {
       stage: selectedStage,
       isValid: true
     }));
-    console.log('🔍 Bulk users updated with stage:', selectedStage);
-    console.log('🔍 Bulk users:', bulkUsersList);
     setBulkUsers(bulkUsersList);
   };
 
@@ -178,7 +175,6 @@ export const BulkAddUsersModal = ({ isOpen, onClose, onUpdate }) => {
       for (const user of validUsers) {
         try {
           // Add to Kanban stage
-          console.log('🔍 Adding user to stage:', user.stage, 'for user:', user.email);
           const { error: kanbanError } = await supabase.rpc('move_user_to_stage', {
             p_user_id: user.id,
             p_new_stage_name: user.stage,
@@ -187,7 +183,6 @@ export const BulkAddUsersModal = ({ isOpen, onClose, onUpdate }) => {
           });
 
           if (kanbanError) {
-            console.error('Kanban error details:', kanbanError);
             throw kanbanError;
           }
 
@@ -203,7 +198,6 @@ export const BulkAddUsersModal = ({ isOpen, onClose, onUpdate }) => {
 
           successCount++;
         } catch (error) {
-          console.error(`Error adding user ${user.email}:`, error);
           errorCount++;
         }
       }
@@ -223,7 +217,6 @@ export const BulkAddUsersModal = ({ isOpen, onClose, onUpdate }) => {
         });
       }
     } catch (error) {
-      console.error('Error in bulk user creation:', error);
       toast({
         title: "Error",
         description: "Failed to add users. Please try again.",

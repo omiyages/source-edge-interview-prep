@@ -154,7 +154,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .eq('user_id', user.user_id);
 
       if (assignmentsError) {
-        console.error('Error loading course assignments:', assignmentsError);
+        // Silently handle
       } else {
         const formattedAssignments = assignments?.map(assignment => ({
           id: assignment.id,
@@ -175,10 +175,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .order('created_at', { ascending: false });
 
       if (notesError) {
-        console.error('Error loading admin notes:', notesError);
+        // Silently handle
       } else {
-        console.log('✅ Loaded admin notes:', notes?.length || 0, 'notes');
-        console.log('📝 Notes data:', notes);
         setAdminNotes(notes || []);
       }
 
@@ -190,7 +188,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .order('transitioned_at', { ascending: false });
 
       if (transitionsError) {
-        console.error('Error loading stage transitions:', transitionsError);
+        // Silently handle
       } else {
         setStageTransitions(transitions || []);
       }
@@ -203,7 +201,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .order('scheduled_date', { ascending: false });
 
       if (interviewError) {
-        console.error('Error loading interviews:', interviewError);
+        // Silently handle
       } else {
         setInterviews(interviewData || []);
       }
@@ -217,7 +215,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           .single();
 
         if (profileError) {
-          console.error('Error loading profile information:', profileError);
           // If columns don't exist, try loading without the new fields
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('profiles')
@@ -226,7 +223,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
             .single();
 
           if (fallbackError) {
-            console.error('Error loading fallback profile information:', fallbackError);
+            // Silently handle
           } else {
             setLinkedinUrl(fallbackData?.linkedin_url || '');
             setCurrentSalary(fallbackData?.current_salary || '');
@@ -248,10 +245,9 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           setYearsOfExperience(profileData?.years_of_experience || '');
         }
       } catch (error) {
-        console.error('Unexpected error loading profile information:', error);
+        // Silently handle
       }
     } catch (error) {
-      console.error('Error loading user details:', error);
       toast({
         title: "Error",
         description: "Failed to load user details. Please try again.",
@@ -288,20 +284,13 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       if (japaneseProficiency.trim()) updateData.japanese_proficiency = japaneseProficiency.trim();
       if (yearsOfExperience.trim()) updateData.years_of_experience = yearsOfExperience.trim();
 
-      console.log('Updating with data:', updateData);
-      console.log('User ID:', user.user_id);
-
       const { data, error } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', user.user_id)
         .select();
 
-      console.log('Update result:', { data, error });
-
       if (error) {
-        console.error('Error saving information:', error);
-        
         // Check if it's a column not found error
         if (error.message.includes('Could not find') && error.message.includes('column')) {
           toast({
@@ -334,7 +323,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .single();
 
       if (reloadError) {
-        console.error('Error reloading profile information:', reloadError);
+        // Silently handle
       } else {
         setLinkedinUrl(updatedProfile?.linkedin_url || '');
         setCurrentSalary(updatedProfile?.current_salary || '');
@@ -345,10 +334,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         setLocation(updatedProfile?.location || '');
         setJapaneseProficiency(updatedProfile?.japanese_proficiency || '');
         setYearsOfExperience(updatedProfile?.years_of_experience || '');
-        console.log('Reloaded profile data:', updatedProfile);
       }
     } catch (error) {
-      console.error('Error saving information:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",
@@ -380,7 +367,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         description: "Note added successfully.",
       });
     } catch (error) {
-      console.error('Error adding note:', error);
       toast({
         title: "Error",
         description: "Failed to add note. Please try again.",
@@ -414,7 +400,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         description: "To-do item added successfully.",
       });
     } catch (error) {
-      console.error('Error adding todo:', error);
       toast({
         title: "Error",
         description: "Failed to add to-do item. Please try again.",
@@ -436,7 +421,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
       loadUserDetails();
     } catch (error) {
-      console.error('Error updating todo:', error);
       toast({
         title: "Error",
         description: "Failed to update to-do item. Please try again.",
@@ -462,7 +446,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         description: "Item deleted successfully.",
       });
     } catch (error) {
-      console.error('Error deleting note:', error);
       toast({
         title: "Error",
         description: "Failed to delete item. Please try again.",
@@ -491,7 +474,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       onUpdate(); // Refresh the kanban data
       onClose();
     } catch (error) {
-      console.error('Error rejecting user:', error);
       toast({
         title: "Error",
         description: "Failed to reject user. Please try again.",

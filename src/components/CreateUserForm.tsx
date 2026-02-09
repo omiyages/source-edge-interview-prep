@@ -125,7 +125,6 @@ export const CreateUserForm = () => {
       });
 
       if (error) {
-        console.error('Edge function error:', error);
         throw error;
       }
 
@@ -158,10 +157,9 @@ export const CreateUserForm = () => {
               },
             },
           });
-          console.log('✅ Welcome email sent to', data.user.email);
         }
       } catch (emailError) {
-        console.error('⚠️ Welcome email failed (non-blocking):', emailError);
+        // Silently handle non-blocking welcome email error
       }
 
       toast({
@@ -179,8 +177,6 @@ export const CreateUserForm = () => {
       setUseManualPassword(true);
     },
     onError: (error: any) => {
-      console.error('User creation error:', error);
-      
       if (error.message === 'Validation failed') {
         // Validation errors are already set in state
         return;

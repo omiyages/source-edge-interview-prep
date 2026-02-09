@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 export const checkQuestionDeletePermission = async (questionId: string, userEmail: string, isAdmin: boolean): Promise<boolean> => {
   // Admins can delete any question
   if (isAdmin) {
-    console.log('🗑️ QuestionCard delete check: Admin access granted', { questionId, userEmail, isAdmin });
     return true;
   }
 
@@ -20,25 +19,12 @@ export const checkQuestionDeletePermission = async (questionId: string, userEmai
       .single();
 
     if (error) {
-      console.error('❌ Error checking question ownership:', error);
       return false;
     }
 
     // Users can only delete their own submitted questions
-    const canDelete = question?.submitted_by === userEmail && question?.question_type === 'user_submitted';
-    
-    console.log('🗑️ QuestionCard delete check:', {
-      questionId,
-      userEmail,
-      isAdmin,
-      submittedBy: question?.submitted_by,
-      questionType: question?.question_type,
-      canDelete
-    });
-
-    return canDelete;
+    return question?.submitted_by === userEmail && question?.question_type === 'user_submitted';
   } catch (error) {
-    console.error('❌ Error in delete permission check:', error);
     return false;
   }
 };
@@ -61,7 +47,6 @@ export const checkQuestionEditPermission = async (questionId: string, userEmail:
     // Users can only edit their own pending questions
     return question?.submitted_by === userEmail && question?.status === 'pending';
   } catch (error) {
-    console.error('❌ Error in edit permission check:', error);
     return false;
   }
 };

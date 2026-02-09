@@ -25,11 +25,9 @@ export const useSessionTracking = () => {
         additional_minutes: additionalMinutes
       });
 
-      if (error) {
-        console.error('Error updating session time:', error);
-      }
+      // error handled silently
     } catch (error) {
-      console.error('Error updating session time:', error);
+      // Silently handle
     }
   }, [user?.id]);
 
@@ -62,7 +60,6 @@ export const useSessionTracking = () => {
       }
     }, 60000); // Check every minute
 
-    console.log('🕐 Session tracking started for user:', user.id);
   }, [user?.id, updateSessionTime]);
 
   // Stop tracking session
@@ -83,7 +80,6 @@ export const useSessionTracking = () => {
     }
 
     sessionRef.current = null;
-    console.log('🕐 Session tracking stopped');
   }, [updateSessionTime]);
 
   // Handle visibility change (tab focus/blur)

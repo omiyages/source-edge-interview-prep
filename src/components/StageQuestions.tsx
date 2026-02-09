@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings2, Search, Filter } from "lucide-react";
-import { useEffect, useState, useMemo, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useMemo } from "react";
 import { stripHtml } from "@/utils/htmlSanitizer";
 import { QuestionDetailDialog } from "@/components/QuestionDetailDialog";
 import type { InterviewQuestion as ServiceInterviewQuestion } from "@/services/questionsService";
@@ -52,46 +51,6 @@ export const StageQuestions = ({
   const [sortOrder, setSortOrder] = useState("newest");
   const [displayedCount, setDisplayedCount] = useState(6);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
-  // Debounce timer ref for real-time updates
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Set up real-time subscription for stage questions with debouncing
-  useEffect(() => {
-    if (!stageId || !onQuestionsUpdate) return;
-
-    console.log('Setting up real-time subscription for stage questions:', stageId);
-
-    const channel = supabase
-      .channel(`stage-questions-${stageId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'stage_questions',
-          filter: `stage_id=eq.${stageId}`
-        },
-        (payload) => {
-          console.log('Stage questions changed:', payload);
-          // Debounce the update to prevent rapid refetches
-          if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-          }
-          debounceTimerRef.current = setTimeout(() => {
-            onQuestionsUpdate();
-          }, 300);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up real-time subscription for stage questions');
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      supabase.removeChannel(channel);
-    };
-  }, [stageId, onQuestionsUpdate]);
 
   // Get unique categories
   const uniqueCategories = useMemo(() => {

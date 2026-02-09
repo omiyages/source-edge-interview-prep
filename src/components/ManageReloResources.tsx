@@ -23,18 +23,15 @@ export const ManageReloResources = ({ onSuccess }: { onSuccess?: () => void }) =
   const { data: allResources, isLoading: isLoadingResources } = useQuery({
     queryKey: ['all-resources'],
     queryFn: async () => {
-      console.log('🔍 Fetching all resources for Relo page management...');
       const { data, error } = await supabase
         .from('resources')
         .select('id, title, description, url, category, created_at')
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ Error fetching resources:', error);
         throw error;
       }
       
-      console.log('✅ Resources fetched successfully:', data?.length || 0, 'resources');
       return data as Resource[];
     },
   });
@@ -107,7 +104,6 @@ export const ManageReloResources = ({ onSuccess }: { onSuccess?: () => void }) =
 
       onSuccess?.();
     } catch (error) {
-      console.error('Error updating page resources:', error);
       toast({
         title: "Error",
         description: "Failed to update resources. Please try again.",

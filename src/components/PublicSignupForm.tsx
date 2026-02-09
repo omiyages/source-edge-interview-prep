@@ -2,7 +2,7 @@
 // ABOUTME: Public registration form with Cloudflare Turnstile CAPTCHA, strong password validation,
 // ABOUTME: email verification, input sanitization, and admin notification on new signups
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,16 @@ export const PublicSignupForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<{ score: number; feedback: string[] }>({ score: 0, feedback: [] });
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReady, setCaptchaReady] = useState(false);
   const turnstileRef = useRef<any>(null);
   const { toast } = useToast();
+
+  // Delay Turnstile rendering to ensure the component is fully mounted
+  // (prevents issues when rendered inside a dialog)
+  useEffect(() => {
+    const timer = setTimeout(() => setCaptchaReady(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
   
   const form = useForm<SignupFormData>({
     defaultValues: {
@@ -159,7 +167,7 @@ export const PublicSignupForm = () => {
           });
 
         if (profileError) {
-          console.error('Profile creation error:', profileError);
+          // Silently handle profile creation error
         }
 
         // Send admin notification email (non-blocking)
@@ -173,9 +181,8 @@ export const PublicSignupForm = () => {
               },
             },
           });
-          console.log('Admin notification email sent');
         } catch (emailError) {
-          console.error('Admin notification email failed (non-blocking):', emailError);
+          // Silently handle non-blocking admin notification email error
         }
       }
 
@@ -183,8 +190,6 @@ export const PublicSignupForm = () => {
       form.reset();
       
     } catch (error: any) {
-      console.error('Signup error:', error);
-      
       let userMessage = 'An error occurred during registration';
       if (error?.message?.includes('already_registered')) {
         userMessage = 'An account with this email already exists';
@@ -446,7 +451,7 @@ export const PublicSignupForm = () => {
             />
 
             {/* Cloudflare Turnstile CAPTCHA */}
-            {TURNSTILE_SITE_KEY && (
+            {TURNSTILE_SITE_KEY && captchaReady && (
               <div className="flex justify-center">
                 <Turnstile
                   ref={turnstileRef}

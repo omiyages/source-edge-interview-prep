@@ -35,13 +35,12 @@ export const JSTDateTime: React.FC<JSTDateTimeProps> = ({
       
       // Check if date is valid
       if (isNaN(dateObj.getTime())) {
-        console.warn('Invalid date provided to JSTDateTime:', dateValue);
         return;
       }
       
       setDisplayTime(timezoneUtils.parseFromDatabase(dateObj.toISOString()));
     } catch (error) {
-      console.error('Error parsing date in JSTDateTime:', error, dateValue);
+      // Silently handle invalid dates
     }
   }, [date, dateTime]);
 

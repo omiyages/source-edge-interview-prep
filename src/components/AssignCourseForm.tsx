@@ -89,10 +89,9 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
               },
             },
           });
-          console.log('✅ Course assignment email sent');
         }
       } catch (emailError) {
-        console.error('⚠️ Course assignment email failed (non-blocking):', emailError);
+        // Silently handle non-blocking course assignment email error
       }
 
       toast({

@@ -57,7 +57,6 @@ export const PendingTasksSimple: React.FC = () => {
   const loadPendingTasks = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Loading tasks with simple approach (no user data)...');
 
       // Simple query - just get tasks without any user joins
       const { data, error } = await supabase
@@ -67,7 +66,6 @@ export const PendingTasksSimple: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error loading tasks:', error);
         toast({
           title: "Error",
           description: `Failed to load tasks: ${error.message}`,
@@ -76,10 +74,8 @@ export const PendingTasksSimple: React.FC = () => {
         return;
       }
 
-      console.log('✅ Loaded tasks:', data?.length);
       setTasks(data || []);
     } catch (error) {
-      console.error('❌ Unexpected error loading tasks:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while loading tasks.",
@@ -101,7 +97,6 @@ export const PendingTasksSimple: React.FC = () => {
         .eq('id', taskId);
 
       if (error) {
-        console.error('Error completing task:', error);
         toast({
           title: "Error",
           description: "Failed to complete task. Please try again.",
@@ -117,7 +112,6 @@ export const PendingTasksSimple: React.FC = () => {
 
       loadPendingTasks();
     } catch (error) {
-      console.error('Error completing task:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",
@@ -134,7 +128,6 @@ export const PendingTasksSimple: React.FC = () => {
         .eq('id', taskId);
 
       if (error) {
-        console.error('Error deleting task:', error);
         toast({
           title: "Error",
           description: "Failed to delete task. Please try again.",
@@ -150,7 +143,6 @@ export const PendingTasksSimple: React.FC = () => {
 
       loadPendingTasks();
     } catch (error) {
-      console.error('Error deleting task:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",

@@ -3,7 +3,6 @@ import React, { useState, useCallback, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuestions } from "@/hooks/useQuestions";
 import { useResources } from "@/hooks/useResources";
-import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { HeroSection } from "@/components/HeroSection";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,8 +12,6 @@ const FeaturedCoursesPreview = React.lazy(() => import("@/components/FeaturedCou
 const QuestionsSection = React.lazy(() => import("@/components/QuestionsSection").then(module => ({ default: module.QuestionsSection })));
 
 const Index = () => {
-  usePerformanceMonitor('Index');
-  
   const { user, isAdmin, loading: authLoading, profile } = useAuth();
   const { toast } = useToast();
   

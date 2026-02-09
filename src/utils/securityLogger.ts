@@ -34,16 +34,11 @@ class SecurityLogger {
     try {
       localStorage.setItem('security_events', JSON.stringify(this.events));
     } catch (error) {
-      console.warn('Failed to store security events:', error);
+      // Silently handle localStorage persistence failure
     }
 
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Security Event:', securityEvent);
-    }
-
-    // Alert on critical events
-    if (event.severity === 'critical') {
+    // Only alert on critical events in production
+    if (event.severity === 'critical' && import.meta.env.PROD) {
       console.error('CRITICAL SECURITY EVENT:', securityEvent);
     }
   }
@@ -65,7 +60,7 @@ class SecurityLogger {
     try {
       localStorage.removeItem('security_events');
     } catch (error) {
-      console.warn('Failed to clear security events:', error);
+      // Silently handle localStorage clear failure
     }
   }
 
@@ -80,7 +75,7 @@ class SecurityLogger {
         }));
       }
     } catch (error) {
-      console.warn('Failed to load stored security events:', error);
+      // Silently handle stored events load failure
     }
   }
 }
@@ -106,7 +101,7 @@ export const logAuthFailure = async (details: string, userId?: string): Promise<
     const { enhancedSecurityLogger } = await import('./enhancedSecurityLogger');
     await enhancedSecurityLogger.logAuthFailure(details, { userId });
   } catch (error) {
-    console.warn('Failed to log to enhanced security logger:', error);
+    // Silently handle enhanced security logger failure
   }
 };
 
@@ -148,7 +143,7 @@ export const logAdminAction = async (details: string, userId?: string, metadata?
       { userId, ...metadata }
     );
   } catch (error) {
-    console.warn('Failed to log to enhanced security logger:', error);
+    // Silently handle enhanced security logger failure
   }
 };
 
@@ -170,7 +165,7 @@ export const logXSSAttempt = async (details: string, userId?: string, metadata?:
       { userId, ...metadata }
     );
   } catch (error) {
-    console.warn('Failed to log to enhanced security logger:', error);
+    // Silently handle enhanced security logger failure
   }
 };
 

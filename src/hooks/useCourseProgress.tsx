@@ -21,8 +21,6 @@ export const useCourseProgress = () => {
   const { data: progressData, isLoading, error, refetch } = useQuery({
     queryKey: ['course-progress'],
     queryFn: async () => {
-      console.log('📊 Fetching course progress data...');
-      
       // Get course assignments with user and course details
       const { data: assignments, error: assignmentError } = await supabase
         .from('course_assignments')
@@ -33,7 +31,6 @@ export const useCourseProgress = () => {
         `);
 
       if (assignmentError) {
-        console.error('❌ Error fetching assignments:', assignmentError);
         throw assignmentError;
       }
 
@@ -49,7 +46,6 @@ export const useCourseProgress = () => {
         .in('id', userIds);
 
       if (usersError) {
-        console.error('❌ Error fetching users:', usersError);
         throw usersError;
       }
 
@@ -60,7 +56,6 @@ export const useCourseProgress = () => {
         .select('id, title')
         .in('id', courseIds);
       if (coursesError) {
-        console.error('❌ Error fetching courses:', coursesError);
         throw coursesError;
       }
 
@@ -71,7 +66,6 @@ export const useCourseProgress = () => {
         .in('course_id', courseIds);
 
       if (stagesError) {
-        console.error('❌ Error fetching stages:', stagesError);
         throw stagesError;
       }
 
@@ -83,7 +77,6 @@ export const useCourseProgress = () => {
         .in('course_id', courseIds);
 
       if (progressError) {
-        console.error('❌ Error fetching progress:', progressError);
         throw progressError;
       }
 
@@ -125,7 +118,6 @@ export const useCourseProgress = () => {
         };
       });
 
-      console.log('✅ Course progress data loaded:', result.length, 'assignments');
       return result;
     },
     staleTime: 30000, // Cache for 30 seconds

@@ -2,7 +2,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ExternalLink, Plus } from "lucide-react";
-import { useEffect, useRef } from "react";
 
 interface Resource {
   id: string;
@@ -19,7 +18,7 @@ interface StageResourcesSectionProps {
 }
 
 export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: StageResourcesSectionProps) => {
-  const { data: stageResources, isLoading, refetch } = useQuery({
+  const { data: stageResources, isLoading } = useQuery({
     queryKey: ['stage-resources-display', stageId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -33,41 +32,8 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
       if (error) throw error;
       return data.map(item => item.resources) as Resource[];
     },
+    staleTime: 30000, // Cache for 30 seconds
   });
-
-  // Debounce timer ref for real-time updates
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Set up real-time subscription for stage resources with debouncing
-  useEffect(() => {
-    const channel = supabase
-      .channel(`stage-resources-${stageId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'stage_resources',
-          filter: `stage_id=eq.${stageId}`
-        },
-        () => {
-          if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-          }
-          debounceTimerRef.current = setTimeout(() => {
-            refetch();
-          }, 300);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      supabase.removeChannel(channel);
-    };
-  }, [stageId, refetch]);
 
   if (isLoading) {
     return (

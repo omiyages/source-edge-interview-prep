@@ -60,21 +60,10 @@ const QuestionCard = ({
   const { count: thumbsUpCount, hasThumbsUp, toggleThumbsUp, isToggling } = useQuestionThumbsUp(question.id);
   const { isBookmarked, toggleBookmark, isToggling: isBookmarkToggling } = useQuestionBookmark(question.id);
 
-  console.log('🗑️ QuestionCard delete check:', {
-    questionId: question.id,
-    userEmail: user?.email,
-    isAdmin,
-    canDelete: isAdmin,
-    stageId,
-    hasRemoveHandler: !!onRemoveFromStage
-  });
-
   // Course-specific removal mutation
   const removeFromStageMutation = useMutation({
     mutationFn: async (questionId: string) => {
       if (!stageId) throw new Error('Stage ID required for removal');
-      
-      console.log('🗑️ Attempting to remove question from stage:', { questionId, stageId });
       
       const { error } = await supabase
         .from('stage_questions')
@@ -83,11 +72,8 @@ const QuestionCard = ({
         .eq('question_id', questionId);
       
       if (error) {
-        console.error('❌ Remove from stage error:', error);
         throw error;
       }
-      
-      console.log('✅ Question removed from stage successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stage-questions', stageId] });
@@ -102,7 +88,6 @@ const QuestionCard = ({
       }
     },
     onError: (error: any) => {
-      console.error('❌ Remove from stage mutation error:', error);
       toast({
         title: "Error",
         description: `Failed to remove question: ${error.message || 'Unknown error'}`,
@@ -114,19 +99,14 @@ const QuestionCard = ({
   // Full question deletion mutation (for non-course contexts)
   const deleteQuestionMutation = useMutation({
     mutationFn: async (questionId: string) => {
-      console.log('🗑️ Attempting to delete question:', questionId);
-      
       const { error } = await supabase
         .from('interview_questions')
         .delete()
         .eq('id', questionId);
       
       if (error) {
-        console.error('❌ Delete error:', error);
         throw error;
       }
-      
-      console.log('✅ Question deleted successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interview-questions'] });
@@ -138,7 +118,6 @@ const QuestionCard = ({
       });
     },
     onError: (error: any) => {
-      console.error('❌ Delete mutation error:', error);
       toast({
         title: "Error",
         description: `Failed to delete question: ${error.message || 'Unknown error'}`,
@@ -149,12 +128,8 @@ const QuestionCard = ({
 
   const handleDeleteClick = () => {
     if (stageId && onRemoveFromStage) {
-      // Course context: remove from stage
-      console.log('🗑️ Removing question from stage:', question.id);
       removeFromStageMutation.mutate(question.id);
     } else {
-      // Non-course context: delete question entirely
-      console.log('🗑️ Deleting question entirely:', question.id);
       deleteQuestionMutation.mutate(question.id);
     }
   };

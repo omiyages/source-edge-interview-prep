@@ -70,18 +70,13 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
 
   const loadRoleOptions = async () => {
     try {
-      console.log('🔍 Loading role options from dropdown_options table...');
-      
       const { data, error } = await supabase
         .from('dropdown_options')
         .select('value')
         .eq('field_name', 'role')
         .order('value');
 
-      console.log('📊 Role options query result:', { data, error });
-
       if (error) {
-        console.error('❌ Error loading role options:', error);
         toast({
           title: "Error",
           description: `Failed to load role options: ${error.message}`,
@@ -92,28 +87,22 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
           value: item.value,
           label: item.value
         })) || [];
-        console.log('✅ Loaded role options:', options.length);
         setRoleOptions(options);
       }
     } catch (error) {
-      console.error('❌ Unexpected error loading role options:', error);
+      // Silently handle
     }
   };
 
   const loadCompanyOptions = async () => {
     try {
-      console.log('🔍 Loading company options from dropdown_options table...');
-      
       const { data, error } = await supabase
         .from('dropdown_options')
         .select('value')
         .eq('field_name', 'company')
         .order('value');
 
-      console.log('📊 Company options query result:', { data, error });
-
       if (error) {
-        console.error('❌ Error loading company options:', error);
         toast({
           title: "Error",
           description: `Failed to load company options: ${error.message}`,
@@ -124,40 +113,32 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
           value: item.value,
           label: item.value
         })) || [];
-        console.log('✅ Loaded company options:', options.length);
         setCompanyOptions(options);
       }
     } catch (error) {
-      console.error('❌ Unexpected error loading company options:', error);
+      // Silently handle
     }
   };
 
   const loadUsers = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Loading users from profiles table...');
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, full_name, role, position, created_at, last_login_at, total_session_time_minutes')
         .order('created_at', { ascending: false });
 
-      console.log('📊 Users query result:', { data, error });
-
       if (error) {
-        console.error('❌ Error loading users:', error);
         toast({
           title: "Error",
           description: `Failed to load users: ${error.message}`,
           variant: "destructive",
         });
       } else {
-        console.log('✅ Loaded users:', data?.length || 0);
         setUsers(data || []);
         
         // If no users found, show a helpful message
         if (!data || data.length === 0) {
-          console.log('⚠️ No users found in profiles table');
           toast({
             title: "No Users Found",
             description: "No users found in the database. You may need to create some users first or check your database connection.",
@@ -166,7 +147,7 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
         }
       }
     } catch (error) {
-      console.error('❌ Unexpected error loading users:', error);
+      // Silently handle
       toast({
         title: "Error",
         description: "An unexpected error occurred while loading users.",
@@ -207,7 +188,6 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
         .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
-        console.error('Error checking existing user:', checkError);
         toast({
           title: "Error",
           description: "Failed to check if user already exists in kanban.",
@@ -236,7 +216,6 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
         .eq('id', selectedUser.id);
 
       if (updateError) {
-        console.error('Error updating user position:', updateError);
         toast({
           title: "Error",
           description: "Failed to update user position. Please try again.",
@@ -246,12 +225,6 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
       }
 
       // Add user to kanban board (Interested stage)
-      console.log('🎯 Adding user to kanban board...', {
-        user_id: selectedUser.id,
-        stage: 'Interested',
-        transitioned_by: currentUser?.id
-      });
-
       const { error: kanbanError } = await supabase.rpc('move_user_to_stage', {
         p_user_id: selectedUser.id,
         p_new_stage_name: 'Interested',
@@ -259,10 +232,7 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
         p_notes: `User added to kanban board with position: ${selectedRole}`
       });
 
-      console.log('📊 Kanban function result:', { kanbanError });
-
       if (kanbanError) {
-        console.error('❌ Error adding user to kanban:', kanbanError);
         toast({
           title: "Error",
           description: `Failed to add user to kanban board: ${kanbanError.message}`,
@@ -270,8 +240,6 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
         });
         return;
       }
-
-      console.log('✅ User successfully added to kanban board');
 
       toast({
         title: "Success",
@@ -286,7 +254,6 @@ export const AddUserToKanbanModal: React.FC<AddUserToKanbanModalProps> = ({
       setSearchTerm('');
 
     } catch (error) {
-      console.error('Error adding user to kanban:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",

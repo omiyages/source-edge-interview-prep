@@ -4,7 +4,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { PublicSignupForm } from "@/components/PublicSignupForm";
 
@@ -140,6 +140,7 @@ const Auth = () => {
       {/* Signup Dialog */}
       <Dialog open={showSignup} onOpenChange={setShowSignup}>
         <DialogContent className="max-w-md p-0 border-0 rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Create Account</DialogTitle>
           <PublicSignupForm />
         </DialogContent>
       </Dialog>

@@ -27,10 +27,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 };
 
 export const measurePerformance = (name: string, fn: () => void) => {
-  const start = performance.now();
   fn();
-  const end = performance.now();
-  console.log(`${name} took ${end - start} milliseconds`);
 };
 
 export const lazyLoadComponent = <T extends React.ComponentType<any>>(
@@ -51,12 +48,5 @@ export const optimizeImage = (src: string, width?: number, quality = 80) => {
 
 // Memory management
 export const cleanupMemory = () => {
-  if ('memory' in performance) {
-    const memory = (performance as any).memory;
-    console.log('Memory usage:', {
-      used: Math.round(memory.usedJSHeapSize / 1048576) + ' MB',
-      total: Math.round(memory.totalJSHeapSize / 1048576) + ' MB',
-      limit: Math.round(memory.jsHeapSizeLimit / 1048576) + ' MB'
-    });
-  }
+  // Memory cleanup placeholder
 };

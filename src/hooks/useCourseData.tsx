@@ -41,8 +41,6 @@ export const useCourseData = (slug: string | undefined, user: any) => {
   const { data: courseData, refetch: refetchCourseData, isLoading: isLoadingCourse } = useQuery({
     queryKey: ['course-with-stages', slug],
     queryFn: async () => {
-      console.log('🔄 Fetching course with stages for slug:', slug);
-      
       // Direct lookup by slug - much faster than fetching all courses
       const { data: course, error } = await supabase
         .from('courses')
@@ -66,7 +64,6 @@ export const useCourseData = (slug: string | undefined, user: any) => {
         .maybeSingle();
       
       if (error) {
-        console.error('❌ Error fetching course:', error);
         throw error;
       }
       
@@ -76,8 +73,6 @@ export const useCourseData = (slug: string | undefined, user: any) => {
       
       // Extract stages and sort them
       const stages = (course.course_stages || []).sort((a, b) => a.stage_order - b.stage_order);
-      
-      console.log('✅ Course and stages fetched:', course.title, stages.length, 'stages');
       
       // Return course without the nested stages (to match expected interface)
       const { course_stages, ...courseWithoutStages } = course;
@@ -105,7 +100,6 @@ export const useStageQuestions = (selectedStage: CourseStage | null) => {
     queryFn: async () => {
       if (!selectedStage) return [];
       
-      console.log('🔄 Fetching questions for stage:', selectedStage.id);
       const { data, error } = await supabase
         .from('stage_questions')
         .select(`
@@ -115,10 +109,8 @@ export const useStageQuestions = (selectedStage: CourseStage | null) => {
         .eq('stage_id', selectedStage.id);
       
       if (error) {
-        console.error('❌ Error fetching stage questions:', error);
         throw error;
       }
-      console.log('✅ Stage questions fetched:', data?.length || 0);
       return data.map(item => item.interview_questions) as InterviewQuestion[];
     },
     enabled: !!selectedStage,
@@ -140,7 +132,6 @@ export const useUserProgress = (user: any, courseId: string | undefined) => {
         .eq('course_id', courseId);
       
       if (error) {
-        console.error('❌ Error fetching user progress:', error);
         throw error;
       }
       return data;
