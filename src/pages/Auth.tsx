@@ -1,11 +1,9 @@
 
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
 const Auth = () => {
@@ -122,6 +120,13 @@ const Auth = () => {
               Login Now
             </Button>
           </form>
+
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-primary font-medium hover:underline">
+              Register Now
+            </Link>
+          </p>
         </div>
       </div>
     </div>
