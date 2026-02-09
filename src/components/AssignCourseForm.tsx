@@ -72,12 +72,32 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
         .single();
 
       if (error) throw error;
-      return data;
+      return { assignment: data, userId, courseId };
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      // Send course assignment email (non-blocking)
+      try {
+        const course = courses?.find(c => c.id === data.courseId);
+        if (course) {
+          await supabase.functions.invoke('send-email', {
+            body: {
+              type: 'course_assigned',
+              data: {
+                userId: data.userId,
+                courseName: course.title,
+                courseDescription: course.description || null,
+              },
+            },
+          });
+          console.log('✅ Course assignment email sent');
+        }
+      } catch (emailError) {
+        console.error('⚠️ Course assignment email failed (non-blocking):', emailError);
+      }
+
       toast({
         title: "Course assigned successfully",
-        description: "The course has been assigned to the user.",
+        description: "The course has been assigned and the user has been notified via email.",
       });
       queryClient.invalidateQueries({ queryKey: ['course-assignments'] });
       setSelectedUser("");

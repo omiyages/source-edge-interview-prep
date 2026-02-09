@@ -140,13 +140,33 @@ export const CreateUserForm = () => {
 
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['pending-users'] });
       
+      // Send welcome email (non-blocking)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token && data.user?.email) {
+          await supabase.functions.invoke('send-email', {
+            body: {
+              type: 'welcome',
+              data: {
+                email: data.user.email,
+                fullName: data.user.full_name || fullName,
+                temporaryPassword: data.temporaryPassword || manualPassword,
+              },
+            },
+          });
+          console.log('✅ Welcome email sent to', data.user.email);
+        }
+      } catch (emailError) {
+        console.error('⚠️ Welcome email failed (non-blocking):', emailError);
+      }
+
       toast({
         title: "User Created Successfully",
-        description: `User ${data.user?.email} has been created with enhanced security.`,
+        description: `User ${data.user?.email} has been created. A welcome email has been sent.`,
       });
 
       // Reset form
