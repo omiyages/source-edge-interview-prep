@@ -131,20 +131,15 @@ export const PublicSignupForm = () => {
       const sanitizedEmail = data.email.toLowerCase().trim();
 
       // Sign up with Supabase (includes CAPTCHA token for server-side verification)
-      const signUpOptions: any = {
-        data: {
-          full_name: sanitizedName,
-        },
-      };
-
-      if (captchaToken) {
-        signUpOptions.captchaToken = captchaToken;
-      }
-
       const { data: authData, error: signupError } = await supabase.auth.signUp({
         email: sanitizedEmail,
         password: data.password,
-        options: signUpOptions,
+        options: {
+          captchaToken: captchaToken || undefined,
+          data: {
+            full_name: sanitizedName,
+          },
+        },
       });
 
       if (signupError) {
