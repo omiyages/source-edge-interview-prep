@@ -14,6 +14,19 @@ const resendApiKey = Deno.env.get('RESEND_API_KEY')!
 
 const FROM_EMAIL = 'Source Edge <noreply@omiyages.com>'
 
+// Allowlisted @source-edge.com emails that should still receive emails
+const SOURCE_EDGE_ALLOWLIST = [
+  'namtaelee@source-edge.com',
+  'james@source-edge.com',
+]
+
+// Check if an email should receive messages (skip proxy/fake @source-edge.com emails)
+function shouldSendEmail(email: string): boolean {
+  const normalizedEmail = email.toLowerCase().trim()
+  if (!normalizedEmail.endsWith('@source-edge.com')) return true
+  return SOURCE_EDGE_ALLOWLIST.includes(normalizedEmail)
+}
+
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 })
@@ -197,6 +210,15 @@ Deno.serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
+    }
+
+    // Skip sending to proxy @source-edge.com emails (except allowlisted ones)
+    if (!shouldSendEmail(to)) {
+      console.log('⏭️ Skipping email to proxy address:', to)
+      return new Response(JSON.stringify({ success: true, skipped: true, reason: 'Proxy email address' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     // Send email via Resend
