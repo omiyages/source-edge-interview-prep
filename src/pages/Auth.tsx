@@ -1,16 +1,19 @@
 
 import { useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
+import { PublicSignupForm } from "@/components/PublicSignupForm";
 
 const Auth = () => {
   const { user, signIn, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   // Redirect if already authenticated
   if (!loading && user) {
@@ -123,12 +126,23 @@ const Auth = () => {
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-primary font-medium hover:underline">
+            <button 
+              type="button"
+              onClick={() => setShowSignup(true)} 
+              className="text-primary font-medium hover:underline"
+            >
               Register Now
-            </Link>
+            </button>
           </p>
         </div>
       </div>
+
+      {/* Signup Dialog */}
+      <Dialog open={showSignup} onOpenChange={setShowSignup}>
+        <DialogContent className="max-w-md p-0 border-0 rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+          <PublicSignupForm />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
