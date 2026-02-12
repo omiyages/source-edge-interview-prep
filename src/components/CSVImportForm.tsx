@@ -54,6 +54,7 @@ export const CSVImportForm = () => {
       if (fileInput) fileInput.value = '';
     },
     onError: (error) => {
+      console.error('Import error:', error);
       toast({
         title: "Import Failed",
         description: "Failed to import questions. Please check the CSV format.",
@@ -127,8 +128,10 @@ export const CSVImportForm = () => {
         return;
       }
 
+      console.log('Importing questions:', questions);
       importQuestionsMutation.mutate(questions);
     } catch (error) {
+      console.error('CSV parsing error:', error);
       toast({
         title: "Parse Error",
         description: "Failed to parse CSV file. Please check the format.",

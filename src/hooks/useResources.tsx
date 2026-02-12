@@ -10,7 +10,6 @@ export const useResources = (shouldFetch: boolean = true, limit: number = 10) =>
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
-    refetchOnMount: true,
   });
 
   return {

@@ -136,10 +136,11 @@ export const ReportTab: React.FC = () => {
         .select('user_id');
 
       if (rejectedError) {
-        // Silently handle
+        console.error('Error fetching rejections:', rejectedError);
       }
 
       const rejectedUserIds = new Set((rejectedData || []).map((r: any) => r.user_id));
+      console.log('Rejected user IDs:', Array.from(rejectedUserIds));
 
       // Fetch users with stages
       const { data: usersData, error: usersError } = await supabase
@@ -160,8 +161,11 @@ export const ReportTab: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (usersError) {
+        console.error('Error fetching user stages:', usersError);
         throw usersError;
       }
+
+      console.log('User stages data:', usersData);
 
       // Transform the data
       const transformedUsers: KanbanUserData[] = (usersData || []).map((item: any) => {
@@ -196,8 +200,11 @@ export const ReportTab: React.FC = () => {
         .order('scheduled_date', { ascending: true });
 
       if (interviewsError) {
+        console.error('Error fetching interviews:', interviewsError);
         throw interviewsError;
       }
+
+      console.log('Interviews data:', interviewsData);
 
       const transformedInterviews: Interview[] = (interviewsData || []).map((item: any) => ({
         id: item.id,
@@ -215,11 +222,18 @@ export const ReportTab: React.FC = () => {
       const uniqueCompanies = [...new Set(transformedUsers.map(u => u.company).filter(Boolean))] as string[];
       const uniquePositions = [...new Set(transformedUsers.map(u => u.position).filter(Boolean))] as string[];
 
+      console.log('Transformed users:', transformedUsers);
+      console.log('Active users:', transformedUsers.filter(u => u.is_active).length);
+      console.log('Rejected users:', transformedUsers.filter(u => !u.is_active).length);
+      console.log('Companies:', uniqueCompanies);
+      console.log('Positions (job roles):', uniquePositions);
+
       setUsers(transformedUsers);
       setInterviews(transformedInterviews);
       setCompanies(uniqueCompanies.sort());
       setPositions(uniquePositions.sort()); // Changed from setRoles to setPositions
     } catch (error: any) {
+      console.error('Error in fetchData:', error);
       toast({
         title: 'Error loading report data',
         description: error.message,

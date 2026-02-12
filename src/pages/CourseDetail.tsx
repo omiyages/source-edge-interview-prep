@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate, useParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, MessageSquare } from "lucide-react";
+import { ArrowLeft, BookOpen, MessageSquare, Lock, LogIn, UserPlus } from "lucide-react";
 import { CourseHeader } from "@/components/CourseHeader";
 import { StageNavigation } from "@/components/StageNavigation";
 import { CourseProgress } from "@/components/CourseProgress";
@@ -15,7 +15,7 @@ import { ManageStageResourcesFormImproved } from "@/components/ManageStageResour
 import { ManageStageResourcesTable } from "@/components/ManageStageResourcesTable";
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
 import { CourseReviewForm } from "@/components/CourseReviewForm";
-import { useCourseData, useStageQuestions, useUserProgress } from "@/hooks/useCourseData";
+import { useCourseData, useStageQuestions, useUserProgress, useBatchStageQuestions } from "@/hooks/useCourseData";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { NavigationHeader } from "@/components/NavigationHeader";
 import { useCourseAssignment } from "@/hooks/useCourseAssignment";
@@ -35,6 +35,7 @@ interface CourseStage {
 const CourseDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user, loading, isAdmin } = useAuth();
+  const isAuthenticated = !loading && !!user;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedStage, setSelectedStage] = useState<CourseStage | null>(null);
@@ -42,14 +43,15 @@ const CourseDetail = () => {
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
   const [showCourseContent, setShowCourseContent] = useState(false);
 
-  // Redirect to auth if not authenticated
-  if (!loading && !user) {
-    return <Navigate to="/auth" replace />;
-  }
-
   // Custom hooks for data fetching
   const { course, stages, refetchCourse, refetchStages, isLoadingCourse } = useCourseData(slug, user);
-  const { stageQuestions, refetchQuestions } = useStageQuestions(selectedStage);
+  // Batch-fetch all stage questions in one query (instead of N+1 per stage)
+  const stageIds = stages?.map(s => s.id) || [];
+  const { questionsByStage } = useBatchStageQuestions(stageIds);
+  // Derive current stage's questions from the batch result
+  const stageQuestions = selectedStage ? (questionsByStage[selectedStage.id] || []) : [];
+  // Refetch all stage questions (after admin edits)
+  const refetchQuestions = () => queryClient.invalidateQueries({ queryKey: ['batch-stage-questions'] });
   const { userProgress } = useUserProgress(user, course?.id);
   const { isAssigned, isLoading: isLoadingAssignment, startCourse, isStarting } = useCourseAssignment(course?.id);
 
@@ -142,8 +144,10 @@ const CourseDetail = () => {
     );
   }
 
-  // Show paywall if course is not assigned and user is not admin
-  const showPaywall = !isAdmin && !isAssigned && course && stages;
+  // Show login wall for unauthenticated users
+  const showLoginWall = !isAuthenticated && course && stages;
+  // Show paywall if course is not assigned and user is not admin (only for authenticated users)
+  const showPaywall = isAuthenticated && !isAdmin && !isAssigned && course && stages;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -161,7 +165,65 @@ const CourseDetail = () => {
           onQuestionsUpdate={refetchQuestions}
         />
 
-        {showPaywall ? (
+        {showLoginWall ? (
+          <>
+            <StageNavigation
+              stages={stages || []}
+              selectedStage={selectedStage}
+              onStageSelect={setSelectedStage}
+            />
+            <div className="relative mt-6">
+              {/* Blurred placeholder content */}
+              <div className="blur-sm select-none pointer-events-none space-y-4" aria-hidden="true">
+                <div className="bg-white rounded-lg border p-6 space-y-3">
+                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                  <div className="h-4 bg-gray-100 rounded w-full"></div>
+                  <div className="h-4 bg-gray-100 rounded w-5/6"></div>
+                  <div className="h-4 bg-gray-100 rounded w-2/3"></div>
+                </div>
+                <div className="bg-white rounded-lg border p-6 space-y-3">
+                  <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="h-20 bg-gray-100 rounded"></div>
+                    <div className="h-20 bg-gray-100 rounded"></div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg border p-6 space-y-3">
+                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                  <div className="h-4 bg-gray-100 rounded w-full"></div>
+                  <div className="h-4 bg-gray-100 rounded w-4/5"></div>
+                </div>
+              </div>
+
+              {/* Login wall overlay */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 px-8 py-8 max-w-md w-full mx-4 text-center">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Lock className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Unlock Course Content</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Sign in to access course stages, questions, resources, and track your progress.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button asChild className="flex-1 btn-purple-gradient">
+                      <Link to="/auth">
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Sign In
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="flex-1">
+                      <Link to="/signup">
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Register
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : showPaywall ? (
           <CoursePaywall
             courseTitle={course.title}
             companyName={course.company}
@@ -280,7 +342,7 @@ const CourseDetail = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © 2025 Source Edge Database. All rights reserved.
+          © 2026 Source Edge Database. All rights reserved.
         </div>
       </footer>
     </div>

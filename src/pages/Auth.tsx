@@ -82,7 +82,7 @@ const Auth = () => {
           </p>
           
           <div className="absolute bottom-8 left-12 text-white/60 text-sm">
-            © 2025 Source Edge. All rights reserved.
+            © 2026 Source Edge. All rights reserved.
           </div>
         </div>
       </div>
@@ -144,7 +144,7 @@ const Auth = () => {
               disabled={isLoading || (!!TURNSTILE_SITE_KEY && !captchaToken)}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Login Now
+              Sign In Now
             </Button>
           </form>
 

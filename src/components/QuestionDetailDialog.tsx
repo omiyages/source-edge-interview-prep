@@ -168,7 +168,7 @@ export function QuestionDetailDialog({
                       ? "bg-primary text-primary-foreground hover:bg-primary/90" 
                       : ""
                   }`}
-                  title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Login to save"}
+                  title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Sign in to save"}
                 >
                   <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""}`} />
                   {isBookmarked ? "Saved" : "Save"}

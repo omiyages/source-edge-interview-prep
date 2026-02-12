@@ -1,10 +1,13 @@
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { OptimizedQuestionList } from "./OptimizedQuestionList";
 import { QuestionFilters } from "./QuestionFilters";
-import { QuestionDetailDialog } from "./QuestionDetailDialog";
 import { Button } from "@/components/ui/button";
+
+const QuestionDetailDialog = lazy(() =>
+  import("./QuestionDetailDialog").then(m => ({ default: m.QuestionDetailDialog }))
+);
 import type { InterviewQuestion } from "@/services/questionsService";
 
 interface QuestionsSectionProps {
@@ -161,31 +164,33 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
         onSelectQuestion={(index) => setSelectedQuestionIndex(index)}
       />
 
-      <QuestionDetailDialog
-        open={selectedQuestionIndex !== null}
-        onOpenChange={(open) => !open && setSelectedQuestionIndex(null)}
-        question={selectedQuestionIndex !== null ? displayedQuestions[selectedQuestionIndex] ?? null : null}
-        currentDisplayNumber={selectedQuestionIndex !== null ? selectedQuestionIndex + 1 : 1}
-        totalCount={displayedQuestions.length}
-        onPrev={() => {
-          if (selectedQuestionIndex !== null && selectedQuestionIndex > 0) {
-            setSelectedQuestionIndex(selectedQuestionIndex - 1);
-          }
-        }}
-        onNext={() => {
-          if (
+      <Suspense fallback={null}>
+        <QuestionDetailDialog
+          open={selectedQuestionIndex !== null}
+          onOpenChange={(open) => !open && setSelectedQuestionIndex(null)}
+          question={selectedQuestionIndex !== null ? displayedQuestions[selectedQuestionIndex] ?? null : null}
+          currentDisplayNumber={selectedQuestionIndex !== null ? selectedQuestionIndex + 1 : 1}
+          totalCount={displayedQuestions.length}
+          onPrev={() => {
+            if (selectedQuestionIndex !== null && selectedQuestionIndex > 0) {
+              setSelectedQuestionIndex(selectedQuestionIndex - 1);
+            }
+          }}
+          onNext={() => {
+            if (
+              selectedQuestionIndex !== null &&
+              selectedQuestionIndex < displayedQuestions.length - 1
+            ) {
+              setSelectedQuestionIndex(selectedQuestionIndex + 1);
+            }
+          }}
+          canPrev={selectedQuestionIndex !== null && selectedQuestionIndex > 0}
+          canNext={
             selectedQuestionIndex !== null &&
             selectedQuestionIndex < displayedQuestions.length - 1
-          ) {
-            setSelectedQuestionIndex(selectedQuestionIndex + 1);
           }
-        }}
-        canPrev={selectedQuestionIndex !== null && selectedQuestionIndex > 0}
-        canNext={
-          selectedQuestionIndex !== null &&
-          selectedQuestionIndex < displayedQuestions.length - 1
-        }
-      />
+        />
+      </Suspense>
 
       {!loading && filteredQuestions.length > 0 && (
         <div className="mt-8 flex justify-center">

@@ -196,7 +196,7 @@ const QuestionCard = ({
                   ? "text-primary" 
                   : "text-gray-300 hover:text-gray-400"
               }`}
-              title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Login to save"}
+              title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Sign in to save"}
             >
               <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
             </button>
@@ -233,7 +233,7 @@ const QuestionCard = ({
               className={`flex items-center gap-1 transition-colors ${
                 hasThumbsUp ? "text-primary" : "hover:text-gray-600"
               }`}
-              title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up") : "Login to vote"}
+              title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up") : "Sign in to vote"}
             >
               <ThumbsUp className={`w-4 h-4 ${hasThumbsUp ? "fill-current" : ""}`} />
               <span>{thumbsUpCount}</span>
@@ -281,7 +281,7 @@ const QuestionCard = ({
                           ? "bg-primary text-primary-foreground hover:bg-primary/90" 
                           : ""
                       }`}
-                      title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up this question") : "Login to thumbs up"}
+                      title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up this question") : "Sign in to thumbs up"}
                     >
                       <ThumbsUp className={`w-4 h-4 ${hasThumbsUp ? "fill-current" : ""}`} />
                       <span>{thumbsUpCount}</span>

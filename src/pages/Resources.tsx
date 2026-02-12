@@ -37,17 +37,6 @@ const Resources = () => {
 
   const fetchResources = async () => {
     try {
-      // Check if user is authenticated before making requests
-      if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to access resources.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase
         .from('resources')
         .select('id, title, description, url, category, created_at')
@@ -71,11 +60,8 @@ const Resources = () => {
   };
 
   useEffect(() => {
-    // Only fetch resources if user is available
-    if (user) {
-      fetchResources();
-    }
-  }, [user]);
+    fetchResources();
+  }, []);
 
   // Initialize category from URL
   useEffect(() => {

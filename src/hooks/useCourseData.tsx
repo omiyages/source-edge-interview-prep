@@ -81,8 +81,9 @@ export const useCourseData = (slug: string | undefined, user: any) => {
         stages: stages as CourseStage[]
       };
     },
-    enabled: !!user && !!slug,
-    staleTime: 30000, // Cache for 30 seconds
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000, // 5 minutes — course content rarely changes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   return {
@@ -114,9 +115,51 @@ export const useStageQuestions = (selectedStage: CourseStage | null) => {
       return data.map(item => item.interview_questions) as InterviewQuestion[];
     },
     enabled: !!selectedStage,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   return { stageQuestions, refetchQuestions };
+};
+
+/**
+ * Batch-fetch all stage questions for a course in one query, then populate
+ * each individual stage's cache. This eliminates N+1 queries when viewing
+ * a course detail page.
+ */
+export const useBatchStageQuestions = (stageIds: string[]) => {
+  const { data } = useQuery({
+    queryKey: ['batch-stage-questions', stageIds],
+    queryFn: async () => {
+      if (stageIds.length === 0) return {};
+
+      const { data: rows, error } = await supabase
+        .from('stage_questions')
+        .select(`
+          stage_id,
+          question_id,
+          interview_questions (*)
+        `)
+        .in('stage_id', stageIds);
+
+      if (error) throw error;
+
+      // Group questions by stage_id
+      const grouped: Record<string, InterviewQuestion[]> = {};
+      for (const row of rows || []) {
+        if (!grouped[row.stage_id]) grouped[row.stage_id] = [];
+        if (row.interview_questions) {
+          grouped[row.stage_id].push(row.interview_questions as unknown as InterviewQuestion);
+        }
+      }
+      return grouped;
+    },
+    enabled: stageIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  return { questionsByStage: data || {} };
 };
 
 export const useUserProgress = (user: any, courseId: string | undefined) => {

@@ -1,28 +1,65 @@
 
-// ABOUTME: Optimized user profile hook with better performance and caching
+// ABOUTME: Optimized user profile hook with localStorage caching for instant loads
 // ABOUTME: Replaces the existing useUserProfile with improved efficiency
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import type { Profile } from '@/types/auth';
 import { loadOrCreateProfile, updateLastLogin, updateSessionTime } from '@/services/profileService';
 
+const PROFILE_CACHE_KEY = 'se-cached-profile';
+
+function getCachedProfile(userId: string): Profile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    // Only use cache if it matches the current user
+    if (cached && cached.id === userId) return cached as Profile;
+  } catch {
+    // Ignore parse errors
+  }
+  return null;
+}
+
+function setCachedProfile(profile: Profile | null) {
+  try {
+    if (profile) {
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(PROFILE_CACHE_KEY);
+    }
+  } catch {
+    // Ignore quota errors
+  }
+}
+
 export const useOptimizedUserProfile = (user: User | null) => {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  // Try to hydrate instantly from localStorage to avoid loading flash
+  const cachedProfile = user?.id ? getCachedProfile(user.id) : null;
+  const [profile, setProfile] = useState<Profile | null>(cachedProfile);
+  // If we already have a cached profile, skip the loading state entirely
   const [loading, setLoading] = useState(false);
+  const hasHydrated = useRef(!!cachedProfile);
 
   const loadProfile = useCallback(async () => {
     if (!user?.id) {
       setProfile(null);
+      setCachedProfile(null);
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      // Only show loading spinner if we don't have a cached profile to show
+      if (!hasHydrated.current) {
+        setLoading(true);
+      }
       
       const profileData = await loadOrCreateProfile(user);
       setProfile(profileData);
+      setCachedProfile(profileData);
+      hasHydrated.current = !!profileData;
       
       // Update last login time when profile is loaded
       if (profileData) {

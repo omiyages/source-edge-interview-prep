@@ -13,12 +13,12 @@ interface OptimizedQuestionListProps {
   isAdmin: boolean;
   onEdit?: (question: InterviewQuestion) => void;
   onDelete?: (questionId: string) => void;
-  onSelectQuestion?: (index: number) => void;
   currentPage?: number;
   itemsPerPage?: number;
   hasNextPage?: boolean;
   onLoadMore?: () => void;
   useInfiniteScroll?: boolean;
+  onSelectQuestion?: (index: number) => void;
 }
 
 const SKELETON_COUNT = 6;
@@ -29,12 +29,12 @@ export const OptimizedQuestionList = memo(({
   isAdmin, 
   onEdit, 
   onDelete,
-  onSelectQuestion,
   currentPage = 1,
   itemsPerPage = 10,
   hasNextPage = false,
   onLoadMore,
-  useInfiniteScroll: enableInfiniteScroll = false
+  useInfiniteScroll: enableInfiniteScroll = false,
+  onSelectQuestion,
 }: OptimizedQuestionListProps) => {
   const { isFetching, setTarget, resetFetching } = useInfiniteScroll({
     hasNextPage,
@@ -84,8 +84,8 @@ export const OptimizedQuestionList = memo(({
             style={{ animationDelay: `${index * 50}ms` }}
             className="animate-fade-in"
           >
-            <QuestionCard
-              question={question}
+            <QuestionCard 
+              question={question} 
               onViewQuestion={onSelectQuestion ? () => onSelectQuestion(index) : undefined}
             />
           </div>

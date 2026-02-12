@@ -13,6 +13,9 @@ import { queryClient } from "@/lib/queryClient";
 import { SessionTracker } from "@/components/SessionTracker";
 import { TIMEZONE_CONFIG } from "@/config/timezone";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { fetchPaginatedQuestions } from "@/services/questionsService";
+import { fetchQuestionStats } from "@/services/questionsService";
+import { supabase } from "@/integrations/supabase/client";
 
 // Critical path components - imported directly for fast initial load
 import Auth from "./pages/Auth";
@@ -61,6 +64,32 @@ function App() {
         return originalToLocaleString.apply(this, args);
       };
     }
+
+    // Prefetch critical data in parallel with auth initialization
+    // This means by the time the user lands on the homepage, data is already cached
+    const questionsParams = { isAdmin: false, page: 1, limit: 10, sortBy: 'popularity' as const };
+    queryClient.prefetchQuery({
+      queryKey: ['questions-paginated', questionsParams],
+      queryFn: () => fetchPaginatedQuestions(questionsParams),
+      staleTime: 5 * 60 * 1000,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ['question-stats'],
+      queryFn: fetchQuestionStats,
+      staleTime: 10 * 60 * 1000,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ['courses'],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('courses')
+          .select('id, title, description, company, created_at')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 5 * 60 * 1000,
+    });
   }, []);
 
   return (
@@ -77,11 +106,9 @@ function App() {
             <Route 
               path="/" 
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Index />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <Index />
+                </Suspense>
               } 
             />
             <Route 
@@ -107,31 +134,25 @@ function App() {
             <Route 
               path="/resources" 
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Resources />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <Resources />
+                </Suspense>
               } 
             />
             <Route 
               path="/course/:slug" 
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <CourseDetail />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <CourseDetail />
+                </Suspense>
               } 
             />
             <Route 
               path="/tracks" 
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Track />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <Track />
+                </Suspense>
               } 
             />
             <Route 
@@ -167,11 +188,9 @@ function App() {
             <Route 
               path="/questions" 
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Questions />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <Questions />
+                </Suspense>
               } 
             />
               <Route path="*" element={<NotFound />} />

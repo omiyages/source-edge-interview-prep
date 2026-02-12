@@ -1,6 +1,6 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Star, ChevronRight, ArrowRight } from "lucide-react";
@@ -174,15 +174,43 @@ interface FeaturedCoursesPreviewProps {
 
 const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
+  // Prefetch course detail on hover for instant navigation
+  const prefetchCourse = useCallback((courseTitle: string) => {
+    const slug = slugify(courseTitle);
+    queryClient.prefetchQuery({
+      queryKey: ['course-with-stages', slug],
+      queryFn: async () => {
+        const { data: courseDetail, error } = await supabase
+          .from('courses')
+          .select(`
+            id, title, description, company, attached_jobs, created_at,
+            course_stages ( id, title, description, information, stage_order )
+          `)
+          .eq('slug', slug)
+          .order('stage_order', { referencedTable: 'course_stages' })
+          .maybeSingle();
+        if (error) throw error;
+        if (!courseDetail) throw new Error('Course not found');
+        const stages = (courseDetail.course_stages || []).sort(
+          (a: any, b: any) => a.stage_order - b.stage_order
+        );
+        const { course_stages, ...rest } = courseDetail;
+        return { course: rest, stages };
+      },
+      staleTime: 5 * 60 * 1000,
+    });
+  }, [queryClient]);
+
+  // Share the same queryKey as Track page so navigating there is instant
   const { data: courses, isLoading } = useQuery({
-    queryKey: ['featured-courses'],
+    queryKey: ['courses'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('courses')
         .select('id, title, description, company, created_at')
-        .order('created_at', { ascending: false })
-        .limit(6);
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Course[];
@@ -190,6 +218,7 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
     enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const displayCourses = useMemo(() => {
@@ -262,6 +291,7 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
               key={course.id}
               className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group"
               onClick={() => navigate(`/course/${slugify(course.title)}`)}
+              onMouseEnter={() => prefetchCourse(course.title)}
             >
               {/* Course Image */}
               <div className="relative">

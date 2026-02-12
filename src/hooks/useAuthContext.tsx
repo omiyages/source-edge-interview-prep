@@ -4,6 +4,31 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Synchronously check localStorage for an existing Supabase session token.
+// This runs before React renders, giving an instant "likely authenticated" signal
+// to prevent the flash of unauthenticated UI (login/register buttons).
+function hasPersistedSession(): boolean {
+  try {
+    // Supabase stores sessions with key pattern: sb-<project-ref>-auth-token
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          const parsed = JSON.parse(value);
+          // Check that there's an access token and it hasn't obviously expired
+          if (parsed?.access_token) {
+            return true;
+          }
+        }
+      }
+    }
+  } catch {
+    // localStorage not available or parse error — fall through
+  }
+  return false;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -13,16 +38,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// If there's a persisted session, start with loading=true so the UI waits.
+// If there's NO persisted session, start with loading=false so logged-out UI
+// renders instantly without any spinner.
+const initialHasSession = hasPersistedSession();
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialHasSession);
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
         
         if (error) {
           console.error('Error getting session:', error);
@@ -32,9 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.error('Unexpected error getting session:', error);
-        setUser(null);
+        if (mounted) setUser(null);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
@@ -43,12 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);

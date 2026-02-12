@@ -59,6 +59,7 @@ export const PendingTasks: React.FC = () => {
   const loadPendingTasks = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Loading all pending tasks with simple approach...');
 
       // Use a simple query without any joins
       const { data: tasksData, error: tasksError } = await supabase
@@ -68,6 +69,7 @@ export const PendingTasks: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (tasksError) {
+        console.error('❌ Error loading tasks:', tasksError);
         toast({
           title: "Error",
           description: `Failed to load tasks: ${tasksError.message}`,
@@ -87,6 +89,7 @@ export const PendingTasks: React.FC = () => {
           .in('id', userIds);
 
         if (usersError) {
+          console.error('❌ Error loading users:', usersError);
           // Continue without user data rather than failing completely
         } else {
           usersData = users || [];
@@ -117,6 +120,7 @@ export const PendingTasks: React.FC = () => {
 
       setTasks(formattedTasks);
     } catch (error) {
+      console.error('❌ Unexpected error loading tasks:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while loading tasks.",
@@ -138,6 +142,7 @@ export const PendingTasks: React.FC = () => {
         .eq('id', taskId);
 
       if (error) {
+        console.error('Error completing task:', error);
         toast({
           title: "Error",
           description: "Failed to complete task. Please try again.",
@@ -154,6 +159,7 @@ export const PendingTasks: React.FC = () => {
       // Reload tasks
       loadPendingTasks();
     } catch (error) {
+      console.error('Error completing task:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",
@@ -170,6 +176,7 @@ export const PendingTasks: React.FC = () => {
         .eq('id', taskId);
 
       if (error) {
+        console.error('Error deleting task:', error);
         toast({
           title: "Error",
           description: "Failed to delete task. Please try again.",
@@ -186,6 +193,7 @@ export const PendingTasks: React.FC = () => {
       // Reload tasks
       loadPendingTasks();
     } catch (error) {
+      console.error('Error deleting task:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",

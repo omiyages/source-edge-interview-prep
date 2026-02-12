@@ -153,14 +153,18 @@ export const OptimizedKanbanBoard: React.FC = () => {
   const { data: kanbanData, isLoading, error } = useQuery({
     queryKey: ['kanban-data', showRejected],
     queryFn: async () => {
+      console.log('🔄 Loading optimized kanban data...');
+      
       const { data, error } = await supabase.rpc('get_users_by_stage_with_rejected', {
         p_show_rejected: showRejected
       });
 
       if (error) {
+        console.error('❌ Error loading kanban data:', error);
         throw error;
       }
 
+      console.log('✅ Loaded kanban data:', data?.length || 0, 'users');
       return data || [];
     },
     staleTime: 30000, // 30 seconds

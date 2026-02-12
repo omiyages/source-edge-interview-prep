@@ -59,12 +59,14 @@ export const PendingTasksAlternative: React.FC = () => {
   const loadPendingTasks = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Loading all pending tasks with alternative approach...');
 
       // Use a direct SQL query approach
       const { data, error } = await supabase
         .rpc('get_all_pending_tasks');
 
       if (error) {
+        console.error('❌ Error loading tasks:', error);
         toast({
           title: "Error",
           description: `Failed to load tasks: ${error.message}`,
@@ -73,8 +75,10 @@ export const PendingTasksAlternative: React.FC = () => {
         return;
       }
 
+      console.log('✅ Loaded tasks:', data?.length);
       setTasks(data || []);
     } catch (error) {
+      console.error('❌ Unexpected error loading tasks:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while loading tasks.",
@@ -96,6 +100,7 @@ export const PendingTasksAlternative: React.FC = () => {
         .eq('id', taskId);
 
       if (error) {
+        console.error('Error completing task:', error);
         toast({
           title: "Error",
           description: "Failed to complete task. Please try again.",
@@ -112,6 +117,7 @@ export const PendingTasksAlternative: React.FC = () => {
       // Reload tasks
       loadPendingTasks();
     } catch (error) {
+      console.error('Error completing task:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",
@@ -128,6 +134,7 @@ export const PendingTasksAlternative: React.FC = () => {
         .eq('id', taskId);
 
       if (error) {
+        console.error('Error deleting task:', error);
         toast({
           title: "Error",
           description: "Failed to delete task. Please try again.",
@@ -144,6 +151,7 @@ export const PendingTasksAlternative: React.FC = () => {
       // Reload tasks
       loadPendingTasks();
     } catch (error) {
+      console.error('Error deleting task:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",

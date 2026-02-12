@@ -126,6 +126,33 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const courseSlug = slugify(course.title);
+
+  // Prefetch course detail data on hover for instant navigation
+  const handleMouseEnter = () => {
+    queryClient.prefetchQuery({
+      queryKey: ['course-with-stages', courseSlug],
+      queryFn: async () => {
+        const { data: courseDetail, error } = await supabase
+          .from('courses')
+          .select(`
+            id, title, description, company, attached_jobs, created_at,
+            course_stages ( id, title, description, information, stage_order )
+          `)
+          .eq('slug', courseSlug)
+          .order('stage_order', { referencedTable: 'course_stages' })
+          .maybeSingle();
+        if (error) throw error;
+        if (!courseDetail) throw new Error('Course not found');
+        const stages = (courseDetail.course_stages || []).sort(
+          (a: any, b: any) => a.stage_order - b.stage_order
+        );
+        const { course_stages, ...rest } = courseDetail;
+        return { course: rest, stages };
+      },
+      staleTime: 5 * 60 * 1000,
+    });
+  };
 
   // Fetch course progress for the current user
   const { data: courseProgress } = useQuery({
@@ -212,6 +239,7 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
     <div 
       className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group h-full flex flex-col"
       onClick={handleCardClick}
+      onMouseEnter={handleMouseEnter}
     >
       {/* Leaf Image Header */}
       <div className={`w-full h-36 bg-gradient-to-br ${colorScheme.gradient} flex items-center justify-center relative overflow-hidden`}>

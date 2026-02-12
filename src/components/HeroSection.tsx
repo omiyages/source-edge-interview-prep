@@ -1,7 +1,8 @@
 import { memo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
 import { NavigationHeader } from "@/components/NavigationHeader";
@@ -14,7 +15,8 @@ interface HeroSectionProps {
 }
 
 const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess }: HeroSectionProps) => {
-  const { profile } = useAuth();
+  const { profile, user, loading: authLoading } = useAuth();
+  const isAuthenticated = !authLoading && !!user;
 
   return (
     <>
@@ -40,32 +42,59 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
               for your next win.
             </h1>
             
-            {/* Welcome Message */}
-            <p className="text-base sm:text-lg text-muted-foreground mb-8">
-              Welcome back, <span className="font-semibold text-foreground">{profile?.full_name || profile?.email}</span> 👋
-              {isAdmin && <span className="text-primary font-semibold ml-1">Admin</span>}
-              . Ready to prepare for your upcoming interview?
-            </p>
-            
-            {/* Submit Question Button */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  size="lg"
-                  variant="gradient"
-                  className="px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
-                >
-                  <Plus className="w-5 h-5 mr-2" />
-                  Submit Question
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Submit New Interview Question</DialogTitle>
-                </DialogHeader>
-                <SubmitQuestionForm onSuccess={onSubmitSuccess} onCancel={() => setDialogOpen(false)} />
-              </DialogContent>
-            </Dialog>
+            {isAuthenticated ? (
+              <>
+                {/* Welcome Message for logged-in users */}
+                <p className="text-base sm:text-lg text-muted-foreground mb-8">
+                  Welcome back, <span className="font-semibold text-foreground">{profile?.full_name || profile?.email}</span> 👋
+                  {isAdmin && <span className="text-primary font-semibold ml-1">Admin</span>}
+                  . Ready to prepare for your upcoming interview?
+                </p>
+                
+                {/* Submit Question Button */}
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      size="lg"
+                      variant="gradient"
+                      className="px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Submit Question
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Submit New Interview Question</DialogTitle>
+                    </DialogHeader>
+                    <SubmitQuestionForm onSuccess={onSubmitSuccess} onCancel={() => setDialogOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              </>
+            ) : (
+              <>
+                {/* Description for logged-out users */}
+                <p className="text-base sm:text-lg text-muted-foreground mb-8">
+                  Browse our curated database of real interview questions from top companies. Sign in to unlock all questions, detailed coaching, and track your progress.
+                </p>
+                
+                {/* Sign In / Register Buttons */}
+                <div className="flex items-center justify-center gap-4">
+                  <Button asChild size="lg" className="px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-shadow btn-purple-gradient">
+                    <Link to="/auth">
+                      <LogIn className="w-5 h-5 mr-2" />
+                      Sign In
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="px-8 py-3 rounded-lg">
+                    <Link to="/signup">
+                      <UserPlus className="w-5 h-5 mr-2" />
+                      Register
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

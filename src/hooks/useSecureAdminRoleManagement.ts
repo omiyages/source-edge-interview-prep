@@ -29,6 +29,8 @@ export const useSecureAdminRoleManagement = () => {
 
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, newRole, reason }: UpdateRoleParams): Promise<RoleUpdateResult> => {
+      console.log('🔐 Attempting secure role update:', { userId, newRole, reason });
+
       // Check rate limit first using raw Supabase client to bypass TypeScript checking
       const { data: rateLimitCheck, error: rateLimitError } = await (supabase as any).rpc('check_rate_limit', { 
         operation_name: 'role_update',
@@ -37,6 +39,7 @@ export const useSecureAdminRoleManagement = () => {
       });
 
       if (rateLimitError) {
+        console.error('Rate limit check failed:', rateLimitError);
         throw new Error('Security check failed');
       }
 
@@ -57,6 +60,7 @@ export const useSecureAdminRoleManagement = () => {
       });
 
       if (error) {
+        console.error('Secure role update failed:', error);
         throw error;
       }
 
@@ -64,8 +68,11 @@ export const useSecureAdminRoleManagement = () => {
       const result = data as RoleUpdateResult;
 
       if (result.error) {
+        console.error('Role update rejected:', result.error);
         throw new Error(result.error);
       }
+
+      console.log('✅ Secure role update successful:', result);
       return result;
     },
     onSuccess: (data, { userId, newRole, reason }) => {
@@ -92,6 +99,8 @@ export const useSecureAdminRoleManagement = () => {
       });
     },
     onError: (error: any) => {
+      console.error('Secure role update error:', error);
+      
       // Log security event
       logAdminAction(
         `Failed role update attempt: ${error.message}`,

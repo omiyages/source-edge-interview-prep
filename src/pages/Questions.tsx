@@ -1,27 +1,34 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, lazy, Suspense } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuestions } from "@/hooks/useQuestions";
+import { usePaginatedQuestions } from "@/hooks/usePaginatedQuestions";
+import { useQuestionStats } from "@/hooks/useQuestionStats";
 import { NavigationHeader } from "@/components/NavigationHeader";
 import { QuestionsSidebarFilters } from "@/components/QuestionsSidebarFilters";
 import { QuestionsList } from "@/components/QuestionsList";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { QuestionDetailDialog } from "@/components/QuestionDetailDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EditQuestionForm } from "@/components/EditQuestionForm";
+
+// Lazy-load the heavy dialog — only downloaded when user clicks a question
+const QuestionDetailDialog = lazy(() =>
+  import("@/components/QuestionDetailDialog").then(m => ({ default: m.QuestionDetailDialog }))
+);
 import type { InterviewQuestion } from "@/services/questionsService";
-import { Search, Shuffle } from "lucide-react";
+import { Search, Shuffle, Lock, LogIn, UserPlus } from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
 
 const Questions = () => {
-  const { isAdmin, user } = useAuth();
-  const { questions, loading, error, refetch } = useQuestions(isAdmin, !!user);
-  
+  const { isAdmin, user, loading: authLoading } = useAuth();
+  const isAuthenticated = !authLoading && !!user;
+
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("popularity");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"popularity" | "newest" | "oldest">("popularity");
   const [filters, setFilters] = useState({
     company: [] as string[],
     category: [] as string[],
@@ -31,6 +38,34 @@ const Questions = () => {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [editQuestion, setEditQuestion] = useState<InterviewQuestion | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Debounce search input (300ms) so we don't fire a query on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on search change
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Server-side paginated + filtered questions
+  const { questions: displayedQuestions, totalCount, loading, error, refetch } = usePaginatedQuestions(
+    {
+      isAdmin,
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
+      search: debouncedSearch || undefined,
+      company: filters.company.length > 0 ? filters.company : undefined,
+      category: filters.category.length > 0 ? filters.category : undefined,
+      role: filters.role.length > 0 ? filters.role : undefined,
+      stage: filters.stage.length > 0 ? filters.stage : undefined,
+      sortBy,
+    },
+    isAuthenticated,
+  );
+
+  // Fetch lightweight stats (counts only) — used for both authenticated (filter sidebar) and anonymous users
+  const { stats, loading: statsLoading } = useQuestionStats(!authLoading);
 
   // Scroll to top when navigating to this page
   useEffect(() => {
@@ -42,22 +77,22 @@ const Questions = () => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q') || "";
     const page = parseInt(params.get('page') || '1', 10);
-    const company = params.get('company')?.split(',') || [];
-    const category = params.get('category')?.split(',') || [];
-    const role = params.get('role')?.split(',') || [];
-    const stage = params.get('stage')?.split(',') || [];
+    const company = params.get('company')?.split(',').filter(Boolean) || [];
+    const category = params.get('category')?.split(',').filter(Boolean) || [];
+    const role = params.get('role')?.split(',').filter(Boolean) || [];
+    const stage = params.get('stage')?.split(',').filter(Boolean) || [];
     const sort = params.get('sort') || "popularity";
 
-    if (q) setSearchTerm(q);
+    if (q) { setSearchTerm(q); setDebouncedSearch(q); }
     if (!Number.isNaN(page) && page > 0) setCurrentPage(page);
     setFilters({ company, category, role, stage });
-    setSortBy(sort);
+    setSortBy(sort as "popularity" | "newest" | "oldest");
   }, []);
 
   // Persist to URL
   useEffect(() => {
     const params = new URLSearchParams();
-    if (searchTerm) params.set('q', searchTerm);
+    if (debouncedSearch) params.set('q', debouncedSearch);
     if (currentPage > 1) params.set('page', String(currentPage));
     if (filters.company.length > 0) params.set('company', filters.company.join(','));
     if (filters.category.length > 0) params.set('category', filters.category.join(','));
@@ -67,62 +102,10 @@ const Questions = () => {
     
     const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
     window.history.replaceState({}, '', newUrl);
-  }, [searchTerm, currentPage, filters, sortBy]);
+  }, [debouncedSearch, currentPage, filters, sortBy]);
 
-  // Filter and sort questions
-  const filteredAndSortedQuestions = useMemo(() => {
-    let filtered = questions || [];
-
-    // Search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter((q) =>
-        q.question.toLowerCase().includes(searchLower) ||
-        q.company.toLowerCase().includes(searchLower) ||
-        q.role.toLowerCase().includes(searchLower) ||
-        q.category?.toLowerCase().includes(searchLower) ||
-        q.interview_stage?.toLowerCase().includes(searchLower)
-      );
-    }
-
-
-    // Company filter
-    if (filters.company.length > 0) {
-      filtered = filtered.filter(q => filters.company.includes(q.company));
-    }
-
-    // Category filter
-    if (filters.category.length > 0) {
-      filtered = filtered.filter(q => q.category && filters.category.includes(q.category));
-    }
-
-    // Role filter
-    if (filters.role.length > 0) {
-      filtered = filtered.filter(q => filters.role.includes(q.role));
-    }
-
-    // Stage filter
-    if (filters.stage.length > 0) {
-      filtered = filtered.filter(q => q.interview_stage && filters.stage.includes(q.interview_stage));
-    }
-
-    // Sort
-    if (sortBy === "popularity") {
-      // Sort by created_at descending (most recent first)
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    } else if (sortBy === "newest") {
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    } else if (sortBy === "oldest") {
-      filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    }
-
-    return filtered;
-  }, [questions, searchTerm, filters, sortBy]);
-
-  const totalPages = Math.ceil(filteredAndSortedQuestions.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const displayedQuestions = filteredAndSortedQuestions.slice(startIndex, endIndex);
 
   const handleOpenEditFromDialog = useCallback((question: InterviewQuestion) => {
     setEditQuestion(question);
@@ -130,13 +113,12 @@ const Questions = () => {
   }, []);
 
   const handlePickRandom = useCallback(() => {
-    if (filteredAndSortedQuestions.length === 0) return;
-    const randomIndex = Math.floor(Math.random() * filteredAndSortedQuestions.length);
-    const page = Math.floor(randomIndex / ITEMS_PER_PAGE) + 1;
-    const indexInPage = randomIndex % ITEMS_PER_PAGE;
-    setCurrentPage(page);
-    setSelectedQuestionIndex(indexInPage);
-  }, [filteredAndSortedQuestions.length]);
+    if (totalCount === 0) return;
+    const randomPage = Math.floor(Math.random() * totalPages) + 1;
+    setCurrentPage(randomPage);
+    // We'll select index 0 on the new page for simplicity
+    setSelectedQuestionIndex(0);
+  }, [totalCount, totalPages]);
 
   const handleFilterChange = useCallback((filterType: string, values: string[]) => {
     setFilters(prev => ({ ...prev, [filterType]: values }));
@@ -151,6 +133,7 @@ const Questions = () => {
       stage: [],
     });
     setSearchTerm("");
+    setDebouncedSearch("");
     setCurrentPage(1);
   }, []);
 
@@ -159,46 +142,30 @@ const Questions = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Memoize unique values for filters to prevent recalculation on every render
+  // Total question count — use server totalCount for authenticated, stats for anonymous
+  const totalQuestionCount = useMemo(() => {
+    if (isAuthenticated) return totalCount;
+    return stats?.total_count || 0;
+  }, [isAuthenticated, totalCount, stats]);
+
+  // Use stats for filter sidebar values (lightweight, works for both auth states)
   const uniqueCompanies = useMemo(() => {
-    const companies = questions?.map(q => q.company).filter(Boolean) || [];
-    const counts: Record<string, number> = {};
-    companies.forEach(company => {
-      counts[company] = (counts[company] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([company, count]) => ({ company, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [questions]);
+    return stats?.companies || [];
+  }, [stats]);
 
   const uniqueCategories = useMemo(() => {
-    const categories = questions?.map(q => q.category).filter(Boolean) || [];
-    return [...new Set(categories)].sort();
-  }, [questions]);
+    return stats?.categories || [];
+  }, [stats]);
 
   const uniqueRoles = useMemo(() => {
-    const roles = questions?.map(q => q.role).filter(Boolean) || [];
-    const counts: Record<string, number> = {};
-    roles.forEach(role => {
-      counts[role] = (counts[role] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([role, count]) => ({ role, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [questions]);
+    return stats?.roles || [];
+  }, [stats]);
 
   const uniqueStages = useMemo(() => {
-    const stages = questions?.map(q => q.interview_stage).filter(Boolean) || [];
-    const counts: Record<string, number> = {};
-    stages.forEach(stage => {
-      counts[stage] = (counts[stage] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([stage, count]) => ({ stage, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [questions]);
+    return stats?.stages || [];
+  }, [stats]);
 
-  if (error) {
+  if (error && isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <NavigationHeader />
@@ -237,16 +204,18 @@ const Questions = () => {
                 <div>
                   <h1 className="text-3xl font-bold text-foreground mb-2">Practice Questions</h1>
                   <p className="text-muted-foreground">
-                    Browse and solve over {questions?.length || 0} questions to prepare for your next interview.
+                    Browse and solve over {totalQuestionCount} questions to prepare for your next interview.
                   </p>
                 </div>
-                <Button
-                  onClick={handlePickRandom}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Shuffle className="w-4 h-4 mr-2" />
-                  Pick Random
-                </Button>
+                {isAuthenticated && (
+                  <Button
+                    onClick={handlePickRandom}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Shuffle className="w-4 h-4 mr-2" />
+                    Pick Random
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -273,107 +242,175 @@ const Questions = () => {
               </Select>
             </div>
 
-            {/* Questions List */}
-            <QuestionsList
-              questions={displayedQuestions}
-              loading={loading}
-              totalCount={filteredAndSortedQuestions.length}
-              startIndex={startIndex}
-              onSelectQuestion={(index) => setSelectedQuestionIndex(index)}
-            />
+            {/* Questions List - loading / login wall / actual content */}
+            {authLoading ? (
+              /* Show loading skeleton while auth is resolving — prevents login wall flash */
+              <div className="space-y-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-white border border-border rounded-lg p-6 animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : isAuthenticated ? (
+              <>
+                <QuestionsList
+                  questions={displayedQuestions}
+                  loading={loading}
+                  totalCount={totalCount}
+                  startIndex={startIndex}
+                  onSelectQuestion={(index) => setSelectedQuestionIndex(index)}
+                />
 
-            {/* Question detail dialog (View Question) */}
-            <QuestionDetailDialog
-              open={selectedQuestionIndex !== null}
-              onOpenChange={(open) => !open && setSelectedQuestionIndex(null)}
-              question={selectedQuestionIndex !== null ? displayedQuestions[selectedQuestionIndex] ?? null : null}
-              currentDisplayNumber={selectedQuestionIndex !== null ? startIndex + selectedQuestionIndex + 1 : 1}
-              totalCount={filteredAndSortedQuestions.length}
-              onPrev={() => {
-                if (selectedQuestionIndex === null) return;
-                if (selectedQuestionIndex > 0) {
-                  setSelectedQuestionIndex(selectedQuestionIndex - 1);
-                } else if (currentPage > 1) {
-                  setCurrentPage(currentPage - 1);
-                  setSelectedQuestionIndex(ITEMS_PER_PAGE - 1);
-                }
-              }}
-              onNext={() => {
-                if (selectedQuestionIndex === null) return;
-                if (selectedQuestionIndex < displayedQuestions.length - 1) {
-                  setSelectedQuestionIndex(selectedQuestionIndex + 1);
-                } else if (currentPage < totalPages) {
-                  setCurrentPage(currentPage + 1);
-                  setSelectedQuestionIndex(0);
-                }
-              }}
-              canPrev={
-                selectedQuestionIndex !== null &&
-                (selectedQuestionIndex > 0 || currentPage > 1)
-              }
-              canNext={
-                selectedQuestionIndex !== null &&
-                (selectedQuestionIndex < displayedQuestions.length - 1 ||
-                  currentPage < totalPages)
-              }
-              showEditButton={isAdmin}
-              onEditQuestion={handleOpenEditFromDialog}
-            />
-
-            {/* Pagination */}
-            {!loading && filteredAndSortedQuestions.length > ITEMS_PER_PAGE && (
-              <div className="mt-8 flex justify-center">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    ←
-                  </Button>
-                  
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNumber = i + 1;
-                    if (totalPages > 5 && pageNumber === 5 && currentPage < totalPages - 1) {
-                      return (
-                        <span key={pageNumber} className="px-3 py-1 text-muted-foreground">
-                          ...
-                        </span>
-                      );
+                {/* Question detail dialog (View Question) — lazy-loaded */}
+                <Suspense fallback={null}>
+                <QuestionDetailDialog
+                  open={selectedQuestionIndex !== null}
+                  onOpenChange={(open) => !open && setSelectedQuestionIndex(null)}
+                  question={selectedQuestionIndex !== null ? displayedQuestions[selectedQuestionIndex] ?? null : null}
+                  currentDisplayNumber={selectedQuestionIndex !== null ? startIndex + selectedQuestionIndex + 1 : 1}
+                  totalCount={totalCount}
+                  onPrev={() => {
+                    if (selectedQuestionIndex === null) return;
+                    if (selectedQuestionIndex > 0) {
+                      setSelectedQuestionIndex(selectedQuestionIndex - 1);
+                    } else if (currentPage > 1) {
+                      setCurrentPage(currentPage - 1);
+                      setSelectedQuestionIndex(ITEMS_PER_PAGE - 1);
                     }
-                    return (
+                  }}
+                  onNext={() => {
+                    if (selectedQuestionIndex === null) return;
+                    if (selectedQuestionIndex < displayedQuestions.length - 1) {
+                      setSelectedQuestionIndex(selectedQuestionIndex + 1);
+                    } else if (currentPage < totalPages) {
+                      setCurrentPage(currentPage + 1);
+                      setSelectedQuestionIndex(0);
+                    }
+                  }}
+                  canPrev={
+                    selectedQuestionIndex !== null &&
+                    (selectedQuestionIndex > 0 || currentPage > 1)
+                  }
+                  canNext={
+                    selectedQuestionIndex !== null &&
+                    (selectedQuestionIndex < displayedQuestions.length - 1 ||
+                      currentPage < totalPages)
+                  }
+                  showEditButton={isAdmin}
+                  onEditQuestion={handleOpenEditFromDialog}
+                />
+                </Suspense>
+
+                {/* Pagination */}
+                {!loading && totalCount > ITEMS_PER_PAGE && (
+                  <div className="mt-8 flex justify-center">
+                    <div className="flex items-center gap-2">
                       <Button
-                        key={pageNumber}
-                        variant={currentPage === pageNumber ? "default" : "outline"}
+                        variant="outline"
                         size="sm"
-                        onClick={() => handlePageChange(pageNumber)}
-                        className={currentPage === pageNumber ? "bg-primary text-primary-foreground" : ""}
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
                       >
-                        {pageNumber}
+                        ←
                       </Button>
-                    );
-                  })}
-                  
-                  {totalPages > 5 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(totalPages)}
-                      className={currentPage === totalPages ? "bg-primary text-primary-foreground" : ""}
-                    >
-                      {totalPages}
-                    </Button>
-                  )}
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    →
-                  </Button>
+                      
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const pageNumber = i + 1;
+                        if (totalPages > 5 && pageNumber === 5 && currentPage < totalPages - 1) {
+                          return (
+                            <span key={pageNumber} className="px-3 py-1 text-muted-foreground">
+                              ...
+                            </span>
+                          );
+                        }
+                        return (
+                          <Button
+                            key={pageNumber}
+                            variant={currentPage === pageNumber ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(pageNumber)}
+                            className={currentPage === pageNumber ? "bg-primary text-primary-foreground" : ""}
+                          >
+                            {pageNumber}
+                          </Button>
+                        );
+                      })}
+                      
+                      {totalPages > 5 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(totalPages)}
+                          className={currentPage === totalPages ? "bg-primary text-primary-foreground" : ""}
+                        >
+                          {totalPages}
+                        </Button>
+                      )}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        →
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="relative">
+                {/* Blurred placeholder question rows */}
+                <div className="blur-sm select-none pointer-events-none space-y-3" aria-hidden="true">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between bg-white rounded-lg border border-gray-100 p-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-muted-foreground">{i + 1}.</span>
+                          <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded">Technical</span>
+                          <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">Company</span>
+                          <span className="bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded">Stage</span>
+                        </div>
+                      </div>
+                      <div className="h-9 w-28 bg-gray-800 rounded-lg"></div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Login wall overlay */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-white rounded-2xl shadow-xl border border-gray-100 px-8 py-8 max-w-md w-full mx-4 text-center">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Lock className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">Unlock All {totalQuestionCount > 0 ? totalQuestionCount : ''} Questions</h3>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Sign in to browse and practice interview questions, view detailed answers, and track your progress.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button asChild className="flex-1 btn-purple-gradient">
+                        <Link to="/auth">
+                          <LogIn className="w-4 h-4 mr-2" />
+                          Sign In
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" className="flex-1">
+                        <Link to="/signup">
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Register
+                        </Link>
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Trusted by candidates at top tech companies.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -402,7 +439,7 @@ const Questions = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © 2025 Source Edge Database. All rights reserved.
+          © 2026 Source Edge Database. All rights reserved.
         </div>
       </footer>
     </div>

@@ -47,8 +47,19 @@ export const UpcomingInterviews: React.FC = () => {
         .gte('scheduled_date', new Date().toISOString())
         .order('scheduled_date', { ascending: true });
 
+      console.log('📊 Interview query result:', { data, error });
+
       if (error) {
+        console.error('Error loading interviews:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
         // Try a simpler query without the join
+        console.log('🔄 Trying simpler query without join...');
         const { data: simpleData, error: simpleError } = await supabase
           .from('interviews')
           .select('id, user_id, interview_name, scheduled_date, created_at')
@@ -56,6 +67,7 @@ export const UpcomingInterviews: React.FC = () => {
           .order('scheduled_date', { ascending: true });
 
         if (simpleError) {
+          console.error('Simple query also failed:', simpleError);
           toast({
             title: "Error",
             description: "Failed to load upcoming interviews. Please check if the interviews table exists.",
@@ -72,6 +84,7 @@ export const UpcomingInterviews: React.FC = () => {
           .in('id', userIds);
 
         if (userError) {
+          console.error('Error loading user data:', userError);
           toast({
             title: "Error",
             description: "Failed to load user details for interviews.",
@@ -113,6 +126,7 @@ export const UpcomingInterviews: React.FC = () => {
 
       setInterviews(transformedInterviews);
     } catch (error) {
+      console.error('Error loading interviews:', error);
       toast({
         title: "Error",
         description: "Failed to load upcoming interviews.",

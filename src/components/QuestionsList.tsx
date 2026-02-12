@@ -12,15 +12,9 @@ interface QuestionsListProps {
   onSelectQuestion?: (index: number) => void;
 }
 
-const QuestionsListItem = memo(({
-  question,
-  displayNumber,
-  onSelect,
-}: {
-  question: InterviewQuestion;
-  displayNumber: number;
-  onSelect: () => void;
-}) => {
+const QuestionsListItem = memo(({ question, displayNumber, onView }: { question: InterviewQuestion; displayNumber: number; onView?: () => void }) => {
+  // For now, we'll use category as difficulty since we don't have a difficulty field
+  // You can add difficulty field later if needed
   const getDifficultyColor = (category?: string) => {
     if (!category) return "bg-gray-100 text-gray-700";
     const cat = category.toLowerCase();
@@ -29,6 +23,7 @@ const QuestionsListItem = memo(({
     return "bg-orange-100 text-orange-700";
   };
 
+  const difficultyLabel = question.category || "Medium";
   const difficultyColor = getDifficultyColor(question.category);
 
   return (
@@ -41,6 +36,7 @@ const QuestionsListItem = memo(({
           <div className="flex items-start gap-3 mb-3">
             <span className="text-sm font-medium text-muted-foreground flex-shrink-0">{displayNumber}.</span>
             <h3 className="text-base font-semibold text-foreground break-words">{question.question}</h3>
+            {/* Solved indicator - we don't have this data, so leaving it out for now */}
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
@@ -66,7 +62,7 @@ const QuestionsListItem = memo(({
           variant="outline"
           size="sm"
           className="bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
-          onClick={onSelect}
+          onClick={onView}
         >
           <Eye className="w-4 h-4 mr-2" />
           View Question
@@ -107,7 +103,7 @@ export const QuestionsList = memo(({ questions, loading, totalCount, startIndex 
           key={question.id}
           question={question}
           displayNumber={startIndex + index + 1}
-          onSelect={() => onSelectQuestion?.(index)}
+          onView={onSelectQuestion ? () => onSelectQuestion(index) : undefined}
         />
       ))}
     </div>
