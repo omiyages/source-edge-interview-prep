@@ -37,18 +37,6 @@ const Index = () => {
     refetchQuestions();
   }, [toast, refetchQuestions]);
 
-  // Show loading state
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground font-semibold">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <HeroSection 
@@ -60,7 +48,21 @@ const Index = () => {
 
       <div className="container mx-auto px-4 py-8 flex-1 space-y-16">
         {/* 1. Interview Questions — gated for unauthenticated users */}
-        {isAuthenticated ? (
+        {authLoading ? (
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-64 mb-2"></div>
+            <div className="h-4 bg-muted rounded w-96 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                  <div className="h-4 bg-muted rounded w-24"></div>
+                  <div className="h-5 bg-muted rounded w-full"></div>
+                  <div className="h-5 bg-muted rounded w-3/4"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : isAuthenticated ? (
           <Suspense fallback={
             <div className="animate-pulse">
               <div className="h-8 bg-muted rounded w-48 mb-4"></div>

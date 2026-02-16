@@ -51,6 +51,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
+    // Safety timeout: if auth takes longer than 5 seconds, stop blocking the UI.
+    // The session will still resolve in the background via onAuthStateChange.
+    const safetyTimer = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth loading timed out — rendering page as logged-out');
+        setLoading(false);
+      }
+    }, 5000);
+
     // Get initial session
     const getInitialSession = async () => {
       try {
@@ -68,7 +77,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Unexpected error getting session:', error);
         if (mounted) setUser(null);
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          clearTimeout(safetyTimer);
+        }
       }
     };
 
@@ -85,6 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, []);
