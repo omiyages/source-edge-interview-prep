@@ -150,7 +150,7 @@ export const fetchPaginatedQuestions = async (
 export const getOrGeneratePreparationNotes = async (questionId: string): Promise<string[]> => {
   try {
     const { data, error } = await supabase.functions.invoke('generate-prep-notes', {
-      body: { questionId },
+      body: { question_id: questionId },
     });
     if (error) throw error;
     return data?.preparation_notes || [];
@@ -184,7 +184,7 @@ export const getOrGenerateQuestionCoaching = async (
 ): Promise<{ interviewer_intent: string[]; winning_answer_framework: WinningAnswerFramework }> => {
   try {
     const { data, error } = await supabase.functions.invoke('generate-question-coaching', {
-      body: { questionId },
+      body: { question_id: questionId },
     });
     if (error) throw error;
     return {

@@ -1,9 +1,8 @@
 import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { LogOut, BookOpen, Settings, Menu, ChevronDown, User, ChevronRight, LogIn, UserPlus } from "lucide-react";
+import { LogOut, BookOpen, Settings, Menu, User, ChevronRight, LogIn, UserPlus } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -54,39 +53,30 @@ export const NavigationHeader = memo(() => {
           Questions
         </Button>
       </Link>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="ghost" 
-            className={`transition-colors font-medium ${
-              isActive("/resources") || isActive("/relo")
-                ? "text-foreground font-semibold" 
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Resources
-            <ChevronDown className="w-4 h-4 ml-1" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/resources" 
-              className={`cursor-pointer ${isActive("/resources") ? "font-semibold" : ""}`}
-            >
-              Resources
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/relo" 
-              className={`cursor-pointer ${isActive("/relo") ? "font-semibold" : ""}`}
-            >
-              Relocation to Tokyo
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Link to="/resources">
+        <Button 
+          variant="ghost" 
+          className={`transition-colors font-medium ${
+            isActive("/resources") 
+              ? "text-foreground font-semibold" 
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Resources
+        </Button>
+      </Link>
+      <Link to="/roles">
+        <Button 
+          variant="ghost" 
+          className={`transition-colors font-medium ${
+            isActive("/roles") || isActive("/role/")
+              ? "text-foreground font-semibold" 
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Roles
+        </Button>
+      </Link>
       <Link to="/company">
         <Button 
           variant="ghost" 
@@ -197,7 +187,7 @@ export const NavigationHeader = memo(() => {
         <div className="flex justify-between items-center py-4">
           <Link to="/">
             <h1 className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
-              Source Edge Database
+              Omiyages
             </h1>
           </Link>
           
@@ -243,32 +233,30 @@ export const NavigationHeader = memo(() => {
                       Questions
                     </Button>
                   </Link>
-                  <div className="flex flex-col gap-1 pl-4">
-                    <Link to="/resources" onClick={() => setMobileMenuOpen(false)}>
-                      <Button 
-                        variant="ghost" 
-                        className={`w-full justify-start transition-colors font-medium text-sm ${
-                          isActive("/resources") 
-                            ? "text-foreground font-semibold" 
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        Resources
-                      </Button>
-                    </Link>
-                    <Link to="/relo" onClick={() => setMobileMenuOpen(false)}>
-                      <Button 
-                        variant="ghost" 
-                        className={`w-full justify-start transition-colors font-medium text-sm ${
-                          isActive("/relo") 
-                            ? "text-foreground font-semibold" 
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        Relocation to Tokyo
-                      </Button>
-                    </Link>
-                  </div>
+                  <Link to="/resources" onClick={() => setMobileMenuOpen(false)}>
+                    <Button 
+                      variant="ghost" 
+                      className={`w-full justify-start transition-colors font-medium ${
+                        isActive("/resources") 
+                          ? "text-foreground font-semibold" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Resources
+                    </Button>
+                  </Link>
+                  <Link to="/roles" onClick={() => setMobileMenuOpen(false)}>
+                    <Button 
+                      variant="ghost" 
+                      className={`w-full justify-start transition-colors font-medium ${
+                        isActive("/roles") || isActive("/role/")
+                          ? "text-foreground font-semibold" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Roles
+                    </Button>
+                  </Link>
                   <Link to="/company" onClick={() => setMobileMenuOpen(false)}>
                     <Button 
                       variant="ghost" 

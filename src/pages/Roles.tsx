@@ -453,7 +453,7 @@ const Roles = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          &copy; 2026 Source Edge Database. All rights reserved.
+          &copy; 2026 Omiyages. All rights reserved.
         </div>
       </footer>
 

@@ -107,20 +107,29 @@ const RoleDetail = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Find courses that explicitly have this role's job_title in their attached_jobs
+  // Find courses that have this role's job_title in their attached_jobs.
+  // Note: Supabase .contains() breaks when values have commas, so we fetch
+  // courses with attached_jobs and match client-side.
   const { data: recommendedCourse } = useQuery<CourseMatch | null>({
     queryKey: ['role-course', role?.id],
     queryFn: async () => {
       if (!role) return null;
 
-      const { data } = await supabase
+      const { data: courses } = await supabase
         .from('courses')
-        .select('id, title, description, company')
-        .contains('attached_jobs', [role.job_title])
-        .limit(1)
-        .maybeSingle();
+        .select('id, title, description, company, attached_jobs')
+        .not('attached_jobs', 'is', null);
 
-      return (data as CourseMatch) || null;
+      if (!courses || courses.length === 0) return null;
+
+      const jobTitle = role.job_title.trim().toLowerCase();
+
+      const match = courses.find((c) =>
+        Array.isArray(c.attached_jobs) &&
+        c.attached_jobs.some((j: string) => j.trim().toLowerCase() === jobTitle)
+      );
+
+      return match ? ({ id: match.id, title: match.title, description: match.description, company: match.company } as CourseMatch) : null;
     },
     enabled: !!role,
     staleTime: 5 * 60_000,
@@ -432,7 +441,7 @@ const RoleDetail = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          &copy; 2026 Source Edge Database. All rights reserved.
+          &copy; 2026 Omiyages. All rights reserved.
         </div>
       </footer>
 

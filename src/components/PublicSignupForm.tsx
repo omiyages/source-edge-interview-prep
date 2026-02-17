@@ -26,12 +26,7 @@ interface SignupFormData {
   agreeTerms: boolean;
 }
 
-interface PublicSignupFormProps {
-  onSwitchToSignIn?: () => void;
-  variant?: "card" | "flat";
-}
-
-export const PublicSignupForm = ({ onSwitchToSignIn, variant = "card" }: PublicSignupFormProps) => {
+export const PublicSignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -219,38 +214,6 @@ export const PublicSignupForm = ({ onSwitchToSignIn, variant = "card" }: PublicS
   };
 
   if (submitted) {
-    const successContent = (
-      <div className={variant === "flat" ? "space-y-4" : "p-8 text-center space-y-4"}>
-        <div className={variant === "flat" ? "mb-6" : ""}>
-          <div className={`w-16 h-16 ${variant === "flat" ? "bg-primary/10" : "bg-primary/10"} rounded-full flex items-center justify-center mx-auto mb-4`}>
-            <CheckCircle2 className={`w-8 h-8 ${variant === "flat" ? "text-primary" : "text-primary"}`} />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground text-center">Registration Submitted!</h2>
-        </div>
-        <div className="bg-blue-50 rounded-xl p-4 text-left">
-          <p className="text-sm font-medium text-blue-900 mb-2">What happens next?</p>
-          <ol className="text-sm text-blue-700 space-y-2 list-decimal list-inside">
-            <li>Check your email to verify your account</li>
-            <li>An admin will review and approve your registration</li>
-            <li>You'll receive an email once your account is activated</li>
-          </ol>
-        </div>
-        <p className="text-sm text-gray-500 text-center">
-          Didn't receive the verification email? Check your spam folder.
-        </p>
-        <Link to="/auth">
-          <Button variant="outline" className="w-full mt-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Sign In
-          </Button>
-        </Link>
-      </div>
-    );
-
-    if (variant === "flat") {
-      return successContent;
-    }
-
     return (
       <Card className="w-full max-w-md mx-auto rounded-2xl border-0 shadow-xl overflow-hidden">
         <div className="bg-gradient-to-br from-primary to-primary/80 p-8 text-center">
@@ -282,7 +245,18 @@ export const PublicSignupForm = ({ onSwitchToSignIn, variant = "card" }: PublicS
     );
   }
 
-  const formContent = (
+  return (
+    <Card className="w-full max-w-md mx-auto rounded-2xl border-0 shadow-xl overflow-hidden">
+      <CardHeader className="bg-gradient-to-br from-primary to-primary/80 p-8 text-center space-y-2">
+        <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto">
+          <UserPlus className="w-7 h-7 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Create an Account</h2>
+        <p className="text-white/80 text-sm">
+          Register to start your interview preparation
+        </p>
+      </CardHeader>
+      <CardContent className="p-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-5">
             {/* Full Name */}
@@ -507,51 +481,12 @@ export const PublicSignupForm = ({ onSwitchToSignIn, variant = "card" }: PublicS
             {/* Sign In Link */}
             <p className="text-center text-sm text-gray-500">
               Already have an account?{" "}
-              {onSwitchToSignIn ? (
-                <button 
-                  type="button" 
-                  onClick={onSwitchToSignIn} 
-                  className="text-primary font-medium hover:underline"
-                >
-                  Sign in
-                </button>
-              ) : (
-                <Link to="/auth" className="text-primary font-medium hover:underline">
-                  Sign in
-                </Link>
-              )}
+              <Link to="/auth" className="text-primary font-medium hover:underline">
+                Sign in
+              </Link>
             </p>
           </form>
         </Form>
-  );
-
-  if (variant === "flat") {
-    return (
-      <div className="w-full">
-        <div className="mb-8">
-          <h3 className="text-2xl font-semibold text-foreground mb-2">Create an Account</h3>
-          <p className="text-muted-foreground">
-            Register to start your interview preparation
-          </p>
-        </div>
-        {formContent}
-      </div>
-    );
-  }
-
-  return (
-    <Card className="w-full max-w-md mx-auto rounded-2xl border-0 shadow-xl overflow-hidden">
-      <CardHeader className="bg-gradient-to-br from-primary to-primary/80 p-8 text-center space-y-2">
-        <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto">
-          <UserPlus className="w-7 h-7 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-white">Create an Account</h2>
-        <p className="text-white/80 text-sm">
-          Register to start your interview preparation
-        </p>
-      </CardHeader>
-      <CardContent className="p-8">
-        {formContent}
       </CardContent>
     </Card>
   );
