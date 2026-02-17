@@ -19,7 +19,6 @@ import {
   Plus,
   Upload,
   Briefcase,
-  Eye,
   Edit,
   Trash2,
 } from 'lucide-react';
@@ -52,6 +51,16 @@ const statusColors: Record<string, string> = {
   closed: 'bg-red-100 text-red-800',
   draft: 'bg-gray-100 text-gray-800',
 };
+
+/** Company logo config — maps company names to a letter + colour scheme. */
+const COMPANY_LOGOS: Record<string, { letter: string; bg: string; text: string; border: string }> = {
+  'woven by toyota': { letter: 'W', bg: 'bg-white', text: 'text-gray-900', border: 'border-gray-200' },
+};
+
+function companyLogo(company: string) {
+  const key = company.toLowerCase();
+  return COMPANY_LOGOS[key] || { letter: company.charAt(0).toUpperCase(), bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' };
+}
 
 const Roles = () => {
   const { toast } = useToast();
@@ -302,61 +311,63 @@ const Roles = () => {
             ) : (
               <>
                 <div className="space-y-3">
-                  {paginatedRoles.map((role, index) => {
-                    const num = startIndex + index + 1;
+                  {paginatedRoles.map((role) => {
+                    const logo = companyLogo(role.company);
+                    const summary = parseAiSummary(role.ai_summary);
                     return (
-                      <div
+                      <Link
                         key={role.id}
-                        className="flex items-center justify-between bg-white rounded-lg border border-gray-100 p-4 hover:shadow-md hover:border-gray-200 transition-all group"
+                        to={roleHref(role)}
+                        className="block bg-white rounded-lg border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all group cursor-pointer"
                       >
-                        <div className="flex-1 min-w-0 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-muted-foreground">{num}.</span>
-                            <h3 className="font-semibold text-foreground truncate">{role.job_title}</h3>
+                        {/* Top row: logo + title + badges + admin actions */}
+                        <div className="flex items-start gap-4">
+                          {/* Company Logo */}
+                          <div
+                            className={`w-12 h-12 rounded-full ${logo.bg} ${logo.text} ${logo.border} border-2 flex items-center justify-center shrink-0 font-bold text-lg`}
+                          >
+                            {logo.letter}
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {role.division && (
-                              <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded font-medium">
-                                {role.division}
+
+                          {/* Title + badges */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-bold text-foreground truncate">{role.job_title}</h3>
+
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                              <span className="text-sm text-muted-foreground">{role.company}</span>
+                              <span className="text-muted-foreground/40">•</span>
+                              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                                {role.working_style}
                               </span>
-                            )}
-                            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">
-                              {role.company}
-                            </span>
-                            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">
-                              {role.location}
-                            </span>
-                            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">
-                              {role.working_style}
-                            </span>
-                            {isAdmin && role.status !== 'active' && (
-                              <Badge className={`${statusColors[role.status]} border-0 text-xs`}>
-                                {role.status}
-                              </Badge>
-                            )}
+                              {role.division && (
+                                <>
+                                  <span className="text-muted-foreground/40">•</span>
+                                  <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                                    {role.division}
+                                  </span>
+                                </>
+                              )}
+                              <span className="text-muted-foreground/40">•</span>
+                              <span className="text-sm text-muted-foreground">{role.location}</span>
+                              {isAdmin && role.status !== 'active' && (
+                                <>
+                                  <span className="text-muted-foreground/40">•</span>
+                                  <Badge className={`${statusColors[role.status]} border-0 text-xs`}>
+                                    {role.status}
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
                           </div>
 
-                          {/* AI Summary */}
-                          {(() => {
-                            const summary = parseAiSummary(role.ai_summary);
-                            if (!summary) return null;
-                            return (
-                              <ul className="text-sm text-muted-foreground space-y-0.5 list-disc list-inside">
-                                {summary.candidate && <li>{summary.candidate}</li>}
-                                {summary.responsibility && <li>{summary.responsibility}</li>}
-                              </ul>
-                            );
-                          })()}
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0 ml-4">
+                          {/* Admin actions */}
                           {isAdmin && (
-                            <>
+                            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => setEditingRole(role)}
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => { e.preventDefault(); setEditingRole(role); }}
                                 title="Edit"
                               >
                                 <Edit className="w-4 h-4 text-muted-foreground" />
@@ -364,25 +375,34 @@ const Roles = () => {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => handleDelete(role)}
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => { e.preventDefault(); handleDelete(role); }}
                                 title="Delete"
                               >
                                 <Trash2 className="w-4 h-4 text-red-400" />
                               </Button>
-                            </>
+                            </div>
                           )}
-                          <Button
-                            asChild
-                            className="bg-gray-900 hover:bg-gray-800 text-white text-sm h-9 px-4"
-                          >
-                            <Link to={roleHref(role)}>
-                              <Eye className="w-4 h-4 mr-1.5" />
-                              View Details
-                            </Link>
-                          </Button>
                         </div>
-                      </div>
+
+                        {/* AI Summary — aligned with the logo's left edge, hanging indent */}
+                        {summary && (
+                          <ul className="mt-3 text-sm text-muted-foreground space-y-1">
+                            {summary.candidate && (
+                              <li className="flex items-start gap-2">
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
+                                <span>{summary.candidate}</span>
+                              </li>
+                            )}
+                            {summary.responsibility && (
+                              <li className="flex items-start gap-2">
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
+                                <span>{summary.responsibility}</span>
+                              </li>
+                            )}
+                          </ul>
+                        )}
+                      </Link>
                     );
                   })}
                 </div>
