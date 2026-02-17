@@ -33,6 +33,8 @@ const Companies = lazy(() => import("./pages/Companies"));
 const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
 const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
+const Roles = lazy(() => import("./pages/Roles"));
+const RoleDetail = lazy(() => import("./pages/RoleDetail"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -190,6 +192,22 @@ function App() {
               element={
                 <Suspense fallback={<PageLoader />}>
                   <Questions />
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="/roles" 
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Roles />
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="/role/:slug" 
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <RoleDetail />
                 </Suspense>
               } 
             />

@@ -283,7 +283,7 @@ const AdminDashboard = () => {
           {/* Users Tab with Subtabs */}
           <TabsContent value="users">
             <Tabs defaultValue="kanban" className="w-full">
-              <TabsList className="grid w-full grid-cols-6 mb-6">
+              <TabsList className="grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="kanban">
                   <Users className="w-4 h-4 mr-2" />
                   Kanban Board
@@ -303,10 +303,6 @@ const AdminDashboard = () => {
                 <TabsTrigger value="users-list">
                   <Users className="w-4 h-4 mr-2" />
                   Users List
-                </TabsTrigger>
-                <TabsTrigger value="create-user">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Create User
                 </TabsTrigger>
               </TabsList>
 
@@ -335,27 +331,7 @@ const AdminDashboard = () => {
               </TabsContent>
 
               <TabsContent value="users-list">
-                <UsersList />
-              </TabsContent>
-
-              <TabsContent value="create-user">
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">User Management</h3>
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={() => setShowBulkUserCreation(true)}
-                        className="flex items-center gap-2"
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        Bulk Create Users
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex justify-center">
-                    <CreateUserForm />
-                  </div>
-                </div>
+                <UsersList onBulkCreate={() => setShowBulkUserCreation(true)} />
               </TabsContent>
             </Tabs>
           </TabsContent>

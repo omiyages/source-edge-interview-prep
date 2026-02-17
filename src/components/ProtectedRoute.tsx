@@ -30,13 +30,8 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // If admin is required but user is not admin, redirect to dashboard
-  if (requireAdmin && !isAdmin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // If user exists but no profile yet, show loading (profile is being created)
-  if (!profile && !loading) {
+  // If user exists but profile hasn't loaded yet, wait for it before checking admin
+  if (!profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -45,6 +40,11 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
         </div>
       </div>
     );
+  }
+
+  // If admin is required but user is not admin, redirect to dashboard
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
