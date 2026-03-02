@@ -56,6 +56,8 @@ const statusColors: Record<string, string> = {
 /** Company logo config — maps company names to a letter + colour scheme. */
 const COMPANY_LOGOS: Record<string, { letter: string; bg: string; text: string; border: string }> = {
   'woven by toyota': { letter: 'W', bg: 'bg-white', text: 'text-gray-900', border: 'border-gray-200' },
+  'geniee': { letter: 'G', bg: 'bg-[#4056F4]', text: 'text-white', border: 'border-[#4056F4]' },
+  '株式会社ジーニー': { letter: 'G', bg: 'bg-[#4056F4]', text: 'text-white', border: 'border-[#4056F4]' },
 };
 
 function companyLogo(company: string) {
