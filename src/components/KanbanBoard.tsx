@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Clock, X, Eye, Plus, Calendar, EyeOff, Filter, Search, Edit, RotateCcw } from 'lucide-react';
+import { User, Clock, X, Eye, Plus, Calendar, EyeOff, Filter, Search, Edit, RotateCcw, Download } from 'lucide-react';
 import { JSTDateTime } from './JSTDateTime';
 import { UserDetailModal } from './UserDetailModal';
 import { AddUserToKanbanModal } from './AddUserToKanbanModal';
@@ -348,6 +348,67 @@ export const KanbanBoard: React.FC = () => {
     return 'bg-white border-2 border-gray-200 shadow-sm';
   };
 
+  const exportToCSV = async () => {
+    try {
+      const allData: any[] = [];
+      const results = await Promise.all(
+        KANBAN_STAGES.map(stage =>
+          supabase.rpc('get_users_by_stage_with_rejected' as any, {
+            p_stage_name: stage.id,
+            p_show_rejected: true,
+          })
+        )
+      );
+
+      for (const { data, error } of results) {
+        if (error) throw error;
+        if (data) allData.push(...data);
+      }
+
+      if (allData.length === 0) {
+        toast({ title: "No data", description: "No candidates to export." });
+        return;
+      }
+
+      const headers = [
+        'Full Name', 'Email', 'Role', 'Position', 'Company', 'Stage',
+        'Last Activity', 'Session Time (min)', 'Stage Updated',
+        'Last Updated', 'Upcoming Interview', 'Interview Date',
+        'Rejected', 'Incomplete Tasks'
+      ];
+
+      const escapeCSV = (val: any) => {
+        if (val == null) return '';
+        const str = String(val);
+        return str.includes(',') || str.includes('"') || str.includes('\n')
+          ? `"${str.replace(/"/g, '""')}"`
+          : str;
+      };
+
+      const rows = allData.map((u: any) => [
+        escapeCSV(u.full_name), escapeCSV(u.email), escapeCSV(u.role),
+        escapeCSV(u.position), escapeCSV(u.company), escapeCSV(u.stage_name),
+        escapeCSV(u.last_activity_at), escapeCSV(u.total_session_time_minutes),
+        escapeCSV(u.stage_updated_at), escapeCSV(u.last_updated_at),
+        escapeCSV(u.upcoming_interview_name), escapeCSV(u.upcoming_interview_date),
+        escapeCSV(u.is_rejected ? 'Yes' : 'No'), escapeCSV(u.incomplete_tasks_count),
+      ].join(','));
+
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `candidates_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Exported", description: `${allData.length} candidates exported to CSV.` });
+    } catch (err: any) {
+      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+    }
+  };
+
   const formatLastActivity = (dateString: string) => {
     const diffH = Math.floor((Date.now() - new Date(dateString).getTime()) / 3_600_000);
     if (diffH < 1) return 'Just now';
@@ -394,6 +455,10 @@ export const KanbanBoard: React.FC = () => {
             <Button onClick={() => setIsBulkAddModalOpen(true)} variant="outline" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               Bulk Add
+            </Button>
+            <Button onClick={exportToCSV} variant="outline" className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Export CSV
             </Button>
           </div>
         </div>

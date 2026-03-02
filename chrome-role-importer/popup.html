@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Omiyages Role Importer</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Omiyages Role Importer</h1>
+
+      <label for="webhook">Apps Script Web App URL</label>
+      <input
+        id="webhook"
+        type="url"
+        placeholder="https://script.google.com/macros/s/.../exec"
+      />
+
+      <label for="apiKey">API Key</label>
+      <input
+        id="apiKey"
+        type="password"
+        placeholder="Matches API_KEY in Apps Script"
+      />
+
+      <div class="actions">
+        <button id="extractBtn" type="button">Extract</button>
+        <button id="sendBtn" type="button">Send to Sheet</button>
+      </div>
+
+      <p id="status" class="status">Ready.</p>
+      <pre id="preview" class="preview"></pre>
+    </main>
+
+    <script src="./popup.js"></script>
+  </body>
+</html>

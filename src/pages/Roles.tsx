@@ -14,6 +14,7 @@ import { fetchRoles, deleteRole } from '@/services/rolesService';
 import type { Role } from '@/types/role';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import {
   Search,
   Plus,
@@ -72,6 +73,7 @@ const Roles = () => {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'company'>('newest');
   const [companyFilter, setCompanyFilter] = useState('all');
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>([]);
+  const [selectedRoleTypes, setSelectedRoleTypes] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -87,6 +89,7 @@ const Roles = () => {
     staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
   });
+  const { options: roleTypeOptions = [] } = useDropdownOptions('role');
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -122,6 +125,19 @@ const Roles = () => {
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [baseRoles]);
 
+  const uniqueRoleTypes = useMemo(() => {
+    const map = new Map<string, number>();
+    const normalizedTitles = baseRoles.map((r) => r.job_title.toLowerCase());
+
+    roleTypeOptions.forEach((roleType) => {
+      const roleTypeLower = roleType.toLowerCase();
+      const count = normalizedTitles.filter((title) => title.includes(roleTypeLower)).length;
+      if (count > 0) map.set(roleType, count);
+    });
+
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [baseRoles, roleTypeOptions]);
+
   const uniqueLocations = useMemo(() => {
     const map = new Map<string, number>();
     baseRoles.forEach((r) => map.set(r.location, (map.get(r.location) || 0) + 1));
@@ -151,6 +167,12 @@ const Roles = () => {
 
     if (companyFilter !== 'all') list = list.filter((r) => r.company === companyFilter);
     if (selectedDivisions.length > 0) list = list.filter((r) => selectedDivisions.includes(r.division || 'Unspecified'));
+    if (selectedRoleTypes.length > 0) {
+      list = list.filter((r) => {
+        const title = r.job_title.toLowerCase();
+        return selectedRoleTypes.some((roleType) => title.includes(roleType.toLowerCase()));
+      });
+    }
     if (selectedLocations.length > 0) list = list.filter((r) => selectedLocations.includes(r.location));
     if (selectedStyles.length > 0) list = list.filter((r) => selectedStyles.includes(r.working_style));
     if (isAdmin && statusFilter !== 'all') list = list.filter((r) => r.status === statusFilter);
@@ -161,7 +183,7 @@ const Roles = () => {
     else if (sortBy === 'company') list = [...list].sort((a, b) => a.company.localeCompare(b.company));
 
     return list;
-  }, [baseRoles, searchTerm, companyFilter, selectedDivisions, selectedLocations, selectedStyles, statusFilter, sortBy, isAdmin]);
+  }, [baseRoles, searchTerm, companyFilter, selectedDivisions, selectedRoleTypes, selectedLocations, selectedStyles, statusFilter, sortBy, isAdmin]);
 
   // Pagination
   const totalPages = Math.ceil(filteredRoles.length / ROLES_PER_PAGE);
@@ -189,6 +211,7 @@ const Roles = () => {
     setSearchTerm('');
     setCompanyFilter('all');
     setSelectedDivisions([]);
+    setSelectedRoleTypes([]);
     setSelectedLocations([]);
     setSelectedStyles([]);
     setStatusFilter('all');
@@ -211,18 +234,21 @@ const Roles = () => {
               filters={{
                 company: companyFilter,
                 divisions: selectedDivisions,
+                roleTypes: selectedRoleTypes,
                 locations: selectedLocations,
                 styles: selectedStyles,
                 status: statusFilter,
               }}
               onCompanyChange={(v) => { setCompanyFilter(v); setCurrentPage(1); }}
               onDivisionToggle={(v) => toggleArr(selectedDivisions, v, setSelectedDivisions)}
+              onRoleTypeToggle={(v) => toggleArr(selectedRoleTypes, v, setSelectedRoleTypes)}
               onLocationToggle={(v) => toggleArr(selectedLocations, v, setSelectedLocations)}
               onStyleToggle={(v) => toggleArr(selectedStyles, v, setSelectedStyles)}
               onStatusChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}
               onClearFilters={clearAllFilters}
               companies={uniqueCompanies}
               divisions={uniqueDivisions}
+              roleTypes={uniqueRoleTypes}
               locations={uniqueLocations}
               styles={uniqueStyles}
               isAdmin={isAdmin}

@@ -8,18 +8,21 @@ interface RolesSidebarFiltersProps {
   filters: {
     company: string;
     divisions: string[];
+    roleTypes: string[];
     locations: string[];
     styles: string[];
     status: string;
   };
   onCompanyChange: (value: string) => void;
   onDivisionToggle: (value: string) => void;
+  onRoleTypeToggle: (value: string) => void;
   onLocationToggle: (value: string) => void;
   onStyleToggle: (value: string) => void;
   onStatusChange: (value: string) => void;
   onClearFilters: () => void;
   companies: [string, number][];
   divisions: [string, number][];
+  roleTypes: [string, number][];
   locations: [string, number][];
   styles: [string, number][];
   isAdmin: boolean;
@@ -29,12 +32,14 @@ export const RolesSidebarFilters = ({
   filters,
   onCompanyChange,
   onDivisionToggle,
+  onRoleTypeToggle,
   onLocationToggle,
   onStyleToggle,
   onStatusChange,
   onClearFilters,
   companies,
   divisions,
+  roleTypes,
   locations,
   styles,
   isAdmin,
@@ -42,6 +47,7 @@ export const RolesSidebarFilters = ({
   const hasActiveFilters =
     filters.company !== 'all' ||
     filters.divisions.length > 0 ||
+    filters.roleTypes.length > 0 ||
     filters.locations.length > 0 ||
     filters.styles.length > 0 ||
     (isAdmin && filters.status !== 'all');
@@ -101,6 +107,32 @@ export const RolesSidebarFilters = ({
                   className="text-sm font-normal cursor-pointer flex-1 flex items-center justify-between"
                 >
                   <span>{division}</span>
+                  <span className="text-xs text-muted-foreground ml-2">{count}</span>
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Role Type */}
+      {roleTypes.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-foreground mb-3">Role Type</h3>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {roleTypes.map(([roleType, count]) => (
+              <div key={roleType} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`role-type-${roleType}`}
+                  checked={filters.roleTypes.includes(roleType)}
+                  onCheckedChange={() => onRoleTypeToggle(roleType)}
+                  className="border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
+                />
+                <Label
+                  htmlFor={`role-type-${roleType}`}
+                  className="text-sm font-normal cursor-pointer flex-1 flex items-center justify-between"
+                >
+                  <span>{roleType}</span>
                   <span className="text-xs text-muted-foreground ml-2">{count}</span>
                 </Label>
               </div>

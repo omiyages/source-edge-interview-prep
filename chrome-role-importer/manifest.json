@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Omiyages Role Importer",
+  "version": "0.1.0",
+  "description": "Extract role data from Jobmiru pages and send to Google Sheets via Apps Script.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": [
+    "https://sourceedgekk.app.jobmiru.cloud/*",
+    "https://*.app.jobmiru.cloud/*",
+    "https://script.google.com/*",
+    "https://script.googleusercontent.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://sourceedgekk.app.jobmiru.cloud/*",
+        "https://*.app.jobmiru.cloud/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
