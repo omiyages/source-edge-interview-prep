@@ -89,32 +89,6 @@ export const RolesSidebarFilters = ({
         </Select>
       </div>
 
-      {/* Division */}
-      {divisions.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-foreground mb-3">Division</h3>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {divisions.map(([division, count]) => (
-              <div key={division} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`div-${division}`}
-                  checked={filters.divisions.includes(division)}
-                  onCheckedChange={() => onDivisionToggle(division)}
-                  className="border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
-                />
-                <Label
-                  htmlFor={`div-${division}`}
-                  className="text-sm font-normal cursor-pointer flex-1 flex items-center justify-between"
-                >
-                  <span>{division}</span>
-                  <span className="text-xs text-muted-foreground ml-2">{count}</span>
-                </Label>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Role Type */}
       {roleTypes.length > 0 && (
         <div className="mb-6">
@@ -193,23 +167,7 @@ export const RolesSidebarFilters = ({
         </div>
       )}
 
-      {/* Status — admin only */}
-      {isAdmin && (
-        <div>
-          <h3 className="text-sm font-medium text-foreground mb-3">Status</h3>
-          <Select value={filters.status} onValueChange={onStatusChange}>
-            <SelectTrigger className="w-full border-gray-200 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {/* Division and Status filters intentionally hidden per current UX request */}
     </div>
   );
 };

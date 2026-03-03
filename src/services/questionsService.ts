@@ -35,11 +35,16 @@ export interface InterviewQuestion {
   winning_answer_framework?: WinningAnswerFramework;
 }
 
-export const fetchQuestions = async (isAdmin: boolean = false, page?: number, limit?: number): Promise<InterviewQuestion[]> => {
+export const fetchQuestions = async (
+  isAdmin: boolean = false,
+  page?: number,
+  limit?: number
+): Promise<InterviewQuestion[]> => {
   try {
+    // Lightweight payload for list pages; detail dialog lazy-loads AI fields on demand.
     let query = supabase
       .from('interview_questions')
-      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status, preparation_notes, interviewer_intent, winning_answer_framework')
+      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status')
       .order('created_at', { ascending: false });
 
     // Only filter out pending questions for non-admin users
@@ -84,43 +89,43 @@ export interface PaginatedQuestionsResult {
   totalCount: number;
 }
 
+function applyQuestionFilters(
+  query: any,
+  params: Omit<PaginatedQuestionsParams, 'page' | 'limit'>
+) {
+  const { isAdmin = false, search, company, category, role, stage } = params;
+
+  if (!isAdmin) {
+    query = query.neq('status', 'pending');
+  }
+
+  if (search && search.trim()) {
+    const s = search.trim();
+    query = query.or(
+      `question.ilike.%${s}%,company.ilike.%${s}%,role.ilike.%${s}%,category.ilike.%${s}%,interview_stage.ilike.%${s}%`
+    );
+  }
+
+  if (company && company.length > 0) query = query.in('company', company);
+  if (category && category.length > 0) query = query.in('category', category);
+  if (role && role.length > 0) query = query.in('role', role);
+  if (stage && stage.length > 0) query = query.in('interview_stage', stage);
+
+  return query;
+}
+
 export const fetchPaginatedQuestions = async (
   params: PaginatedQuestionsParams
-): Promise<PaginatedQuestionsResult> => {
+): Promise<InterviewQuestion[]> => {
   try {
     const { isAdmin = false, page, limit, search, company, category, role, stage, sortBy = 'popularity' } = params;
 
-    // Build the query with exact count
+    // Lightweight list payload for faster page loads.
     let query = supabase
       .from('interview_questions')
-      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status, preparation_notes, interviewer_intent, winning_answer_framework', { count: 'exact' });
+      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status');
 
-    // Status filter for non-admins
-    if (!isAdmin) {
-      query = query.neq('status', 'pending');
-    }
-
-    // Search filter (case-insensitive across multiple fields)
-    if (search && search.trim()) {
-      const s = search.trim();
-      query = query.or(
-        `question.ilike.%${s}%,company.ilike.%${s}%,role.ilike.%${s}%,category.ilike.%${s}%,interview_stage.ilike.%${s}%`
-      );
-    }
-
-    // Multi-value filters
-    if (company && company.length > 0) {
-      query = query.in('company', company);
-    }
-    if (category && category.length > 0) {
-      query = query.in('category', category);
-    }
-    if (role && role.length > 0) {
-      query = query.in('role', role);
-    }
-    if (stage && stage.length > 0) {
-      query = query.in('interview_stage', stage);
-    }
+    query = applyQuestionFilters(query, { isAdmin, search, company, category, role, stage, sortBy });
 
     // Sort
     const ascending = sortBy === 'oldest';
@@ -131,18 +136,37 @@ export const fetchPaginatedQuestions = async (
     const end = start + limit - 1;
     query = query.range(start, end);
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Failed to fetch questions: ${error.message}`);
     }
 
-    return {
-      data: data || [],
-      totalCount: count || 0,
-    };
+    return (data || []) as InterviewQuestion[];
   } catch (error) {
     console.error('❌ Service error fetching paginated questions:', error);
+    throw error;
+  }
+};
+
+export const fetchPaginatedQuestionsCount = async (
+  params: Omit<PaginatedQuestionsParams, 'page' | 'limit' | 'sortBy'>
+): Promise<number> => {
+  try {
+    const { isAdmin = false, search, company, category, role, stage } = params;
+
+    let query = supabase
+      .from('interview_questions')
+      .select('id', { count: 'exact', head: true });
+
+    query = applyQuestionFilters(query, { isAdmin, search, company, category, role, stage });
+
+    const { count, error } = await query;
+    if (error) throw new Error(`Failed to fetch question count: ${error.message}`);
+
+    return count || 0;
+  } catch (error) {
+    console.error('❌ Service error fetching question count:', error);
     throw error;
   }
 };

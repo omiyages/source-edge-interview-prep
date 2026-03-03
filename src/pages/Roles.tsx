@@ -26,7 +26,7 @@ import {
 
 /** Build the URL path for a role detail page. Falls back to id if no slug. */
 function roleHref(role: Role): string {
-  return `/role/${role.slug || role.id}`;
+  return `/job/${role.slug || role.id}`;
 }
 
 /** Parse the ai_summary JSON string into candidate + responsibility lines. */
@@ -55,9 +55,17 @@ const statusColors: Record<string, string> = {
 
 /** Company logo config — maps company names to a letter + colour scheme. */
 const COMPANY_LOGOS: Record<string, { letter: string; bg: string; text: string; border: string }> = {
-  'woven by toyota': { letter: 'W', bg: 'bg-white', text: 'text-gray-900', border: 'border-gray-200' },
-  'geniee': { letter: 'G', bg: 'bg-[#4056F4]', text: 'text-white', border: 'border-[#4056F4]' },
-  '株式会社ジーニー': { letter: 'G', bg: 'bg-[#4056F4]', text: 'text-white', border: 'border-[#4056F4]' },
+  'woven by toyota': { letter: 'W', bg: 'bg-[#EF3054]', text: 'text-white', border: 'border-[#EF3054]' },
+  'geniee': { letter: 'G', bg: 'bg-[#FFDD4A]', text: 'text-gray-900', border: 'border-[#FFDD4A]' },
+  '株式会社ジーニー': { letter: 'G', bg: 'bg-[#FFDD4A]', text: 'text-gray-900', border: 'border-[#FFDD4A]' },
+  'shippio': { letter: 'S', bg: 'bg-[#000665]', text: 'text-white', border: 'border-[#000665]' },
+  '株式会社shippio': { letter: 'S', bg: 'bg-[#000665]', text: 'text-white', border: 'border-[#000665]' },
+  'meetsmore': { letter: 'M', bg: 'bg-[#5BC8AF]', text: 'text-gray-900', border: 'border-[#5BC8AF]' },
+  '株式会社meetsmore': { letter: 'M', bg: 'bg-[#5BC8AF]', text: 'text-gray-900', border: 'border-[#5BC8AF]' },
+  'linkx': { letter: 'L', bg: 'bg-[#A14EBF]', text: 'text-white', border: 'border-[#A14EBF]' },
+  '株式会社linkx': { letter: 'L', bg: 'bg-[#A14EBF]', text: 'text-white', border: 'border-[#A14EBF]' },
+  'givery': { letter: 'G', bg: 'bg-[#FF7D00]', text: 'text-white', border: 'border-[#FF7D00]' },
+  '株式会社givery': { letter: 'G', bg: 'bg-[#FF7D00]', text: 'text-white', border: 'border-[#FF7D00]' },
 };
 
 function companyLogo(company: string) {
@@ -129,11 +137,15 @@ const Roles = () => {
 
   const uniqueRoleTypes = useMemo(() => {
     const map = new Map<string, number>();
-    const normalizedTitles = baseRoles.map((r) => r.job_title.toLowerCase());
 
     roleTypeOptions.forEach((roleType) => {
       const roleTypeLower = roleType.toLowerCase();
-      const count = normalizedTitles.filter((title) => title.includes(roleTypeLower)).length;
+      const count = baseRoles.filter((r) => {
+        if (r.role_type && r.role_type.trim()) {
+          return r.role_type.trim().toLowerCase() === roleTypeLower;
+        }
+        return r.job_title.toLowerCase().includes(roleTypeLower);
+      }).length;
       if (count > 0) map.set(roleType, count);
     });
 
@@ -171,8 +183,13 @@ const Roles = () => {
     if (selectedDivisions.length > 0) list = list.filter((r) => selectedDivisions.includes(r.division || 'Unspecified'));
     if (selectedRoleTypes.length > 0) {
       list = list.filter((r) => {
-        const title = r.job_title.toLowerCase();
-        return selectedRoleTypes.some((roleType) => title.includes(roleType.toLowerCase()));
+        return selectedRoleTypes.some((roleType) => {
+          const roleTypeLower = roleType.toLowerCase();
+          if (r.role_type && r.role_type.trim()) {
+            return r.role_type.trim().toLowerCase() === roleTypeLower;
+          }
+          return r.job_title.toLowerCase().includes(roleTypeLower);
+        });
       });
     }
     if (selectedLocations.length > 0) list = list.filter((r) => selectedLocations.includes(r.location));
@@ -263,9 +280,9 @@ const Roles = () => {
             <div className="mb-6">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-2">Open Positions</h1>
+                  <h1 className="text-3xl font-bold text-foreground mb-2">Open Jobs</h1>
                   <p className="text-muted-foreground">
-                    Browse {baseRoles.length > 0 ? `${baseRoles.length} ` : ''}active job listings across your organization.
+                    Browse {baseRoles.length > 0 ? `${baseRoles.length} ` : ''}active job listings across tech companies in Japan.
                   </p>
                 </div>
                 {isAdmin && (
@@ -320,7 +337,7 @@ const Roles = () => {
               <div className="text-center py-16 border rounded-lg bg-white">
                 <Briefcase className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                 <p className="text-lg font-semibold text-gray-600">
-                  {baseRoles.length === 0 ? 'No positions yet' : 'No positions match your filters'}
+                  {baseRoles.length === 0 ? 'No open jobs yet' : 'No open jobs match your filters'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
                   {baseRoles.length === 0
@@ -366,6 +383,10 @@ const Roles = () => {
                               <span className="text-muted-foreground/40">•</span>
                               <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">
                                 {role.working_style}
+                              </span>
+                              <span className="text-muted-foreground/40">•</span>
+                              <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                                Japanese: {role.japanese_level || 'None'}
                               </span>
                               {role.division && (
                                 <>

@@ -18,7 +18,10 @@ export const RichTextDisplay = ({ content, className }: RichTextDisplayProps) =>
         "prose prose-sm max-w-none text-foreground leading-relaxed",
         "[&_p]:font-normal [&_p]:text-foreground [&_p]:mb-2 [&_p]:text-sm",
         "[&_li]:font-normal [&_li]:text-foreground [&_li]:text-sm",
-        "[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ml-4 [&_ol]:ml-4",
+        "[&_ul]:!list-disc [&_ol]:!list-decimal [&_ul]:!ml-4 [&_ol]:!ml-4 [&_ul]:!pl-4 [&_ol]:!pl-4",
+        // Support Quill list markup (<li data-list='bullet'|'ordered'>)
+        "[&_li[data-list='bullet']]:!list-disc [&_li[data-list='ordered']]:!list-decimal",
+        "[&_li[data-list='bullet']]:!ml-4 [&_li[data-list='ordered']]:!ml-4",
         "[&_strong]:font-semibold [&_strong]:text-foreground",
         "[&_h1]:font-semibold [&_h1]:text-foreground [&_h1]:text-lg [&_h1]:mb-3 [&_h1]:mt-4",
         "[&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:text-base [&_h2]:mb-2 [&_h2]:mt-3",

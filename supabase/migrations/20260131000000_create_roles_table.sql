@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.roles (
 CREATE INDEX IF NOT EXISTS idx_roles_company ON public.roles(company);
 CREATE INDEX IF NOT EXISTS idx_roles_status ON public.roles(status);
 CREATE INDEX IF NOT EXISTS idx_roles_created_at ON public.roles(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_roles_working_style ON public.roles(working_style);
+CREATE INDEX IF NOT EXISTS idx_roles_working_style ON puletblic.roles(working_style);
 
 -- Enable Row Level Security
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;

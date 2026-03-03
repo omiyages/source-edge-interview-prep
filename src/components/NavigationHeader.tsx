@@ -65,16 +65,16 @@ export const NavigationHeader = memo(() => {
           Resources
         </Button>
       </Link>
-      <Link to="/roles">
+      <Link to="/jobs">
         <Button 
           variant="ghost" 
           className={`transition-colors font-medium ${
-            isActive("/roles") || isActive("/role/")
+            isActive("/jobs") || isActive("/job/") || isActive("/roles") || isActive("/role/")
               ? "text-foreground font-semibold" 
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Roles
+          Jobs
         </Button>
       </Link>
       <Link to="/company">
@@ -245,16 +245,16 @@ export const NavigationHeader = memo(() => {
                       Resources
                     </Button>
                   </Link>
-                  <Link to="/roles" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/jobs" onClick={() => setMobileMenuOpen(false)}>
                     <Button 
                       variant="ghost" 
                       className={`w-full justify-start transition-colors font-medium ${
-                        isActive("/roles") || isActive("/role/")
+                        isActive("/jobs") || isActive("/job/") || isActive("/roles") || isActive("/role/")
                           ? "text-foreground font-semibold" 
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      Roles
+                      Jobs
                     </Button>
                   </Link>
                   <Link to="/company" onClick={() => setMobileMenuOpen(false)}>

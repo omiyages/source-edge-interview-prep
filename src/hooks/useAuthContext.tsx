@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Provider } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,6 +33,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string, captchaToken?: string) => Promise<void>;
+  signInWithSocial: (provider: Provider) => Promise<void>;
+  signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -129,6 +131,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithSocial = async (provider: Provider) => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin },
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Social sign in failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const signInWithGoogleIdToken = async (idToken: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Welcome!",
+        description: "You have been signed in with Google.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Google sign in failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -151,6 +195,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     loading,
     signIn,
+    signInWithSocial,
+    signInWithGoogleIdToken,
     signOut,
   };
 

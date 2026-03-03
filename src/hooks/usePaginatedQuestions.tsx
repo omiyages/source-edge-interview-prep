@@ -1,6 +1,6 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchPaginatedQuestions } from '@/services/questionsService';
+import { fetchPaginatedQuestions, fetchPaginatedQuestionsCount } from '@/services/questionsService';
 import type { PaginatedQuestionsParams } from '@/services/questionsService';
 import { useEffect } from 'react';
 
@@ -10,10 +10,23 @@ export const usePaginatedQuestions = (
 ) => {
   const queryClient = useQueryClient();
 
-  const queryKey = ['questions-paginated', params];
+  const pageQueryKey = ['questions-paginated', params];
+  const countQueryKey = ['questions-paginated-count', {
+    isAdmin: params.isAdmin ?? false,
+    search: params.search ?? '',
+    company: params.company ?? [],
+    category: params.category ?? [],
+    role: params.role ?? [],
+    stage: params.stage ?? [],
+  }];
 
-  const { data, isLoading: loading, error, refetch } = useQuery({
-    queryKey,
+  const {
+    data: questionsData,
+    isLoading: questionsLoading,
+    error: questionsError,
+    refetch: refetchPage,
+  } = useQuery({
+    queryKey: pageQueryKey,
     queryFn: () => fetchPaginatedQuestions(params),
     enabled,
     staleTime: 5 * 60 * 1000,  // 5 minutes
@@ -23,11 +36,33 @@ export const usePaginatedQuestions = (
     placeholderData: (previousData: any) => previousData,
   });
 
+  const {
+    data: totalCount = 0,
+    isLoading: countLoading,
+    error: countError,
+    refetch: refetchCount,
+  } = useQuery({
+    queryKey: countQueryKey,
+    queryFn: () =>
+      fetchPaginatedQuestionsCount({
+        isAdmin: params.isAdmin,
+        search: params.search,
+        company: params.company,
+        category: params.category,
+        role: params.role,
+        stage: params.stage,
+      }),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   // Prefetch next page in the background
   useEffect(() => {
-    if (!enabled || !data) return;
+    if (!enabled || !questionsData || totalCount <= 0) return;
 
-    const totalPages = Math.ceil(data.totalCount / params.limit);
+    const totalPages = Math.ceil(totalCount / params.limit);
     if (params.page < totalPages) {
       const nextParams = { ...params, page: params.page + 1 };
       queryClient.prefetchQuery({
@@ -36,13 +71,16 @@ export const usePaginatedQuestions = (
         staleTime: 5 * 60 * 1000,
       });
     }
-  }, [enabled, data, params, queryClient]);
+  }, [enabled, questionsData, totalCount, params, queryClient]);
 
   return {
-    questions: data?.data || [],
-    totalCount: data?.totalCount || 0,
-    loading,
-    error: error?.message || null,
-    refetch,
+    questions: questionsData || [],
+    totalCount,
+    loading: questionsLoading || countLoading,
+    error: questionsError?.message || countError?.message || null,
+    refetch: () => {
+      refetchPage();
+      refetchCount();
+    },
   };
 };

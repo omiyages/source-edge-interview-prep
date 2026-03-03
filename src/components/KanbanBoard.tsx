@@ -350,20 +350,9 @@ export const KanbanBoard: React.FC = () => {
 
   const exportToCSV = async () => {
     try {
-      const allData: any[] = [];
-      const results = await Promise.all(
-        KANBAN_STAGES.map(stage =>
-          supabase.rpc('get_users_by_stage_with_rejected' as any, {
-            p_stage_name: stage.id,
-            p_show_rejected: true,
-          })
-        )
-      );
-
-      for (const { data, error } of results) {
-        if (error) throw error;
-        if (data) allData.push(...data);
-      }
+      const cachedRejectedColumns = queryClient.getQueryData<KanbanColumn[]>(['kanban-users', true]);
+      const sourceColumns = cachedRejectedColumns ?? (await fetchAllKanbanUsers(true));
+      const allData = deduplicateUsers(sourceColumns.flatMap((column) => column.users));
 
       if (allData.length === 0) {
         toast({ title: "No data", description: "No candidates to export." });

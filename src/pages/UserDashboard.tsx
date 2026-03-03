@@ -31,7 +31,6 @@ import {
 } from 'lucide-react';
 import { slugify } from '@/utils/slugify';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
-import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { QuestionDetailDialog } from '@/components/QuestionDetailDialog';
 import type { InterviewQuestion } from '@/services/questionsService';
@@ -356,11 +355,6 @@ const UserDashboard = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
-        {/* Breadcrumbs */}
-        <Breadcrumbs 
-          items={[{ label: 'Home', href: '/' }, { label: 'Candidate Dashboard' }]} 
-          className="mb-4" 
-        />
         
         {/* Header */}
         <div className="mb-8">

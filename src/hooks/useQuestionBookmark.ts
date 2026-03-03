@@ -106,6 +106,84 @@ export const useQuestionBookmark = (questionId: string) => {
   };
 };
 
+export const useQuestionBookmarkWithOptions = (
+  questionId: string,
+  options?: { enabled?: boolean }
+) => {
+  const enabled = options?.enabled ?? true;
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: bookmarkInfo, isLoading } = useQuery<BookmarkInfo>({
+    queryKey: ['question-bookmark', questionId, user?.id],
+    queryFn: async () => {
+      if (!questionId || !user?.id) {
+        return { isBookmarked: false };
+      }
+
+      const { data, error } = await supabase
+        .from('question_likes')
+        .select('id')
+        .eq('question_id', questionId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) return { isBookmarked: false };
+      return { isBookmarked: !!data };
+    },
+    enabled: enabled && !!questionId && !!user?.id,
+    staleTime: 30000,
+  });
+
+  const toggleBookmarkMutation = useMutation({
+    mutationFn: async () => {
+      if (!enabled) return;
+      if (!user?.id) throw new Error('You must be logged in to save questions');
+
+      if (!bookmarkInfo?.isBookmarked) {
+        const { error } = await supabase
+          .from('question_likes')
+          .insert({ question_id: questionId, user_id: user.id });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('question_likes')
+          .delete()
+          .eq('question_id', questionId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['question-bookmark', questionId] });
+      queryClient.invalidateQueries({ queryKey: ['saved-questions'] });
+      if (!enabled) return;
+      toast({
+        title: bookmarkInfo?.isBookmarked ? "Question unsaved" : "Question saved",
+        description: bookmarkInfo?.isBookmarked
+          ? "Removed from your saved questions."
+          : "Added to your saved questions!",
+      });
+    },
+    onError: (error: any) => {
+      if (!enabled) return;
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save question. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  return {
+    isBookmarked: bookmarkInfo?.isBookmarked || false,
+    isLoading,
+    toggleBookmark: toggleBookmarkMutation.mutate,
+    isToggling: toggleBookmarkMutation.isPending,
+  };
+};
+
 /**
  * Hook to get bookmark status for multiple questions
  */

@@ -12,8 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EditQuestionForm } from "./EditQuestionForm";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
-import { useQuestionThumbsUp } from "@/hooks/useThumbsUp";
-import { useQuestionBookmark } from "@/hooks/useQuestionBookmark";
+import { useQuestionThumbsUpWithOptions } from "@/hooks/useThumbsUp";
+import { useQuestionBookmarkWithOptions } from "@/hooks/useQuestionBookmark";
 
 interface InterviewQuestion {
   id: string;
@@ -40,6 +40,7 @@ interface QuestionCardProps {
   showDeleteButton?: boolean;
   /** When provided, View Question uses the parent's dialog (e.g. QuestionDetailDialog) instead of the inline one */
   onViewQuestion?: () => void;
+  lightweight?: boolean;
   // Course-specific props for removal instead of deletion
   stageId?: string;
   onRemoveFromStage?: (questionId: string) => void;
@@ -49,6 +50,7 @@ const QuestionCard = ({
   question, 
   showDeleteButton = true, 
   onViewQuestion,
+  lightweight = false,
   stageId, 
   onRemoveFromStage 
 }: QuestionCardProps) => {
@@ -57,8 +59,12 @@ const QuestionCard = ({
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const { count: thumbsUpCount, hasThumbsUp, toggleThumbsUp, isToggling } = useQuestionThumbsUp(question.id);
-  const { isBookmarked, toggleBookmark, isToggling: isBookmarkToggling } = useQuestionBookmark(question.id);
+  const { count: thumbsUpCount, hasThumbsUp, toggleThumbsUp, isToggling } = useQuestionThumbsUpWithOptions(question.id, {
+    enabled: !lightweight,
+  });
+  const { isBookmarked, toggleBookmark, isToggling: isBookmarkToggling } = useQuestionBookmarkWithOptions(question.id, {
+    enabled: !lightweight,
+  });
 
   // Course-specific removal mutation
   const removeFromStageMutation = useMutation({
@@ -188,18 +194,20 @@ const QuestionCard = ({
                 </Button>
               </div>
             )}
-            <button
-              onClick={() => user && toggleBookmark()}
-              disabled={isBookmarkToggling || !user}
-              className={`p-1.5 rounded-md transition-colors ${
-                isBookmarked 
-                  ? "text-primary" 
-                  : "text-gray-300 hover:text-gray-400"
-              }`}
-              title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Sign in to save"}
-            >
-              <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
-            </button>
+            {!lightweight && (
+              <button
+                onClick={() => user && toggleBookmark()}
+                disabled={isBookmarkToggling || !user}
+                className={`p-1.5 rounded-md transition-colors ${
+                  isBookmarked 
+                    ? "text-primary" 
+                    : "text-gray-300 hover:text-gray-400"
+                }`}
+                title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Sign in to save"}
+              >
+                <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -227,17 +235,24 @@ const QuestionCard = ({
         {/* Footer: Thumbs up + Date + View Question */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
           <div className="flex items-center gap-3 text-sm text-gray-400">
-            <button
-              onClick={() => user && toggleThumbsUp()}
-              disabled={isToggling || !user}
-              className={`flex items-center gap-1 transition-colors ${
-                hasThumbsUp ? "text-primary" : "hover:text-gray-600"
-              }`}
-              title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up") : "Sign in to vote"}
-            >
-              <ThumbsUp className={`w-4 h-4 ${hasThumbsUp ? "fill-current" : ""}`} />
-              <span>{thumbsUpCount}</span>
-            </button>
+            {!lightweight ? (
+              <button
+                onClick={() => user && toggleThumbsUp()}
+                disabled={isToggling || !user}
+                className={`flex items-center gap-1 transition-colors ${
+                  hasThumbsUp ? "text-primary" : "hover:text-gray-600"
+                }`}
+                title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up") : "Sign in to vote"}
+              >
+                <ThumbsUp className={`w-4 h-4 ${hasThumbsUp ? "fill-current" : ""}`} />
+                <span>{thumbsUpCount}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1">
+                <ThumbsUp className="w-4 h-4" />
+                <span>0</span>
+              </div>
+            )}
             <span>Added {new Date(question.created_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}</span>
           </div>
           

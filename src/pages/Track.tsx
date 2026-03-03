@@ -1,17 +1,15 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, BookOpen, ArrowLeft } from "lucide-react";
+import { Plus, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateCourseForm } from "@/components/CreateCourseForm";
 import { CourseCard } from "@/components/CourseCard";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { NavigationHeader } from "@/components/NavigationHeader";
 
 interface Course {
@@ -50,6 +48,57 @@ const Track = () => {
     refetchOnWindowFocus: false,
   });
 
+  const courseIds = courses?.map((course) => course.id) ?? [];
+
+  const { data: courseProgressById = {} } = useQuery<
+    Record<string, { total_stages: number; completed_stages: number; progress_percentage: number }>
+  >({
+    queryKey: ['track-course-progress', user?.id, courseIds],
+    queryFn: async () => {
+      if (!user || isAdmin || courseIds.length === 0) return {};
+
+      const [{ data: stageRows, error: stageError }, { data: progressRows, error: progressError }] =
+        await Promise.all([
+          supabase.from('course_stages').select('course_id').in('course_id', courseIds),
+          supabase
+            .from('user_progress')
+            .select('course_id')
+            .eq('user_id', user.id)
+            .in('course_id', courseIds),
+        ]);
+
+      if (stageError) throw stageError;
+      if (progressError) throw progressError;
+
+      const stageCountByCourse: Record<string, number> = {};
+      const completedByCourse: Record<string, number> = {};
+
+      for (const row of stageRows ?? []) {
+        stageCountByCourse[row.course_id] = (stageCountByCourse[row.course_id] ?? 0) + 1;
+      }
+
+      for (const row of progressRows ?? []) {
+        completedByCourse[row.course_id] = (completedByCourse[row.course_id] ?? 0) + 1;
+      }
+
+      return courseIds.reduce<
+        Record<string, { total_stages: number; completed_stages: number; progress_percentage: number }>
+      >((acc, courseId) => {
+        const totalStages = stageCountByCourse[courseId] ?? 0;
+        const completedStages = completedByCourse[courseId] ?? 0;
+        acc[courseId] = {
+          total_stages: totalStages,
+          completed_stages: completedStages,
+          progress_percentage: totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0,
+        };
+        return acc;
+      }, {});
+    },
+    enabled: !!user && !isAdmin && courseIds.length > 0,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -68,21 +117,11 @@ const Track = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tracks' }]} className="mb-4" />
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Questions
-              </Button>
-            </Link>
-            <h1 className="text-4xl font-black text-foreground">
-              Interview Tracks
-            </h1>
-            <div className="w-32"></div> {/* Spacer to center the title */}
-          </div>
+          <h1 className="text-4xl font-black text-foreground mb-4">
+            Interview Tracks
+          </h1>
           <p className="text-lg text-foreground font-semibold max-w-2xl mx-auto">
             Structured interview preparation courses with organized stages and curated questions.
           </p>
@@ -132,7 +171,7 @@ const Track = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {courses?.map((course) => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard key={course.id} course={course} progress={courseProgressById[course.id] ?? null} />
             ))}
           </div>
         )}

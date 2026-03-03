@@ -1,13 +1,16 @@
 export type WorkingStyle = 'Hybrid' | 'Remote' | 'Onsite';
 export type RoleStatus = 'active' | 'closed' | 'draft';
+export type JapaneseLevel = 'None' | 'Conversational' | 'Business' | 'Native';
 
 export interface Role {
   id: string;
   slug: string | null;
   job_title: string;
+  role_type: string | null;
   company: string;
   location: string;
   working_style: WorkingStyle;
+  japanese_level: JapaneseLevel | null;
   division: string | null;
   job_description: string | null;
   requirements: string | null;
@@ -23,9 +26,11 @@ export interface Role {
 
 export interface RoleFormData {
   job_title: string;
+  role_type: string;
   company: string;
   location: string;
   working_style: WorkingStyle;
+  japanese_level: JapaneseLevel;
   division: string;
   job_description: string;
   requirements: string;

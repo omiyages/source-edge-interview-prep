@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { fetchRoleBySlug, deleteRole } from '@/services/rolesService';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchRecommendedCourseForRole, type CourseMatch } from '@/services/coursesService';
 import { slugify } from '@/utils/slugify';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -13,16 +13,19 @@ import { RoleForm } from '@/components/RoleForm';
 import { ApplyRoleDialog } from '@/components/ApplyRoleDialog';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { LazyImage } from '@/components/ui/lazy-image';
+import { RichTextDisplay } from '@/components/ui/rich-text-display';
 import {
   ArrowLeft,
   MapPin,
   Building2,
   Briefcase,
   Monitor,
+  Languages,
   Calendar,
   Edit,
   Trash2,
   Send,
+  Download,
   BookOpen,
   ArrowRight,
   Globe,
@@ -83,11 +86,25 @@ function parseAiSummary(raw: string | null): { candidate: string; responsibility
   }
 }
 
-interface CourseMatch {
-  id: string;
-  title: string;
-  description: string | null;
-  company: string | null;
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function compactRichTextForPdf(html: string | null): string {
+  if (!html) return '';
+  return html
+    // Remove common Quill empty lines
+    .replace(/<p><br><\/p>/gi, '')
+    .replace(/<p>\s*<\/p>/gi, '')
+    .replace(/<div><br><\/div>/gi, '')
+    .replace(/<div>\s*<\/div>/gi, '')
+    // Collapse excessive breaks
+    .replace(/(<br\s*\/?>\s*){3,}/gi, '<br/>');
 }
 
 const RoleDetail = () => {
@@ -107,29 +124,13 @@ const RoleDetail = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Find courses that have this role's job_title in their attached_jobs.
-  // Note: Supabase .contains() breaks when values have commas, so we fetch
-  // courses with attached_jobs and match client-side.
+  // Find courses that have this role's job title in attached_jobs.
+  // Use company-scoped query first to avoid scanning all courses.
   const { data: recommendedCourse } = useQuery<CourseMatch | null>({
     queryKey: ['role-course', role?.id],
     queryFn: async () => {
       if (!role) return null;
-
-      const { data: courses } = await supabase
-        .from('courses')
-        .select('id, title, description, company, attached_jobs')
-        .not('attached_jobs', 'is', null);
-
-      if (!courses || courses.length === 0) return null;
-
-      const jobTitle = role.job_title.trim().toLowerCase();
-
-      const match = courses.find((c) =>
-        Array.isArray(c.attached_jobs) &&
-        c.attached_jobs.some((j: string) => j.trim().toLowerCase() === jobTitle)
-      );
-
-      return match ? ({ id: match.id, title: match.title, description: match.description, company: match.company } as CourseMatch) : null;
+      return fetchRecommendedCourseForRole(role.company, role.job_title);
     },
     enabled: !!role,
     staleTime: 5 * 60_000,
@@ -142,7 +143,7 @@ const RoleDetail = () => {
     deleteRole(role.id).then(() => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       toast({ title: 'Role Deleted', description: 'The role has been removed.' });
-      navigate('/roles');
+      navigate('/jobs');
     }).catch((err) => {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     });
@@ -150,6 +151,107 @@ const RoleDetail = () => {
 
   const summary = role ? parseAiSummary(role.ai_summary) : null;
   const companyInfo = useMemo(() => (role ? findCompanyInfo(role.company) : null), [role]);
+
+  const handleDownloadPdf = () => {
+    if (!role) return;
+
+    const headerMetaParts = [
+      role.company,
+      role.location,
+      role.working_style,
+    ].filter(Boolean);
+
+    const headerMetaLine = headerMetaParts.map((part) => escapeHtml(part)).join(' / ');
+
+    const contentHtml = `
+      <html>
+        <head>
+          <title>${escapeHtml(role.job_title)} - ${escapeHtml(role.company)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #111; margin: 0; line-height: 1.26; font-size: 14px; }
+            @page { margin: 18mm 12mm 16mm; }
+            .pdf-brand {
+              position: fixed;
+              top: 8px;
+              right: 20px;
+              font-size: 10px;
+              color: #6b7280;
+              font-weight: 600;
+              letter-spacing: 0.02em;
+              z-index: 9999;
+            }
+            .pdf-header {
+              text-align: center;
+              padding: 20px 20px 10px;
+            }
+            .pdf-header h1 {
+              font-size: 22px;
+              line-height: 1.2;
+              margin: 0 0 8px;
+              font-weight: 700;
+              letter-spacing: -0.02em;
+            }
+            .pdf-header .subtitle {
+              font-size: 11px;
+              font-weight: 600;
+              color: #2f2f2f;
+              margin: 0;
+              line-height: 1.3;
+            }
+            .pdf-content {
+              padding: 12px 20px 16px;
+              font-size: 14px;
+            }
+            h2 { font-size: 21px; margin: 4px 0 8px; border-bottom: 1px solid #ddd; padding-bottom: 1px; line-height: 1.15; }
+            .meta { margin-bottom: 8px; color: #444; font-size: 12px; }
+            .meta div { margin: 1px 0; }
+            .section { margin-top: 18px; }
+            .pdf-content > .section:first-child { margin-top: 6px; }
+            ul, ol { margin: 0 0 0 12px; padding-left: 6px; }
+            li { margin: 0; line-height: 1.26; font-size: 14px; }
+            .rich * { margin: 0; padding: 0; line-height: 1.26; font-size: 14px; }
+            .rich p { margin: 0 !important; line-height: 1.26; font-size: 14px; }
+            .rich p + p { margin-top: 1px !important; }
+            .rich br { display: block; content: ""; margin: 0; line-height: 1; }
+            .rich h1, .rich h2, .rich h3, .rich h4, .rich h5, .rich h6 { margin: 2px 0 1px !important; }
+            .rich ul, .rich ol { margin: 0 0 0 12px !important; padding-left: 6px !important; }
+            .rich li { margin: 0 !important; }
+          </style>
+        </head>
+        <body>
+          <div class="pdf-brand">Presented by Source Edge</div>
+          <header class="pdf-header">
+            <h1>${escapeHtml(role.job_title)}</h1>
+            <p class="subtitle">${headerMetaLine}</p>
+          </header>
+          <div class="pdf-content">
+            ${role.job_description ? `<div class="section rich"><h2>Job Description</h2>${compactRichTextForPdf(role.job_description)}</div>` : ''}
+            ${role.requirements ? `<div class="section rich"><h2>Requirements</h2>${compactRichTextForPdf(role.requirements)}</div>` : ''}
+            ${role.nice_to_haves ? `<div class="section rich"><h2>Nice to Haves</h2>${compactRichTextForPdf(role.nice_to_haves)}</div>` : ''}
+            ${role.benefits ? `<div class="section rich"><h2>Benefits</h2>${compactRichTextForPdf(role.benefits)}</div>` : ''}
+          </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=1024,height=768');
+    if (!printWindow) {
+      toast({
+        title: 'Popup Blocked',
+        description: 'Please allow popups to download the PDF.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    printWindow.document.write(contentHtml);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
 
   if (isLoading) {
     return (
@@ -172,9 +274,9 @@ const RoleDetail = () => {
             <h2 className="text-xl font-semibold text-gray-600 mb-2">Role not found</h2>
             <p className="text-sm text-gray-500 mb-4">This position may have been removed or the link is incorrect.</p>
             <Button asChild variant="outline">
-              <Link to="/roles">
+              <Link to="/jobs">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Roles
+                Back to Jobs
               </Link>
             </Button>
           </div>
@@ -190,11 +292,11 @@ const RoleDetail = () => {
       <div className="container mx-auto px-4 py-8 flex-1">
         {/* Back link */}
         <Link
-          to="/roles"
+          to="/jobs"
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to Open Positions
+          Back to Open Jobs
         </Link>
 
         {/* Two-column layout */}
@@ -220,6 +322,10 @@ const RoleDetail = () => {
                       <Monitor className="w-4 h-4" />
                       {role.working_style}
                     </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Languages className="w-4 h-4" />
+                      Japanese: {role.japanese_level || 'None'}
+                    </span>
                     {role.division && (
                       <span className="inline-flex items-center gap-1.5">
                         <Briefcase className="w-4 h-4" />
@@ -240,6 +346,9 @@ const RoleDetail = () => {
                     )}
                     <span className="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full">
                       {role.working_style}
+                    </span>
+                    <span className="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                      Japanese: {role.japanese_level || 'None'}
                     </span>
                     {isAdmin && role.status !== 'active' && (
                       <Badge className={`${statusColors[role.status]} border-0 text-xs`}>
@@ -277,40 +386,28 @@ const RoleDetail = () => {
             {role.job_description && (
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-3">Job Description</h2>
-                <div
-                  className="text-sm text-gray-700 prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: role.job_description }}
-                />
+                <RichTextDisplay content={role.job_description} className="text-sm text-gray-700" />
               </div>
             )}
 
             {role.requirements && (
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-3">Requirements</h2>
-                <div
-                  className="text-sm text-gray-700 prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: role.requirements }}
-                />
+                <RichTextDisplay content={role.requirements} className="text-sm text-gray-700" />
               </div>
             )}
 
             {role.nice_to_haves && (
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-3">Nice to Haves</h2>
-                <div
-                  className="text-sm text-gray-700 prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: role.nice_to_haves }}
-                />
+                <RichTextDisplay content={role.nice_to_haves} className="text-sm text-gray-700" />
               </div>
             )}
 
             {role.benefits && (
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-3">Benefits</h2>
-                <div
-                  className="text-sm text-gray-700 prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: role.benefits }}
-                />
+                <RichTextDisplay content={role.benefits} className="text-sm text-gray-700" />
               </div>
             )}
           </div>
@@ -325,11 +422,19 @@ const RoleDetail = () => {
                   onClick={() => setApplyDialogOpen(true)}
                 >
                   <Send className="w-5 h-5 mr-2" />
-                  Apply for this Role
+                  Apply Now
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">
                   Typically responds within 48 hours
                 </p>
+                <Button
+                  variant="outline"
+                  className="w-full mt-3"
+                  onClick={handleDownloadPdf}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export as PDF
+                </Button>
               </div>
 
               {/* Recommended Course */}

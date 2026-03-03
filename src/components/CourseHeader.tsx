@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Briefcase } from "lucide-react";
+import { Edit, Briefcase } from "lucide-react";
 import { EditCourseForm } from "./EditCourseForm";
+import { useQuery } from "@tanstack/react-query";
+import { fetchRoleLinksByJobTitles } from "@/services/coursesService";
 
 interface Course {
   id: string;
@@ -38,6 +40,20 @@ export const CourseHeader = ({
   onCourseUpdate,
   onQuestionsUpdate 
 }: CourseHeaderProps) => {
+  const { data: roleLinks } = useQuery({
+    queryKey: ['role-links', course.attached_jobs],
+    queryFn: async () => {
+      if (!course.attached_jobs || course.attached_jobs.length === 0) return [];
+      const roleLinks = await fetchRoleLinksByJobTitles(course.attached_jobs);
+      const titleSet = new Set(course.attached_jobs.map((job) => job.trim().toLowerCase()));
+      return roleLinks
+        .filter((role) => titleSet.has(role.job_title.trim().toLowerCase()))
+        .map(r => ({ id: r.id, slug: r.slug, job_title: r.job_title }));
+    },
+    enabled: !!course.attached_jobs && course.attached_jobs.length > 0,
+    staleTime: 5 * 60_000,
+  });
+
   return (
     <>
       {/* Course Info Card */}
@@ -86,7 +102,26 @@ export const CourseHeader = ({
               </div>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold text-gray-700">Relevant Roles:</span>{" "}
-                {course.attached_jobs.join(", ")}
+                {course.attached_jobs.map((job, idx) => {
+                  const match = roleLinks?.find(
+                    r => r.job_title.trim().toLowerCase() === job.trim().toLowerCase()
+                  );
+                  return (
+                    <span key={idx}>
+                      {idx > 0 && ", "}
+                      {match ? (
+                        <Link
+                          to={`/job/${match.slug || match.id}`}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          {job}
+                        </Link>
+                      ) : (
+                        job
+                      )}
+                    </span>
+                  );
+                })}
               </p>
             </div>
           </div>

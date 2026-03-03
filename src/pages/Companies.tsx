@@ -2,10 +2,9 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { LazyImage } from '@/components/ui/lazy-image';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Building2, Globe, Users } from 'lucide-react';
+import { Building2, Globe, Users } from 'lucide-react';
 import { NavigationHeader } from '@/components/NavigationHeader';
 
 const Companies: React.FC = () => {
@@ -27,24 +26,13 @@ const Companies: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Companies' }]} className="mb-4" />
-        
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
-              </Button>
-            </Link>
-            <h1 className="text-4xl font-black text-foreground">
-              Companies
-            </h1>
-            <div className="w-32"></div> {/* Spacer to center the title */}
-          </div>
+          <h1 className="text-4xl font-black text-foreground mb-1">
+            Companies
+          </h1>
           <p className="text-lg text-foreground font-semibold max-w-2xl mx-auto">
-            Explore our portfolio of innovative companies driving the future of mobility and technology.
+            Explore list of companies hiring top talents in Japan
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             Showing {companies.length} company{companies.length !== 1 ? 'ies' : ''}

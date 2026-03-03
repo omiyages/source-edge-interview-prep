@@ -9,7 +9,8 @@ const sanitizeConfig = {
     'code', 'pre', 'span', 'div', 'img', 'kbd', 'samp', 'var'
   ],
   // Removed 'style' to prevent CSS injection attacks
-  ALLOWED_ATTR: ['class', 'src', 'alt', 'width', 'height'],
+  // Keep safe Quill list metadata so bullet/ordered lists round-trip correctly
+  ALLOWED_ATTR: ['class', 'src', 'alt', 'width', 'height', 'data-list', 'data-indent'],
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
   FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link', 'meta', 'iframe', 'form', 'input'],
   ALLOW_DATA_ATTR: false, // Disabled data attributes for stricter security

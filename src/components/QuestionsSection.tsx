@@ -61,11 +61,7 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
         question.company.toLowerCase().includes(searchLower) ||
         question.role.toLowerCase().includes(searchLower) ||
         question.category?.toLowerCase().includes(searchLower) ||
-        question.interview_stage?.toLowerCase().includes(searchLower) ||
-        question.additional_context?.toLowerCase().includes(searchLower) ||
-        question.team?.toLowerCase().includes(searchLower) ||
-        question.position_name?.toLowerCase().includes(searchLower) ||
-        question.source_website?.toLowerCase().includes(searchLower);
+        question.interview_stage?.toLowerCase().includes(searchLower);
       
       const matchesCompany = !filters.company || question.company === filters.company;
       const matchesRole = !filters.role || question.role === filters.role;
@@ -161,6 +157,7 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
         isAdmin={false}
         currentPage={1}
         itemsPerPage={ITEMS_PER_PAGE}
+        lightweight
         onSelectQuestion={(index) => setSelectedQuestionIndex(index)}
       />
 

@@ -19,6 +19,7 @@ interface OptimizedQuestionListProps {
   onLoadMore?: () => void;
   useInfiniteScroll?: boolean;
   onSelectQuestion?: (index: number) => void;
+  lightweight?: boolean;
 }
 
 const SKELETON_COUNT = 6;
@@ -35,6 +36,7 @@ export const OptimizedQuestionList = memo(({
   onLoadMore,
   useInfiniteScroll: enableInfiniteScroll = false,
   onSelectQuestion,
+  lightweight = false,
 }: OptimizedQuestionListProps) => {
   const { isFetching, setTarget, resetFetching } = useInfiniteScroll({
     hasNextPage,
@@ -87,6 +89,7 @@ export const OptimizedQuestionList = memo(({
             <QuestionCard 
               question={question} 
               onViewQuestion={onSelectQuestion ? () => onSelectQuestion(index) : undefined}
+              lightweight={lightweight}
             />
           </div>
         ))}

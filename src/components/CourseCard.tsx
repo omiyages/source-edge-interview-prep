@@ -2,7 +2,7 @@
 // ABOUTME: Modern card component for displaying course information with LMS-inspired design
 // ABOUTME: Features clean layout, progress tracking, and admin controls with enhanced visual styling
 
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -119,9 +119,14 @@ const getLeafData = (courseId: string) => {
 interface CourseCardProps {
   course: Course;
   onEdit?: (course: Course) => void;
+  progress?: {
+    total_stages: number;
+    completed_stages: number;
+    progress_percentage: number;
+  } | null;
 }
 
-export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
+export const CourseCard = ({ course, onEdit, progress }: CourseCardProps) => {
   const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -153,42 +158,6 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
       staleTime: 5 * 60 * 1000,
     });
   };
-
-  // Fetch course progress for the current user
-  const { data: courseProgress } = useQuery({
-    queryKey: ['course-progress', course.id, user?.id],
-    queryFn: async () => {
-      if (!user || isAdmin) return null;
-
-      // Get total stages for this course
-      const { data: stages, error: stagesError } = await supabase
-        .from('course_stages')
-        .select('id')
-        .eq('course_id', course.id);
-
-      if (stagesError) throw stagesError;
-
-      // Get completed stages for user
-      const { data: completedStages, error: progressError } = await supabase
-        .from('user_progress')
-        .select('stage_id')
-        .eq('user_id', user.id)
-        .eq('course_id', course.id);
-
-      if (progressError) throw progressError;
-
-      const totalStages = stages?.length || 0;
-      const completed = completedStages?.length || 0;
-      const percentage = totalStages > 0 ? Math.round((completed / totalStages) * 100) : 0;
-
-      return {
-        total_stages: totalStages,
-        completed_stages: completed,
-        progress_percentage: percentage
-      };
-    },
-    enabled: !!user && !isAdmin,
-  });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -323,12 +292,12 @@ export const CourseCard = ({ course, onEdit }: CourseCardProps) => {
         )}
 
         {/* Progress badge for non-admin users */}
-        {!isAdmin && courseProgress && courseProgress.progress_percentage > 0 && (
+        {!isAdmin && progress && progress.progress_percentage > 0 && (
           <Badge
             variant="secondary"
             className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-xs w-fit mb-3"
           >
-            {courseProgress.progress_percentage}% Complete
+            {progress.progress_percentage}% Complete
           </Badge>
         )}
 

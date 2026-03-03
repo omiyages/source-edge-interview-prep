@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createRole, updateRole, generateRoleSummary } from '@/services/rolesService';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
-import type { Role, RoleFormData, WorkingStyle, RoleStatus } from '@/types/role';
+import type { Role, RoleFormData, WorkingStyle, RoleStatus, JapaneseLevel } from '@/types/role';
 import { Save, Loader2, Plus } from 'lucide-react';
 
 interface RoleFormProps {
@@ -21,9 +21,11 @@ interface RoleFormProps {
 
 const EMPTY_FORM: RoleFormData = {
   job_title: '',
+  role_type: '',
   company: '',
   location: '',
   working_style: 'Onsite',
+  japanese_level: 'None',
   division: '',
   job_description: '',
   requirements: '',
@@ -34,6 +36,7 @@ const EMPTY_FORM: RoleFormData = {
 
 // Labels for the "Add New" dialog per field
 const FIELD_LABELS: Record<string, { title: string; label: string; placeholder: string }> = {
+  role_type: { title: 'Add New Role Type', label: 'Role Type', placeholder: 'e.g. Backend Engineer' },
   company: { title: 'Add New Company', label: 'Company Name', placeholder: 'e.g. Google' },
   location: { title: 'Add New Location', label: 'Location', placeholder: 'e.g. Tokyo, Japan' },
   division: { title: 'Add New Division', label: 'Division', placeholder: 'e.g. Engineering' },
@@ -46,6 +49,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
 
   // Dropdown options for each field
   const { options: companies, addOption: addCompany } = useDropdownOptions('company');
+  const { options: roleTypes, addOption: addRoleType } = useDropdownOptions('role');
   const { options: locations, addOption: addLocation } = useDropdownOptions('location');
   const { options: divisions, addOption: addDivision } = useDropdownOptions('division');
 
@@ -56,14 +60,35 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
   const [addDialogValue, setAddDialogValue] = useState('');
   const [isAddingOption, setIsAddingOption] = useState(false);
 
+  // Keep current role values selectable in edit mode even if dropdown_options
+  // does not contain them yet.
+  const companyOptions = useMemo(
+    () => Array.from(new Set([...(form.company ? [form.company.trim()] : []), ...companies.map((c) => c.trim())].filter(Boolean))),
+    [form.company, companies]
+  );
+  const roleTypeOptions = useMemo(
+    () => Array.from(new Set([...(form.role_type ? [form.role_type.trim()] : []), ...roleTypes.map((r) => r.trim())].filter(Boolean))),
+    [form.role_type, roleTypes]
+  );
+  const locationOptions = useMemo(
+    () => Array.from(new Set([...(form.location ? [form.location.trim()] : []), ...locations.map((l) => l.trim())].filter(Boolean))),
+    [form.location, locations]
+  );
+  const divisionOptions = useMemo(
+    () => Array.from(new Set([...(form.division ? [form.division.trim()] : []), ...divisions.map((d) => d.trim())].filter(Boolean))),
+    [form.division, divisions]
+  );
+
   useEffect(() => {
     if (role) {
       setForm({
         job_title: role.job_title,
-        company: role.company,
-        location: role.location,
+        role_type: (role.role_type || '').trim(),
+        company: (role.company || '').trim(),
+        location: (role.location || '').trim(),
         working_style: role.working_style,
-        division: role.division || '',
+        japanese_level: role.japanese_level || 'None',
+        division: (role.division || '').trim(),
         job_description: role.job_description || '',
         requirements: role.requirements || '',
         nice_to_haves: role.nice_to_haves || '',
@@ -92,9 +117,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
 
       // Fire-and-forget: generate AI summary in the background
       if (savedRole?.id) {
-        generateRoleSummary(savedRole.id, /* force */ !!role).then(() => {
-          queryClient.invalidateQueries({ queryKey: ['roles'] });
-        });
+        generateRoleSummary(savedRole.id, /* force */ !!role).catch(() => {});
       }
 
       if (!role) setForm(EMPTY_FORM);
@@ -123,6 +146,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
     setIsAddingOption(true);
 
     const adders: Record<string, (v: string) => Promise<boolean>> = {
+      role_type: addRoleType,
       company: addCompany,
       location: addLocation,
       division: addDivision,
@@ -161,18 +185,20 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Row 1: Job Title + Company */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="job_title">Job Title *</Label>
-            <Input
-              id="job_title"
-              placeholder="e.g. Software Engineer"
-              value={form.job_title}
-              onChange={(e) => handleChange('job_title', e.target.value)}
-              required
-            />
-          </div>
+        {/* Row 1: Job Title only */}
+        <div className="space-y-2">
+          <Label htmlFor="job_title">Job Title *</Label>
+          <Input
+            id="job_title"
+            placeholder="e.g. Software Engineer"
+            value={form.job_title}
+            onChange={(e) => handleChange('job_title', e.target.value)}
+            required
+          />
+        </div>
+
+        {/* Row 2: Company / Role Type / Location */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Company *</Label>
             <div className="flex gap-2">
@@ -181,7 +207,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
                   <SelectValue placeholder="Select company" />
                 </SelectTrigger>
                 <SelectContent>
-                  {companies.map((comp) => (
+                  {companyOptions.map((comp) => (
                     <SelectItem key={comp} value={comp}>{comp}</SelectItem>
                   ))}
                 </SelectContent>
@@ -191,10 +217,27 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
               </Button>
             </div>
           </div>
-        </div>
 
-        {/* Row 2: Location + Working Style + Division */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Role Type</Label>
+            <div className="flex gap-2">
+              <Select value={form.role_type || '__none__'} onValueChange={(v) => handleChange('role_type', v === '__none__' ? '' : v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select role type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {roleTypeOptions.map((roleType) => (
+                    <SelectItem key={roleType} value={roleType}>{roleType}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="outline" size="icon" onClick={() => openAddDialog('role_type')} className="h-9 w-9 shrink-0" title="Add new role type">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Location *</Label>
             <div className="flex gap-2">
@@ -203,7 +246,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations.map((loc) => (
+                  {locationOptions.map((loc) => (
                     <SelectItem key={loc} value={loc}>{loc}</SelectItem>
                   ))}
                 </SelectContent>
@@ -213,6 +256,10 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Row 3: Working Style / Japanese / Division */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Working Style *</Label>
             <Select
@@ -229,6 +276,25 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label>Japanese Level *</Label>
+            <Select
+              value={form.japanese_level}
+              onValueChange={(v) => handleChange('japanese_level', v as JapaneseLevel)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="None">None</SelectItem>
+                <SelectItem value="Conversational">Conversational</SelectItem>
+                <SelectItem value="Business">Business</SelectItem>
+                <SelectItem value="Native">Native</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label>Division</Label>
             <div className="flex gap-2">
@@ -238,7 +304,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">None</SelectItem>
-                  {divisions.map((div) => (
+                  {divisionOptions.map((div) => (
                     <SelectItem key={div} value={div}>{div}</SelectItem>
                   ))}
                 </SelectContent>
@@ -250,24 +316,22 @@ export const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, onCancel })
           </div>
         </div>
 
-        {/* Row 3: Status */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select
-              value={form.status}
-              onValueChange={(v) => handleChange('status', v as RoleStatus)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Status: full width */}
+        <div className="space-y-2">
+          <Label>Status</Label>
+          <Select
+            value={form.status}
+            onValueChange={(v) => handleChange('status', v as RoleStatus)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Row 4: Job Description */}

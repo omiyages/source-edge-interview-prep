@@ -1,15 +1,37 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Role, RoleFormData } from '@/types/role';
 
-/** Turn a job title + company into a URL-friendly slug, with a short unique suffix. */
+/** Turn job title + company into a stable URL slug. */
 function generateSlug(jobTitle: string, company: string): string {
-  const base = `${jobTitle}-${company}`
+  return `${jobTitle}-${company}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 80);
-  const suffix = Math.random().toString(36).slice(2, 6);
-  return `${base}-${suffix}`;
+}
+
+async function getExistingSlugsForBase(baseSlug: string): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('roles')
+    .select('slug')
+    .or(`slug.eq.${baseSlug},slug.like.${baseSlug}-%`);
+
+  if (error) throw new Error(`Failed to check slug uniqueness: ${error.message}`);
+
+  const set = new Set<string>();
+  (data || []).forEach((row: any) => {
+    if (row?.slug) set.add(String(row.slug));
+  });
+  return set;
+}
+
+function nextUniqueSlug(baseSlug: string, taken: Set<string>): string {
+  if (!taken.has(baseSlug)) return baseSlug;
+  let counter = 2;
+  while (taken.has(`${baseSlug}-${counter}`)) {
+    counter += 1;
+  }
+  return `${baseSlug}-${counter}`;
 }
 
 export async function fetchRoles(): Promise<Role[]> {
@@ -55,15 +77,19 @@ export async function fetchRoleBySlug(slugOrId: string): Promise<Role> {
 }
 
 export async function createRole(role: RoleFormData, createdBy: string): Promise<Role> {
-  const slug = generateSlug(role.job_title, role.company);
+  const baseSlug = generateSlug(role.job_title, role.company);
+  const takenSlugs = await getExistingSlugsForBase(baseSlug);
+  const slug = nextUniqueSlug(baseSlug, takenSlugs);
 
   const { data, error } = await supabase
     .from('roles')
     .insert({
       job_title: role.job_title,
+      role_type: role.role_type || null,
       company: role.company,
       location: role.location,
       working_style: role.working_style,
+      japanese_level: role.japanese_level,
       division: role.division || null,
       job_description: role.job_description || null,
       requirements: role.requirements || null,
@@ -85,11 +111,6 @@ export async function updateRole(id: string, role: Partial<RoleFormData>): Promi
     ...role,
     updated_at: new Date().toISOString(),
   };
-
-  // Regenerate slug if the title changed
-  if (role.job_title && role.company) {
-    updatePayload.slug = generateSlug(role.job_title, role.company);
-  }
 
   const { data, error } = await supabase
     .from('roles')
@@ -136,20 +157,37 @@ export async function generateRoleSummary(
 }
 
 export async function bulkCreateRoles(roles: RoleFormData[], createdBy: string): Promise<{ count: number; ids: string[] }> {
-  const rolesToInsert = roles.map((r) => ({
-    job_title: r.job_title,
-    company: r.company,
-    location: r.location,
-    working_style: r.working_style,
-    division: r.division || null,
-    job_description: r.job_description || null,
-    requirements: r.requirements || null,
-    nice_to_haves: r.nice_to_haves || null,
-    benefits: r.benefits || null,
-    status: r.status || 'active',
-    created_by: createdBy,
-    slug: generateSlug(r.job_title, r.company),
-  }));
+  const slugCache = new Map<string, Set<string>>();
+
+  const rolesToInsert = await Promise.all(
+    roles.map(async (r) => {
+      const baseSlug = generateSlug(r.job_title, r.company);
+      let taken = slugCache.get(baseSlug);
+      if (!taken) {
+        taken = await getExistingSlugsForBase(baseSlug);
+        slugCache.set(baseSlug, taken);
+      }
+      const uniqueSlug = nextUniqueSlug(baseSlug, taken);
+      taken.add(uniqueSlug);
+
+      return {
+        job_title: r.job_title,
+        role_type: r.role_type || null,
+        company: r.company,
+        location: r.location,
+        working_style: r.working_style,
+        japanese_level: r.japanese_level,
+        division: r.division || null,
+        job_description: r.job_description || null,
+        requirements: r.requirements || null,
+        nice_to_haves: r.nice_to_haves || null,
+        benefits: r.benefits || null,
+        status: r.status || 'active',
+        created_by: createdBy,
+        slug: uniqueSlug,
+      };
+    })
+  );
 
   const { data, error } = await supabase
     .from('roles')

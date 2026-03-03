@@ -131,6 +131,96 @@ export const useQuestionThumbsUp = (questionId: string) => {
   };
 };
 
+export const useQuestionThumbsUpWithOptions = (
+  questionId: string,
+  options?: { enabled?: boolean }
+) => {
+  const enabled = options?.enabled ?? true;
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: thumbsUpInfo, isLoading } = useQuery<QuestionThumbsUpInfo>({
+    queryKey: ['question-thumbs-up', questionId, user?.id],
+    queryFn: async () => {
+      if (!questionId) {
+        return { count: 0, hasThumbsUp: false };
+      }
+
+      const { count, error: countError } = await supabase
+        .from('question_thumbs_up')
+        .select('*', { count: 'exact', head: true })
+        .eq('question_id', questionId);
+
+      if (countError) return { count: 0, hasThumbsUp: false };
+
+      let hasThumbsUp = false;
+      if (user?.id) {
+        const { data } = await supabase
+          .from('question_thumbs_up')
+          .select('id')
+          .eq('question_id', questionId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (data) hasThumbsUp = true;
+      }
+
+      return { count: count || 0, hasThumbsUp };
+    },
+    enabled: enabled && !!questionId,
+    staleTime: 30000,
+  });
+
+  const toggleThumbsUpMutation = useMutation({
+    mutationFn: async () => {
+      if (!enabled) return;
+      if (!user?.id) throw new Error('You must be logged in to thumbs up questions');
+
+      if (!thumbsUpInfo?.hasThumbsUp) {
+        const { error } = await supabase
+          .from('question_thumbs_up')
+          .insert({ question_id: questionId, user_id: user.id });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('question_thumbs_up')
+          .delete()
+          .eq('question_id', questionId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['question-thumbs-up', questionId] });
+      queryClient.invalidateQueries({ queryKey: ['interview-questions'] });
+      if (!enabled) return;
+      toast({
+        title: thumbsUpInfo?.hasThumbsUp ? "Thumbs up removed" : "Thumbs up added",
+        description: thumbsUpInfo?.hasThumbsUp
+          ? "Your thumbs up has been removed."
+          : "Thanks for your feedback!",
+      });
+    },
+    onError: (error: any) => {
+      if (!enabled) return;
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update thumbs up. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  return {
+    count: thumbsUpInfo?.count || 0,
+    hasThumbsUp: thumbsUpInfo?.hasThumbsUp || false,
+    isLoading,
+    toggleThumbsUp: toggleThumbsUpMutation.mutate,
+    isToggling: toggleThumbsUpMutation.isPending,
+  };
+};
+
 /**
  * Hook to get thumbs up counts for multiple questions
  */

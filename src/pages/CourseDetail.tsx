@@ -10,8 +10,6 @@ import { CourseProgress } from "@/components/CourseProgress";
 import { StageCompleteButton } from "@/components/StageCompleteButton";
 import { CourseContentSection } from "@/components/CourseContentSection";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ManageStageResourcesForm } from "@/components/ManageStageResourcesForm";
-import { ManageStageResourcesFormImproved } from "@/components/ManageStageResourcesFormImproved";
 import { ManageStageResourcesTable } from "@/components/ManageStageResourcesTable";
 import { ManageStageQuestionsForm } from "@/components/ManageStageQuestionsForm";
 import { CourseReviewForm } from "@/components/CourseReviewForm";

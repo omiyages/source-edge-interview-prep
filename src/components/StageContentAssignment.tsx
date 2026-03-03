@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ManageStageQuestionsForm } from "./ManageStageQuestionsForm";
-import { ManageStageResourcesForm } from "./ManageStageResourcesForm";
+import { ManageStageResourcesTable } from "./ManageStageResourcesTable";
 
 interface CourseStage {
   title: string;
@@ -83,7 +83,7 @@ export const StageContentAssignment = ({
                       <DialogHeader>
                         <DialogTitle>Manage Resources for {stageName}</DialogTitle>
                       </DialogHeader>
-                      <ManageStageResourcesForm 
+                      <ManageStageResourcesTable 
                         stageId={stageId}
                         onSuccess={() => onAssignmentSuccess(stageId, 'resources')}
                       />

@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { bulkCreateRoles } from '@/services/rolesService';
-import type { RoleFormData, WorkingStyle } from '@/types/role';
+import type { RoleFormData, WorkingStyle, JapaneseLevel } from '@/types/role';
 import { Upload, Download, FileText, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,9 +14,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 const REQUIRED_HEADERS = ['job_title', 'company', 'location', 'working_style'];
 const ALL_HEADERS = [
   'job_title',
+  'role_type',
   'company',
   'location',
   'working_style',
+  'japanese_level',
   'division',
   'job_description',
   'requirements',
@@ -24,6 +26,7 @@ const ALL_HEADERS = [
   'benefits',
 ];
 const VALID_WORKING_STYLES: WorkingStyle[] = ['Hybrid', 'Remote', 'Onsite'];
+const VALID_JAPANESE_LEVELS: JapaneseLevel[] = ['None', 'Conversational', 'Business', 'Native'];
 
 interface ParsedRow {
   data: RoleFormData;
@@ -47,8 +50,6 @@ export const RoleCSVImport: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      // AI summaries are being generated in the background; refresh after a delay
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['roles'] }), 8000);
       toast({
         title: 'Import Successful',
         description: `Successfully imported ${result.count} role${result.count !== 1 ? 's' : ''}. AI summaries are being generated.`,
@@ -116,14 +117,23 @@ export const RoleCSVImport: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
         errors.push(`Invalid working_style "${ws}" (must be Hybrid, Remote, or Onsite)`);
       }
 
+      const japaneseLevel = obj.japanese_level || 'None';
+      const normalizedJapanese =
+        VALID_JAPANESE_LEVELS.find((v) => v.toLowerCase() === japaneseLevel.toLowerCase()) || null;
+      if (!normalizedJapanese) {
+        errors.push(`Invalid japanese_level "${japaneseLevel}" (must be None, Conversational, Business, or Native)`);
+      }
+
       rows.push({
         rowNum: i + 1,
         errors,
         data: {
           job_title: obj.job_title || '',
+          role_type: obj.role_type || '',
           company: obj.company || '',
           location: obj.location || '',
           working_style: normalizedWs || 'Onsite',
+          japanese_level: normalizedJapanese || 'None',
           division: obj.division || '',
           job_description: obj.job_description || '',
           requirements: obj.requirements || '',
@@ -217,9 +227,9 @@ export const RoleCSVImport: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
   };
 
   const downloadTemplate = () => {
-    const csvContent = `job_title,company,location,working_style,division,job_description,requirements,nice_to_haves,benefits
-"Software Engineer","Google","Tokyo, Japan","Hybrid","Engineering","Build scalable distributed systems...","3+ years of experience in Go or Java, Strong CS fundamentals","Experience with Kubernetes, Open source contributions","Health insurance, Stock options, Remote flexibility"
-"Product Manager","Meta","Menlo Park, CA","Onsite","Product","Lead product strategy for social features...","5+ years PM experience, Data-driven decision making","MBA preferred, Experience with A/B testing","Competitive salary, RSUs, Free meals"`;
+    const csvContent = `job_title,role_type,company,location,working_style,japanese_level,division,job_description,requirements,nice_to_haves,benefits
+"Software Engineer","Backend Engineer","Google","Tokyo, Japan","Hybrid","Business","Engineering","Build scalable distributed systems...","3+ years of experience in Go or Java, Strong CS fundamentals","Experience with Kubernetes, Open source contributions","Health insurance, Stock options, Remote flexibility"
+"Product Manager","Product Manager","Meta","Menlo Park, CA","Onsite","None","Product","Lead product strategy for social features...","5+ years PM experience, Data-driven decision making","MBA preferred, Experience with A/B testing","Competitive salary, RSUs, Free meals"`;
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -247,7 +257,7 @@ export const RoleCSVImport: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
         />
         <p className="text-sm text-muted-foreground">
           Required columns: <span className="font-medium">job_title, company, location, working_style</span>.
-          Optional: division, job_description, requirements, nice_to_haves, benefits.
+          Optional: role_type, japanese_level, division, job_description, requirements, nice_to_haves, benefits.
         </p>
       </div>
 
@@ -298,9 +308,11 @@ export const RoleCSVImport: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                 <TableRow>
                   <TableHead className="w-16">Row</TableHead>
                   <TableHead>Job Title</TableHead>
+                  <TableHead>Role Type</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Working Style</TableHead>
+                  <TableHead>Japanese</TableHead>
                   <TableHead>Division</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
@@ -313,10 +325,14 @@ export const RoleCSVImport: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                   >
                     <TableCell className="font-mono text-xs">{row.rowNum}</TableCell>
                     <TableCell className="font-medium">{row.data.job_title || '—'}</TableCell>
+                    <TableCell>{row.data.role_type || '—'}</TableCell>
                     <TableCell>{row.data.company || '—'}</TableCell>
                     <TableCell>{row.data.location || '—'}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{row.data.working_style}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{row.data.japanese_level}</Badge>
                     </TableCell>
                     <TableCell>{row.data.division || '—'}</TableCell>
                     <TableCell>

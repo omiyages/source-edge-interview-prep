@@ -18,7 +18,6 @@ import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
 import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
 import { BulkUserCreation } from "@/components/BulkUserCreation";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { NavigationHeader } from "@/components/NavigationHeader";
 
 // Lazy load heavy tab components to reduce initial bundle
@@ -60,6 +59,8 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showBulkUserCreation, setShowBulkUserCreation] = useState(false);
+  const [activeMainTab, setActiveMainTab] = useState("users");
+  const [activeQuestionsTab, setActiveQuestionsTab] = useState("management");
 
   console.log('🚀 AdminDashboard: Component mounted/rendered');
   console.log('🔧 AdminDashboard render - DETAILED:', {
@@ -75,6 +76,8 @@ const AdminDashboard = () => {
 
   // Move ALL hooks to the top - this is critical for React's Rules of Hooks
   const shouldFetchData = !!user && isAdmin && !authLoading;
+  const shouldFetchQuestions = shouldFetchData && activeMainTab === "questions";
+  const shouldFetchAllQuestions = shouldFetchQuestions && activeQuestionsTab === "management";
 
   // Fetch pending questions - always call this hook
   const { data: pendingQuestions, isLoading: loadingPending, error: pendingError } = useQuery({
@@ -95,7 +98,7 @@ const AdminDashboard = () => {
       console.log('✅ Pending questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
-    enabled: shouldFetchData,
+    enabled: shouldFetchQuestions,
   });
 
   // Fetch all questions - always call this hook
@@ -116,7 +119,7 @@ const AdminDashboard = () => {
       console.log('✅ All questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
-    enabled: shouldFetchData,
+    enabled: shouldFetchAllQuestions,
   });
 
   // Question approval mutation - always call this hook
@@ -227,7 +230,6 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Admin' }]} className="mb-4" />
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -235,8 +237,7 @@ const AdminDashboard = () => {
               Admin Dashboard
             </h1>
             <p className="text-lg text-foreground font-semibold">
-              Welcome back, {profile?.full_name || profile?.email} 
-              <span className="text-primary font-bold ml-2">👑 Admin</span>
+              Welcome back, {profile?.full_name || profile?.email}
             </p>
           </div>
           <div className="flex gap-4">
@@ -266,7 +267,7 @@ const AdminDashboard = () => {
           </Alert>
         )}
 
-        <Tabs defaultValue="users" className="w-full">
+        <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
@@ -367,7 +368,7 @@ const AdminDashboard = () => {
 
           {/* Questions Tab with Subtabs */}
           <TabsContent value="questions">
-            <Tabs defaultValue="management" className="w-full">
+            <Tabs value={activeQuestionsTab} onValueChange={setActiveQuestionsTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="management">
                   Questions Management
