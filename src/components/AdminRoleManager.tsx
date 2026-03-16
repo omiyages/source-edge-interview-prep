@@ -105,9 +105,9 @@ export const AdminRoleManager = ({ user, trigger }: AdminRoleManagerProps) => {
         <div className="space-y-4">
           <div>
             <Label htmlFor="user-info">User Information</Label>
-            <div className="mt-1 p-3 bg-gray-50 rounded-md">
+            <div className="mt-1 p-3 bg-neutral-800/50 rounded-md">
               <p className="font-medium">{user.full_name || 'No name'}</p>
-              <p className="text-sm text-gray-600">{user.email}</p>
+              <p className="text-sm text-neutral-400">{user.email}</p>
               <p className="text-sm">Current Role: <span className="font-medium">{user.role}</span></p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export const AdminRoleManager = ({ user, trigger }: AdminRoleManagerProps) => {
                   rows={3}
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   This change will be logged for security audit purposes.
                 </p>
               </div>

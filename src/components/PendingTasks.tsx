@@ -227,16 +227,16 @@ export const PendingTasks: React.FC = () => {
     switch (priority) {
       case 'high': return 'bg-red-100 text-red-800 border-red-200';
       case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'low': return 'bg-green-900/40 text-green-400 border-green-200';
+      default: return 'bg-neutral-800 text-neutral-200 border-neutral-700';
     }
   };
 
   const getTaskTypeColor = (type: string) => {
     switch (type) {
-      case 'todo': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'note': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'todo': return 'bg-blue-900/40 text-blue-400 border-blue-200';
+      case 'note': return 'bg-cyan-900/40 text-cyan-400 border-cyan-200';
+      default: return 'bg-neutral-800 text-neutral-200 border-neutral-700';
     }
   };
 
@@ -368,7 +368,7 @@ export const PendingTasks: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-purple-600" />
+              <Clock className="h-5 w-5 text-cyan-500" />
               <div>
                 <div className="text-2xl font-bold">{filteredTasks.length}</div>
                 <div className="text-sm text-muted-foreground">Total Tasks</div>
@@ -408,7 +408,7 @@ export const PendingTasks: React.FC = () => {
                         </div>
                         
                         <div className="mb-2">
-                          <p className="text-sm font-medium text-gray-900">{task.note_content || 'No content available'}</p>
+                          <p className="text-sm font-medium text-foreground">{task.note_content || 'No content available'}</p>
                         </div>
                         
                         <div className="flex items-center gap-2">

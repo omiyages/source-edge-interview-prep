@@ -88,7 +88,7 @@ export const ResourcesFilters = ({
               className={
                 isSelected
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-white hover:bg-gray-50"
+                  : "bg-neutral-900 hover:bg-neutral-800"
               }
             >
               {category === "all" ? "All" : category}

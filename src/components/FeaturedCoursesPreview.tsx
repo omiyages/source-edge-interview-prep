@@ -91,9 +91,9 @@ const LeafDesigns = {
 // Background gradient colors for course cards
 const GradientColors = [
   { gradient: 'from-amber-400 to-orange-500', leafColor: 'text-amber-100' },
-  { gradient: 'from-emerald-400 to-teal-600', leafColor: 'text-emerald-100' },
+  { gradient: 'from-emerald-400 to-cyan-600', leafColor: 'text-emerald-100' },
   { gradient: 'from-cyan-400 to-blue-500', leafColor: 'text-cyan-100' },
-  { gradient: 'from-purple-400 to-indigo-600', leafColor: 'text-purple-100' },
+  { gradient: 'from-cyan-400 to-cyan-600', leafColor: 'text-cyan-100' },
   { gradient: 'from-pink-400 to-rose-500', leafColor: 'text-pink-100' },
   { gradient: 'from-lime-400 to-green-600', leafColor: 'text-lime-100' },
   { gradient: 'from-red-400 to-rose-600', leafColor: 'text-red-100' },
@@ -143,7 +143,7 @@ const StarRating = ({ rating }: { rating: number }) => {
               ? 'fill-amber-400 text-amber-400'
               : i === fullStars && hasHalfStar
               ? 'fill-amber-400/50 text-amber-400'
-              : 'fill-gray-200 text-gray-200'
+              : 'fill-neutral-700 text-neutral-700'
           }`}
         />
       ))}
@@ -230,22 +230,22 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
       <div className="mb-12">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8 gap-4">
           <div>
-            <div className="h-8 bg-muted rounded w-48 animate-pulse mb-2"></div>
-            <div className="h-4 bg-muted rounded w-72 animate-pulse"></div>
+            <div className="h-8 bg-neutral-800 rounded w-48 animate-pulse mb-2"></div>
+            <div className="h-4 bg-neutral-800 rounded w-72 animate-pulse"></div>
           </div>
-          <div className="h-5 bg-muted rounded w-36 animate-pulse"></div>
+          <div className="h-5 bg-neutral-800 rounded w-36 animate-pulse"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
-              <div className="h-40 bg-muted"></div>
+            <div key={i} className="bg-neutral-900 rounded-xl border border-neutral-800 overflow-hidden animate-pulse">
+              <div className="h-40 bg-neutral-800"></div>
               <div className="p-5">
-                <div className="h-4 bg-muted rounded w-24 mb-3"></div>
-                <div className="h-5 bg-muted rounded w-full mb-2"></div>
-                <div className="h-4 bg-muted rounded w-32 mb-4"></div>
+                <div className="h-4 bg-neutral-800 rounded w-24 mb-3"></div>
+                <div className="h-5 bg-neutral-800 rounded w-full mb-2"></div>
+                <div className="h-4 bg-neutral-800 rounded w-32 mb-4"></div>
                 <div className="flex justify-between items-center">
-                  <div className="h-6 bg-muted rounded w-16"></div>
-                  <div className="h-4 bg-muted rounded w-20"></div>
+                  <div className="h-6 bg-neutral-800 rounded w-16"></div>
+                  <div className="h-4 bg-neutral-800 rounded w-20"></div>
                 </div>
               </div>
             </div>
@@ -289,7 +289,7 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
           return (
             <div
               key={course.id}
-              className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group"
+              className="bg-neutral-900 rounded-xl border border-neutral-800 hover:border-neutral-700 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group"
               onClick={() => navigate(`/course/${slugify(course.title)}`)}
               onMouseEnter={() => prefetchCourse(course.title)}
             >
@@ -325,7 +325,7 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
                 )}
 
                 {/* Start Learning Button */}
-                <div className="flex items-center justify-end pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-end pt-2 border-t border-neutral-800">
                   <Button
                     variant="ghost"
                     size="sm"

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Minus, Save, BookTemplate } from "lucide-react";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { LazyRichTextEditor as RichTextEditor } from "@/components/ui/lazy-rich-text-editor";
 import { StageTemplateDialog } from "@/components/StageTemplateDialog";
 import { StageTemplateSelector } from "@/components/StageTemplateSelector";
 

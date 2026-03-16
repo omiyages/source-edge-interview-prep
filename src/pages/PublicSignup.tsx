@@ -18,8 +18,8 @@ const PublicSignup = () => {
 
   if (user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md rounded-2xl border-0 shadow-xl overflow-hidden">
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md rounded-2xl border-0 shadow-2xl shadow-black/20 overflow-hidden">
           <CardHeader className="bg-gradient-to-br from-primary to-primary/80 p-8 text-center space-y-2">
             <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto">
               <ShieldCheck className="w-7 h-7 text-white" />
@@ -27,7 +27,7 @@ const PublicSignup = () => {
             <h2 className="text-2xl font-bold text-white">Already Signed In</h2>
           </CardHeader>
           <CardContent className="p-8 text-center space-y-4">
-            <p className="text-gray-600">
+            <p className="text-neutral-400">
               You are already signed in as <strong>{user.email}</strong>. You cannot create a new account while logged in.
             </p>
             <div className="flex flex-col gap-3">
@@ -49,7 +49,7 @@ const PublicSignup = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Purple Gradient with Branding (matches Auth page) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-800 to-purple-900 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-cyan-800 to-cyan-900 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/60" />
         
         {/* Geometric Background Elements */}

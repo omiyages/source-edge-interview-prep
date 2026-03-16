@@ -1,6 +1,7 @@
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import { compression } from "vite-plugin-compression2";
 import path from "path";
 
 // Vite plugin to handle Supabase module issues
@@ -38,6 +39,10 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     supabasePlugin(),
+    // Gzip compression for production builds (~70% smaller transfers)
+    mode === 'production' && compression({ algorithm: 'gzip', threshold: 1024 }),
+    // Brotli compression for modern browsers (~80% smaller transfers)
+    mode === 'production' && compression({ algorithm: 'brotliCompress', threshold: 1024 }),
   ].filter(Boolean),
   resolve: {
     alias: {

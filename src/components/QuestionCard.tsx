@@ -148,7 +148,7 @@ const QuestionCard = ({
 
   return (
     <>
-      <div className="group h-full flex flex-col bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200 p-5">
+      <div className="group h-full flex flex-col bg-neutral-900 rounded-xl border border-neutral-800 hover:shadow-lg hover:border-neutral-700 transition-all duration-200 p-5">
         {/* Header: Role Badge + Bookmark */}
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ const QuestionCard = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 text-gray-400 hover:text-primary hover:bg-primary/10"
+                      className="h-8 w-8 p-0 text-neutral-400 hover:text-primary hover:bg-primary/10"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -187,7 +187,7 @@ const QuestionCard = ({
                   size="sm"
                   onClick={handleDeleteClick}
                   disabled={deleteQuestionMutation.isPending || removeFromStageMutation.isPending}
-                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                  className="h-8 w-8 p-0 text-neutral-400 hover:text-red-400 hover:bg-red-900/20"
                   title={deleteTooltip}
                 >
                   {React.createElement(deleteIcon, { className: "w-4 h-4" })}
@@ -200,8 +200,8 @@ const QuestionCard = ({
                 disabled={isBookmarkToggling || !user}
                 className={`p-1.5 rounded-md transition-colors ${
                   isBookmarked 
-                    ? "text-primary" 
-                    : "text-gray-300 hover:text-gray-400"
+                    ? "text-primary"
+                    : "text-neutral-500 hover:text-neutral-400"
                 }`}
                 title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Sign in to save"}
               >
@@ -212,35 +212,35 @@ const QuestionCard = ({
         </div>
 
         {/* Question Title */}
-        <h3 className="text-base font-semibold text-gray-900 leading-snug mb-4 line-clamp-3 flex-shrink-0">
+        <h3 className="text-base font-semibold text-foreground leading-snug mb-4 line-clamp-3 flex-shrink-0">
           {question.question}
         </h3>
 
         {/* Metadata */}
         <div className="space-y-2 flex-1 mb-4">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-gray-400 min-w-[70px]">Company</span>
-            <span className="text-sm text-gray-700">{question.company}</span>
+            <span className="text-sm text-neutral-500 min-w-[70px]">Company</span>
+            <span className="text-sm text-neutral-300">{question.company}</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-gray-400 min-w-[70px]">Category</span>
-            <span className="text-sm text-gray-700">{question.category}</span>
+            <span className="text-sm text-neutral-500 min-w-[70px]">Category</span>
+            <span className="text-sm text-neutral-300">{question.category}</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-gray-400 min-w-[70px]">Stage</span>
-            <span className="text-sm text-gray-700">{question.interview_stage}</span>
+            <span className="text-sm text-neutral-500 min-w-[70px]">Stage</span>
+            <span className="text-sm text-neutral-300">{question.interview_stage}</span>
           </div>
         </div>
 
         {/* Footer: Thumbs up + Date + View Question */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
-          <div className="flex items-center gap-3 text-sm text-gray-400">
+        <div className="flex items-center justify-between pt-4 border-t border-neutral-800 mt-auto">
+          <div className="flex items-center gap-3 text-sm text-neutral-500">
             {!lightweight ? (
               <button
                 onClick={() => user && toggleThumbsUp()}
                 disabled={isToggling || !user}
                 className={`flex items-center gap-1 transition-colors ${
-                  hasThumbsUp ? "text-primary" : "hover:text-gray-600"
+                  hasThumbsUp ? "text-primary" : "hover:text-neutral-400"
                 }`}
                 title={user ? (hasThumbsUp ? "Remove thumbs up" : "Thumbs up") : "Sign in to vote"}
               >
@@ -369,7 +369,7 @@ const QuestionCard = ({
                               href={question.source_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline break-all block"
+                              className="text-sm text-primary hover:underline break-all block"
                             >
                               {question.source_url}
                             </a>

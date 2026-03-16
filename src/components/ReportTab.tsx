@@ -783,10 +783,10 @@ export const ReportTab: React.FC = () => {
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     return (
-                      <div className="bg-white p-3 border rounded-lg shadow-lg">
+                      <div className="bg-neutral-900 p-3 border rounded-lg shadow-lg">
                         <p className="font-semibold text-sm">{data.stage}</p>
                         <p className="text-sm text-indigo-600 font-bold">{data.conversionRate}%</p>
-                        <p className="text-xs text-gray-500">{data.count} candidates</p>
+                        <p className="text-xs text-neutral-400">{data.count} candidates</p>
                       </div>
                     );
                   }
@@ -836,7 +836,7 @@ export const ReportTab: React.FC = () => {
           <CardContent>
             <div className="overflow-auto max-h-[250px]">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 sticky top-0">
+                <thead className="bg-neutral-50 sticky top-0">
                   <tr className="text-xs text-muted-foreground uppercase">
                     <th className="text-left p-2 font-medium">Candidate</th>
                     <th className="text-left p-2 font-medium">Company</th>
@@ -853,7 +853,7 @@ export const ReportTab: React.FC = () => {
                     </tr>
                   ) : (
                     upcomingInterviews.slice(0, 5).map(interview => (
-                      <tr key={interview.id} className="border-b hover:bg-slate-50">
+                      <tr key={interview.id} className="border-b hover:bg-neutral-50">
                         <td className="p-2 font-medium">{interview.user_name}</td>
                         <td className="p-2 text-muted-foreground">{interview.user_company}</td>
                         <td className="p-2">
@@ -885,7 +885,7 @@ export const ReportTab: React.FC = () => {
           <CardContent>
             <div className="overflow-auto max-h-[250px]">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 sticky top-0">
+                <thead className="bg-neutral-50 sticky top-0">
                   <tr className="text-xs text-muted-foreground uppercase">
                     <th className="text-left p-2 font-medium">Candidate</th>
                     <th className="text-left p-2 font-medium">Company</th>
@@ -902,7 +902,7 @@ export const ReportTab: React.FC = () => {
                     </tr>
                   ) : (
                     candidateCalls.slice(0, 5).map(call => (
-                      <tr key={call.id} className="border-b hover:bg-slate-50">
+                      <tr key={call.id} className="border-b hover:bg-neutral-50">
                         <td className="p-2 font-medium">{call.user_name}</td>
                         <td className="p-2 text-muted-foreground">{call.user_company}</td>
                         <td className="p-2 text-muted-foreground">

@@ -37,46 +37,46 @@ const getIconAndColor = (category: string, title: string) => {
   
   // Check title keywords first for more specific matches
   if (lowerTitle.includes('rental') || lowerTitle.includes('property') || lowerTitle.includes('housing')) {
-    return { icon: Home, bgColor: 'bg-blue-100', iconColor: 'text-blue-600' };
+    return { icon: Home, bgColor: 'bg-blue-500/15', iconColor: 'text-blue-400' };
   }
   if (lowerTitle.includes('cost of living') || lowerTitle.includes('living index')) {
-    return { icon: Video, bgColor: 'bg-emerald-100', iconColor: 'text-emerald-600' };
+    return { icon: Video, bgColor: 'bg-emerald-500/15', iconColor: 'text-emerald-400' };
   }
   if (lowerTitle.includes('salary') || lowerTitle.includes('calculator') || lowerTitle.includes('tax')) {
-    return { icon: Calculator, bgColor: 'bg-amber-100', iconColor: 'text-amber-600' };
+    return { icon: Calculator, bgColor: 'bg-amber-500/15', iconColor: 'text-amber-400' };
   }
   if (lowerTitle.includes('visa') || lowerTitle.includes('immigration')) {
-    return { icon: FileText, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' };
+    return { icon: FileText, bgColor: 'bg-cyan-500/15', iconColor: 'text-cyan-300' };
   }
   
   // Fall back to category-based icons
   if (lowerCategory.includes('finance') || lowerCategory.includes('money')) {
-    return { icon: TrendingUp, bgColor: 'bg-emerald-100', iconColor: 'text-emerald-600' };
+    return { icon: TrendingUp, bgColor: 'bg-emerald-500/15', iconColor: 'text-emerald-400' };
   }
   if (lowerCategory.includes('code') || lowerCategory.includes('programming') || lowerCategory.includes('technical')) {
-    return { icon: Code, bgColor: 'bg-indigo-100', iconColor: 'text-indigo-600' };
+    return { icon: Code, bgColor: 'bg-indigo-500/15', iconColor: 'text-indigo-400' };
   }
   if (lowerCategory.includes('career') || lowerCategory.includes('job')) {
-    return { icon: Briefcase, bgColor: 'bg-orange-100', iconColor: 'text-orange-600' };
+    return { icon: Briefcase, bgColor: 'bg-orange-500/15', iconColor: 'text-orange-400' };
   }
   if (lowerCategory.includes('learning') || lowerCategory.includes('education')) {
-    return { icon: GraduationCap, bgColor: 'bg-cyan-100', iconColor: 'text-cyan-600' };
+    return { icon: GraduationCap, bgColor: 'bg-cyan-500/15', iconColor: 'text-cyan-400' };
   }
   if (lowerCategory.includes('community') || lowerCategory.includes('network')) {
-    return { icon: Users, bgColor: 'bg-pink-100', iconColor: 'text-pink-600' };
+    return { icon: Users, bgColor: 'bg-pink-500/15', iconColor: 'text-pink-400' };
   }
   if (lowerCategory.includes('relocation') || lowerCategory.includes('expat')) {
-    return { icon: Globe, bgColor: 'bg-teal-100', iconColor: 'text-teal-600' };
+    return { icon: Globe, bgColor: 'bg-cyan-500/15', iconColor: 'text-cyan-300' };
   }
   if (lowerCategory.includes('guide') || lowerCategory.includes('tutorial')) {
-    return { icon: Lightbulb, bgColor: 'bg-yellow-100', iconColor: 'text-yellow-600' };
+    return { icon: Lightbulb, bgColor: 'bg-yellow-500/15', iconColor: 'text-yellow-400' };
   }
   if (lowerCategory.includes('tool')) {
-    return { icon: Target, bgColor: 'bg-red-100', iconColor: 'text-red-600' };
+    return { icon: Target, bgColor: 'bg-red-500/15', iconColor: 'text-red-400' };
   }
   
   // Default
-  return { icon: BookOpen, bgColor: 'bg-slate-100', iconColor: 'text-slate-600' };
+  return { icon: BookOpen, bgColor: 'bg-neutral-500/15', iconColor: 'text-neutral-400' };
 };
 
 // Get tags from category
@@ -111,24 +111,24 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
       <div className="mb-12">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-6 gap-4">
           <div>
-            <div className="h-8 bg-muted rounded w-48 animate-pulse mb-2"></div>
-            <div className="h-4 bg-muted rounded w-72 animate-pulse"></div>
+            <div className="h-8 bg-neutral-800 rounded w-48 animate-pulse mb-2"></div>
+            <div className="h-4 bg-neutral-800 rounded w-72 animate-pulse"></div>
           </div>
           <div className="flex gap-3">
-            <div className="h-10 bg-muted rounded w-48 animate-pulse"></div>
-            <div className="h-10 bg-muted rounded w-20 animate-pulse"></div>
+            <div className="h-10 bg-neutral-800 rounded w-48 animate-pulse"></div>
+            <div className="h-10 bg-neutral-800 rounded w-20 animate-pulse"></div>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-xl p-6 border border-border animate-pulse">
-              <div className="w-12 h-12 bg-muted rounded-xl mb-4"></div>
-              <div className="h-5 bg-muted rounded w-3/4 mb-3"></div>
-              <div className="h-4 bg-muted rounded w-full mb-2"></div>
-              <div className="h-4 bg-muted rounded w-2/3 mb-4"></div>
+            <div key={i} className="bg-neutral-900 rounded-xl p-6 border border-border animate-pulse">
+              <div className="w-12 h-12 bg-neutral-800 rounded-xl mb-4"></div>
+              <div className="h-5 bg-neutral-800 rounded w-3/4 mb-3"></div>
+              <div className="h-4 bg-neutral-800 rounded w-full mb-2"></div>
+              <div className="h-4 bg-neutral-800 rounded w-2/3 mb-4"></div>
               <div className="flex gap-2">
-                <div className="h-6 bg-muted rounded w-16"></div>
-                <div className="h-6 bg-muted rounded w-16"></div>
+                <div className="h-6 bg-neutral-800 rounded w-16"></div>
+                <div className="h-6 bg-neutral-800 rounded w-16"></div>
               </div>
             </div>
           ))}
@@ -151,16 +151,16 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -tranneutral-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search resources..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-48 bg-white"
+              className="pl-10 w-full sm:w-48 bg-neutral-900"
             />
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-auto min-w-[80px] bg-white">
+            <SelectTrigger className="w-auto min-w-[80px] bg-neutral-900">
               <div className="flex items-center gap-2">
                 <span>{selectedCategory === 'all' ? 'All' : selectedCategory}</span>
                 <Filter className="h-3 w-3 text-muted-foreground" />
@@ -191,7 +191,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
               return (
                 <div 
                   key={resource.id} 
-                  className="bg-white rounded-xl p-6 border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-200 flex flex-col group cursor-pointer"
+                  className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 hover:border-neutral-700 hover:shadow-lg transition-all duration-200 flex flex-col group cursor-pointer"
                   onClick={() => window.open(resource.url, '_blank')}
                 >
                   {/* Icon and External Link */}
@@ -199,7 +199,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
                     <div className={`w-12 h-12 rounded-xl ${bgColor} flex items-center justify-center`}>
                       <IconComponent className={`w-6 h-6 ${iconColor}`} />
                     </div>
-                    <ExternalLink className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                    <ExternalLink className="w-5 h-5 text-neutral-600 group-hover:text-neutral-400 transition-colors" />
                   </div>
                   
                   {/* Title */}
@@ -220,7 +220,7 @@ const ResourcesPreview = memo(({ resources, loading }: ResourcesPreviewProps) =>
                       <Badge
                         key={index}
                         variant="secondary"
-                        className="bg-slate-100 text-slate-600 hover:bg-slate-100 text-xs font-medium px-2.5 py-1 rounded"
+                        className="bg-neutral-800 text-neutral-400 hover:bg-neutral-800 text-xs font-medium px-2.5 py-1 rounded"
                       >
                         {tag}
                       </Badge>

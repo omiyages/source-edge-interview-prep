@@ -41,10 +41,10 @@ const Auth = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-neutral-950 to-neutral-900 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-neutral-400">Loading...</p>
         </div>
       </div>
     );
@@ -53,7 +53,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Darker Purple Gradient with Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-800 to-purple-900 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-cyan-800 to-cyan-900 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/60" />
         
         {/* Geometric Background Elements */}
@@ -163,7 +163,7 @@ const Auth = () => {
 
       {/* Auth Dialog (Signup / Sign In) */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className={`max-w-md p-0 border-0 rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto gap-0 bg-transparent [&>button]:z-10 ${dialogMode === "signup" ? "[&>button]:text-white [&>button]:hover:text-white/80" : "[&>button]:text-gray-400 [&>button]:hover:text-gray-600"}`}>
+        <DialogContent className={`max-w-md p-0 border-0 rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto gap-0 bg-transparent [&>button]:z-10 ${dialogMode === "signup" ? "[&>button]:text-white [&>button]:hover:text-white/80" : "[&>button]:text-neutral-400 [&>button]:hover:text-neutral-300"}`}>
           <DialogTitle className="sr-only">{dialogMode === "signup" ? "Create Account" : "Sign In"}</DialogTitle>
           {dialogMode === "signup" ? (
             <PublicSignupForm onSwitchToSignIn={() => setDialogMode("signin")} />
@@ -210,7 +210,7 @@ const DialogSignInForm = ({ onSwitchToSignUp, onSuccess }: { onSwitchToSignUp: (
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto rounded-2xl border-0 shadow-xl overflow-hidden">
+    <Card className="w-full max-w-md mx-auto rounded-2xl border-0 shadow-2xl shadow-black/20 overflow-hidden">
       <CardHeader className="bg-gradient-to-br from-gray-700 to-gray-900 p-8 text-center space-y-2">
         <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto">
           <LogIn className="w-7 h-7 text-white" />
@@ -223,9 +223,9 @@ const DialogSignInForm = ({ onSwitchToSignUp, onSuccess }: { onSwitchToSignUp: (
       <CardContent className="p-8">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">Email Address</label>
+            <label className="text-sm font-medium text-neutral-300">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 -tranneutral-y-1/2 w-4 h-4 text-neutral-400" />
               <Input
                 type="email"
                 placeholder="you@example.com"
@@ -238,9 +238,9 @@ const DialogSignInForm = ({ onSwitchToSignUp, onSuccess }: { onSwitchToSignUp: (
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">Password</label>
+            <label className="text-sm font-medium text-neutral-300">Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 -tranneutral-y-1/2 w-4 h-4 text-neutral-400" />
               <Input
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
@@ -252,7 +252,7 @@ const DialogSignInForm = ({ onSwitchToSignUp, onSuccess }: { onSwitchToSignUp: (
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -tranneutral-y-1/2 text-neutral-400 hover:text-neutral-300"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -279,12 +279,12 @@ const DialogSignInForm = ({ onSwitchToSignUp, onSuccess }: { onSwitchToSignUp: (
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
 
-          <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+          <div className="flex items-center justify-center gap-1.5 text-xs text-neutral-400">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Protected by Cloudflare Turnstile</span>
           </div>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-neutral-400">
             Don't have an account?{" "}
             <button 
               type="button" 

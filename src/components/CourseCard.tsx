@@ -86,9 +86,9 @@ const LeafDesigns = {
 
 const GradientColors = [
   { gradient: 'from-amber-400 to-orange-500', leafColor: 'text-amber-100' },
-  { gradient: 'from-emerald-400 to-teal-600', leafColor: 'text-emerald-100' },
+  { gradient: 'from-emerald-400 to-cyan-600', leafColor: 'text-emerald-100' },
   { gradient: 'from-cyan-400 to-blue-500', leafColor: 'text-cyan-100' },
-  { gradient: 'from-purple-400 to-indigo-600', leafColor: 'text-purple-100' },
+  { gradient: 'from-cyan-400 to-cyan-600', leafColor: 'text-cyan-100' },
   { gradient: 'from-pink-400 to-rose-500', leafColor: 'text-pink-100' },
   { gradient: 'from-lime-400 to-green-600', leafColor: 'text-lime-100' },
   { gradient: 'from-red-400 to-rose-600', leafColor: 'text-red-100' },
@@ -206,7 +206,7 @@ export const CourseCard = ({ course, onEdit, progress }: CourseCardProps) => {
 
   return (
     <div 
-      className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group h-full flex flex-col"
+      className="bg-neutral-900 rounded-xl border border-neutral-800 hover:border-neutral-700 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group h-full flex flex-col"
       onClick={handleCardClick}
       onMouseEnter={handleMouseEnter}
     >
@@ -302,7 +302,7 @@ export const CourseCard = ({ course, onEdit, progress }: CourseCardProps) => {
         )}
 
         {/* Start Learning Button */}
-        <div className="flex items-center justify-end pt-2 border-t border-slate-100 mt-auto">
+        <div className="flex items-center justify-end pt-2 border-t border-neutral-800 mt-auto">
           <Button
             variant="ghost"
             size="sm"

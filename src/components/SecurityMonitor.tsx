@@ -77,22 +77,22 @@ export const SecurityMonitor = () => {
       case 'admin_action':
         return <Shield className="w-4 h-4 text-blue-500" />;
       default:
-        return <Info className="w-4 h-4 text-gray-500" />;
+        return <Info className="w-4 h-4 text-neutral-400" />;
     }
   };
 
   const getSeverityColor = (severity: SecurityEvent['severity']) => {
     switch (severity) {
       case 'critical':
-        return 'bg-red-100 text-red-800 border-red-300';
+        return 'bg-red-900/40 text-red-400 border-red-800';
       case 'high':
-        return 'bg-red-50 text-red-700 border-red-200';
+        return 'bg-red-900/20 text-red-400 border-red-800';
       case 'medium':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
+        return 'bg-orange-900/20 text-orange-400 border-orange-800';
       case 'low':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-900/20 text-blue-400 border-blue-800';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-neutral-800/50 text-neutral-300 border-neutral-700';
     }
   };
 
@@ -100,16 +100,16 @@ export const SecurityMonitor = () => {
     switch (type) {
       case 'auth_failure':
       case 'xss_attempt':
-        return 'bg-red-50 text-red-700 border-red-200';
+        return 'bg-red-900/20 text-red-400 border-red-800';
       case 'rate_limit_exceeded':
       case 'suspicious_activity':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
+        return 'bg-orange-900/20 text-orange-400 border-orange-800';
       case 'invalid_input':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+        return 'bg-yellow-900/20 text-yellow-400 border-yellow-800';
       case 'admin_action':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-900/20 text-blue-400 border-blue-800';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-neutral-800/50 text-neutral-300 border-neutral-700';
     }
   };
 
@@ -132,7 +132,7 @@ export const SecurityMonitor = () => {
             <Shield className="w-5 h-5" />
             Security Monitor ({events.length})
             {getCriticalEventsCount() > 0 && (
-              <Badge className="bg-red-100 text-red-800 border-red-300">
+              <Badge className="bg-red-900/40 text-red-400 border-red-800">
                 {getCriticalEventsCount()} Critical
               </Badge>
             )}
@@ -216,9 +216,9 @@ export const SecurityMonitor = () => {
       <CardContent>
         {events.length === 0 ? (
           <div className="text-center py-8">
-            <Shield className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">No security events</h3>
-            <p className="text-gray-500">Security events will appear here when they occur.</p>
+            <Shield className="w-16 h-16 mx-auto text-neutral-400 mb-4" />
+            <h3 className="text-lg font-semibold text-neutral-400 mb-2">No security events</h3>
+            <p className="text-neutral-400">Security events will appear here when they occur.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -226,9 +226,9 @@ export const SecurityMonitor = () => {
               <div
                 key={index}
                 className={`flex items-start gap-3 p-3 rounded-lg border ${
-                  event.severity === 'critical' ? 'bg-red-50 border-red-200' :
-                  event.severity === 'high' ? 'bg-orange-50 border-orange-200' :
-                  'bg-gray-50 border-gray-200'
+                  event.severity === 'critical' ? 'bg-red-900/20 border-red-800' :
+                  event.severity === 'high' ? 'bg-orange-900/20 border-orange-800' :
+                  'bg-neutral-800/50 border-neutral-700'
                 }`}
               >
                 {getEventIcon(event.type)}
@@ -240,21 +240,21 @@ export const SecurityMonitor = () => {
                     <Badge className={`text-xs ${getSeverityColor(event.severity)}`}>
                       {event.severity.toUpperCase()}
                     </Badge>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-neutral-400">
                       {event.timestamp.toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 mb-1">{event.details}</p>
+                  <p className="text-sm text-neutral-300 mb-1">{event.details}</p>
                   {event.userId && (
-                    <p className="text-xs text-gray-500">User: {event.userId}</p>
+                    <p className="text-xs text-neutral-400">User: {event.userId}</p>
                   )}
                   {event.metadata && Object.keys(event.metadata).length > 0 && (
-                    <details className="text-xs text-gray-500 mt-1">
-                      <summary className="cursor-pointer hover:text-gray-700">
+                    <details className="text-xs text-neutral-400 mt-1">
+                      <summary className="cursor-pointer hover:text-neutral-300">
                         <Eye className="w-3 h-3 inline mr-1" />
                         Additional Details
                       </summary>
-                      <pre className="mt-1 p-2 bg-gray-100 rounded text-xs overflow-auto">
+                      <pre className="mt-1 p-2 bg-neutral-800 rounded text-xs overflow-auto">
                         {JSON.stringify(event.metadata, null, 2)}
                       </pre>
                     </details>

@@ -229,10 +229,10 @@ export const UpcomingInterviews: React.FC = () => {
     const diffMs = interviewDate.getTime() - now.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
     
-    if (diffHours < 0) return 'bg-gray-100 text-gray-800';
-    if (diffHours <= 24) return 'bg-red-100 text-red-800';
-    if (diffHours <= 72) return 'bg-orange-100 text-orange-800';
-    return 'bg-green-100 text-green-800';
+    if (diffHours < 0) return 'bg-neutral-800 text-neutral-200';
+    if (diffHours <= 24) return 'bg-red-900/40 text-red-400';
+    if (diffHours <= 72) return 'bg-orange-900/40 text-orange-400';
+    return 'bg-green-900/40 text-green-400';
   };
 
   const filteredInterviews = getFilteredInterviews();
@@ -241,10 +241,10 @@ export const UpcomingInterviews: React.FC = () => {
     return (
       <div className="space-y-4">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-neutral-700 rounded w-1/4 mb-4"></div>
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              <div key={i} className="h-24 bg-neutral-700 rounded"></div>
             ))}
           </div>
         </div>

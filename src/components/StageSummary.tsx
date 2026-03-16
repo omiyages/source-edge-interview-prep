@@ -94,7 +94,7 @@ export const StageSummary = memo(({
   // Show loading state while generating for the first time
   if (isLoading || (!summary && stageInformation && !hasTriggeredGeneration.current)) {
     return (
-      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+      <div className="mb-6 flex items-center gap-2 text-sm text-neutral-400">
         <Loader2 className="w-4 h-4 animate-spin" />
         <span>Generating summary...</span>
       </div>
@@ -118,10 +118,10 @@ export const StageSummary = memo(({
     <div className="mb-6">
       {/* TL;DR Section */}
       {hasTldr && (
-        <div className="mb-5 bg-gray-50 rounded-xl p-5 border border-gray-100">
+        <div className="mb-5 bg-neutral-800/50 rounded-xl p-5 border border-neutral-800">
           <div className="flex items-center gap-2 mb-4">
             <span className="w-2 h-2 rounded-full bg-primary"></span>
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
               At a Glance (TL;DR)
             </h4>
           </div>
@@ -130,7 +130,7 @@ export const StageSummary = memo(({
               <li key={index} className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <span 
-                  className="text-gray-700 leading-relaxed"
+                  className="text-neutral-300 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: formatBoldText(point) }}
                 />
               </li>
@@ -141,12 +141,12 @@ export const StageSummary = memo(({
 
       {/* Bottom Two-Column Section */}
       {(hasTestingFocus || hasPitfalls) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-neutral-800">
           {/* Interviewer is Looking for */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-2">Interviewer is Looking for...</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-2">Interviewer is Looking for...</h4>
             {summary.testing_focus_quote && (
-              <p className="text-gray-500 italic text-sm leading-relaxed mb-2">
+              <p className="text-neutral-400 italic text-sm leading-relaxed mb-2">
                 "{summary.testing_focus_quote}"
               </p>
             )}
@@ -154,8 +154,8 @@ export const StageSummary = memo(({
               <ul className="space-y-1.5">
                 {summary.testing_focus_points.map((point, index) => (
                   <li key={index} className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0 mt-2"></span>
-                    <span className="text-sm text-gray-600">{point}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-500 flex-shrink-0 mt-2"></span>
+                    <span className="text-sm text-neutral-400">{point}</span>
                   </li>
                 ))}
               </ul>
@@ -170,7 +170,7 @@ export const StageSummary = memo(({
                 {summary.common_pitfalls.map((pitfall, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0 mt-2"></span>
-                    <span className="text-sm text-gray-600">{pitfall}</span>
+                    <span className="text-sm text-neutral-400">{pitfall}</span>
                   </li>
                 ))}
               </ul>
@@ -186,5 +186,5 @@ StageSummary.displayName = 'StageSummary';
 
 // Helper function to format bold text (words between ** markers)
 function formatBoldText(text: string): string {
-  return text.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>');
+  return text.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
 }

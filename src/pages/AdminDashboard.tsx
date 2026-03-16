@@ -161,7 +161,7 @@ const AdminDashboard = () => {
   if (authLoading) {
     console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-neutral-950">
         <NavigationHeader />
         <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
         <div className="text-center">
@@ -182,7 +182,7 @@ const AdminDashboard = () => {
   if (!profile) {
     console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-neutral-950">
         <NavigationHeader />
         <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
         <div className="text-center">
@@ -209,25 +209,25 @@ const AdminDashboard = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'approved': return 'bg-green-900/40 text-green-400';
+      case 'rejected': return 'bg-red-900/40 text-red-400';
+      case 'pending': return 'bg-yellow-900/40 text-yellow-400';
+      default: return 'bg-neutral-800 text-neutral-300';
     }
   };
 
   const getRoleTypeColor = (roleType: string) => {
     switch (roleType) {
-      case 'Backend Engineer': return 'bg-blue-100 text-blue-800';
-      case 'Frontend Engineer': return 'bg-green-100 text-green-800';
-      case 'SRE/DevOps': return 'bg-orange-100 text-orange-800';
-      case 'Engineering Manager': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Backend Engineer': return 'bg-blue-900/40 text-blue-400';
+      case 'Frontend Engineer': return 'bg-green-900/40 text-green-400';
+      case 'SRE/DevOps': return 'bg-orange-900/40 text-orange-400';
+      case 'Engineering Manager': return 'bg-cyan-900/40 text-cyan-400';
+      default: return 'bg-neutral-800 text-neutral-300';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         {/* Header */}
@@ -409,7 +409,7 @@ const AdminDashboard = () => {
                   <EmptyState
                     title="No pending questions"
                     description="All questions have been reviewed."
-                    icon={<Clock className="w-16 h-16 mx-auto text-gray-400" />}
+                    icon={<Clock className="w-16 h-16 mx-auto text-neutral-400" />}
                   />
                 )}
 
@@ -419,7 +419,7 @@ const AdminDashboard = () => {
                       <Card key={question.id} className="hover:shadow-lg transition-shadow duration-200">
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-2 mb-2">
-                            <Badge className="bg-yellow-100 text-yellow-800">
+                            <Badge className="bg-yellow-900/40 text-yellow-400">
                               <Clock className="w-3 h-3 mr-1" />
                               Pending
                             </Badge>
@@ -433,24 +433,24 @@ const AdminDashboard = () => {
                         </CardHeader>
                         <CardContent className="pt-0">
                           <div className="space-y-3">
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-neutral-400">
                               <strong>Company:</strong> {question.company}
                             </div>
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-neutral-400">
                               <strong>Category:</strong> {question.category}
                             </div>
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-neutral-400">
                               <strong>Stage:</strong> {question.interview_stage}
                             </div>
                             {question.additional_context && (
-                              <div className="p-3 bg-gray-50 rounded-md text-sm">
+                              <div className="p-3 bg-neutral-950 rounded-md text-sm">
                                 {question.additional_context}
                               </div>
                             )}
                             <div className="flex gap-2 pt-2">
                               <Button
                                 size="sm"
-                                className="bg-purple-gradient hover:shadow-lg hover:shadow-purple-500/25 hover:-translate-y-0.5 transition-all duration-300 text-white font-medium"
+                                className="bg-purple-gradient hover:shadow-lg hover:shadow-cyan-500/25 hover:-tranneutral-y-0.5 transition-all duration-300 text-white font-medium"
                                 onClick={() => approveQuestionMutation.mutate({ 
                                   questionId: question.id, 
                                   status: 'approved' 
@@ -505,7 +505,7 @@ const AdminDashboard = () => {
       )}
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           © 2026 Omiyages. All rights reserved.
         </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { LazyRichTextEditor as RichTextEditor } from "@/components/ui/lazy-rich-text-editor";
 import { Plus, Trash2, Save } from "lucide-react";
 import { StageTemplateDialog } from "@/components/StageTemplateDialog";
 import { StageTemplateSelector } from "@/components/StageTemplateSelector";

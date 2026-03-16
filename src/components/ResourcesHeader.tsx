@@ -35,7 +35,7 @@ export const ResourcesHeader = ({
                 Add Resource
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-white">
+            <DialogContent className="sm:max-w-md bg-neutral-900">
               <DialogHeader>
                 <DialogTitle>Create New Resource</DialogTitle>
               </DialogHeader>

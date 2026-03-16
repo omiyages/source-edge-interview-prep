@@ -53,7 +53,7 @@ export const RolesSidebarFilters = ({
     (isAdmin && filters.status !== 'all');
 
   return (
-    <div className="bg-white rounded-lg border border-border shadow-sm p-4 sticky top-4">
+    <div className="bg-neutral-900 rounded-lg border border-border shadow-sm p-4 sticky top-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Menu className="w-4 h-4" />
@@ -75,7 +75,7 @@ export const RolesSidebarFilters = ({
       <div className="mb-6">
         <h3 className="text-sm font-medium text-foreground mb-3">Company</h3>
         <Select value={filters.company} onValueChange={onCompanyChange}>
-          <SelectTrigger className="w-full border-gray-200 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+          <SelectTrigger className="w-full border-neutral-700 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
             <SelectValue placeholder="All Companies" />
           </SelectTrigger>
           <SelectContent>
@@ -100,7 +100,7 @@ export const RolesSidebarFilters = ({
                   id={`role-type-${roleType}`}
                   checked={filters.roleTypes.includes(roleType)}
                   onCheckedChange={() => onRoleTypeToggle(roleType)}
-                  className="border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
+                  className="border-neutral-600 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
                 <Label
                   htmlFor={`role-type-${roleType}`}
@@ -126,7 +126,7 @@ export const RolesSidebarFilters = ({
                   id={`loc-${location}`}
                   checked={filters.locations.includes(location)}
                   onCheckedChange={() => onLocationToggle(location)}
-                  className="border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
+                  className="border-neutral-600 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
                 <Label
                   htmlFor={`loc-${location}`}
@@ -152,7 +152,7 @@ export const RolesSidebarFilters = ({
                   id={`style-${style}`}
                   checked={filters.styles.includes(style)}
                   onCheckedChange={() => onStyleToggle(style)}
-                  className="border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
+                  className="border-neutral-600 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
                 <Label
                   htmlFor={`style-${style}`}

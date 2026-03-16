@@ -4,28 +4,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Source Edge Database</title>
-    <meta name="description" content="An interview preparation platform designed to help you ace your upcoming interview through study material, courses, resources, and past questions asked." />
-    <meta name="author" content="Source Edge" />
+    <title>Omiyages</title>
+    <meta name="description" content="Omiyages is an interview preparation platform for tech roles in Japan with real questions, structured courses, and job-focused resources." />
+    <meta name="author" content="Omiyages" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
 
-    <!-- DNS prefetch for potential external resources -->
-    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <!-- Preconnect to Supabase (auth + data fetching on every page) -->
+    <link rel="preconnect" href="https://satshobhbkjptsbmfsia.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://satshobhbkjptsbmfsia.supabase.co" />
 
-    <!-- Inline critical CSS to eliminate render-blocking -->
+    <!-- Inline critical CSS — matches dark theme to prevent FOUC -->
     <style>
-      /* Critical above-the-fold styles inlined */
-      *,::before,::after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::before,::after{--tw-content:''}html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,"Consolas","Liberation Mono","Courier New",monospace;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,[type='button'],[type='reset'],[type='submit']{-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type='search']{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role="button"]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]{display:none}:root{--background:0 0% 100%;--foreground:222 84% 4.9%;--card:0 0% 100%;--card-foreground:222 84% 4.9%;--popover:0 0% 100%;--popover-foreground:222 84% 4.9%;--primary:260 95% 45%;--primary-foreground:210 40% 98%;--secondary:210 40% 96%;--secondary-foreground:222 84% 4.9%;--muted:210 40% 96%;--muted-foreground:215 16% 46.9%;--accent:210 40% 96%;--accent-foreground:222 84% 4.9%;--destructive:0 84.2% 60.2%;--destructive-foreground:210 40% 98%;--border:214 32% 91%;--input:214 32% 91%;--ring:260 95% 45%;--radius:0.5rem;--sidebar-background:260 25% 96%;--sidebar-foreground:260 5.3% 26.1%;--sidebar-primary:260 95% 45%;--sidebar-primary-foreground:0 0% 98%;--sidebar-accent:260 25% 93%;--sidebar-accent-foreground:260 95% 25%;--sidebar-border:260 25% 88%;--sidebar-ring:260 95% 45%}*{border-color:hsl(var(--border))}body{background-color:hsl(var(--background));color:hsl(var(--foreground));font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-weight:400;font-size:16px;line-height:1.5}h1,h2,h3,h4,h5,h6{font-weight:600}p,span,div{font-weight:400}.text-xs{font-size:14px!important}.text-sm{font-size:14px!important}.text-base{font-size:16px!important}.text-lg{font-size:18px!important}
+      *,::before,::after{box-sizing:border-box;border-width:0;border-style:solid}body{margin:0}img,svg,video{display:block;max-width:100%;height:auto}:root{--background:0 0% 17%;--foreground:0 0% 89%;--card:0 0% 21%;--card-foreground:0 0% 89%;--primary:181 44% 76%;--primary-foreground:0 0% 10%;--border:0 0% 28%;--muted:0 0% 25%;--muted-foreground:0 0% 58%;--ring:270 36% 71%;--radius:0.5rem}*{border-color:hsl(var(--border))}body{background-color:hsl(var(--background));color:hsl(var(--foreground));font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-weight:400;font-size:16px;line-height:1.5}
     </style>
 
     <!-- OpenGraph and Twitter meta tags -->
-    <meta property="og:title" content="Source Edge Database" />
-    <meta property="og:description" content="An interview preparation platform designed to help you ace your upcoming interview through study material, courses, resources, and past questions asked." />
+    <meta property="og:title" content="Omiyages" />
+    <meta property="og:description" content="Omiyages is an interview preparation platform for tech roles in Japan with real questions, structured courses, and job-focused resources." />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Omiyages" />
+    <meta property="og:url" content="https://omiyages.com" />
     <meta property="og:image" content="/omiyages-social-image.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@sourceedge" />
+    <meta name="twitter:title" content="Omiyages" />
+    <meta name="twitter:description" content="Omiyages is an interview preparation platform for tech roles in Japan with real questions, structured courses, and job-focused resources." />
+    <meta name="twitter:site" content="@omiyages" />
     <meta name="twitter:image" content="/omiyages-social-image.png" />
   </head>
 

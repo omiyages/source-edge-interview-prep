@@ -26,15 +26,15 @@ export const QuestionList = ({
   if (loading) {
     return (
       <div className="text-center py-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-sm text-gray-500">Loading questions...</p>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-sm text-muted-foreground">Loading questions...</p>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <p className="text-xs text-gray-500 text-center py-4">
+      <p className="text-xs text-muted-foreground text-center py-4">
         No questions found. Try adjusting your search or filters.
       </p>
     );
@@ -50,20 +50,20 @@ export const QuestionList = ({
             className="mt-1"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-900 line-clamp-1 mb-1">
+            <p className="text-xs font-medium text-foreground line-clamp-1 mb-1">
               {question.question}
             </p>
             <div className="flex flex-wrap gap-1 text-xs">
-              <span className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">
+              <span className="bg-blue-900/40 text-blue-400 px-1 py-0.5 rounded text-xs">
                 {question.company}
               </span>
-              <span className="bg-green-100 text-green-800 px-1 py-0.5 rounded text-xs">
+              <span className="bg-green-900/40 text-green-400 px-1 py-0.5 rounded text-xs">
                 {question.role}
               </span>
-              <span className="bg-purple-100 text-purple-800 px-1 py-0.5 rounded text-xs">
+              <span className="bg-cyan-900/40 text-cyan-300 px-1 py-0.5 rounded text-xs">
                 {question.category}
               </span>
-              <span className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs">
+              <span className="bg-neutral-800 text-neutral-400 px-1 py-0.5 rounded text-xs">
                 {question.interview_stage}
               </span>
             </div>

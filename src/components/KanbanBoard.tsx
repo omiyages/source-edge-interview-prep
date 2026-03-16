@@ -29,15 +29,15 @@ interface FilterOptions {
 }
 
 const KANBAN_STAGES = [
-  { id: 'Interested', title: 'Interested', color: 'bg-blue-100 text-blue-800' },
-  { id: 'Scheduled', title: 'Scheduled', color: 'bg-yellow-100 text-yellow-800' },
-  { id: 'CV Sent', title: 'CV Sent', color: 'bg-orange-100 text-orange-800' },
-  { id: '1st Interview', title: '1st Interview', color: 'bg-purple-100 text-purple-800' },
-  { id: '2nd Interview', title: '2nd Interview', color: 'bg-indigo-100 text-indigo-800' },
-  { id: '3rd Interview+', title: '3rd Interview+', color: 'bg-pink-100 text-pink-800' },
-  { id: 'Debrief', title: 'Debrief', color: 'bg-cyan-100 text-cyan-800' },
-  { id: 'Offer', title: 'Offer', color: 'bg-green-100 text-green-800' },
-  { id: 'Offer Accepted', title: 'Offer Accepted', color: 'bg-emerald-100 text-emerald-800' },
+  { id: 'Interested', title: 'Interested', color: 'bg-blue-900/40 text-blue-400' },
+  { id: 'Scheduled', title: 'Scheduled', color: 'bg-yellow-900/40 text-yellow-400' },
+  { id: 'CV Sent', title: 'CV Sent', color: 'bg-orange-900/40 text-orange-400' },
+  { id: '1st Interview', title: '1st Interview', color: 'bg-cyan-900/40 text-cyan-400' },
+  { id: '2nd Interview', title: '2nd Interview', color: 'bg-indigo-900/40 text-indigo-400' },
+  { id: '3rd Interview+', title: '3rd Interview+', color: 'bg-pink-900/40 text-pink-400' },
+  { id: 'Debrief', title: 'Debrief', color: 'bg-cyan-900/40 text-cyan-400' },
+  { id: 'Offer', title: 'Offer', color: 'bg-green-900/40 text-green-400' },
+  { id: 'Offer Accepted', title: 'Offer Accepted', color: 'bg-emerald-900/40 text-emerald-400' },
 ];
 
 const STAGE_IDS = KANBAN_STAGES.map(s => s.id);
@@ -345,7 +345,7 @@ export const KanbanBoard: React.FC = () => {
       return 'bg-red-50 border-2 border-red-200 shadow-sm';
     if (user.upcoming_interview_name && user.upcoming_interview_date)
       return 'bg-green-50 border-2 border-green-200 shadow-sm';
-    return 'bg-white border-2 border-gray-200 shadow-sm';
+    return 'bg-neutral-900 border-2 border-neutral-700 shadow-sm';
   };
 
   const exportToCSV = async () => {
@@ -453,7 +453,7 @@ export const KanbanBoard: React.FC = () => {
         </div>
 
         {/* Filter Section */}
-        <div className="bg-gray-50 p-4 rounded-lg border">
+        <div className="bg-neutral-800/50 p-4 rounded-lg border">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4" />
@@ -487,7 +487,7 @@ export const KanbanBoard: React.FC = () => {
               <div className="space-y-2">
                 <Label htmlFor="search">Search</Label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -tranneutral-y-1/2 w-4 h-4 text-neutral-400" />
                   <Input
                     id="search"
                     placeholder="Name or email..."
@@ -582,7 +582,7 @@ export const KanbanBoard: React.FC = () => {
 
         {/* Filter Summary */}
         {showFilters && (
-          <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+          <div className="mt-4 flex items-center justify-between text-sm text-neutral-400">
             <div className="flex items-center gap-4">
               <span>Showing {filteredColumns.reduce((t, c) => t + c.users.length, 0)} users</span>
               <span>Total: {columns.reduce((t, c) => t + c.users.length, 0)} users</span>
@@ -604,7 +604,7 @@ export const KanbanBoard: React.FC = () => {
         <div className="flex gap-4 overflow-x-auto pb-4">
           {filteredColumns.map((column) => (
             <div key={column.id} className="flex-shrink-0 w-80">
-              <Card className="h-full flex flex-col max-h-[calc(100vh-200px)] border-2 border-gray-100">
+              <Card className="h-full flex flex-col max-h-[calc(100vh-200px)] border-2 border-neutral-800">
                 <CardHeader className="pb-3 flex-shrink-0">
                   <CardTitle className="flex items-center justify-between">
                     <span className="text-sm font-medium">{column.title}</span>
@@ -617,7 +617,7 @@ export const KanbanBoard: React.FC = () => {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`h-full overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 ${
+                        className={`h-full overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-neutral-600 scrollbar-track-neutral-800 hover:scrollbar-thumb-neutral-500 ${
                           snapshot.isDraggingOver ? 'bg-muted/50 rounded-md' : ''
                         }`}
                         style={DROPPABLE_STYLE}
@@ -629,7 +629,7 @@ export const KanbanBoard: React.FC = () => {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`kanban-user-card p-3 ${getCardColor(user)} rounded-lg cursor-pointer hover:shadow-lg hover:border-gray-300 transition-all duration-200 ${
+                                className={`kanban-user-card p-3 ${getCardColor(user)} rounded-lg cursor-pointer hover:shadow-lg hover:border-neutral-600 transition-all duration-200 ${
                                   snapshot.isDragging ? 'shadow-xl scale-105' : ''
                                 }`}
                                 onClick={() => { setSelectedUser(user); setIsModalOpen(true); }}
@@ -670,16 +670,16 @@ export const KanbanBoard: React.FC = () => {
                                   </div>
                                 </div>
 
-                                {user.position && <div className="text-xs text-gray-500 mb-1">{user.position}</div>}
+                                {user.position && <div className="text-xs text-neutral-400 mb-1">{user.position}</div>}
 
                                 <div className="flex flex-wrap gap-1 mb-2">
                                   {user.incomplete_tasks_count && Number(user.incomplete_tasks_count) > 0 && (
-                                    <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
+                                    <Badge variant="destructive" className="text-xs bg-red-900/40 text-red-400 border-red-800">
                                       {user.incomplete_tasks_count} Task{Number(user.incomplete_tasks_count) !== 1 ? 's' : ''}
                                     </Badge>
                                   )}
                                   {user.upcoming_interview_name && user.upcoming_interview_date && (
-                                    <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
+                                    <Badge variant="destructive" className="text-xs bg-red-900/40 text-red-400 border-red-800">
                                       Interview
                                     </Badge>
                                   )}

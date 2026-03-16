@@ -149,7 +149,7 @@ const Resources = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-neutral-950 flex flex-col">
         <NavigationHeader />
         <div className="container mx-auto px-4 py-8 flex-1">
         <ResourcesHeader 
@@ -180,7 +180,7 @@ const Resources = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         <ResourcesHeader 
@@ -208,7 +208,7 @@ const Resources = () => {
           <EmptyState
             title={selectedCategory === 'all' ? 'No resources yet' : 'No resources in this category'}
             description={selectedCategory === 'all' ? 'Create the first resource to kick things off.' : 'Try a different category or add a new resource.'}
-            icon={<FolderX className="w-16 h-16 mx-auto text-gray-400" />}
+            icon={<FolderX className="w-16 h-16 mx-auto text-neutral-400" />}
           />
         )}
 
@@ -228,7 +228,7 @@ const Resources = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           © 2026 Omiyages. All rights reserved.
         </div>

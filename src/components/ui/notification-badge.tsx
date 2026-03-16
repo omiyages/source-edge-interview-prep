@@ -1,4 +1,4 @@
-// ABOUTME: Purple notification badge component for displaying counts
+// ABOUTME: Teal notification badge component for displaying counts
 // ABOUTME: Positioned at top-right of parent element using absolute positioning
 
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ export const NotificationBadge = ({
       className={cn(
         "absolute -top-2 -right-2 flex items-center justify-center",
         "min-w-5 h-5 px-1.5 py-0.5",
-        "bg-purple-500 text-white text-xs font-medium rounded-full",
+        "bg-teal-500 text-white text-xs font-medium rounded-full",
         "ring-2 ring-background",
         "animate-in fade-in-0 zoom-in-75 duration-200",
         className

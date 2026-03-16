@@ -322,7 +322,7 @@ const UserDashboard = () => {
   // Show loading state while authentication is being resolved
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-neutral-950">
         <NavigationHeader />
         <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
           <div className="text-center">
@@ -337,7 +337,7 @@ const UserDashboard = () => {
   // Don't render anything if user is admin (will redirect)
   if (isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-neutral-950">
         <NavigationHeader />
         <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
           <div className="text-center">
@@ -352,7 +352,7 @@ const UserDashboard = () => {
   const userName = profile?.full_name?.split(' ')[0] || profile?.email?.split('@')[0] || 'Candidate';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         
@@ -368,19 +368,19 @@ const UserDashboard = () => {
 
         {/* Current Course Card */}
         {coursesLoading ? (
-          <Card className="mb-8 border-gray-200">
+          <Card className="mb-8 border-neutral-700">
             <CardContent className="p-6">
               <LoadingSkeleton lines={3} />
             </CardContent>
           </Card>
         ) : (
-          <Card className="mb-8 overflow-hidden border-gray-200 bg-white rounded-2xl shadow-sm">
+          <Card className="mb-8 overflow-hidden border-neutral-700 bg-neutral-900 rounded-2xl shadow-sm">
             <CardContent className="p-0">
               <div className="flex flex-col md:flex-row">
                 {/* Course Image - Softer design */}
-                <div className="md:w-52 h-36 md:h-auto bg-gradient-to-br from-gray-50 to-gray-100 flex-shrink-0 border-r border-gray-100">
+                <div className="md:w-52 h-36 md:h-auto bg-gradient-to-br from-neutral-800 to-neutral-900 flex-shrink-0 border-r border-neutral-800">
                   <div className="w-full h-full flex items-center justify-center p-6">
-                    <div className="w-16 h-16 rounded-xl bg-white shadow-sm border border-gray-200 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-xl bg-neutral-900 shadow-sm border border-neutral-700 flex items-center justify-center">
                       <BookOpen className="w-8 h-8 text-primary/70" />
                     </div>
                   </div>
@@ -394,38 +394,38 @@ const UserDashboard = () => {
                         <>
                           <div className="flex items-center gap-2 mb-2">
                             {primaryCourse.progressPercentage > 0 ? (
-                              <Badge className="bg-emerald-50 text-emerald-700 border-0 px-2.5 py-0.5 text-xs font-medium">
+                              <Badge className="bg-emerald-900/40 text-emerald-400 border-0 px-2.5 py-0.5 text-xs font-medium">
                                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 inline-block"></span>
                                 In Progress
                               </Badge>
                             ) : (
-                              <Badge className="bg-gray-100 text-gray-600 border-0 px-2.5 py-0.5 text-xs font-medium">
+                              <Badge className="bg-neutral-800 text-neutral-400 border-0 px-2.5 py-0.5 text-xs font-medium">
                                 Not Started
                               </Badge>
                             )}
                           </div>
-                          <h2 className="text-xl font-bold text-gray-900 mb-3">
+                          <h2 className="text-xl font-bold text-neutral-100 mb-3">
                             {primaryCourse.courses?.title || 'Course'}
                           </h2>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500">Course Progress</span>
-                              <span className="text-gray-700 font-medium">
+                              <span className="text-neutral-400">Course Progress</span>
+                              <span className="text-neutral-300 font-medium">
                                 {primaryCourse.progressPercentage}% ({primaryCourse.completedStages}/{primaryCourse.totalStages} lessons)
                               </span>
                             </div>
-                            <Progress value={primaryCourse.progressPercentage} className="h-2 bg-gray-100" />
+                            <Progress value={primaryCourse.progressPercentage} className="h-2 bg-neutral-800" />
                           </div>
                         </>
                       ) : (
                         <>
-                          <Badge className="bg-gray-100 text-gray-600 border-0 px-2.5 py-0.5 text-xs font-medium mb-2">
+                          <Badge className="bg-neutral-800 text-neutral-400 border-0 px-2.5 py-0.5 text-xs font-medium mb-2">
                             No Course Assigned
                           </Badge>
-                          <h2 className="text-xl font-bold text-gray-900 mb-2">
+                          <h2 className="text-xl font-bold text-neutral-100 mb-2">
                             Get Started with Your Interview Prep
                           </h2>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-neutral-400">
                             Browse available courses to begin your journey.
                           </p>
                         </>
@@ -455,7 +455,7 @@ const UserDashboard = () => {
               <h2 className="text-xl font-semibold text-foreground">Saved Questions</h2>
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -tranneutral-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search saved items..."
                     value={searchQuery}
@@ -685,7 +685,7 @@ const UserDashboard = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Next Session</span>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                    <Badge variant="outline" className="bg-blue-900/40 text-blue-400 border-blue-800">
                       None Scheduled
                     </Badge>
                   </div>
@@ -697,7 +697,7 @@ const UserDashboard = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           © 2026 Omiyages. All rights reserved.
         </div>

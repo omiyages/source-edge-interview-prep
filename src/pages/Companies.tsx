@@ -23,7 +23,7 @@ const Companies: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         {/* Header */}
@@ -55,32 +55,32 @@ const Companies: React.FC = () => {
               
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-red-600 transition-colors">
+                  <h3 className="text-xl font-bold text-neutral-100 group-hover:text-red-600 transition-colors">
                     {company.name}
                   </h3>
                 </div>
                 
-                <p className="text-gray-600 mb-4 line-clamp-3">
+                <p className="text-neutral-400 mb-4 line-clamp-3">
                   {company.description}
                 </p>
                 
                 <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-sm text-neutral-400">
                     <Building2 className="w-4 h-4" />
                     <span>{company.industry}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-sm text-neutral-400">
                     <Globe className="w-4 h-4" />
                     <span>{company.location}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-sm text-neutral-400">
                     <Users className="w-4 h-4" />
                     <span>Founded {company.founded}</span>
                   </div>
                 </div>
                 
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Divisions:</p>
+                  <p className="text-sm font-medium text-neutral-300 mb-2">Divisions:</p>
                   <div className="flex flex-wrap gap-1">
                     {company.divisions.map((division, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
@@ -110,7 +110,7 @@ const Companies: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           © 2026 Omiyages. All rights reserved.
         </div>

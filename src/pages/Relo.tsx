@@ -333,7 +333,7 @@ const Relo = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto py-8 px-4 max-w-7xl flex-1">
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Relocation to Tokyo Guide' }]} className="mb-4" />
@@ -716,35 +716,35 @@ const Relo = () => {
                       <span className="text-sm text-muted-foreground">Breakfast</span>
                       <span className="font-medium">{formatCurrency(peopleCount === "1" ? 15000 : 30000)}</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 500 : 1000)}</span>
+                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 500 : 1000)}</span>
                   </div>
                   <div className="flex flex-col">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Lunch</span>
                       <span className="font-medium">{formatCurrency(peopleCount === "1" ? 30000 : 60000)}</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 1000 : 2000)}</span>
+                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 1000 : 2000)}</span>
                   </div>
                   <div className="flex flex-col">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Dinner</span>
                       <span className="font-medium">{formatCurrency(peopleCount === "1" ? 30000 : 60000)}</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 1000 : 2000)}</span>
+                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 1000 : 2000)}</span>
                   </div>
                   <div className="flex flex-col">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Coffee</span>
                       <span className="font-medium">{formatCurrency(peopleCount === "1" ? 15000 : 30000)}</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 500 : 1000)}</span>
+                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 500 : 1000)}</span>
                   </div>
                   <div className="flex flex-col">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Transportation</span>
                       <span className="font-medium">{formatCurrency(peopleCount === "1" ? 12000 : 24000)}</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 400 : 800)}</span>
+                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 400 : 800)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center font-semibold">
@@ -770,7 +770,7 @@ const Relo = () => {
                       <span className="text-sm text-muted-foreground">Nice Dinner/Drinking x4</span>
                       <span className="font-medium">{formatCurrency(peopleCount === "1" ? 20000 : 40000)}</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-auto">Each Time: {formatCurrency(peopleCount === "1" ? 5000 : 10000)}</span>
+                    <span className="text-xs text-neutral-400 ml-auto">Each Time: {formatCurrency(peopleCount === "1" ? 5000 : 10000)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Movie Theater</span>
@@ -852,7 +852,7 @@ const Relo = () => {
                           <div className="text-xs text-muted-foreground mt-1">
                             Monthly: {formatCurrency(year1Breakdown.monthlyTakeHome - monthlyExpenses)}
                           </div>
-                          <div className="text-xs text-gray-400 mt-2">
+                          <div className="text-xs text-neutral-400 mt-2">
                             {formatCurrency(year1Breakdown.takeHomeSalary)} - {formatCurrency(annualExpenses)} = {formatCurrency(savings)}
                           </div>
                         </>
@@ -902,7 +902,7 @@ const Relo = () => {
                           <div className="text-xs text-muted-foreground mt-1">
                             Monthly: {formatCurrency(year2Breakdown.monthlyTakeHome - monthlyExpenses)}
                           </div>
-                          <div className="text-xs text-gray-400 mt-2">
+                          <div className="text-xs text-neutral-400 mt-2">
                             {formatCurrency(year2Breakdown.takeHomeSalary)} - {formatCurrency(annualExpenses)} = {formatCurrency(savings)}
                           </div>
                         </>
@@ -1025,10 +1025,10 @@ const Relo = () => {
                             <span className="font-medium">{formatCurrency(Math.round(totalBase))}</span>
                           </div>
                           <div className="text-xs text-right mt-1 space-y-0.5">
-                            <div className="text-purple-600">
+                            <div className="text-cyan-500">
                               Basic salary (80%): {formatCurrency(Math.round(basicSalaryPerMonth * 12))}
                             </div>
-                            <div className="text-gray-400">
+                            <div className="text-neutral-400">
                               Discretionary (20%): {formatCurrency(Math.round(discretionaryPerMonth * 12))}
                             </div>
                           </div>
@@ -1038,7 +1038,7 @@ const Relo = () => {
                             <span className="text-sm text-muted-foreground">Annual Bonus</span>
                             <span className="font-medium">{formatCurrency(Math.round(annualBonus))}</span>
                           </div>
-                          <div className="text-xs text-gray-400 text-right mt-1">
+                          <div className="text-xs text-neutral-400 text-right mt-1">
                             20% of the basic salary, paid once a year
                           </div>
                         </div>
@@ -1047,7 +1047,7 @@ const Relo = () => {
                             <span className="text-sm text-muted-foreground">Toyota Pension</span>
                             <span className="font-medium">{formatCurrency(Math.round(toyotaPension))}</span>
                           </div>
-                          <div className="text-xs text-gray-400 text-right mt-1">
+                          <div className="text-xs text-neutral-400 text-right mt-1">
                             7.5% of basic salary
                           </div>
                         </div>
@@ -1056,7 +1056,7 @@ const Relo = () => {
                             <span className="text-sm text-muted-foreground">Housing Allowance</span>
                             <span className="font-medium">{formatCurrency(HOUSING_ALLOWANCE)}</span>
                           </div>
-                          <div className="text-xs text-gray-400 text-right mt-1">
+                          <div className="text-xs text-neutral-400 text-right mt-1">
                             50,000 yen per month
                           </div>
                         </div>
@@ -1065,7 +1065,7 @@ const Relo = () => {
                             <span className="text-sm text-muted-foreground">Retention Bonus</span>
                             <span className="font-medium">{formatCurrency(RETENTION_BONUS)}</span>
                           </div>
-                          <div className="text-xs text-gray-400 text-right mt-1">
+                          <div className="text-xs text-neutral-400 text-right mt-1">
                             2,700,000 yen vested across 3 years
                           </div>
                         </div>
@@ -1075,7 +1075,7 @@ const Relo = () => {
                               <span className="text-sm text-muted-foreground">Relocation Bonus</span>
                               <span className="font-medium">{formatCurrency(RELOCATION_BONUS)}</span>
                             </div>
-                            <div className="text-xs text-gray-400 text-right mt-1">
+                            <div className="text-xs text-neutral-400 text-right mt-1">
                               1 time bonus that is paid in the 2nd month paycheck
                             </div>
                           </div>
@@ -1135,7 +1135,7 @@ const Relo = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           © 2026 Omiyages. All rights reserved.
         </div>

@@ -67,9 +67,9 @@ function findCompanyInfo(companyName: string) {
 }
 
 const statusColors: Record<string, string> = {
-  active: 'bg-green-100 text-green-800',
-  closed: 'bg-red-100 text-red-800',
-  draft: 'bg-gray-100 text-gray-800',
+  active: 'bg-green-900/40 text-green-400',
+  closed: 'bg-red-900/40 text-red-400',
+  draft: 'bg-neutral-800 text-neutral-300',
 };
 
 function parseAiSummary(raw: string | null): { candidate: string; responsibility: string } | null {
@@ -255,7 +255,7 @@ const RoleDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-neutral-950 flex flex-col">
         <NavigationHeader />
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner size="lg" />
@@ -266,13 +266,13 @@ const RoleDetail = () => {
 
   if (error || !role) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-neutral-950 flex flex-col">
         <NavigationHeader />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <Briefcase className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-            <h2 className="text-xl font-semibold text-gray-600 mb-2">Role not found</h2>
-            <p className="text-sm text-gray-500 mb-4">This position may have been removed or the link is incorrect.</p>
+            <Briefcase className="w-12 h-12 mx-auto text-neutral-500 mb-3" />
+            <h2 className="text-xl font-semibold text-neutral-400 mb-2">Role not found</h2>
+            <p className="text-sm text-neutral-400 mb-4">This position may have been removed or the link is incorrect.</p>
             <Button asChild variant="outline">
               <Link to="/jobs">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -286,7 +286,7 @@ const RoleDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
 
       <div className="container mx-auto px-4 py-8 flex-1">
@@ -304,7 +304,7 @@ const RoleDetail = () => {
           {/* Left column — Job details */}
           <div className="flex-1 min-w-0 space-y-6">
             {/* Header card */}
-            <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+            <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-3">
                   <h1 className="text-2xl font-bold text-foreground">{role.job_title}</h1>
@@ -340,14 +340,14 @@ const RoleDetail = () => {
 
                   <div className="flex flex-wrap gap-2">
                     {role.division && (
-                      <span className="bg-purple-100 text-purple-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                      <span className="bg-cyan-900/40 text-cyan-400 text-xs px-2.5 py-1 rounded-full font-medium">
                         {role.division}
                       </span>
                     )}
-                    <span className="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full">
+                    <span className="bg-neutral-800 text-neutral-400 text-xs px-2.5 py-1 rounded-full">
                       {role.working_style}
                     </span>
-                    <span className="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                    <span className="bg-indigo-900/40 text-indigo-400 text-xs px-2.5 py-1 rounded-full font-medium">
                       Japanese: {role.japanese_level || 'None'}
                     </span>
                     {isAdmin && role.status !== 'active' && (
@@ -364,7 +364,7 @@ const RoleDetail = () => {
                       <Edit className="w-4 h-4 mr-1.5" />
                       Edit
                     </Button>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleDelete}>
+                    <Button variant="outline" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/20" onClick={handleDelete}>
                       <Trash2 className="w-4 h-4 mr-1.5" />
                       Delete
                     </Button>
@@ -373,8 +373,8 @@ const RoleDetail = () => {
               </div>
 
               {summary && (
-                <div className="mt-4 bg-gray-50 border border-gray-100 rounded-md px-4 py-3">
-                  <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                <div className="mt-4 bg-neutral-950 border border-neutral-800 rounded-md px-4 py-3">
+                  <ul className="text-sm text-neutral-300 space-y-1 list-disc list-inside">
                     {summary.candidate && <li>{summary.candidate}</li>}
                     {summary.responsibility && <li>{summary.responsibility}</li>}
                   </ul>
@@ -384,30 +384,30 @@ const RoleDetail = () => {
 
             {/* Content sections */}
             {role.job_description && (
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+              <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-3">Job Description</h2>
-                <RichTextDisplay content={role.job_description} className="text-sm text-gray-700" />
+                <RichTextDisplay content={role.job_description} className="text-sm text-neutral-300" />
               </div>
             )}
 
             {role.requirements && (
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+              <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-3">Requirements</h2>
-                <RichTextDisplay content={role.requirements} className="text-sm text-gray-700" />
+                <RichTextDisplay content={role.requirements} className="text-sm text-neutral-300" />
               </div>
             )}
 
             {role.nice_to_haves && (
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+              <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-3">Nice to Haves</h2>
-                <RichTextDisplay content={role.nice_to_haves} className="text-sm text-gray-700" />
+                <RichTextDisplay content={role.nice_to_haves} className="text-sm text-neutral-300" />
               </div>
             )}
 
             {role.benefits && (
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+              <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-3">Benefits</h2>
-                <RichTextDisplay content={role.benefits} className="text-sm text-gray-700" />
+                <RichTextDisplay content={role.benefits} className="text-sm text-neutral-300" />
               </div>
             )}
           </div>
@@ -416,7 +416,7 @@ const RoleDetail = () => {
           <aside className="w-full lg:w-80 shrink-0">
             <div className="sticky top-8 space-y-5">
               {/* Apply button */}
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 text-center">
+              <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-5 text-center">
                 <Button
                   className="w-full btn-purple-gradient text-base h-12 font-semibold"
                   onClick={() => setApplyDialogOpen(true)}
@@ -438,11 +438,11 @@ const RoleDetail = () => {
               </div>
 
               {/* Recommended Course */}
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm overflow-hidden">
                 {recommendedCourse ? (
                   <>
                     {/* Course banner */}
-                    <div className="bg-gradient-to-br from-purple-500 to-indigo-600 px-5 py-4">
+                    <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 px-5 py-4">
                       <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-white bg-white/20 rounded px-2 py-0.5 mb-2">
                         Recommended Course
                       </span>
@@ -461,7 +461,7 @@ const RoleDetail = () => {
                       <Button
                         asChild
                         variant="outline"
-                        className="w-full border-purple-200 text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+                        className="w-full border-cyan-600 text-cyan-400 hover:bg-cyan-900/20 hover:text-cyan-300"
                       >
                         <Link to={`/course/${slugify(recommendedCourse.title)}`}>
                           View Course Details
@@ -472,8 +472,8 @@ const RoleDetail = () => {
                   </>
                 ) : (
                   <div className="p-5 text-center">
-                    <BookOpen className="w-10 h-10 mx-auto text-gray-300 mb-2" />
-                    <p className="text-sm font-medium text-gray-500">No Assigned Course</p>
+                    <BookOpen className="w-10 h-10 mx-auto text-neutral-500 mb-2" />
+                    <p className="text-sm font-medium text-neutral-400">No Assigned Course</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       There is no preparation course linked to this role yet.
                     </p>
@@ -483,7 +483,7 @@ const RoleDetail = () => {
 
               {/* Company info */}
               {companyInfo && (
-                <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm overflow-hidden">
                   {companyInfo.image && (
                     <div className="aspect-[16/9] overflow-hidden">
                       <LazyImage
@@ -544,7 +544,7 @@ const RoleDetail = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           &copy; 2026 Omiyages. All rights reserved.
         </div>

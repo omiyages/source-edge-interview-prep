@@ -44,13 +44,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     
     // Apply gradient styles directly via style prop for gradient variant
     const gradientStyle = variant === "gradient" ? {
-      background: "linear-gradient(to right, rgb(168 85 247), rgb(126 34 206))",
+      background: "linear-gradient(135deg, hsl(270 36% 71%), hsl(270 36% 58%))",
+      boxShadow: "0 2px 8px hsl(270 36% 60% / 0.3)",
       ...(props.style || {})
     } : props.style;
-    
-    const gradientHoverClass = variant === "gradient" ? 
+
+    const gradientHoverClass = variant === "gradient" ?
       "hover:bg-none" : "";
-    
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size }), gradientHoverClass, className)}
@@ -59,13 +60,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
         onMouseEnter={(e) => {
           if (variant === "gradient") {
-            e.currentTarget.style.background = "linear-gradient(to right, rgb(147 51 234), rgb(109 40 217))";
+            e.currentTarget.style.background = "linear-gradient(135deg, hsl(270 36% 65%), hsl(270 36% 52%))";
+            e.currentTarget.style.boxShadow = "0 4px 14px hsl(270 36% 60% / 0.4)";
           }
           props.onMouseEnter?.(e);
         }}
         onMouseLeave={(e) => {
           if (variant === "gradient") {
-            e.currentTarget.style.background = "linear-gradient(to right, rgb(168 85 247), rgb(126 34 206))";
+            e.currentTarget.style.background = "linear-gradient(135deg, hsl(270 36% 71%), hsl(270 36% 58%))";
+            e.currentTarget.style.boxShadow = "0 2px 8px hsl(270 36% 60% / 0.3)";
           }
           props.onMouseLeave?.(e);
         }}

@@ -57,7 +57,7 @@ export const CourseHeader = ({
   return (
     <>
       {/* Course Info Card */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+      <div className="bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-800 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
@@ -67,15 +67,15 @@ export const CourseHeader = ({
                 </Badge>
               )}
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{course.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{course.title}</h1>
             {course.description && (
-              <p className="text-base text-gray-500 leading-relaxed">{course.description}</p>
+              <p className="text-base text-neutral-400 leading-relaxed">{course.description}</p>
             )}
           </div>
           {isAdmin && (
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" className="whitespace-nowrap rounded-lg border-gray-200 hover:bg-gray-50">
+                <Button variant="outline" className="whitespace-nowrap rounded-lg border-neutral-700 hover:bg-neutral-800">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Course
                 </Button>
@@ -95,13 +95,13 @@ export const CourseHeader = ({
 
         {/* Relevant Roles */}
         {course.attached_jobs && course.attached_jobs.length > 0 && (
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                <Briefcase className="w-4 h-4 text-gray-500" />
+              <div className="w-8 h-8 bg-neutral-700 rounded-lg flex items-center justify-center">
+                <Briefcase className="w-4 h-4 text-neutral-400" />
               </div>
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold text-gray-700">Relevant Roles:</span>{" "}
+              <p className="text-sm text-neutral-400">
+                <span className="font-semibold text-neutral-300">Relevant Roles:</span>{" "}
                 {course.attached_jobs.map((job, idx) => {
                   const match = roleLinks?.find(
                     r => r.job_title.trim().toLowerCase() === job.trim().toLowerCase()

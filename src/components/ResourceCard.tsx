@@ -56,7 +56,7 @@ const getIconAndColor = (category: string, title: string) => {
     return { icon: Calculator, bgColor: 'bg-amber-100', iconColor: 'text-amber-600' };
   }
   if (lowerTitle.includes('visa') || lowerTitle.includes('immigration')) {
-    return { icon: FileText, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' };
+    return { icon: FileText, bgColor: 'bg-cyan-100', iconColor: 'text-cyan-400' };
   }
   
   // Fall back to category-based icons
@@ -76,7 +76,7 @@ const getIconAndColor = (category: string, title: string) => {
     return { icon: Users, bgColor: 'bg-pink-100', iconColor: 'text-pink-600' };
   }
   if (lowerCategory.includes('relocation') || lowerCategory.includes('expat')) {
-    return { icon: Globe, bgColor: 'bg-teal-100', iconColor: 'text-teal-600' };
+    return { icon: Globe, bgColor: 'bg-cyan-100', iconColor: 'text-cyan-600' };
   }
   if (lowerCategory.includes('guide') || lowerCategory.includes('tutorial')) {
     return { icon: Lightbulb, bgColor: 'bg-yellow-100', iconColor: 'text-yellow-600' };
@@ -86,7 +86,7 @@ const getIconAndColor = (category: string, title: string) => {
   }
   
   // Default
-  return { icon: BookOpen, bgColor: 'bg-slate-100', iconColor: 'text-slate-600' };
+  return { icon: BookOpen, bgColor: 'bg-neutral-100', iconColor: 'text-neutral-600' };
 };
 
 // Get tags from category
@@ -102,7 +102,7 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
 
   return (
     <div 
-      className="bg-white rounded-xl p-6 border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all duration-200 flex flex-col h-full group cursor-pointer"
+      className="bg-neutral-900 rounded-xl p-6 border border-neutral-200 hover:border-neutral-300 hover:shadow-lg transition-all duration-200 flex flex-col h-full group cursor-pointer"
       onClick={() => window.open(resource.url, '_blank')}
     >
       {/* Icon and Actions Row */}
@@ -117,7 +117,7 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-8 w-8 p-0 hover:bg-neutral-700 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
@@ -139,7 +139,7 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <ExternalLink className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition-colors" />
+          <ExternalLink className="w-5 h-5 text-neutral-300 group-hover:text-neutral-500 transition-colors" />
         </div>
       </div>
 
@@ -161,7 +161,7 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
           <Badge
             key={index}
             variant="secondary"
-            className="bg-slate-100 text-slate-600 hover:bg-slate-100 text-xs font-medium px-2.5 py-1 rounded"
+            className="bg-neutral-100 text-neutral-600 hover:bg-neutral-100 text-xs font-medium px-2.5 py-1 rounded"
           >
             {tag}
           </Badge>

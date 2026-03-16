@@ -231,7 +231,7 @@ export const PublicSignupForm = () => {
               <li>You'll receive an email once your account is activated</li>
             </ol>
           </div>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-neutral-400">
             Didn't receive the verification email? Check your spam folder.
           </p>
           <Link to="/auth">
@@ -270,13 +270,13 @@ export const PublicSignupForm = () => {
               }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">Full Name</FormLabel>
+                  <FormLabel className="text-neutral-300 font-medium">Full Name</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <UserPlus className="absolute left-3 top-1/2 -tranneutral-y-1/2 w-4 h-4 text-neutral-500" />
                       <Input 
                         placeholder="Enter your full name" 
-                        className="pl-10 h-11 rounded-lg border-gray-200 focus:border-primary"
+                        className="pl-10 h-11 rounded-lg border-neutral-700 focus:border-primary"
                         {...field} 
                       />
                     </div>
@@ -299,14 +299,14 @@ export const PublicSignupForm = () => {
               }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">Email Address</FormLabel>
+                  <FormLabel className="text-neutral-300 font-medium">Email Address</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Mail className="absolute left-3 top-1/2 -tranneutral-y-1/2 w-4 h-4 text-neutral-500" />
                       <Input 
                         type="email" 
                         placeholder="you@example.com" 
-                        className="pl-10 h-11 rounded-lg border-gray-200 focus:border-primary"
+                        className="pl-10 h-11 rounded-lg border-neutral-700 focus:border-primary"
                         {...field} 
                       />
                     </div>
@@ -337,21 +337,21 @@ export const PublicSignupForm = () => {
               }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">Password</FormLabel>
+                  <FormLabel className="text-neutral-300 font-medium">Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -tranneutral-y-1/2 w-4 h-4 text-neutral-500" />
                       <Input 
                         type={showPassword ? "text" : "password"} 
                         placeholder="Create a strong password" 
-                        className="pl-10 pr-10 h-11 rounded-lg border-gray-200 focus:border-primary"
+                        className="pl-10 pr-10 h-11 rounded-lg border-neutral-700 focus:border-primary"
                         {...field}
                         onChange={(e) => handlePasswordChange(e.target.value, field.onChange)}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -tranneutral-y-1/2 text-neutral-500 hover:text-neutral-400"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -361,7 +361,7 @@ export const PublicSignupForm = () => {
                   {watchPassword && (
                     <div className="mt-2 space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-300 ${getStrengthColor(passwordStrength.score)}`}
                             style={{ width: `${Math.max(10, (passwordStrength.score / 6) * 100)}%` }}
@@ -375,10 +375,10 @@ export const PublicSignupForm = () => {
                         </span>
                       </div>
                       {passwordStrength.feedback.length > 0 && (
-                        <ul className="text-xs text-gray-500 space-y-0.5">
+                        <ul className="text-xs text-neutral-400 space-y-0.5">
                           {passwordStrength.feedback.map((fb, i) => (
                             <li key={i} className="flex items-center gap-1">
-                              <span className="w-1 h-1 bg-gray-400 rounded-full" />
+                              <span className="w-1 h-1 bg-neutral-500 rounded-full" />
                               {fb}
                             </li>
                           ))}
@@ -402,20 +402,20 @@ export const PublicSignupForm = () => {
               }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">Confirm Password</FormLabel>
+                  <FormLabel className="text-neutral-300 font-medium">Confirm Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -tranneutral-y-1/2 w-4 h-4 text-neutral-500" />
                       <Input 
                         type={showConfirmPassword ? "text" : "password"} 
                         placeholder="Confirm your password" 
-                        className="pl-10 pr-10 h-11 rounded-lg border-gray-200 focus:border-primary"
+                        className="pl-10 pr-10 h-11 rounded-lg border-neutral-700 focus:border-primary"
                         {...field} 
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -tranneutral-y-1/2 text-neutral-500 hover:text-neutral-400"
                       >
                         {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -441,7 +441,7 @@ export const PublicSignupForm = () => {
                         className="mt-0.5"
                       />
                     </FormControl>
-                    <label className="text-sm text-gray-600 leading-snug cursor-pointer" onClick={() => field.onChange(!field.value)}>
+                    <label className="text-sm text-neutral-400 leading-snug cursor-pointer" onClick={() => field.onChange(!field.value)}>
                       I agree to the Terms of Service and Privacy Policy
                     </label>
                   </div>
@@ -473,13 +473,13 @@ export const PublicSignupForm = () => {
             </Button>
 
             {/* Security Badge */}
-            <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-neutral-500">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Protected by Cloudflare Turnstile</span>
             </div>
 
             {/* Sign In Link */}
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-neutral-400">
               Already have an account?{" "}
               <Link to="/auth" className="text-primary font-medium hover:underline">
                 Sign in

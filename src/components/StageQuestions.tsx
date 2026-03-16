@@ -90,10 +90,10 @@ export const StageQuestions = ({
 
   const getCategoryColor = (category: string) => {
     const cat = category?.toUpperCase() || "";
-    if (cat.includes("TECH") || cat.includes("TECHNICAL")) return "bg-orange-100 text-orange-700 border-orange-200";
-    if (cat.includes("BEHAVIORAL")) return "bg-teal-100 text-teal-700 border-teal-200";
-    if (cat.includes("SYSTEM") || cat.includes("DESIGN")) return "bg-purple-100 text-purple-700 border-purple-200";
-    return "bg-gray-100 text-gray-700 border-gray-200";
+    if (cat.includes("TECH") || cat.includes("TECHNICAL")) return "bg-orange-900/40 text-orange-400 border-orange-800";
+    if (cat.includes("BEHAVIORAL")) return "bg-cyan-900/40 text-cyan-300 border-cyan-800";
+    if (cat.includes("SYSTEM") || cat.includes("DESIGN")) return "bg-cyan-900/40 text-cyan-300 border-cyan-800";
+    return "bg-neutral-800 text-neutral-400 border-neutral-700";
   };
 
   return (
@@ -103,7 +103,7 @@ export const StageQuestions = ({
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-semibold text-foreground">Practice Questions</h2>
           {totalQuestions > 0 && (
-            <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+            <Badge variant="secondary" className="bg-neutral-800 text-neutral-400">
               {totalQuestions} Total
             </Badge>
           )}
@@ -122,7 +122,7 @@ export const StageQuestions = ({
         </div>
 
       {/* Filters Section */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-border space-y-4">
+      <div className="bg-neutral-900 rounded-lg p-4 shadow-sm border border-neutral-800 space-y-4">
         {/* Category Filters */}
         <div className="flex flex-wrap gap-2">
           <Button
@@ -186,7 +186,7 @@ export const StageQuestions = ({
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {displayedQuestions.map((question, index) => (
-              <Card key={question.id} className="bg-white border-border shadow-sm hover:shadow-md transition-shadow h-full">
+              <Card key={question.id} className="bg-neutral-900 border-neutral-800 shadow-sm hover:shadow-md transition-shadow h-full">
                 <CardContent className="p-4 h-full flex flex-col">
                   {/* Category Badge */}
                   <div className="flex items-center gap-2 mb-3">
@@ -231,7 +231,7 @@ export const StageQuestions = ({
                         <Button
                           variant="outline"
                 onClick={() => setDisplayedCount(prev => prev + 6)}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700"
+                className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
                         >
                 Load More Questions
                         </Button>
@@ -239,7 +239,7 @@ export const StageQuestions = ({
                     )}
         </>
         ) : (
-        <div className="text-center py-12 bg-white rounded-lg border border-border">
+        <div className="text-center py-12 bg-neutral-900 rounded-lg border border-neutral-800">
           <p className="text-muted-foreground mb-4">No questions found matching your filters.</p>
             {isAdmin && (
               <Button

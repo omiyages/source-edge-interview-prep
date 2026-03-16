@@ -28,7 +28,7 @@ export const StageContentAssignment = ({
 }: StageContentAssignmentProps) => {
   return (
     <>
-      <p className="text-sm text-gray-600 mb-6">
+      <p className="text-sm text-neutral-400 mb-6">
         Course created successfully! Now assign questions and resources to each stage.
       </p>
       
@@ -43,10 +43,10 @@ export const StageContentAssignment = ({
                 <CardTitle className="text-base flex items-center justify-between">
                   <span>{stageName}</span>
                   <div className="flex gap-2 text-xs">
-                    <span className={`px-2 py-1 rounded ${assignments.questionsAssigned ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`px-2 py-1 rounded ${assignments.questionsAssigned ? 'bg-green-900/40 text-green-400' : 'bg-neutral-800 text-neutral-400'}`}>
                       Questions {assignments.questionsAssigned ? '✓' : '○'}
                     </span>
-                    <span className={`px-2 py-1 rounded ${assignments.resourcesAssigned ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`px-2 py-1 rounded ${assignments.resourcesAssigned ? 'bg-green-900/40 text-green-400' : 'bg-neutral-800 text-neutral-400'}`}>
                       Resources {assignments.resourcesAssigned ? '✓' : '○'}
                     </span>
                   </div>

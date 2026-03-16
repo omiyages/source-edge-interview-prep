@@ -136,7 +136,7 @@ export function QuestionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[96vh] overflow-hidden flex flex-col p-0 gap-0 rounded-xl border-0 shadow-xl top-[2vh] translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[96vh] overflow-hidden flex flex-col p-0 gap-0 rounded-xl border-0 shadow-xl top-[2vh] tranneutral-y-0 sm:top-[50%] sm:tranneutral-y-[-50%]">
         <DialogHeader className="px-6 pt-6 pb-4 text-left space-y-0 border-b border-border/50">
           <DialogTitle className="text-lg font-semibold text-foreground">
             Question Details
@@ -153,7 +153,7 @@ export function QuestionDetailDialog({
                     <Building2 className="h-3.5 w-3.5" />
                     {question.company.toUpperCase()}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300">
                     <User className="h-3.5 w-3.5" />
                     {question.role.toUpperCase()}
                   </span>
@@ -203,11 +203,11 @@ export function QuestionDetailDialog({
                 <p className="text-sm text-muted-foreground">Loading coaching…</p>
               ) : interviewerIntent.length > 0 ? (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                  <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-2">
                     The interviewer&apos;s intent
                   </p>
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                    <ul className="list-disc list-inside space-y-1.5 text-sm text-gray-700">
+                  <div className="rounded-lg border border-neutral-700 bg-neutral-800/50 p-4">
+                    <ul className="list-disc list-inside space-y-1.5 text-sm text-neutral-300">
                       {interviewerIntent.map((bullet, i) => (
                         <li key={i}>{bullet}</li>
                       ))}
@@ -219,36 +219,36 @@ export function QuestionDetailDialog({
               {/* Winning Answer Framework (STAR) */}
               {!coachingLoading && winningFramework && (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                  <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-2">
                     Winning answer framework
                   </p>
-                  <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <div className="space-y-4 rounded-lg border border-neutral-700 bg-neutral-800/50 p-4">
                     <div className="flex gap-2">
-                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-cyan-400" aria-hidden />
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">Situation</p>
-                        <p className="mt-1 text-sm text-gray-700">{winningFramework.situation || "—"}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Situation</p>
+                        <p className="mt-1 text-sm text-neutral-300">{winningFramework.situation || "—"}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-cyan-400" aria-hidden />
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">Task</p>
-                        <p className="mt-1 text-sm text-gray-700">{winningFramework.task || "—"}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Task</p>
+                        <p className="mt-1 text-sm text-neutral-300">{winningFramework.task || "—"}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500" aria-hidden />
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-cyan-400" aria-hidden />
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">Action</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Action</p>
                         {winningFramework.action?.length ? (
-                          <ul className="mt-1 list-disc list-inside space-y-1 text-sm text-gray-700">
+                          <ul className="mt-1 list-disc list-inside space-y-1 text-sm text-neutral-300">
                             {winningFramework.action.map((a, i) => (
                               <li key={i}>{a}</li>
                             ))}
                           </ul>
                         ) : (
-                          <p className="mt-1 text-sm text-gray-700">—</p>
+                          <p className="mt-1 text-sm text-neutral-300">—</p>
                         )}
                       </div>
                     </div>
@@ -256,7 +256,7 @@ export function QuestionDetailDialog({
                       <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-green-500" aria-hidden />
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-green-600">Result</p>
-                        <p className="mt-1 text-sm text-gray-700">{winningFramework.result || "—"}</p>
+                        <p className="mt-1 text-sm text-neutral-300">{winningFramework.result || "—"}</p>
                       </div>
                     </div>
                   </div>
@@ -268,7 +268,7 @@ export function QuestionDetailDialog({
                   <button
                     type="button"
                     onClick={() => onEditQuestion(question)}
-                    className="inline-flex items-center rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="inline-flex items-center rounded-md border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
                     Edit Question
                   </button>
@@ -336,7 +336,7 @@ export function QuestionDetailDialog({
             <ChevronLeft className="h-4 w-4" />
             Previous
           </button>
-          <span className="text-sm text-gray-300">
+          <span className="text-sm text-neutral-400">
             Question {currentDisplayNumber} / {totalCount}
           </span>
           <button

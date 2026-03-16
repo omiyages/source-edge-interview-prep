@@ -125,8 +125,8 @@ export const QuestionsSection = ({ questions, loading, error }: QuestionsSection
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">Interview Questions</h2>
           <p className="text-muted-foreground">Real-life interview questions based on previous candidates' experiences, carefully tailored and curated.</p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-600">Failed to load questions: {error}</p>
+        <div className="bg-red-900/20 border border-red-800 rounded-lg p-6 text-center">
+          <p className="text-red-400">Failed to load questions: {error}</p>
         </div>
       </section>
     );

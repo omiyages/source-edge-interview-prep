@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePaginatedQuestions } from "@/hooks/usePaginatedQuestions";
 import { useQuestionStats } from "@/hooks/useQuestionStats";
 import { NavigationHeader } from "@/components/NavigationHeader";
+import { Seo } from "@/components/Seo";
 import { QuestionsSidebarFilters } from "@/components/QuestionsSidebarFilters";
 import { QuestionsList } from "@/components/QuestionsList";
 import { Input } from "@/components/ui/input";
@@ -167,11 +168,11 @@ const Questions = () => {
 
   if (error && isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-neutral-950 flex flex-col">
         <NavigationHeader />
         <div className="container mx-auto px-4 py-8 flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600">Failed to load questions: {error}</p>
+            <p className="text-red-400">Failed to load questions: {error}</p>
           </div>
         </div>
       </div>
@@ -179,7 +180,12 @@ const Questions = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title="Interview Questions"
+        description="Browse interview questions by company, role, category, and stage to prepare for your next technical interview."
+        path="/questions"
+      />
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         <div className="flex flex-col lg:flex-row gap-6">
@@ -231,7 +237,7 @@ const Questions = () => {
                 />
               </div>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48 border-gray-200 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+                <SelectTrigger className="w-48 border-neutral-700 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,9 +253,9 @@ const Questions = () => {
               /* Show loading skeleton while auth is resolving — prevents login wall flash */
               <div className="space-y-3">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white border border-border rounded-lg p-6 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div key={i} className="bg-neutral-900 border border-border rounded-lg p-6 animate-pulse">
+                    <div className="h-4 bg-neutral-700 rounded w-3/4 mb-3"></div>
+                    <div className="h-3 bg-neutral-700 rounded w-1/2"></div>
                   </div>
                 ))}
               </div>
@@ -366,16 +372,16 @@ const Questions = () => {
                 {/* Blurred placeholder question rows */}
                 <div className="blur-sm select-none pointer-events-none space-y-3" aria-hidden="true">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="flex items-center justify-between bg-white rounded-lg border border-gray-100 p-4">
+                    <div key={i} className="flex items-center justify-between bg-neutral-900 rounded-lg border border-neutral-800 p-4">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-muted-foreground">{i + 1}.</span>
-                          <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                          <div className="h-5 bg-neutral-700 rounded w-3/4"></div>
                         </div>
                         <div className="flex gap-2">
-                          <span className="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded">Technical</span>
-                          <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">Company</span>
-                          <span className="bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded">Stage</span>
+                          <span className="bg-orange-900/40 text-orange-400 text-xs px-2 py-0.5 rounded">Technical</span>
+                          <span className="bg-neutral-800 text-neutral-400 text-xs px-2 py-0.5 rounded">Company</span>
+                          <span className="bg-cyan-900/40 text-cyan-400 text-xs px-2 py-0.5 rounded">Stage</span>
                         </div>
                       </div>
                       <div className="h-9 w-28 bg-gray-800 rounded-lg"></div>
@@ -385,7 +391,7 @@ const Questions = () => {
 
                 {/* Login wall overlay */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white rounded-2xl shadow-xl border border-gray-100 px-8 py-8 max-w-md w-full mx-4 text-center">
+                  <div className="bg-neutral-900 rounded-2xl shadow-2xl shadow-black/20 border border-neutral-800 px-8 py-8 max-w-md w-full mx-4 text-center">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Lock className="w-6 h-6 text-primary" />
                     </div>
@@ -437,7 +443,7 @@ const Questions = () => {
       </Dialog>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           © 2026 Omiyages. All rights reserved.
         </div>

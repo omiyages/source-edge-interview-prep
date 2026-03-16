@@ -44,7 +44,7 @@ const CompanyDetail: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[
@@ -99,7 +99,7 @@ const CompanyDetail: React.FC = () => {
         </div>
 
         {/* Page Navigation */}
-        <div className="bg-gray-50 py-6 mb-8 -mx-4 px-4">
+        <div className="bg-neutral-950 py-6 mb-8 -mx-4 px-4">
           <div className="container mx-auto">
             <div className="flex justify-center">
               <nav className="flex items-center gap-8">
@@ -121,21 +121,21 @@ const CompanyDetail: React.FC = () => {
             </p>
             <div className="grid md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Car className="w-8 h-8 text-red-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-foreground">Building the Future of Mobility</h3>
                 <p className="text-muted-foreground">Woven by Toyota is Toyota's innovation arm focused on transforming mobility for a safer, more connected, and sustainable future. It develops advanced technologies that go beyond traditional vehicles, including automated driving, smart infrastructure, and software-defined mobility systems.</p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Code className="w-8 h-8 text-red-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-foreground">Software-First Vehicle Development</h3>
                 <p className="text-muted-foreground">At its core, Woven by Toyota is pioneering a "software-first" approach to cars. It creates platforms and tools that enable continuous updates and improvements to vehicle performance, safety, and user experience—much like how smartphones evolve through software updates.</p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Building2 className="w-8 h-8 text-red-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-foreground">The Woven City Vision</h3>
@@ -146,7 +146,7 @@ const CompanyDetail: React.FC = () => {
         </div>
 
         {/* Divisions Section */}
-        <div id="divisions" className="py-16 bg-white">
+        <div id="divisions" className="py-16 bg-neutral-900">
           <div className="container mx-auto px-6">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">Divisions</h2>
@@ -156,7 +156,7 @@ const CompanyDetail: React.FC = () => {
               {/* ADAS Division */}
               <Card className="p-8 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-6">
-                  <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-16 h-16 bg-blue-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Shield className="w-8 h-8 text-blue-600" />
                   </div>
                   <div className="flex-1">
@@ -183,8 +183,8 @@ const CompanyDetail: React.FC = () => {
               {/* Arene Division */}
               <Card className="p-8 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-6">
-                  <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Globe className="w-8 h-8 text-purple-600" />
+                  <div className="w-16 h-16 bg-cyan-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Globe className="w-8 h-8 text-cyan-500" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold mb-4">Arene</h3>
@@ -210,7 +210,7 @@ const CompanyDetail: React.FC = () => {
               {/* Woven City Division */}
               <Card className="p-8 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-6">
-                  <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-16 h-16 bg-green-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Building2 className="w-8 h-8 text-green-600" />
                   </div>
                   <div className="flex-1">
@@ -237,7 +237,7 @@ const CompanyDetail: React.FC = () => {
               {/* Enterprise Technology Division */}
               <Card className="p-8 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-6">
-                  <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-16 h-16 bg-orange-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
                     <TrendingUp className="w-8 h-8 text-orange-600" />
                   </div>
                   <div className="flex-1">
@@ -264,7 +264,7 @@ const CompanyDetail: React.FC = () => {
               {/* Dojo Division */}
               <Card className="p-8 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-6">
-                  <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-16 h-16 bg-red-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Lightbulb className="w-8 h-8 text-red-600" />
                   </div>
                   <div className="flex-1">
@@ -292,7 +292,7 @@ const CompanyDetail: React.FC = () => {
         </div>
 
         {/* Interview Process Section */}
-        <div id="interview-process" className="py-16 bg-gray-50 -mx-4 px-4">
+        <div id="interview-process" className="py-16 bg-neutral-950 -mx-4 px-4">
           <div className="container mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">Interview Process</h2>
@@ -365,7 +365,7 @@ const CompanyDetail: React.FC = () => {
                 <h3 className="text-2xl font-bold mb-6">Why Join Woven by Toyota?</h3>
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-blue-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Award className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
@@ -374,7 +374,7 @@ const CompanyDetail: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-red-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Car className="w-6 h-6 text-red-600" />
                     </div>
                     <div>
@@ -383,7 +383,7 @@ const CompanyDetail: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-green-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Zap className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
@@ -392,8 +392,8 @@ const CompanyDetail: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Heart className="w-6 h-6 text-purple-600" />
+                    <div className="w-12 h-12 bg-cyan-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Heart className="w-6 h-6 text-cyan-500" />
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Unique Culture</h4>
@@ -401,7 +401,7 @@ const CompanyDetail: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-orange-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Globe className="w-6 h-6 text-orange-600" />
                     </div>
                     <div>
@@ -417,7 +417,7 @@ const CompanyDetail: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           © 2026 Omiyages. All rights reserved.
         </div>

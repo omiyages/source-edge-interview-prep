@@ -6,13 +6,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { queryClient } from "@/lib/queryClient";
 import { SessionTracker } from "@/components/SessionTracker";
 import { TIMEZONE_CONFIG } from "@/config/timezone";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Seo } from "@/components/Seo";
 
 // Critical path components - imported directly for fast initial load
 import Auth from "./pages/Auth";
@@ -32,29 +33,60 @@ const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
 const Roles = lazy(() => import("./pages/Roles"));
 const RoleDetail = lazy(() => import("./pages/RoleDetail"));
-
 // Loading fallback component
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+  <div className="min-h-screen flex items-center justify-center bg-background">
     <LoadingSpinner size="lg" />
   </div>
 );
 
+type SeoMeta = { title: string; description: string; noindex?: boolean } | null;
+
+// null = page handles its own SEO
+const STATIC_SEO: Record<string, SeoMeta> = {
+  "/": null,
+  "/questions": null,
+  "/tracks": { title: "Interview Courses", description: "Explore structured interview preparation courses by company and role." },
+  "/jobs": { title: "Open Jobs", description: "Browse active tech job openings in Japan and match them with interview prep resources." },
+  "/roles": { title: "Open Jobs", description: "Browse active tech job openings in Japan and match them with interview prep resources." },
+  "/resources": { title: "Interview Resources", description: "Find curated interview resources to prepare faster and smarter." },
+  "/company": { title: "Companies", description: "Explore companies hiring top tech talent in Japan." },
+  "/auth": { title: "Sign In", description: "Sign in to Omiyages to access interview questions, courses, and job prep tools." },
+  "/signup": { title: "Create Account", description: "Create your Omiyages account to unlock interview questions and preparation resources." },
+  "/dashboard": { title: "Dashboard", description: "Track your interview preparation progress in one place.", noindex: true },
+  "/admin": { title: "Admin Dashboard", description: "Manage questions, users, and content from the Omiyages admin dashboard.", noindex: true },
+  "/relo": { title: "Relocation to Tokyo", description: "Guidance and resources for relocating to Tokyo for your next role." },
+  "/404": { title: "Omiyages", description: "Interview preparation platform for tech roles in Japan.", noindex: true },
+};
+
+const PREFIX_SEO: Array<{ prefix: string; meta: SeoMeta }> = [
+  { prefix: "/job/", meta: { title: "Job Details", description: "Review role details, requirements, and responsibilities for this job opening." } },
+  { prefix: "/role/", meta: { title: "Job Details", description: "Review role details, requirements, and responsibilities for this job opening." } },
+  { prefix: "/course/", meta: { title: "Course Details", description: "View full interview preparation roadmap and stage-by-stage materials." } },
+  { prefix: "/company/", meta: { title: "Company Profile", description: "Explore company details, roles, and related interview preparation tracks." } },
+];
+
+function AppSeo() {
+  const { pathname } = useLocation();
+
+  const meta: SeoMeta = pathname in STATIC_SEO
+    ? STATIC_SEO[pathname]
+    : (PREFIX_SEO.find(({ prefix }) => pathname.startsWith(prefix))?.meta ?? {
+        title: "Omiyages",
+        description: "Interview preparation platform for tech roles in Japan.",
+      });
+
+  if (!meta) return null;
+
+  return <Seo {...meta} path={pathname} />;
+}
+
 function App() {
-  // Initialize timezone settings and clear dark mode
+  // Initialize timezone settings
   React.useEffect(() => {
-    // Clear any stored dark mode preferences to fix users stuck in dark mode
-    localStorage.removeItem('theme');
-    localStorage.removeItem('vite-ui-theme');
-    document.documentElement.classList.remove('dark');
-    document.documentElement.removeAttribute('data-theme');
-    
-    // Set timezone for the application
     document.documentElement.setAttribute('data-timezone', TIMEZONE_CONFIG.timezone);
-    
-    // Set locale for date formatting
+
     if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
-      // Configure default locale
       const originalToLocaleString = Date.prototype.toLocaleString;
       Date.prototype.toLocaleString = function(...args) {
         if (args.length === 0) {
@@ -63,7 +95,6 @@ function App() {
         return originalToLocaleString.apply(this, args);
       };
     }
-
   }, []);
 
   return (
@@ -74,6 +105,7 @@ function App() {
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <SessionTracker />
+            <AppSeo />
             <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/signup" element={<PublicSignup />} />

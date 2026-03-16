@@ -72,7 +72,7 @@ export const OptimizedQuestionList = memo(({
   if (displayQuestions.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 text-base">No questions found.</p>
+        <p className="text-neutral-400 text-base">No questions found.</p>
       </div>
     );
   }

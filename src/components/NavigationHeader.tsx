@@ -92,8 +92,8 @@ export const NavigationHeader = memo(() => {
       {authLoading ? (
         /* Subtle skeleton while auth resolves — prevents flash */
         <div className="flex items-center gap-2">
-          <div className="h-9 w-28 bg-gray-100 rounded-md animate-pulse" />
-          <div className="h-9 w-9 bg-gray-100 rounded-md animate-pulse" />
+          <div className="h-9 w-28 bg-neutral-800 rounded-md animate-pulse" />
+          <div className="h-9 w-9 bg-neutral-800 rounded-md animate-pulse" />
         </div>
       ) : isAuthenticated ? (
         <>
@@ -182,7 +182,7 @@ export const NavigationHeader = memo(() => {
   );
 
   return (
-    <div className="bg-white border-b border-border/30">
+    <div className="bg-neutral-900 border-b border-neutral-800">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link to="/">

@@ -48,9 +48,9 @@ function parseAiSummary(raw: string | null): { candidate: string; responsibility
 const ROLES_PER_PAGE = 10;
 
 const statusColors: Record<string, string> = {
-  active: 'bg-green-100 text-green-800',
-  closed: 'bg-red-100 text-red-800',
-  draft: 'bg-gray-100 text-gray-800',
+  active: 'bg-green-900/40 text-green-400',
+  closed: 'bg-red-900/40 text-red-400',
+  draft: 'bg-neutral-800 text-neutral-300',
 };
 
 /** Company logo config — maps company names to a letter + colour scheme. */
@@ -70,7 +70,7 @@ const COMPANY_LOGOS: Record<string, { letter: string; bg: string; text: string; 
 
 function companyLogo(company: string) {
   const key = company.toLowerCase();
-  return COMPANY_LOGOS[key] || { letter: company.charAt(0).toUpperCase(), bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' };
+  return COMPANY_LOGOS[key] || { letter: company.charAt(0).toUpperCase(), bg: 'bg-neutral-800', text: 'text-neutral-300', border: 'border-neutral-700' };
 }
 
 const Roles = () => {
@@ -243,7 +243,7 @@ const Roles = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         <div className="flex flex-col lg:flex-row gap-6">
@@ -312,7 +312,7 @@ const Roles = () => {
                 />
               </div>
               <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-                <SelectTrigger className="w-48 border-gray-200 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+                <SelectTrigger className="w-48 border-neutral-700 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -327,19 +327,19 @@ const Roles = () => {
             {isLoading ? (
               <div className="space-y-3">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white border border-border rounded-lg p-6 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div key={i} className="bg-neutral-900 border border-border rounded-lg p-6 animate-pulse">
+                    <div className="h-4 bg-neutral-700 rounded w-3/4 mb-3"></div>
+                    <div className="h-3 bg-neutral-700 rounded w-1/2"></div>
                   </div>
                 ))}
               </div>
             ) : filteredRoles.length === 0 ? (
-              <div className="text-center py-16 border rounded-lg bg-white">
-                <Briefcase className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-lg font-semibold text-gray-600">
+              <div className="text-center py-16 border rounded-lg bg-neutral-900">
+                <Briefcase className="w-12 h-12 mx-auto text-neutral-500 mb-3" />
+                <p className="text-lg font-semibold text-neutral-400">
                   {baseRoles.length === 0 ? 'No open jobs yet' : 'No open jobs match your filters'}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-neutral-400 mt-1">
                   {baseRoles.length === 0
                     ? 'Create your first role or import from CSV.'
                     : 'Try adjusting your search or filters.'}
@@ -363,7 +363,7 @@ const Roles = () => {
                       <Link
                         key={role.id}
                         to={roleHref(role)}
-                        className="block bg-white rounded-lg border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all group cursor-pointer"
+                        className="block bg-neutral-900 rounded-lg border border-neutral-800 p-5 hover:shadow-md hover:border-neutral-700 transition-all group cursor-pointer"
                       >
                         {/* Top row: logo + title + badges + admin actions */}
                         <div className="flex items-start gap-4">
@@ -381,17 +381,17 @@ const Roles = () => {
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
                               <span className="text-sm text-muted-foreground">{role.company}</span>
                               <span className="text-muted-foreground/40">•</span>
-                              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                              <span className="bg-blue-900/40 text-blue-400 text-xs px-2 py-0.5 rounded-full font-medium">
                                 {role.working_style}
                               </span>
                               <span className="text-muted-foreground/40">•</span>
-                              <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                              <span className="bg-indigo-900/40 text-indigo-400 text-xs px-2 py-0.5 rounded-full font-medium">
                                 Japanese: {role.japanese_level || 'None'}
                               </span>
                               {role.division && (
                                 <>
                                   <span className="text-muted-foreground/40">•</span>
-                                  <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                                  <span className="bg-cyan-900/40 text-cyan-400 text-xs px-2 py-0.5 rounded-full font-medium">
                                     {role.division}
                                   </span>
                                 </>
@@ -520,7 +520,7 @@ const Roles = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border/30 mt-auto py-6">
+      <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           &copy; 2026 Omiyages. All rights reserved.
         </div>

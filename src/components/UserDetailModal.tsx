@@ -639,7 +639,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">LinkedIn URL</label>
+                      <label className="text-sm font-medium text-neutral-300">LinkedIn URL</label>
                       {isEditingInfo ? (
                         <Input
                           value={linkedinUrl}
@@ -648,7 +648,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           className="text-sm"
                         />
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
                           {linkedinUrl ? (
                             <a
                               href={linkedinUrl}
@@ -659,14 +659,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                               View LinkedIn Profile
                             </a>
                           ) : (
-                            <span className="text-gray-400">Not provided</span>
+                            <span className="text-neutral-500">Not provided</span>
                           )}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Current Company</label>
+                      <label className="text-sm font-medium text-neutral-300">Current Company</label>
                       {isEditingInfo ? (
                         <Input
                           value={currentCompany}
@@ -675,14 +675,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           className="text-sm"
                         />
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
-                          {currentCompany || <span className="text-gray-400">Not provided</span>}
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
+                          {currentCompany || <span className="text-neutral-500">Not provided</span>}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Current Job Title</label>
+                      <label className="text-sm font-medium text-neutral-300">Current Job Title</label>
                       {isEditingInfo ? (
                         <Input
                           value={currentJobTitle}
@@ -691,14 +691,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           className="text-sm"
                         />
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
-                          {currentJobTitle || <span className="text-gray-400">Not provided</span>}
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
+                          {currentJobTitle || <span className="text-neutral-500">Not provided</span>}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Notice Period</label>
+                      <label className="text-sm font-medium text-neutral-300">Notice Period</label>
                       {isEditingInfo ? (
                         <Input
                           value={noticePeriod}
@@ -707,14 +707,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           className="text-sm"
                         />
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
-                          {noticePeriod || <span className="text-gray-400">Not provided</span>}
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
+                          {noticePeriod || <span className="text-neutral-500">Not provided</span>}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Current Salary</label>
+                      <label className="text-sm font-medium text-neutral-300">Current Salary</label>
                       {isEditingInfo ? (
                         <Input
                           value={currentSalary}
@@ -723,14 +723,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           className="text-sm"
                         />
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
-                          {currentSalary || <span className="text-gray-400">Not provided</span>}
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
+                          {currentSalary || <span className="text-neutral-500">Not provided</span>}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Expected Salary</label>
+                      <label className="text-sm font-medium text-neutral-300">Expected Salary</label>
                       {isEditingInfo ? (
                         <Input
                           value={expectedSalary}
@@ -739,14 +739,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           className="text-sm"
                         />
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
-                          {expectedSalary || <span className="text-gray-400">Not provided</span>}
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
+                          {expectedSalary || <span className="text-neutral-500">Not provided</span>}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Location</label>
+                      <label className="text-sm font-medium text-neutral-300">Location</label>
                       {isEditingInfo ? (
                         <Input
                           value={location}
@@ -755,14 +755,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           className="text-sm"
                         />
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
-                          {location || <span className="text-gray-400">Not provided</span>}
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
+                          {location || <span className="text-neutral-500">Not provided</span>}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Japanese Proficiency</label>
+                      <label className="text-sm font-medium text-neutral-300">Japanese Proficiency</label>
                       {isEditingInfo ? (
                         <Select value={japaneseProficiency || undefined} onValueChange={(value) => setJapaneseProficiency(value === 'clear' ? '' : value || '')}>
                           <SelectTrigger className="text-sm">
@@ -778,14 +778,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
-                          {japaneseProficiency || <span className="text-gray-400">Not provided</span>}
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
+                          {japaneseProficiency || <span className="text-neutral-500">Not provided</span>}
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Years of Experience</label>
+                      <label className="text-sm font-medium text-neutral-300">Years of Experience</label>
                       {isEditingInfo ? (
                         <Input
                           value={yearsOfExperience}
@@ -794,8 +794,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           className="text-sm"
                         />
                       ) : (
-                        <div className="text-sm text-gray-900 min-h-[32px] flex items-center">
-                          {yearsOfExperience || <span className="text-gray-400">Not provided</span>}
+                        <div className="text-sm text-foreground min-h-[32px] flex items-center">
+                          {yearsOfExperience || <span className="text-neutral-500">Not provided</span>}
                         </div>
                       )}
                     </div>
@@ -874,9 +874,9 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                         content: `${interview.interview_type} - ${formatDate(interview.scheduled_date)}`,
                         timestamp: interview.scheduled_date,
                         icon: CalendarDays,
-                        color: 'text-purple-600',
-                        bgColor: 'bg-purple-50',
-                        borderColor: 'border-purple-200'
+                        color: 'text-cyan-500',
+                        bgColor: 'bg-cyan-50',
+                        borderColor: 'border-cyan-200'
                       });
                     });
                     
@@ -907,9 +907,9 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                         content: `User ${user.full_name || user.email} was added to the system`,
                         timestamp: user.stage_updated_at || user.last_activity_at || new Date().toISOString(),
                         icon: User,
-                        color: 'text-gray-600',
-                        bgColor: 'bg-gray-50',
-                        borderColor: 'border-gray-200'
+                        color: 'text-neutral-400',
+                        bgColor: 'bg-neutral-800/50',
+                        borderColor: 'border-neutral-700'
                       });
                     }
                     

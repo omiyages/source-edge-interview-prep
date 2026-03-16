@@ -39,9 +39,9 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
     return (
       <div className="h-full">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Learning Resources</h3>
+          <h3 className="text-lg font-bold text-foreground">Learning Resources</h3>
         </div>
-        <div className="text-center py-8 text-gray-500">Loading resources...</div>
+        <div className="text-center py-8 text-neutral-400">Loading resources...</div>
       </div>
     );
   }
@@ -50,7 +50,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
     <div className="h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900">Learning Resources</h3>
+        <h3 className="text-lg font-bold text-foreground">Learning Resources</h3>
         {isAdmin && (
           <button
             onClick={onManageClick}
@@ -64,7 +64,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
       {/* Resources List */}
       {!stageResources || stageResources.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-500 mb-4">No resources assigned to this stage yet.</p>
+          <p className="text-neutral-400 mb-4">No resources assigned to this stage yet.</p>
           {isAdmin && (
             <button
               onClick={onManageClick}
@@ -83,7 +83,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
               href={resource.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md hover:border-gray-200 transition-all group"
+              className="block bg-neutral-900 border border-neutral-800 rounded-xl p-4 hover:shadow-md hover:border-neutral-700 transition-all group"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -93,20 +93,20 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
                   </span>
                   
                   {/* Title */}
-                  <h4 className="font-bold text-gray-900 mt-2 mb-1 group-hover:text-primary transition-colors">
+                  <h4 className="font-bold text-foreground mt-2 mb-1 group-hover:text-primary transition-colors">
                     {resource.title}
                   </h4>
                   
                   {/* Description */}
                   {resource.description && (
-                    <p className="text-sm text-gray-500 leading-relaxed">
+                    <p className="text-sm text-neutral-400 leading-relaxed">
                       {resource.description}
                     </p>
                   )}
                 </div>
                 
                 {/* External Link Icon */}
-                <ExternalLink className="w-5 h-5 text-gray-300 group-hover:text-primary flex-shrink-0 mt-1 transition-colors" />
+                <ExternalLink className="w-5 h-5 text-neutral-600 group-hover:text-primary flex-shrink-0 mt-1 transition-colors" />
               </div>
             </a>
           ))}

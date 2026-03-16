@@ -40,7 +40,7 @@ export const StageInformation = ({
 
   if (!information) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm h-full">
+      <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 shadow-sm h-full">
         {stageId && (
           <StageSummary 
             stageId={stageId}
@@ -58,10 +58,10 @@ export const StageInformation = ({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 shadow-sm h-full flex flex-col">
       {/* Header with title and AI badge */}
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-foreground">
           Stage Information: {stageTitle || 'Stage'}
         </h3>
         {hasSummary && (
@@ -74,7 +74,7 @@ export const StageInformation = ({
       
       {/* Stage description subtitle */}
       {stageDescription && (
-        <p className="text-sm text-gray-500 mb-4">{stageDescription}</p>
+        <p className="text-sm text-neutral-400 mb-4">{stageDescription}</p>
       )}
       
       {/* AI Summary Section */}
@@ -102,14 +102,14 @@ export const StageInformation = ({
         </button>
         
         {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="mt-4 pt-4 border-t border-neutral-800">
             <RichTextDisplay content={information} />
           </div>
         )}
       </div>
       
       {children && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="mt-6 pt-6 border-t border-neutral-800">
           {children}
         </div>
       )}

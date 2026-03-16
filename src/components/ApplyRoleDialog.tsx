@@ -186,17 +186,17 @@ export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogPro
               </div>
               <div className="space-y-1.5">
                 <Label>Resume / CV *</Label>
-                <div className="border-2 border-dashed border-gray-200 rounded-md px-4 py-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                <div className="border-2 border-dashed border-neutral-700 rounded-md px-4 py-6 text-center">
+                  <Upload className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
                   <p className="text-sm text-muted-foreground">Click to upload</p>
                 </div>
               </div>
-              <div className="h-11 bg-purple-400 rounded-md" />
+              <div className="h-11 bg-cyan-400 rounded-md" />
             </div>
 
             {/* Overlay */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-6 py-6 max-w-xs w-full text-center">
+              <div className="bg-neutral-900 rounded-xl shadow-lg border border-neutral-800 px-6 py-6 max-w-xs w-full text-center">
                 <div className="w-11 h-11 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Lock className="w-5 h-5 text-primary" />
                 </div>
@@ -223,7 +223,7 @@ export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogPro
           </div>
         ) : submitted ? (
           <div className="text-center py-6 space-y-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 bg-green-900/40 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
             <div>
@@ -287,8 +287,8 @@ export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogPro
             <div className="space-y-1.5">
               <Label>Resume / CV *</Label>
               {file ? (
-                <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-md px-3 py-2.5">
-                  <FileText className="w-5 h-5 text-purple-500 shrink-0" />
+                <div className="flex items-center gap-3 bg-neutral-800/50 border border-neutral-700 rounded-md px-3 py-2.5">
+                  <FileText className="w-5 h-5 text-cyan-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -305,10 +305,10 @@ export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogPro
                 </div>
               ) : (
                 <div
-                  className="border-2 border-dashed border-gray-200 rounded-md px-4 py-6 text-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-colors"
+                  className="border-2 border-dashed border-neutral-700 rounded-md px-4 py-6 text-center cursor-pointer hover:border-cyan-300 hover:bg-cyan-50/30 transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <Upload className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
                   <p className="text-sm text-muted-foreground">
                     Click to upload or drag and drop
                   </p>

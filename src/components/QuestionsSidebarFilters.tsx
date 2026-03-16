@@ -58,7 +58,7 @@ export const QuestionsSidebarFilters = ({
     filters.stage.length > 0;
 
   return (
-    <div className="bg-white rounded-lg border border-border shadow-sm p-4 sticky top-4">
+    <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-4 sticky top-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Menu className="w-4 h-4" />
@@ -87,7 +87,7 @@ export const QuestionsSidebarFilters = ({
           value={filters.company.length > 0 ? filters.company[0] : "all"}
           onValueChange={handleCompanyChange}
         >
-          <SelectTrigger className="w-full border-gray-200 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+          <SelectTrigger className="w-full border-neutral-700 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
             <SelectValue placeholder="All Companies" />
           </SelectTrigger>
           <SelectContent>
@@ -113,7 +113,7 @@ export const QuestionsSidebarFilters = ({
                 onCheckedChange={(checked) =>
                   handleCheckboxChange('role', role, checked as boolean)
                 }
-                className="border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
+                className="border-neutral-600 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
               <Label
                 htmlFor={`role-${role}`}
@@ -139,7 +139,7 @@ export const QuestionsSidebarFilters = ({
                 onCheckedChange={(checked) =>
                   handleCheckboxChange('stage', stage, checked as boolean)
                 }
-                className="border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
+                className="border-neutral-600 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
               <Label
                 htmlFor={`stage-${stage}`}
@@ -184,7 +184,7 @@ export const QuestionsSidebarFilters = ({
                       onCheckedChange={(checked) =>
                         handleCheckboxChange('category', category, checked as boolean)
                       }
-                      className="border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
+                      className="border-neutral-600 focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                     <Label
                       htmlFor={`category-${category}`}

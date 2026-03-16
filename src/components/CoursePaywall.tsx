@@ -21,11 +21,11 @@ export const CoursePaywall = ({
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-300px)] py-12">
       <div className="max-w-md w-full mx-auto px-4">
-        <div className="bg-white rounded-lg p-8 text-center">
+        <div className="bg-neutral-900 rounded-lg p-8 text-center">
           {/* Lock Icon */}
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
-              <Lock className="w-8 h-8 text-purple-600" />
+            <div className="w-16 h-16 rounded-full bg-cyan-900/40 flex items-center justify-center">
+              <Lock className="w-8 h-8 text-cyan-500" />
             </div>
           </div>
 
@@ -43,7 +43,7 @@ export const CoursePaywall = ({
           <Button
             onClick={onStartCourse}
             disabled={isStarting}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white mb-6"
+            className="w-full bg-cyan-500 hover:bg-cyan-600 text-white mb-6"
             size="lg"
           >
             {isStarting ? 'Starting...' : 'Start Course →'}
