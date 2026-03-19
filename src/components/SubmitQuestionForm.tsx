@@ -401,7 +401,7 @@ export const SubmitQuestionForm = ({ onSuccess, onCancel }: SubmitQuestionFormPr
               Cancel
             </Button>
           )}
-          <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button type="submit" disabled={isLoading}>
             {isLoading ? "Submitting..." : "Submit Question"}
             {!isLoading && <Send className="ml-2 h-4 w-4" />}
           </Button>

@@ -214,7 +214,6 @@ export const StageQuestions = ({
                     <span className="text-xs text-muted-foreground">{question.company}</span>
                     <Button
                       size="sm"
-                      className="bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={() => setSelectedQuestionIndex(index)}
                     >
                       View Question

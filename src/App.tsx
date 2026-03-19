@@ -29,6 +29,7 @@ const Resources = lazy(() => import("./pages/Resources"));
 const CourseDetail = lazy(() => import("./pages/CourseDetail"));
 const Companies = lazy(() => import("./pages/Companies"));
 const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
+const ShippioCompanyPage = lazy(() => import("./pages/ShippioCompanyPage"));
 const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
 const Roles = lazy(() => import("./pages/Roles"));
@@ -171,15 +172,25 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/company/:companyId" 
+            <Route
+              path="/company/shippio"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <ShippioCompanyPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company/:companyId"
               element={
                 <ProtectedRoute>
                   <Suspense fallback={<PageLoader />}>
                     <CompanyDetail />
                   </Suspense>
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route 
               path="/relo" 

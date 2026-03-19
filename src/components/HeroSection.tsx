@@ -14,6 +14,16 @@ interface HeroSectionProps {
   onSubmitSuccess: () => void;
 }
 
+const dotGridStyle: React.CSSProperties = {
+  backgroundColor: '#0A0C0F',
+  backgroundImage: 'radial-gradient(circle, #1E2329 1px, transparent 1px)',
+  backgroundSize: '24px 24px',
+};
+
+const gradientFadeStyle: React.CSSProperties = {
+  background: 'linear-gradient(to bottom, transparent 50%, #0a0a0b 100%)',
+};
+
 const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess }: HeroSectionProps) => {
   const { profile, user, loading: authLoading } = useAuth();
   const isAuthenticated = !authLoading && !!user;
@@ -24,8 +34,10 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
       <NavigationHeader />
 
       {/* Hero Content */}
-      <div className="bg-gradient-to-b from-neutral-900 via-neutral-900 to-neutral-950 border-b border-neutral-800">
-        <div className="container mx-auto px-4 py-14 md:py-20 text-center">
+      <div className="relative" style={dotGridStyle}>
+        {/* Gradient fade overlay */}
+        <div className="absolute inset-0 pointer-events-none" style={gradientFadeStyle} />
+        <div className="relative container mx-auto px-4 py-14 md:py-20 text-center">
           <div className="max-w-3xl mx-auto">
             {/* Updated Badge */}
             <div className="inline-flex items-center gap-2 bg-neutral-800 border border-neutral-700 rounded-full px-4 py-1.5 mb-8">

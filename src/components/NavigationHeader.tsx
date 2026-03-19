@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -18,6 +18,14 @@ export const NavigationHeader = memo(() => {
   const [dashboardDropdownOpen, setDashboardDropdownOpen] = useState(false);
   const { count: assignedCoursesCount } = useAssignedCoursesCount();
   const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    onScroll(); // check initial position
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -34,7 +42,7 @@ export const NavigationHeader = memo(() => {
           className={`transition-colors font-medium ${
             isActive("/tracks") || isActive("/course/") 
               ? "text-foreground font-semibold" 
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-accent-foreground"
           }`}
         >
           <BookOpen className="w-4 h-4 mr-2" />
@@ -47,7 +55,7 @@ export const NavigationHeader = memo(() => {
           className={`transition-colors font-medium ${
             isActive("/questions") 
               ? "text-foreground font-semibold" 
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-accent-foreground"
           }`}
         >
           Questions
@@ -59,7 +67,7 @@ export const NavigationHeader = memo(() => {
           className={`transition-colors font-medium ${
             isActive("/resources") 
               ? "text-foreground font-semibold" 
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-accent-foreground"
           }`}
         >
           Resources
@@ -71,7 +79,7 @@ export const NavigationHeader = memo(() => {
           className={`transition-colors font-medium ${
             isActive("/jobs") || isActive("/job/") || isActive("/roles") || isActive("/role/")
               ? "text-foreground font-semibold" 
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-accent-foreground"
           }`}
         >
           Jobs
@@ -83,7 +91,7 @@ export const NavigationHeader = memo(() => {
           className={`transition-colors font-medium ${
             isActive("/company") 
               ? "text-foreground font-semibold" 
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-accent-foreground"
           }`}
         >
           Companies
@@ -104,7 +112,7 @@ export const NavigationHeader = memo(() => {
                 className={`transition-colors font-medium ${
                   isActive("/admin") 
                     ? "text-foreground font-semibold" 
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-accent-foreground"
                 }`}
               >
                 <Settings className="w-4 h-4 mr-2" />
@@ -124,7 +132,7 @@ export const NavigationHeader = memo(() => {
                   className={`transition-colors font-medium relative ${
                     isActive("/dashboard") 
                       ? "text-foreground font-semibold" 
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-muted-foreground hover:text-accent-foreground"
                   }`}
                 >
                   <User className="w-4 h-4 mr-2" />
@@ -149,7 +157,7 @@ export const NavigationHeader = memo(() => {
             <Button 
               variant="ghost" 
               onClick={signOut}
-              className="transition-colors font-medium text-muted-foreground hover:text-foreground"
+              className="transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
@@ -161,7 +169,7 @@ export const NavigationHeader = memo(() => {
           <Link to="/auth">
             <Button 
               variant="ghost" 
-              className="transition-colors font-medium text-muted-foreground hover:text-foreground"
+              className="transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
             >
               <LogIn className="w-4 h-4 mr-2" />
               Sign In
@@ -170,7 +178,7 @@ export const NavigationHeader = memo(() => {
           <Link to="/signup">
             <Button 
               variant="default"
-              className="btn-purple-gradient"
+              className="btn-cta"
             >
               <UserPlus className="w-4 h-4 mr-2" />
               Register
@@ -182,11 +190,15 @@ export const NavigationHeader = memo(() => {
   );
 
   return (
-    <div className="bg-neutral-900 border-b border-neutral-800">
+    <div className={`sticky top-0 z-50 transition-all duration-300 ${
+      scrolled
+        ? 'bg-neutral-900/95 backdrop-blur-md border-b border-neutral-800'
+        : 'bg-transparent border-b border-transparent'
+    }`}>
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link to="/">
-            <h1 className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
+            <h1 className="text-xl font-semibold text-foreground hover:text-accent-foreground transition-colors cursor-pointer">
               Omiyages
             </h1>
           </Link>
@@ -194,7 +206,7 @@ export const NavigationHeader = memo(() => {
           {/* Desktop Navigation */}
           {!isMobile && (
             <nav className="flex items-center gap-1">
-              <NavigationItems />
+              {NavigationItems()}
             </nav>
           )}
           
@@ -214,7 +226,7 @@ export const NavigationHeader = memo(() => {
                       className={`w-full justify-start transition-colors font-medium ${
                         isActive("/tracks") || isActive("/course/")
                           ? "text-foreground font-semibold" 
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-accent-foreground"
                       }`}
                     >
                       <BookOpen className="w-4 h-4 mr-2" />
@@ -227,7 +239,7 @@ export const NavigationHeader = memo(() => {
                       className={`w-full justify-start transition-colors font-medium ${
                         isActive("/questions") 
                           ? "text-foreground font-semibold" 
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-accent-foreground"
                       }`}
                     >
                       Questions
@@ -239,7 +251,7 @@ export const NavigationHeader = memo(() => {
                       className={`w-full justify-start transition-colors font-medium ${
                         isActive("/resources") 
                           ? "text-foreground font-semibold" 
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-accent-foreground"
                       }`}
                     >
                       Resources
@@ -251,7 +263,7 @@ export const NavigationHeader = memo(() => {
                       className={`w-full justify-start transition-colors font-medium ${
                         isActive("/jobs") || isActive("/job/") || isActive("/roles") || isActive("/role/")
                           ? "text-foreground font-semibold" 
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-accent-foreground"
                       }`}
                     >
                       Jobs
@@ -263,7 +275,7 @@ export const NavigationHeader = memo(() => {
                       className={`w-full justify-start transition-colors font-medium ${
                         isActive("/company") 
                           ? "text-foreground font-semibold" 
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-accent-foreground"
                       }`}
                     >
                       Companies
@@ -278,7 +290,7 @@ export const NavigationHeader = memo(() => {
                             className={`w-full justify-start transition-colors font-medium ${
                               isActive("/admin") 
                                 ? "text-foreground font-semibold" 
-                                : "text-muted-foreground hover:text-foreground"
+                                : "text-muted-foreground hover:text-accent-foreground"
                             }`}
                           >
                             <Settings className="w-4 h-4 mr-2" />
@@ -294,7 +306,7 @@ export const NavigationHeader = memo(() => {
                               className={`w-full justify-start transition-colors font-medium relative ${
                                 isActive("/dashboard") 
                                   ? "text-foreground font-semibold" 
-                                  : "text-muted-foreground hover:text-foreground"
+                                  : "text-muted-foreground hover:text-accent-foreground"
                               }`}
                             >
                               <User className="w-4 h-4 mr-2" />
@@ -306,7 +318,7 @@ export const NavigationHeader = memo(() => {
                             <CollapsibleTrigger asChild>
                               <Button 
                                 variant="ghost" 
-                                className="w-full justify-between transition-colors font-medium text-muted-foreground hover:text-foreground pl-6"
+                                className="w-full justify-between transition-colors font-medium text-muted-foreground hover:text-accent-foreground pl-6"
                               >
                                 <span className="text-sm">More</span>
                                 <ChevronRight className={`w-4 h-4 transition-transform ${mobileDashboardOpen ? 'rotate-90' : ''}`} />
@@ -320,7 +332,7 @@ export const NavigationHeader = memo(() => {
                                     setMobileMenuOpen(false);
                                     signOut();
                                   }} 
-                                  className="w-full justify-start text-muted-foreground hover:text-foreground transition-colors font-medium text-sm"
+                                  className="w-full justify-start text-muted-foreground hover:text-accent-foreground transition-colors font-medium text-sm"
                                 >
                                   <LogOut className="w-4 h-4 mr-2" />
                                   Sign Out
@@ -337,7 +349,7 @@ export const NavigationHeader = memo(() => {
                             setMobileMenuOpen(false);
                             signOut();
                           }} 
-                          className="w-full justify-start text-muted-foreground hover:text-foreground transition-colors font-medium"
+                          className="w-full justify-start text-muted-foreground hover:text-accent-foreground transition-colors font-medium"
                         >
                           <LogOut className="w-4 h-4 mr-2" />
                           Sign Out
@@ -349,7 +361,7 @@ export const NavigationHeader = memo(() => {
                       <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                         <Button 
                           variant="ghost" 
-                          className="w-full justify-start transition-colors font-medium text-muted-foreground hover:text-foreground"
+                          className="w-full justify-start transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
                         >
                           <LogIn className="w-4 h-4 mr-2" />
                           Sign In
@@ -358,7 +370,7 @@ export const NavigationHeader = memo(() => {
                       <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
                         <Button 
                           variant="default"
-                          className="w-full btn-purple-gradient"
+                          className="w-full btn-cta"
                         >
                           <UserPlus className="w-4 h-4 mr-2" />
                           Register

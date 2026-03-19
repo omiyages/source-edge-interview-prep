@@ -10,13 +10,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
+        default: "bg-[#E4E4E4] text-neutral-950 hover:bg-[#D4D4D4] transition-colors",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors",
         ghost: "hover:bg-accent hover:text-accent-foreground transition-colors",
         link: "text-primary underline-offset-4 hover:underline transition-colors",
-        gradient: "text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5",
+        gradient: "bg-[#E4E4E4] text-neutral-950 font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#D4D4D4]",
       },
       size: {
         default: "h-10 px-4 py-2",
@@ -42,36 +42,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     
-    // Apply gradient styles directly via style prop for gradient variant
-    const gradientStyle = variant === "gradient" ? {
-      background: "linear-gradient(135deg, hsl(270 36% 71%), hsl(270 36% 58%))",
-      boxShadow: "0 2px 8px hsl(270 36% 60% / 0.3)",
-      ...(props.style || {})
-    } : props.style;
-
-    const gradientHoverClass = variant === "gradient" ?
-      "hover:bg-none" : "";
-
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size }), gradientHoverClass, className)}
-        style={gradientStyle}
+        className={cn(buttonVariants({ variant, size }), className)}
         ref={ref}
         {...props}
-        onMouseEnter={(e) => {
-          if (variant === "gradient") {
-            e.currentTarget.style.background = "linear-gradient(135deg, hsl(270 36% 65%), hsl(270 36% 52%))";
-            e.currentTarget.style.boxShadow = "0 4px 14px hsl(270 36% 60% / 0.4)";
-          }
-          props.onMouseEnter?.(e);
-        }}
-        onMouseLeave={(e) => {
-          if (variant === "gradient") {
-            e.currentTarget.style.background = "linear-gradient(135deg, hsl(270 36% 71%), hsl(270 36% 58%))";
-            e.currentTarget.style.boxShadow = "0 2px 8px hsl(270 36% 60% / 0.3)";
-          }
-          props.onMouseLeave?.(e);
-        }}
       />
     )
   }

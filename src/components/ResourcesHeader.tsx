@@ -30,7 +30,7 @@ export const ResourcesHeader = ({
         {isAdmin && (
           <Dialog open={createDialogOpen} onOpenChange={onCreateDialogOpenChange}>
             <DialogTrigger asChild>
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Resource
               </Button>

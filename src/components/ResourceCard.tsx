@@ -6,24 +6,9 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { 
-  MoreVertical, 
-  ExternalLink,
-  Home, 
-  Video, 
-  Calculator, 
-  FileText, 
-  Code, 
-  Briefcase,
-  GraduationCap,
-  Users,
-  Globe,
-  Lightbulb,
-  Target,
-  TrendingUp,
-  BookOpen
-} from "lucide-react";
+import { MoreVertical, ExternalLink } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { getIconAndColor, getTags } from "@/utils/resourceIcons";
 
 interface Resource {
   id: string;
@@ -40,61 +25,6 @@ interface ResourceCardProps {
   onDelete?: (resourceId: string) => void;
 }
 
-// Icon and color mapping based on category/title keywords
-const getIconAndColor = (category: string, title: string) => {
-  const lowerCategory = category.toLowerCase();
-  const lowerTitle = title.toLowerCase();
-  
-  // Check title keywords first for more specific matches
-  if (lowerTitle.includes('rental') || lowerTitle.includes('property') || lowerTitle.includes('housing')) {
-    return { icon: Home, bgColor: 'bg-blue-100', iconColor: 'text-blue-600' };
-  }
-  if (lowerTitle.includes('cost of living') || lowerTitle.includes('living index')) {
-    return { icon: Video, bgColor: 'bg-emerald-100', iconColor: 'text-emerald-600' };
-  }
-  if (lowerTitle.includes('salary') || lowerTitle.includes('calculator') || lowerTitle.includes('tax')) {
-    return { icon: Calculator, bgColor: 'bg-amber-100', iconColor: 'text-amber-600' };
-  }
-  if (lowerTitle.includes('visa') || lowerTitle.includes('immigration')) {
-    return { icon: FileText, bgColor: 'bg-cyan-100', iconColor: 'text-cyan-400' };
-  }
-  
-  // Fall back to category-based icons
-  if (lowerCategory.includes('finance') || lowerCategory.includes('money')) {
-    return { icon: TrendingUp, bgColor: 'bg-emerald-100', iconColor: 'text-emerald-600' };
-  }
-  if (lowerCategory.includes('code') || lowerCategory.includes('programming') || lowerCategory.includes('technical')) {
-    return { icon: Code, bgColor: 'bg-indigo-100', iconColor: 'text-indigo-600' };
-  }
-  if (lowerCategory.includes('career') || lowerCategory.includes('job')) {
-    return { icon: Briefcase, bgColor: 'bg-orange-100', iconColor: 'text-orange-600' };
-  }
-  if (lowerCategory.includes('learning') || lowerCategory.includes('education')) {
-    return { icon: GraduationCap, bgColor: 'bg-cyan-100', iconColor: 'text-cyan-600' };
-  }
-  if (lowerCategory.includes('community') || lowerCategory.includes('network')) {
-    return { icon: Users, bgColor: 'bg-pink-100', iconColor: 'text-pink-600' };
-  }
-  if (lowerCategory.includes('relocation') || lowerCategory.includes('expat')) {
-    return { icon: Globe, bgColor: 'bg-cyan-100', iconColor: 'text-cyan-600' };
-  }
-  if (lowerCategory.includes('guide') || lowerCategory.includes('tutorial')) {
-    return { icon: Lightbulb, bgColor: 'bg-yellow-100', iconColor: 'text-yellow-600' };
-  }
-  if (lowerCategory.includes('tool')) {
-    return { icon: Target, bgColor: 'bg-red-100', iconColor: 'text-red-600' };
-  }
-  
-  // Default
-  return { icon: BookOpen, bgColor: 'bg-neutral-100', iconColor: 'text-neutral-600' };
-};
-
-// Get tags from category
-const getTags = (category: string): string[] => {
-  const tags = category.split(/[,\/&]/).map(t => t.trim().toUpperCase()).filter(Boolean);
-  return tags.length > 0 ? tags : [category.toUpperCase()];
-};
-
 export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) => {
   const { isAdmin } = useAuth();
   const { icon: IconComponent, bgColor, iconColor } = getIconAndColor(resource.category, resource.title);
@@ -102,7 +32,7 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
 
   return (
     <div 
-      className="bg-neutral-900 rounded-xl p-6 border border-neutral-200 hover:border-neutral-300 hover:shadow-lg transition-all duration-200 flex flex-col h-full group cursor-pointer"
+      className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 hover:border-neutral-700 hover:shadow-lg transition-all duration-200 flex flex-col h-full group cursor-pointer"
       onClick={() => window.open(resource.url, '_blank')}
     >
       {/* Icon and Actions Row */}
@@ -139,7 +69,7 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <ExternalLink className="w-5 h-5 text-neutral-300 group-hover:text-neutral-500 transition-colors" />
+          <ExternalLink className="w-5 h-5 text-neutral-600 group-hover:text-neutral-400 transition-colors" />
         </div>
       </div>
 
@@ -161,7 +91,7 @@ export const ResourceCard = ({ resource, onEdit, onDelete }: ResourceCardProps) 
           <Badge
             key={index}
             variant="secondary"
-            className="bg-neutral-100 text-neutral-600 hover:bg-neutral-100 text-xs font-medium px-2.5 py-1 rounded"
+            className="bg-neutral-800 text-neutral-400 hover:bg-neutral-800 text-xs font-medium px-2.5 py-1 rounded"
           >
             {tag}
           </Badge>

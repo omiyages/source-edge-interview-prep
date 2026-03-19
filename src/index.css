@@ -44,8 +44,8 @@
     --secondary-foreground: 0 0% 89%;
     --muted: 0 0% 25%;
     --muted-foreground: 0 0% 58%;
-    --accent: 349 100% 88%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 0 0% 89%;
+    --accent-foreground: 0 0% 9%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 89%;
     --border: 0 0% 28%;
@@ -119,17 +119,17 @@
     animation: slideUp 0.3s ease-out;
   }
 
-  .btn-purple-gradient {
-    background: linear-gradient(135deg, hsl(270 36% 71%), hsl(270 36% 58%));
-    color: white;
+  .btn-cta {
+    background: #E4E4E4;
+    color: #0a0a0a;
     font-weight: 500;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px hsl(270 36% 60% / 0.3);
+    box-shadow: 0 2px 8px rgba(228, 228, 228, 0.15);
   }
 
-  .btn-purple-gradient:hover {
-    background: linear-gradient(135deg, hsl(270 36% 65%), hsl(270 36% 52%));
-    box-shadow: 0 4px 14px hsl(270 36% 60% / 0.4);
+  .btn-cta:hover {
+    background: #D4D4D4;
+    box-shadow: 0 4px 14px rgba(228, 228, 228, 0.2);
     transform: translateY(-1px);
   }
 }

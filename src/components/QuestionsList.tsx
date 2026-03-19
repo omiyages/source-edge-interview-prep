@@ -61,7 +61,7 @@ const QuestionsListItem = memo(({ question, displayNumber, onView }: { question:
         <Button
           variant="outline"
           size="sm"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
+          className="border-[#E4E4E4]"
           onClick={onView}
         >
           <Eye className="w-4 h-4 mr-2" />

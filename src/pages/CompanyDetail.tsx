@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { LazyImage } from '@/components/ui/lazy-image';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { 
   CheckCircle, 
@@ -48,23 +47,14 @@ const CompanyDetail: React.FC = () => {
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[
-          { label: 'Home', href: '/' }, 
-          { label: 'Companies', href: '/company' }, 
+          { label: 'Home', href: '/' },
+          { label: 'Companies', href: '/company' },
           { label: companyData.name }
         ]} className="mb-4" />
-        
-        <div className="flex items-center gap-4 mb-6">
-          <Link to="/company">
-            <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Companies
-            </Button>
-          </Link>
-        </div>
 
         {/* Hero Section */}
-        <div className="py-16 mb-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+        <div className="min-h-[calc(100vh-64px)] flex items-center mb-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto w-full">
             <div>
               <h1 className="text-6xl font-bold text-foreground mb-6">
                 Building the Future of

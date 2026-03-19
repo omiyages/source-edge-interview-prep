@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, BookOpen } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, BookOpen, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateCourseForm } from "@/components/CreateCourseForm";
 import { CourseCard } from "@/components/CourseCard";
@@ -23,9 +24,10 @@ interface Course {
 }
 
 const Track = () => {
-  const { user, profile, loading, isAdmin } = useAuth();
-  const isAuthenticated = !loading && !!user;
+  const { user, loading, isAdmin } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("all");
 
   const { data: courses, isLoading, refetch } = useQuery({
     queryKey: ['courses'],
@@ -34,17 +36,17 @@ const Track = () => {
         .from('courses')
         .select('id, title, description, company, created_at')
         .order('created_at', { ascending: false });
-      
+
       if (error) {
         console.error('❌ Error fetching courses:', error);
         throw error;
       }
-      
+
       return data as Course[];
     },
     enabled: !loading,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -99,6 +101,29 @@ const Track = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Extract unique companies from courses
+  const companies = useMemo(() => {
+    if (!courses) return [];
+    const companySet = new Set(
+      courses.map(c => c.company).filter((c): c is string => !!c)
+    );
+    return [...companySet].sort();
+  }, [courses]);
+
+  // Filter courses by search and company
+  const filteredCourses = useMemo(() => {
+    if (!courses) return [];
+    return courses.filter(course => {
+      const matchesSearch = !searchTerm.trim() ||
+        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.company?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCompany = selectedCompany === "all" ||
+        course.company === selectedCompany;
+      return matchesSearch && matchesCompany;
+    });
+  }, [courses, searchTerm, selectedCompany]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-950">
@@ -117,46 +142,82 @@ const Track = () => {
     <div className="min-h-screen bg-neutral-950 flex flex-col">
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-foreground mb-4">
-            Interview Tracks
-          </h1>
-          <p className="text-lg text-foreground font-semibold max-w-2xl mx-auto">
-            Structured interview preparation courses with organized stages and curated questions.
-          </p>
-          {isAuthenticated && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Welcome back, {profile?.full_name || profile?.email} ({profile?.role})
-              {isAdmin && <span className="text-primary font-semibold ml-2">👑 Admin</span>}
-            </p>
-          )}
+        {/* Header — left-aligned like Resources */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                Interview Tracks
+              </h1>
+              <p className="text-base text-muted-foreground">
+                Structured interview preparation courses with organized stages and curated questions.
+              </p>
+            </div>
+            {isAdmin && (
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Course
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Create New Course</DialogTitle>
+                  </DialogHeader>
+                  <CreateCourseForm
+                    onSuccess={() => {
+                      setIsCreateDialogOpen(false);
+                      refetch();
+                    }}
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
 
-        {/* Create Course Button for Admins */}
-        {isAdmin && (
-          <div className="flex justify-center mb-8">
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="gradient">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Course
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Course</DialogTitle>
-                </DialogHeader>
-                <CreateCourseForm 
-                  onSuccess={() => {
-                    setIsCreateDialogOpen(false);
-                    refetch();
-                  }} 
-                />
-              </DialogContent>
-            </Dialog>
+        {/* Search + Company Filter Tags */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tracks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        )}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={selectedCompany === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedCompany("all")}
+              className={
+                selectedCompany === "all"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-neutral-900 hover:bg-neutral-800"
+              }
+            >
+              All
+            </Button>
+            {companies.map((company) => (
+              <Button
+                key={company}
+                variant={selectedCompany === company ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCompany(company)}
+                className={
+                  selectedCompany === company
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-neutral-900 hover:bg-neutral-800"
+                }
+              >
+                {company}
+              </Button>
+            ))}
+          </div>
+        </div>
 
         {/* Courses Grid */}
         {isLoading ? (
@@ -168,18 +229,24 @@ const Track = () => {
               </div>
             ))}
           </div>
-        ) : (
+        ) : filteredCourses.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {courses?.map((course) => (
+            {filteredCourses.map((course) => (
               <CourseCard key={course.id} course={course} progress={courseProgressById[course.id] ?? null} />
             ))}
           </div>
-        )}
-
-        {courses?.length === 0 && !isLoading && (
+        ) : (
           <EmptyState
-            title="No courses available yet"
-            description={isAdmin ? "Create your first course to get started." : "Check back later for new courses."}
+            title={
+              courses?.length === 0
+                ? "No courses available yet"
+                : "No tracks match your filters"
+            }
+            description={
+              courses?.length === 0
+                ? (isAdmin ? "Create your first course to get started." : "Check back later for new courses.")
+                : "Try adjusting your search or filters."
+            }
             icon={<BookOpen className="w-16 h-16 mx-auto text-muted-foreground" />}
           />
         )}

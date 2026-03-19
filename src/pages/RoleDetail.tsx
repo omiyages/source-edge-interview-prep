@@ -57,6 +57,18 @@ const COMPANIES_DIRECTORY: {
     image: '/woven-office-image.jpg',
     divisions: ['ADAS', 'Arene', 'Woven City', 'Enterprise Technology', 'Dojo'],
   },
+  {
+    id: 'shippio',
+    name: 'Shippio',
+    aliases: ['shippio'],
+    description:
+      "Japan's first digital freight forwarder, building an international logistics platform to drive digital transformation in global trade. Cloud-based cargo tracking, document management, and AI-powered customs clearance.",
+    industry: 'International Logistics / Trade DX',
+    location: 'Tokyo, Japan',
+    founded: '2016',
+    image: '/shippio-cover.svg',
+    divisions: ['Engineering', 'Product', 'Operations', 'Sales'],
+  },
 ];
 
 function findCompanyInfo(companyName: string) {
@@ -418,7 +430,7 @@ const RoleDetail = () => {
               {/* Apply button */}
               <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-5 text-center">
                 <Button
-                  className="w-full btn-purple-gradient text-base h-12 font-semibold"
+                  className="w-full btn-cta text-base h-12 font-semibold"
                   onClick={() => setApplyDialogOpen(true)}
                 >
                   <Send className="w-5 h-5 mr-2" />

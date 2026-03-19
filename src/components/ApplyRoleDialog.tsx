@@ -205,7 +205,7 @@ export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogPro
                   Create an account or sign in to submit your application.
                 </p>
                 <div className="flex gap-3">
-                  <Button asChild className="flex-1 btn-purple-gradient">
+                  <Button asChild className="flex-1 btn-cta">
                     <Link to="/auth" onClick={() => onOpenChange(false)}>
                       <LogIn className="w-4 h-4 mr-1.5" />
                       Sign In
@@ -329,7 +329,7 @@ export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogPro
             {/* Submit */}
             <Button
               type="submit"
-              className="w-full btn-purple-gradient h-11 text-base font-semibold"
+              className="w-full btn-cta h-11 text-base font-semibold"
               disabled={submitting || !file}
             >
               {submitting ? (

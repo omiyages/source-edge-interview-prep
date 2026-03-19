@@ -291,7 +291,7 @@ const Roles = () => {
                       <Upload className="w-4 h-4 mr-2" />
                       Import CSV
                     </Button>
-                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setShowCreateDialog(true)}>
+                    <Button onClick={() => setShowCreateDialog(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Create Role
                     </Button>
@@ -346,7 +346,7 @@ const Roles = () => {
                 </p>
                 {baseRoles.length === 0 && isAdmin && (
                   <div className="flex justify-center gap-3 mt-4">
-                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setShowCreateDialog(true)}>
+                    <Button onClick={() => setShowCreateDialog(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Create Role
                     </Button>

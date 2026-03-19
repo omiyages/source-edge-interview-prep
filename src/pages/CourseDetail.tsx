@@ -204,7 +204,7 @@ const CourseDetail = () => {
                     Sign in to access course stages, questions, resources, and track your progress.
                   </p>
                   <div className="flex gap-3">
-                    <Button asChild className="flex-1 btn-purple-gradient">
+                    <Button asChild className="flex-1 btn-cta">
                       <Link to="/auth">
                         <LogIn className="w-4 h-4 mr-2" />
                         Sign In

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" fill="none">
+  <rect width="960" height="540" fill="#0A0C0F"/>
+
+  <!-- Dot grid background -->
+  <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+    <circle cx="12" cy="12" r="1" fill="#1E2329"/>
+  </pattern>
+  <rect width="960" height="540" fill="url(#dots)"/>
+
+  <!-- Gradient fade at bottom -->
+  <defs>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.6" stop-color="#0A0C0F" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0A0C0F" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="tealGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00C2A8" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#00C2A8" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#fade)"/>
+
+  <!-- Subtle teal glow -->
+  <ellipse cx="480" cy="270" rx="320" ry="180" fill="url(#tealGlow)"/>
+
+  <!-- Container ship silhouette (stylized) -->
+  <g transform="translate(240, 200)" opacity="0.6">
+    <!-- Hull -->
+    <path d="M0 140 L40 180 L440 180 L480 140 L460 140 L460 80 L20 80 L20 140 Z" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <!-- Containers row 1 -->
+    <rect x="40" y="90" width="60" height="40" rx="1" fill="#00C2A8" opacity="0.3" stroke="#00C2A8" stroke-width="0.5" stroke-opacity="0.5"/>
+    <rect x="110" y="90" width="60" height="40" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <rect x="180" y="90" width="60" height="40" rx="1" fill="#00C2A8" opacity="0.2" stroke="#00C2A8" stroke-width="0.5" stroke-opacity="0.4"/>
+    <rect x="250" y="90" width="60" height="40" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <rect x="320" y="90" width="60" height="40" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <rect x="390" y="90" width="60" height="40" rx="1" fill="#00C2A8" opacity="0.15" stroke="#00C2A8" stroke-width="0.5" stroke-opacity="0.3"/>
+    <!-- Containers row 2 -->
+    <rect x="80" y="42" width="60" height="40" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <rect x="150" y="42" width="60" height="40" rx="1" fill="#00C2A8" opacity="0.25" stroke="#00C2A8" stroke-width="0.5" stroke-opacity="0.4"/>
+    <rect x="220" y="42" width="60" height="40" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <rect x="290" y="42" width="60" height="40" rx="1" fill="#00C2A8" opacity="0.1" stroke="#00C2A8" stroke-width="0.5" stroke-opacity="0.3"/>
+    <rect x="360" y="42" width="60" height="40" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <!-- Containers row 3 -->
+    <rect x="140" y="0" width="60" height="34" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <rect x="210" y="0" width="60" height="34" rx="1" fill="#00C2A8" opacity="0.2" stroke="#00C2A8" stroke-width="0.5" stroke-opacity="0.4"/>
+    <rect x="280" y="0" width="60" height="34" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <!-- Bridge -->
+    <rect x="430" y="20" width="30" height="60" rx="1" fill="#111418" stroke="#1E2329" stroke-width="1"/>
+    <rect x="435" y="30" width="20" height="8" rx="1" fill="#00C2A8" opacity="0.4"/>
+  </g>
+
+  <!-- Water line -->
+  <line x1="0" y1="380" x2="960" y2="380" stroke="#1E2329" stroke-width="1" stroke-dasharray="8 4" opacity="0.5"/>
+
+  <!-- Route lines (trade routes) -->
+  <g opacity="0.3">
+    <path d="M100 420 Q300 400 480 410 Q660 420 860 390" stroke="#00C2A8" stroke-width="1" fill="none" stroke-dasharray="4 6"/>
+    <path d="M50 450 Q250 430 480 440 Q710 450 910 420" stroke="#00C2A8" stroke-width="0.5" fill="none" stroke-dasharray="3 8"/>
+  </g>
+
+  <!-- Route dots -->
+  <circle cx="100" cy="420" r="3" fill="#00C2A8" opacity="0.6"/>
+  <circle cx="480" cy="410" r="3" fill="#00C2A8" opacity="0.6"/>
+  <circle cx="860" cy="390" r="3" fill="#00C2A8" opacity="0.6"/>
+
+  <!-- "SHIPPIO" text -->
+  <text x="480" y="500" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="14" letter-spacing="8" fill="#4A5568">SHIPPIO</text>
+</svg>
