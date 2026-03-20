@@ -125,10 +125,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signInLoaded || !signIn) {
-      setError('Authentication is still loading. Please wait a moment and try again.');
-      return;
-    }
+    if (!signInLoaded || !signIn) return;
     setLoading(true);
     setError('');
     try {
@@ -301,10 +298,10 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (mode === 'signin' ? !signInLoaded : !signUpLoaded)}
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold h-10 mb-5 transition-colors"
                 >
-                  {loading
+                  {(loading || (mode === 'signin' ? !signInLoaded : !signUpLoaded))
                     ? <Loader2 className="w-4 h-4 animate-spin" />
                     : mode === 'signin' ? 'Sign in' : 'Create account'}
                 </Button>

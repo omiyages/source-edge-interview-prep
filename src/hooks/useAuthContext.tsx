@@ -3,7 +3,7 @@ import React, { createContext, useContext } from 'react';
 import { useUser, useClerk } from '@clerk/react';
 
 export interface MinimalUser {
-  id: string;   // Supabase UUID from publicMetadata.supabase_uuid (set by clerk-webhook)
+  id: string;   // Clerk user ID (e.g. "user_2abc") — directly used as profiles.id
   email: string;
 }
 
@@ -20,15 +20,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { signOut: clerkSignOut } = useClerk();
 
   // Map Clerk's UserResource to the minimal shape the app needs.
-  // The Supabase UUID is written to publicMetadata.supabase_uuid by the
-  // clerk-webhook Edge Function on user.created. Until the webhook fires
-  // (first sign-up only), id falls back to the Clerk user ID so the session
-  // isn't blocked — the profile will be created on next load once the webhook
-  // has completed.
+  // profiles.id is the Clerk user ID — no UUID mapping needed.
   const mappedUser: MinimalUser | null =
     isSignedIn && user
       ? {
-          id: (user.publicMetadata?.supabase_uuid as string) ?? user.id,
+          id: user.id,
           email: user.primaryEmailAddress?.emailAddress ?? '',
         }
       : null;

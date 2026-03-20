@@ -14,10 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@clerk/react';
-import {
-  createClerkSupabaseClient,
-  CLERK_SUPABASE_JWT_TEMPLATE,
-} from '@/lib/clerk';
+import { createClerkSupabaseClient } from '@/lib/clerk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -36,12 +33,12 @@ export function useClerkSupabase() {
     }
 
     try {
-      const token = await getToken({ template: CLERK_SUPABASE_JWT_TEMPLATE });
+      // Get the raw Clerk session JWT — no custom template needed.
+      // Supabase validates it via Third-Party Auth (JWKS endpoint).
+      const token = await getToken();
       clientRef.current = createClerkSupabaseClient(token);
     } catch (err) {
-      // JWT template not configured in Clerk dashboard — fall back to anon client.
-      // Profile queries will fail RLS; user must configure the "supabase" JWT template.
-      console.warn('[Clerk-Supabase] Failed to get JWT token (is the "supabase" template configured in Clerk dashboard?):', err);
+      console.warn('[Clerk-Supabase] Failed to get JWT token:', err);
       clientRef.current = createClerkSupabaseClient(null);
     } finally {
       setIsReady(true);

@@ -2,18 +2,15 @@
  * Clerk Configuration & Supabase Integration
  *
  * Provides a helper to create a Supabase client authenticated with a
- * Clerk-issued JWT.  The JWT template named "supabase" must be configured
- * in the Clerk dashboard with:
- *   {
- *     "sub": "{{user.public_metadata.supabase_uuid}}",
- *     "role": "authenticated",
- *     "aud": "authenticated",
- *     "iss": "supabase"
- *   }
+ * Clerk-issued JWT.  Supabase validates the raw Clerk session JWT via
+ * Third-Party Auth (JWKS).  No custom JWT template is needed.
  *
- * The Supabase project's JWT secret must be set to the signing key from
- * this Clerk JWT template so that `auth.uid()` in RLS resolves to the
- * user's Supabase UUID.
+ * Setup required in Supabase Dashboard → Authentication → Third-Party Auth:
+ *   Provider: Clerk
+ *   JWKS URL: https://clerk.omiyages.com/.well-known/jwks.json
+ *
+ * RLS policies use clerk_uid() which returns auth.jwt() ->> 'sub'
+ * (the Clerk user ID, e.g. "user_2abc"), which matches profiles.id.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -44,5 +41,3 @@ export function createClerkSupabaseClient(clerkToken: string | null) {
   });
 }
 
-/** The Clerk JWT template name configured in the Clerk dashboard. */
-export const CLERK_SUPABASE_JWT_TEMPLATE = 'supabase';
