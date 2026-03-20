@@ -40,7 +40,9 @@ root.render(
   <StrictMode>
     <ClerkProvider
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
-      clerkJSUrl="https://clerk.omiyages.com/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+      {...(import.meta.env.PROD && {
+        clerkJSUrl: 'https://clerk.omiyages.com/npm/@clerk/clerk-js@6/dist/clerk.browser.js',
+      })}
       afterSignOutUrl="/auth"
       appearance={clerkAppearance}
     >
