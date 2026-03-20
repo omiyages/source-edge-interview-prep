@@ -7,17 +7,17 @@ import { useOptimizedUserProfile } from './useOptimizedUserProfile';
 
 export const useAuth = () => {
   const authContext = useAuthContext();
-  const { profile, loading: profileLoading, refetch } = useOptimizedUserProfile(authContext.user);
+  const { profile, loading: profileLoading, loadFailed: profileLoadFailed, refetch } = useOptimizedUserProfile(authContext.user);
 
   // More robust admin check with memoization
   const isAdmin = Boolean(
-    authContext.user && 
-    profile && 
-    profile.role === 'admin' && 
-    !authContext.loading && 
+    authContext.user &&
+    profile &&
+    profile.role === 'admin' &&
+    !authContext.loading &&
     !profileLoading
   );
-  
+
   const loading = authContext.loading || profileLoading;
 
   return {
@@ -25,6 +25,7 @@ export const useAuth = () => {
     profile,
     loading,
     isAdmin,
+    profileLoadFailed,
     refetchProfile: refetch,
   };
 };

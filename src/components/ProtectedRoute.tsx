@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { user, loading, isAdmin, profile } = useAuth();
+  const { user, loading, isAdmin, profile, profileLoadFailed, refetchProfile } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while authentication is being checked
@@ -30,7 +30,27 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // If user exists but profile hasn't loaded yet, wait for it before checking admin
+  // If profile failed to load, show error with retry instead of spinning forever
+  if (!profile && profileLoadFailed) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <p className="text-foreground font-semibold mb-2">Unable to load your profile</p>
+          <p className="text-muted-foreground text-sm mb-4">
+            There was an issue connecting to the database. Check the browser console for details.
+          </p>
+          <button
+            onClick={() => refetchProfile()}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If profile is still loading (not yet attempted), wait briefly
   if (!profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

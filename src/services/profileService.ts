@@ -19,9 +19,10 @@ export const loadOrCreateProfile = async (
   const db = client ?? supabase;
 
   try {
-    // Validate email before processing
-    if (!validateEmail(user.email || '')) {
+    // Skip email validation if email is empty (some OAuth flows may omit it)
+    if (user.email && !validateEmail(user.email)) {
       logSuspiciousActivity(`Invalid email format in profile loading: ${user.email}`, user.id);
+      console.warn('[ProfileService] Invalid email format, skipping profile load for user:', user.id);
       return null;
     }
 
@@ -32,13 +33,25 @@ export const loadOrCreateProfile = async (
       .eq('id', user.id)
       .maybeSingle();
 
+    if (error) {
+      console.error('[ProfileService] SELECT error — RLS or JWT issue:', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint,
+        details: error.details,
+        userId: user.id,
+      });
+    }
+
     if (existingProfile) {
+      console.log('[ProfileService] Profile loaded for user:', user.id);
       return existingProfile;
     }
 
     // If no profile exists, create one with secure defaults
     if (!error || error.code === 'PGRST116') {
       const sanitizedEmail = sanitizeInput(user.email || '');
+      console.log('[ProfileService] No profile found, creating new profile for user:', user.id);
 
       // All new profiles start as 'user' role for security
       const { data: newProfile, error: createError } = await db
@@ -55,16 +68,25 @@ export const loadOrCreateProfile = async (
         .single();
 
       if (createError) {
+        console.error('[ProfileService] INSERT error — RLS or constraint issue:', {
+          code: createError.code,
+          message: createError.message,
+          hint: createError.hint,
+          details: createError.details,
+          userId: user.id,
+        });
         logAuthFailure(`Failed to create profile: ${createError.message}`, user.id);
         return null;
       }
 
+      console.log('[ProfileService] Profile created for user:', user.id);
       return newProfile || null;
     }
 
     logAuthFailure(`Failed to load profile: ${error.message}`, user.id);
     return null;
   } catch (error) {
+    console.error('[ProfileService] Unexpected error:', error);
     logAuthFailure(`Unexpected error in profile loading: ${error}`, user.id);
     return null;
   }

@@ -43,6 +43,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
   const [profile, setProfile] = useState<Profile | null>(cachedProfile);
   // Show loading while we wait for the authenticated client + profile fetch
   const [loading, setLoading] = useState(!!user?.id && !cachedProfile);
+  const [loadFailed, setLoadFailed] = useState(false);
   const hasHydrated = useRef(!!cachedProfile);
 
   const loadProfile = useCallback(async () => {
@@ -50,6 +51,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
       setProfile(null);
       setCachedProfile(null);
       setLoading(false);
+      setLoadFailed(false);
       return;
     }
 
@@ -58,11 +60,16 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
       if (!hasHydrated.current) {
         setLoading(true);
       }
+      setLoadFailed(false);
 
       const profileData = await loadOrCreateProfile(user, authClient);
       setProfile(profileData);
       setCachedProfile(profileData);
       hasHydrated.current = !!profileData;
+
+      if (!profileData) {
+        setLoadFailed(true);
+      }
 
       // Update last login time when profile is loaded
       if (profileData) {
@@ -70,6 +77,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
       }
     } catch (error) {
       setProfile(null);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -123,5 +131,5 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
     };
   }, [user?.id, profile?.id]);
 
-  return { profile, loading, refetch: loadProfile };
+  return { profile, loading, loadFailed, refetch: loadProfile };
 };

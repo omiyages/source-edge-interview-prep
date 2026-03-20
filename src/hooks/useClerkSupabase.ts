@@ -36,6 +36,11 @@ export function useClerkSupabase() {
       // Get the raw Clerk session JWT — no custom template needed.
       // Supabase validates it via Third-Party Auth (JWKS endpoint).
       const token = await getToken();
+      if (token) {
+        console.log('[Clerk-Supabase] JWT token acquired, length:', token.length);
+      } else {
+        console.warn('[Clerk-Supabase] getToken() returned null — user may not be fully signed in');
+      }
       clientRef.current = createClerkSupabaseClient(token);
     } catch (err) {
       console.warn('[Clerk-Supabase] Failed to get JWT token:', err);
