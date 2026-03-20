@@ -302,7 +302,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
                   disabled={loading || (mode === 'signin' ? !signInLoaded : !signUpLoaded)}
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold h-10 mb-5 transition-colors"
                 >
-                  {(loading || (mode === 'signin' ? !signInLoaded : !signUpLoaded))
+                  {loading
                     ? <Loader2 className="w-4 h-4 animate-spin" />
                     : mode === 'signin' ? 'Sign in' : 'Create account'}
                 </Button>
