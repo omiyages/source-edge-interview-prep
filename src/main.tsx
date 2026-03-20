@@ -39,8 +39,8 @@ const clerkAppearance = {
 root.render(
   <StrictMode>
     <ClerkProvider
+      publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       afterSignOutUrl="/auth"
-      clerkJSUrl="https://npm.clerk.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
       appearance={clerkAppearance}
     >
       <HelmetProvider>

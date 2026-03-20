@@ -125,7 +125,10 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signInLoaded || !signIn) return;
+    if (!signInLoaded || !signIn) {
+      setError('Authentication is still loading. Please wait a moment and try again.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -133,6 +136,12 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
       if (result.status === 'complete') {
         await setSignInActive({ session: result.createdSessionId });
         onClose();
+      } else if (result.status === 'needs_second_factor') {
+        setError('Two-factor authentication is required. Please use the Omiyages sign-in page.');
+      } else if (result.status === 'needs_first_factor') {
+        setError('Additional verification required. Please check your email for a sign-in link.');
+      } else {
+        setError('Sign in could not complete. Please try again or use a social login.');
       }
     } catch (err) {
       setError(clerkError(err));
@@ -292,10 +301,10 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
                 <Button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold h-10 mb-5 transition-colors"
+                  disabled={loading || !signInLoaded || !signUpLoaded}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold h-10 mb-5 transition-colors"
                 >
-                  {loading
+                  {loading || !signInLoaded || !signUpLoaded
                     ? <Loader2 className="w-4 h-4 animate-spin" />
                     : mode === 'signin' ? 'Sign in' : 'Create account'}
                 </Button>
