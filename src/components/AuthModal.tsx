@@ -299,7 +299,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
                 <Button
                   type="submit"
-                  disabled={loading || (mode === 'signin' ? !signInLoaded : !signUpLoaded)}
+                  disabled={loading}
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold h-10 mb-5 transition-colors"
                 >
                   {loading
