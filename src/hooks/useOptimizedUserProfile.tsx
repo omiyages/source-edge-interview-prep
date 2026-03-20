@@ -3,7 +3,7 @@
 // ABOUTME: Replaces the existing useUserProfile with improved efficiency
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { User } from '@supabase/supabase-js';
+import type { MinimalUser } from '@/hooks/useAuthContext';
 import type { Profile } from '@/types/auth';
 import { loadOrCreateProfile, updateLastLogin, updateSessionTime } from '@/services/profileService';
 
@@ -34,7 +34,7 @@ function setCachedProfile(profile: Profile | null) {
   }
 }
 
-export const useOptimizedUserProfile = (user: User | null) => {
+export const useOptimizedUserProfile = (user: MinimalUser | null) => {
   // Try to hydrate instantly from localStorage to avoid loading flash
   const cachedProfile = user?.id ? getCachedProfile(user.id) : null;
   const [profile, setProfile] = useState<Profile | null>(cachedProfile);

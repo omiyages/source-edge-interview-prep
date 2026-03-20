@@ -3,12 +3,11 @@
 // ABOUTME: Replaces multiple scattered profile services with a single, secure implementation
 
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from '@supabase/supabase-js';
 import type { Profile } from "@/types/auth";
 import { logAuthFailure, logSuspiciousActivity } from "@/utils/securityLogger";
 import { validateEmail, sanitizeInput } from "@/utils/inputSecurity";
 
-export const loadOrCreateProfile = async (user: User): Promise<Profile | null> => {
+export const loadOrCreateProfile = async (user: { id: string; email: string }): Promise<Profile | null> => {
   try {
     // Validate email before processing
     if (!validateEmail(user.email || '')) {

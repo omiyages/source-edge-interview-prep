@@ -9,6 +9,11 @@ interface EnvironmentConfig {
     url: string;
     anonKey: string;
   };
+
+  // Clerk Configuration
+  clerk: {
+    publishableKey: string;
+  };
   
   // Google OAuth Configuration
   google: {
@@ -59,6 +64,8 @@ class EnvironmentManager {
     const supabaseUrl = this.getOptionalEnvVar('VITE_SUPABASE_URL', 'https://satshobhbkjptsbmfsia.supabase.co');
     const supabaseAnonKey = this.getOptionalEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhdHNob2JoYmtqcHRzYm1mc2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDI5NjUsImV4cCI6MjA2NjMxODk2NX0.T_q1HFL4SQEdzjWjJtfX9WRiHjQLK5WaoH8bCKsLP2c');
     
+    const clerkPublishableKey = this.getOptionalEnvVar('VITE_CLERK_PUBLISHABLE_KEY', '');
+
     const googleClientId = this.getOptionalEnvVar('VITE_GOOGLE_CLIENT_ID', '');
     const googleClientSecret = this.getOptionalEnvVar('VITE_GOOGLE_CLIENT_SECRET', '');
     const googleRedirectUri = this.getOptionalEnvVar('VITE_GOOGLE_REDIRECT_URI', '');
@@ -82,6 +89,9 @@ class EnvironmentManager {
       supabase: {
         url: supabaseUrl,
         anonKey: supabaseAnonKey,
+      },
+      clerk: {
+        publishableKey: clerkPublishableKey,
       },
       google: {
         clientId: googleClientId,
@@ -138,6 +148,10 @@ class EnvironmentManager {
   // Public getters with security checks
   get supabase() {
     return this.config.supabase;
+  }
+
+  get clerk() {
+    return this.config.clerk;
   }
 
   get google() {
