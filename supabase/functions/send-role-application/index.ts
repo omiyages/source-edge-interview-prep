@@ -20,6 +20,20 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
+  }
+  const supabaseAuthClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader } } }
+  )
+  const { data: { user }, error: authError } = await supabaseAuthClient.auth.getUser()
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
+  }
+
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
@@ -66,6 +80,10 @@ Deno.serve(async (req) => {
     );
   }
 
+  if (resume_path && !resume_path.startsWith(user.id + '/')) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders })
+  }
+
   // Download the CV from Supabase Storage to attach it
   let attachments: { filename: string; content: string }[] = [];
 
@@ -104,6 +122,9 @@ Deno.serve(async (req) => {
     }
   }
 
+  // HTML escape helper to prevent XSS in email template
+  const escHtml = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+
   // Build the email
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -114,23 +135,23 @@ Deno.serve(async (req) => {
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
             <td style="padding: 8px 0; font-weight: bold; color: #374151; width: 140px;">Role:</td>
-            <td style="padding: 8px 0; color: #111827;">${role_title}</td>
+            <td style="padding: 8px 0; color: #111827;">${escHtml(role_title)}</td>
           </tr>
           <tr>
             <td style="padding: 8px 0; font-weight: bold; color: #374151;">Company:</td>
-            <td style="padding: 8px 0; color: #111827;">${company || "—"}</td>
+            <td style="padding: 8px 0; color: #111827;">${company ? escHtml(company) : "—"}</td>
           </tr>
           <tr style="border-top: 1px solid #f3f4f6;">
             <td style="padding: 8px 0; font-weight: bold; color: #374151;">Applicant Name:</td>
-            <td style="padding: 8px 0; color: #111827;">${full_name}</td>
+            <td style="padding: 8px 0; color: #111827;">${escHtml(full_name)}</td>
           </tr>
           <tr>
             <td style="padding: 8px 0; font-weight: bold; color: #374151;">Email:</td>
-            <td style="padding: 8px 0; color: #111827;"><a href="mailto:${email}">${email}</a></td>
+            <td style="padding: 8px 0; color: #111827;"><a href="mailto:${escHtml(email)}">${escHtml(email)}</a></td>
           </tr>
           <tr>
             <td style="padding: 8px 0; font-weight: bold; color: #374151;">Phone:</td>
-            <td style="padding: 8px 0; color: #111827;">${phone || "Not provided"}</td>
+            <td style="padding: 8px 0; color: #111827;">${phone ? escHtml(phone) : "Not provided"}</td>
           </tr>
           <tr>
             <td style="padding: 8px 0; font-weight: bold; color: #374151;">CV Attached:</td>
@@ -139,7 +160,7 @@ Deno.serve(async (req) => {
         </table>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-          Application ID: ${application_id || "N/A"}<br/>
+          Application ID: ${application_id ? escHtml(application_id) : "N/A"}<br/>
           Submitted at ${new Date().toISOString()}
         </p>
       </div>
@@ -150,7 +171,7 @@ Deno.serve(async (req) => {
     const resendPayload: Record<string, unknown> = {
       from: `Source Edge <${fromEmail}>`,
       to: [adminEmail],
-      subject: `New Application: ${role_title} — ${full_name}`,
+      subject: `New Application: ${escHtml(role_title)} — ${escHtml(full_name)}`,
       html: htmlBody,
     };
 

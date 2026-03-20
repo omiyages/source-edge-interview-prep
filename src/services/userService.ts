@@ -123,10 +123,11 @@ export class UserService {
 
     for (const name of names) {
       const email = this.generateEmail(name);
+      const tempPassword = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2,'0')).join('').slice(0,16);
       const userData: CreateUserData = {
         fullName: name,
         email,
-        password: 'SourceEdge2025!',
+        password: tempPassword,
         role: 'candidate',
         position: 'Unassigned'
       };

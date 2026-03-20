@@ -178,22 +178,20 @@ Deno.serve(async (req) => {
     try {
       const bodyText = await req.text();
       console.log('📄 Request body received, length:', bodyText.length);
-      console.log('📄 Request body content:', bodyText);
-      
+
       if (!bodyText || bodyText.trim() === '') {
         console.error('❌ Empty request body');
         return new Response(
           JSON.stringify({ error: 'Request body is empty' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
-      
+
       requestData = JSON.parse(bodyText);
       console.log('📋 Parsed data keys:', Object.keys(requestData));
-      console.log('📋 Parsed data structure:', JSON.stringify(requestData, null, 2));
     } catch (parseError) {
       console.error('❌ JSON parse error:', parseError);
       return new Response(
@@ -215,7 +213,6 @@ Deno.serve(async (req) => {
     // Default to CREATE_USER for backward compatibility
     // Handle both direct properties and nested body structure
     const userData = requestData.body || requestData;
-    console.log('📋 User data extracted:', JSON.stringify(userData, null, 2));
     
     const { email, fullName, role = 'user', customPassword } = userData;
     
@@ -396,7 +393,6 @@ Deno.serve(async (req) => {
         created_at: newUser.user.created_at,
         email_confirmed: true
       },
-      temporaryPassword: passwordToUse,
       security: {
         audit_logged: true,
         rate_limited: true,

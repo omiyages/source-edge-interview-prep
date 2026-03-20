@@ -67,10 +67,17 @@ async function verifyWebhookSignature(
   )
 
   // svix-signature may contain multiple space-separated signatures (v1,xxx v1,yyy)
+  const encoder = new TextEncoder()
   const signatures = svixSignature.split(' ')
   return signatures.some((sig) => {
     const [, value] = sig.split(',')
-    return value === expectedSig
+    if (!value) return false
+    const a = encoder.encode(value)
+    const b = encoder.encode(expectedSig)
+    if (a.length !== b.length) return false
+    let mismatch = 0
+    for (let i = 0; i < a.length; i++) mismatch |= a[i] ^ b[i]
+    return mismatch === 0
   })
 }
 

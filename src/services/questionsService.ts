@@ -100,7 +100,7 @@ function applyQuestionFilters(
   }
 
   if (search && search.trim()) {
-    const s = search.trim();
+    const s = search.trim().replace(/[%_(),`]/g, '\\$&');
     query = query.or(
       `question.ilike.%${s}%,company.ilike.%${s}%,role.ilike.%${s}%,category.ilike.%${s}%,interview_stage.ilike.%${s}%`
     );
