@@ -87,8 +87,9 @@ const OAUTH_PROVIDERS = [
 ] as const;
 
 const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, initialMode }) => {
-  const { signIn, setActive: setSignInActive, isLoaded: signInLoaded } = useSignIn();
-  const { signUp, setActive: setSignUpActive, isLoaded: signUpLoaded } = useSignUp();
+  // Clerk v6 Signal API — returns { signIn, errors, fetchStatus }, no isLoaded/setActive
+  const { signIn } = useSignIn();
+  const { signUp } = useSignUp();
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
@@ -118,83 +119,72 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     setMode(next);
   };
 
-  const clerkError = (err: unknown) => {
-    const e = err as { errors?: { longMessage?: string; message?: string }[] };
-    return e?.errors?.[0]?.longMessage ?? e?.errors?.[0]?.message ?? 'Something went wrong.';
+  const clerkErr = (e: unknown) => {
+    const err = e as { longMessage?: string; message?: string };
+    return err?.longMessage ?? err?.message ?? 'Something went wrong.';
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signInLoaded || !signIn) return;
+    if (!signIn) return;
     setLoading(true);
     setError('');
-    try {
-      const result = await signIn.create({ identifier: email, password });
-      if (result.status === 'complete') {
-        await setSignInActive({ session: result.createdSessionId });
-        onClose();
-      } else if (result.status === 'needs_second_factor') {
-        setError('Two-factor authentication is required. Please use the Omiyages sign-in page.');
-      } else if (result.status === 'needs_first_factor') {
-        setError('Additional verification required. Please check your email for a sign-in link.');
-      } else {
-        setError('Sign in could not complete. Please try again or use a social login.');
-      }
-    } catch (err) {
-      setError(clerkError(err));
-    } finally {
-      setLoading(false);
+    // v6: signIn.password() handles identifier + password in one call
+    const { error } = await signIn.password({ identifier: email, password });
+    if (error) { setError(clerkErr(error)); setLoading(false); return; }
+    if (signIn.status === 'complete') {
+      const { error: fe } = await signIn.finalize();
+      if (fe) { setError(clerkErr(fe)); setLoading(false); return; }
+      onClose();
+    } else if (signIn.status === 'needs_second_factor') {
+      setError('Two-factor auth required. Please use the Omiyages sign-in page.');
+    } else {
+      setError('Sign in could not complete. Please try again or use a social login.');
     }
+    setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUpLoaded || !signUp) return;
+    if (!signUp) return;
     setLoading(true);
     setError('');
-    try {
-      await signUp.create({ emailAddress: email, password });
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-      setMode('verify');
-    } catch (err) {
-      setError(clerkError(err));
-    } finally {
-      setLoading(false);
-    }
+    // v6: signUp.password() creates the account; then send email verification code
+    const { error } = await signUp.password({ emailAddress: email, password });
+    if (error) { setError(clerkErr(error)); setLoading(false); return; }
+    const { error: ve } = await signUp.verifications.sendEmailCode();
+    if (ve) { setError(clerkErr(ve)); setLoading(false); return; }
+    setMode('verify');
+    setLoading(false);
   };
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUpLoaded || !signUp) return;
+    if (!signUp) return;
     setLoading(true);
     setError('');
-    try {
-      const result = await signUp.attemptEmailAddressVerification({ code });
-      if (result.status === 'complete') {
-        await setSignUpActive({ session: result.createdSessionId });
-        onClose();
-      }
-    } catch (err) {
-      setError(clerkError(err));
-    } finally {
-      setLoading(false);
+    // v6: verifyEmailCode then finalize to activate session
+    const { error } = await signUp.verifications.verifyEmailCode({ code });
+    if (error) { setError(clerkErr(error)); setLoading(false); return; }
+    if (signUp.status === 'complete') {
+      const { error: fe } = await signUp.finalize();
+      if (fe) { setError(clerkErr(fe)); setLoading(false); return; }
+      onClose();
     }
+    setLoading(false);
   };
 
   const handleOAuth = async (strategy: typeof OAUTH_PROVIDERS[number]['strategy']) => {
-    if (!signInLoaded || !signIn) return;
+    if (!signIn) return;
     setOauthLoading(strategy);
     setError('');
-    try {
-      await signIn.authenticateWithRedirect({
-        strategy,
-        redirectUrl: `${window.location.origin}/sso-callback`,
-        redirectUrlComplete: '/',
-      });
-    } catch (err) {
-      setError(clerkError(err));
-      setOauthLoading(null);
-    }
+    // v6: signIn.sso() replaces authenticateWithRedirect
+    const { error } = await signIn.sso({
+      strategy,
+      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectCallbackUrl: `${window.location.origin}/sso-callback`,
+    });
+    if (error) { setError(clerkErr(error)); setOauthLoading(null); }
   };
 
   return (
