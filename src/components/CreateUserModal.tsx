@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { CreateUserForm } from './CreateUserForm';
 
 interface CreateUserModalProps {
@@ -11,6 +11,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClos
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl p-0">
+        <DialogTitle className="sr-only">Create User</DialogTitle>
         <div className="flex justify-center p-4">
           <CreateUserForm />
         </div>

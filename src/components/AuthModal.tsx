@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { useSignIn, useSignUp } from '@clerk/react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -200,6 +200,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[380px] bg-[#0d0d0d] border border-neutral-800/80 p-0 gap-0 shadow-2xl [&>button]:text-neutral-500 [&>button]:hover:text-neutral-200 [&>button]:transition-colors">
+        <DialogTitle className="sr-only">Sign in to Omiyages</DialogTitle>
         <div className="flex flex-col items-center px-7 pt-8 pb-7">
 
           {/* Logo mark */}
