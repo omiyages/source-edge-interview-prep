@@ -1,10 +1,9 @@
 /**
  * Hook: useClerkSupabase
  *
- * Returns a Supabase client authenticated with the current Clerk user's
- * JWT.  The token is fetched from Clerk's `useAuth().getToken()` and
- * injected into the Supabase client's Authorization header so that
- * RLS policies using `auth.uid()` resolve correctly.
+ * Returns the singleton Supabase client with the current Clerk user's JWT
+ * injected dynamically.  Calls setClerkToken() whenever the session changes
+ * so the singleton's fetch wrapper always sends the latest token.
  *
  * Usage:
  *   const { client, isReady } = useClerkSupabase();
@@ -12,22 +11,19 @@
  *   const { data } = await client.from('profiles').select('*');
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@clerk/react';
-import { createClerkSupabaseClient } from '@/lib/clerk';
+import { clerkSupabaseClient, setClerkToken } from '@/lib/clerk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
 export function useClerkSupabase() {
   const { getToken, isSignedIn } = useAuth();
   const [isReady, setIsReady] = useState(false);
-  const clientRef = useRef<SupabaseClient<Database> | null>(null);
 
-  // Build or refresh the Supabase client with the latest Clerk JWT.
   const refreshClient = useCallback(async () => {
     if (!isSignedIn) {
-      // Unauthenticated — use a client with no auth header (anon access).
-      clientRef.current = createClerkSupabaseClient(null);
+      setClerkToken(null);
       setIsReady(true);
       return;
     }
@@ -41,10 +37,10 @@ export function useClerkSupabase() {
       } else {
         console.warn('[Clerk-Supabase] getToken() returned null — user may not be fully signed in');
       }
-      clientRef.current = createClerkSupabaseClient(token);
+      setClerkToken(token);
     } catch (err) {
       console.warn('[Clerk-Supabase] Failed to get JWT token:', err);
-      clientRef.current = createClerkSupabaseClient(null);
+      setClerkToken(null);
     } finally {
       setIsReady(true);
     }
@@ -54,12 +50,9 @@ export function useClerkSupabase() {
     refreshClient();
   }, [refreshClient]);
 
-  // Stable reference — consumers read clientRef.current.
-  const client = useMemo(() => {
-    if (clientRef.current) return clientRef.current;
-    // Return an anonymous client as fallback during initial load.
-    return createClerkSupabaseClient(null);
-  }, [isReady]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return { client, isReady, refreshClient };
+  return {
+    client: clerkSupabaseClient as SupabaseClient<Database>,
+    isReady,
+    refreshClient,
+  };
 }

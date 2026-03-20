@@ -1,9 +1,12 @@
 /**
  * Clerk Configuration & Supabase Integration
  *
- * Provides a helper to create a Supabase client authenticated with a
- * Clerk-issued JWT.  Supabase validates the raw Clerk session JWT via
- * Third-Party Auth (JWKS).  No custom JWT template is needed.
+ * Single Supabase client singleton with a dynamic Clerk JWT injected via
+ * custom fetch.  This avoids creating multiple GoTrueClient instances
+ * (which triggers "Multiple GoTrueClient instances detected" warnings).
+ *
+ * Supabase validates the raw Clerk session JWT via Third-Party Auth (JWKS).
+ * No custom JWT template is needed.
  *
  * Setup required in Supabase Dashboard → Authentication → Third-Party Auth:
  *   Provider: Clerk
@@ -14,30 +17,46 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import { environment } from '@/config/environment';
 
 const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = environment.supabase;
 
+// Module-level token — updated by setClerkToken() from useClerkSupabase.
+let _currentToken: string | null = null;
+
 /**
- * Create a Supabase client that sends the Clerk-issued JWT in the
- * Authorization header.  This allows RLS policies that reference
- * `auth.uid()` to resolve to the user's Supabase UUID.
- *
- * Usage:
- *   const { getToken } = useAuth();           // Clerk's useAuth
- *   const token = await getToken({ template: 'supabase' });
- *   const client = createClerkSupabaseClient(token);
- *   const { data } = await client.from('profiles').select('*');
+ * Update the Clerk JWT used by the singleton Supabase client.
+ * Call this whenever the Clerk session token changes.
  */
-export function createClerkSupabaseClient(clerkToken: string | null) {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: {
-      headers: {
-        ...(clerkToken ? { Authorization: `Bearer ${clerkToken}` } : {}),
-        'X-Client-Info': 'source-edge-interview-prep',
-      },
-    },
-  });
+export function setClerkToken(token: string | null) {
+  _currentToken = token;
 }
 
+/**
+ * Singleton Supabase client.  The Clerk JWT is injected dynamically via
+ * a custom fetch wrapper so only one GoTrueClient is ever created.
+ */
+export const clerkSupabaseClient: SupabaseClient<Database> = createClient<Database>(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      // Disable Supabase's own auth — we manage auth entirely via Clerk JWTs.
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionFromUrl: false,
+    },
+    global: {
+      headers: { 'X-Client-Info': 'source-edge-interview-prep' },
+      fetch: (input, init = {}) => {
+        const headers = new Headers(init.headers);
+        if (_currentToken) {
+          headers.set('Authorization', `Bearer ${_currentToken}`);
+        }
+        return fetch(input, { ...init, headers });
+      },
+    },
+  }
+);

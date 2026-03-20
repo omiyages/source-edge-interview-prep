@@ -11,16 +11,15 @@ const { url: SUPABASE_URL, anonKey: SUPABASE_PUBLISHABLE_KEY } = environment.sup
 const configValidation = environment.validateSecrets();
 
 // Create Supabase client with secure configuration
+// Auth is managed entirely by Clerk — disable Supabase's own GoTrueClient
+// to avoid "Multiple GoTrueClient instances" warnings.
+// Use clerkSupabaseClient (src/lib/clerk.ts) for any query that needs RLS.
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    // Security: Auto refresh tokens
-    autoRefreshToken: true,
-    // Security: Persist session in localStorage
-    persistSession: true,
-    // Security: Detect session in URL
-    detectSessionInUrl: true,
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionFromUrl: false,
   },
-  // Security: Global headers for all requests
   global: {
     headers: {
       'X-Client-Info': 'source-edge-interview-prep',
