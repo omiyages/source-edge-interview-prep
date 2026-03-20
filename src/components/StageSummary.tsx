@@ -185,6 +185,15 @@ export const StageSummary = memo(({
 StageSummary.displayName = 'StageSummary';
 
 // Helper function to format bold text (words between ** markers)
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function formatBoldText(text: string): string {
-  return text.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
+  return escapeHtml(text).replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
 }

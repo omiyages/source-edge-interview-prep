@@ -4,10 +4,21 @@
 //
 // Required secret: Set OPENAI_API_KEY in Supabase Dashboard → Edge Functions → generate-prep-notes → Secrets.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
-};
+const ALLOWED_ORIGINS = [
+  "https://omiyages.com",
+  "https://www.omiyages.com",
+  "http://localhost:8080",
+  "http://localhost:5173",
+];
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 const SYSTEM_PROMPT = "You generate concise interview preparation notes. Focus on what interviewers are testing, common pitfalls, and what candidates should emphasize. Return EXACTLY 3-4 notes. Each note must be UNDER 20 WORDS. Output valid JSON only: {\"preparation_notes\": [\"note1\", \"note2\", \"note3\"]}";
 function buildUserPrompt(row) {
   const parts = [
@@ -35,6 +46,7 @@ function parseNotesJson(raw) {
   return parsed.preparation_notes.filter((n)=>typeof n === "string").map((n)=>n.trim()).filter((n)=>n.length > 0).slice(0, 4);
 }
 Deno.serve(async (req)=>{
+  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: corsHeaders
@@ -169,7 +181,8 @@ Deno.serve(async (req)=>{
     });
     if (!res.ok) {
       const errText = await res.text();
-      console.error("OpenAI error:", res.status, errText);
+      const safeErrText = errText.replace(/Bearer\s+[^\s"]+/gi, "Bearer [REDACTED]");
+      console.error("OpenAI error:", res.status, safeErrText);
       return new Response(JSON.stringify({
         preparation_notes: existingNotes,
         error: "Generation failed"

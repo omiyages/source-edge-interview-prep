@@ -20,7 +20,7 @@ export const sanitizeHtml = (html: string, options: SanitizeOptions = {}): strin
       'p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'blockquote', 
       'h1', 'h2', 'h3', 'code', 'pre', 'span', 'div', 'img'
     ],
-    ALLOWED_ATTR: options.allowedAttributes || ['class', 'style', 'src', 'alt', 'width', 'height'],
+    ALLOWED_ATTR: options.allowedAttributes || ['class', 'src', 'alt', 'width', 'height'],
     KEEP_CONTENT: !options.stripTags,
     RETURN_DOM: false,
     RETURN_DOM_FRAGMENT: false,
@@ -44,7 +44,7 @@ export const sanitizeForDisplay = (content: string): string => {
       'p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'blockquote', 
       'h1', 'h2', 'h3', 'code', 'pre', 'span', 'div', 'img'
     ],
-    allowedAttributes: ['class', 'style', 'src', 'alt', 'width', 'height'],
+    allowedAttributes: ['class', 'src', 'alt', 'width', 'height'],
   });
 };
 
