@@ -35,9 +35,17 @@ export function useClerkSupabase() {
       return;
     }
 
-    const token = await getToken({ template: CLERK_SUPABASE_JWT_TEMPLATE });
-    clientRef.current = createClerkSupabaseClient(token);
-    setIsReady(true);
+    try {
+      const token = await getToken({ template: CLERK_SUPABASE_JWT_TEMPLATE });
+      clientRef.current = createClerkSupabaseClient(token);
+    } catch (err) {
+      // JWT template not configured in Clerk dashboard — fall back to anon client.
+      // Profile queries will fail RLS; user must configure the "supabase" JWT template.
+      console.warn('[Clerk-Supabase] Failed to get JWT token (is the "supabase" template configured in Clerk dashboard?):', err);
+      clientRef.current = createClerkSupabaseClient(null);
+    } finally {
+      setIsReady(true);
+    }
   }, [getToken, isSignedIn]);
 
   useEffect(() => {

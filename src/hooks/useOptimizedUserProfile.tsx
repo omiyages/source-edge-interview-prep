@@ -1,11 +1,12 @@
 
 // ABOUTME: Optimized user profile hook with localStorage caching for instant loads
-// ABOUTME: Replaces the existing useUserProfile with improved efficiency
+// ABOUTME: Uses the Clerk-authenticated Supabase client so RLS policies resolve correctly
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { MinimalUser } from '@/hooks/useAuthContext';
 import type { Profile } from '@/types/auth';
 import { loadOrCreateProfile, updateLastLogin, updateSessionTime } from '@/services/profileService';
+import { useClerkSupabase } from '@/hooks/useClerkSupabase';
 
 const PROFILE_CACHE_KEY = 'se-cached-profile';
 
@@ -35,11 +36,13 @@ function setCachedProfile(profile: Profile | null) {
 }
 
 export const useOptimizedUserProfile = (user: MinimalUser | null) => {
+  const { client: authClient, isReady: clientReady } = useClerkSupabase();
+
   // Try to hydrate instantly from localStorage to avoid loading flash
   const cachedProfile = user?.id ? getCachedProfile(user.id) : null;
   const [profile, setProfile] = useState<Profile | null>(cachedProfile);
-  // If we already have a cached profile, skip the loading state entirely
-  const [loading, setLoading] = useState(false);
+  // Show loading while we wait for the authenticated client + profile fetch
+  const [loading, setLoading] = useState(!!user?.id && !cachedProfile);
   const hasHydrated = useRef(!!cachedProfile);
 
   const loadProfile = useCallback(async () => {
@@ -55,12 +58,12 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
       if (!hasHydrated.current) {
         setLoading(true);
       }
-      
-      const profileData = await loadOrCreateProfile(user);
+
+      const profileData = await loadOrCreateProfile(user, authClient);
       setProfile(profileData);
       setCachedProfile(profileData);
       hasHydrated.current = !!profileData;
-      
+
       // Update last login time when profile is loaded
       if (profileData) {
         await updateLastLogin(user.id);
@@ -70,11 +73,15 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, user?.email]);
+  }, [user?.id, user?.email, authClient]);
 
+  // Wait until the Clerk-authenticated client is ready before loading the profile.
+  // This ensures RLS policies (which use auth.uid() from the Clerk JWT) resolve correctly.
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    if (clientReady) {
+      loadProfile();
+    }
+  }, [loadProfile, clientReady]);
 
   // Optimized session tracking with debouncing
   useEffect(() => {
@@ -83,11 +90,11 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
     const sessionStart = Date.now();
     let lastUpdateTime = sessionStart;
     let sessionUpdateTimeout: NodeJS.Timeout;
-    
+
     const updateSessionTimeDebounced = () => {
       const now = Date.now();
       const incrementalMinutes = Math.floor((now - lastUpdateTime) / 1000 / 60); // minutes since last update
-      
+
       if (incrementalMinutes > 0) {
         updateSessionTime(user.id, incrementalMinutes);
         lastUpdateTime = now; // Update the last update time
@@ -99,13 +106,13 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
       clearTimeout(sessionUpdateTimeout);
       sessionUpdateTimeout = setTimeout(updateSessionTimeDebounced, 1000);
     }, 5 * 60 * 1000);
-    
+
     // Update on page unload
     const handleBeforeUnload = () => {
       clearTimeout(sessionUpdateTimeout);
       updateSessionTimeDebounced();
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
