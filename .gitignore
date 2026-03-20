@@ -37,3 +37,4 @@ quick-backup/
 
 # Cursor/IDE specific
 .cursor/
+.vercel
