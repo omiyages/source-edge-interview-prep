@@ -38,7 +38,11 @@ const clerkAppearance = {
 
 root.render(
   <StrictMode>
-    <ClerkProvider afterSignOutUrl="/auth" appearance={clerkAppearance}>
+    <ClerkProvider
+      afterSignOutUrl="/auth"
+      clerkJSUrl="https://npm.clerk.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+      appearance={clerkAppearance}
+    >
       <HelmetProvider>
         <App />
       </HelmetProvider>
