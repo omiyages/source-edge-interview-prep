@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen, MessageSquare, Lock, LogIn, UserPlus } from "lucide-react";
+import { SignInButton, SignUpButton } from "@clerk/react";
 import { CourseHeader } from "@/components/CourseHeader";
 import { StageNavigation } from "@/components/StageNavigation";
 import { CourseProgress } from "@/components/CourseProgress";
@@ -204,18 +205,18 @@ const CourseDetail = () => {
                     Sign in to access course stages, questions, resources, and track your progress.
                   </p>
                   <div className="flex gap-3">
-                    <Button asChild className="flex-1 btn-cta">
-                      <Link to="/auth">
+                    <SignInButton mode="modal">
+                      <Button className="flex-1 btn-cta">
                         <LogIn className="w-4 h-4 mr-2" />
                         Sign In
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="flex-1">
-                      <Link to="/signup">
+                      </Button>
+                    </SignInButton>
+                    <SignUpButton mode="modal">
+                      <Button variant="outline" className="flex-1">
                         <UserPlus className="w-4 h-4 mr-2" />
                         Register
-                      </Link>
-                    </Button>
+                      </Button>
+                    </SignUpButton>
                   </div>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { Role } from '@/types/role';
 import { Loader2, Upload, FileText, CheckCircle, X, Lock, LogIn, UserPlus } from 'lucide-react';
+import { SignInButton, SignUpButton } from '@clerk/react';
 
 interface ApplyRoleDialogProps {
   open: boolean;
@@ -205,18 +206,18 @@ export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogPro
                   Create an account or sign in to submit your application.
                 </p>
                 <div className="flex gap-3">
-                  <Button asChild className="flex-1 btn-cta">
-                    <Link to="/auth" onClick={() => onOpenChange(false)}>
+                  <SignInButton mode="modal">
+                    <Button className="flex-1 btn-cta" onClick={() => onOpenChange(false)}>
                       <LogIn className="w-4 h-4 mr-1.5" />
                       Sign In
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="flex-1">
-                    <Link to="/signup" onClick={() => onOpenChange(false)}>
+                    </Button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                       <UserPlus className="w-4 h-4 mr-1.5" />
                       Register
-                    </Link>
-                  </Button>
+                    </Button>
+                  </SignUpButton>
                 </div>
               </div>
             </div>

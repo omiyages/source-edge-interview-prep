@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, lazy, Suspense } from "react";
-import { Link } from "react-router-dom";
+
 import { useAuth } from "@/hooks/useAuth";
 import { usePaginatedQuestions } from "@/hooks/usePaginatedQuestions";
 import { useQuestionStats } from "@/hooks/useQuestionStats";
@@ -19,6 +19,7 @@ const QuestionDetailDialog = lazy(() =>
 );
 import type { InterviewQuestion } from "@/services/questionsService";
 import { Search, Shuffle, Lock, LogIn, UserPlus } from "lucide-react";
+import { SignInButton, SignUpButton } from "@clerk/react";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -399,18 +400,18 @@ const Questions = () => {
                       Sign in to browse and practice interview questions, view detailed answers, and track your progress.
                     </p>
                     <div className="flex gap-3">
-                      <Button asChild className="flex-1 btn-cta">
-                        <Link to="/auth">
+                      <SignInButton mode="modal">
+                        <Button className="flex-1 btn-cta">
                           <LogIn className="w-4 h-4 mr-2" />
                           Sign In
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" className="flex-1">
-                        <Link to="/signup">
+                        </Button>
+                      </SignInButton>
+                      <SignUpButton mode="modal">
+                        <Button variant="outline" className="flex-1">
                           <UserPlus className="w-4 h-4 mr-2" />
                           Register
-                        </Link>
-                      </Button>
+                        </Button>
+                      </SignUpButton>
                     </div>
                     <p className="text-xs text-muted-foreground mt-4">
                       Trusted by candidates at top tech companies.

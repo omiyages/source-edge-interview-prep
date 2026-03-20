@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { SignInButton, SignUpButton } from "@clerk/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -100,18 +100,18 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
 
                 {/* Sign In / Register Buttons */}
                 <div className="flex items-center justify-center gap-4">
-                  <Button asChild size="lg" variant="gradient" className="px-8 py-3 rounded-lg">
-                    <Link to="/auth">
+                  <SignInButton mode="modal">
+                    <Button size="lg" variant="gradient" className="px-8 py-3 rounded-lg">
                       <LogIn className="w-5 h-5 mr-2" />
                       Sign In
-                    </Link>
-                  </Button>
-                  <Button asChild size="lg" variant="outline" className="px-8 py-3 rounded-lg border-neutral-600 text-neutral-200 hover:bg-neutral-800 hover:border-neutral-500">
-                    <Link to="/signup">
+                    </Button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <Button size="lg" variant="outline" className="px-8 py-3 rounded-lg border-neutral-600 text-neutral-200 hover:bg-neutral-800 hover:border-neutral-500">
                       <UserPlus className="w-5 h-5 mr-2" />
                       Register
-                    </Link>
-                  </Button>
+                    </Button>
+                  </SignUpButton>
                 </div>
               </>
             )}

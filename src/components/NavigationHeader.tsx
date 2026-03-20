@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LogOut, BookOpen, Settings, Menu, User, ChevronRight, LogIn, UserPlus } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { SignInButton, SignUpButton } from "@clerk/react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationBadge } from "@/components/ui/notification-badge";
@@ -166,24 +167,24 @@ export const NavigationHeader = memo(() => {
         </>
       ) : (
         <>
-          <Link to="/auth">
-            <Button 
-              variant="ghost" 
+          <SignInButton mode="modal">
+            <Button
+              variant="ghost"
               className="transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
             >
               <LogIn className="w-4 h-4 mr-2" />
               Sign In
             </Button>
-          </Link>
-          <Link to="/signup">
-            <Button 
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <Button
               variant="default"
               className="btn-cta"
             >
               <UserPlus className="w-4 h-4 mr-2" />
               Register
             </Button>
-          </Link>
+          </SignUpButton>
         </>
       )}
     </>
@@ -358,24 +359,26 @@ export const NavigationHeader = memo(() => {
                     </>
                   ) : (
                     <div className="flex flex-col gap-2 mt-2 border-t pt-4">
-                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                        <Button 
-                          variant="ghost" 
+                      <SignInButton mode="modal">
+                        <Button
+                          variant="ghost"
                           className="w-full justify-start transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
+                          onClick={() => setMobileMenuOpen(false)}
                         >
                           <LogIn className="w-4 h-4 mr-2" />
                           Sign In
                         </Button>
-                      </Link>
-                      <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                        <Button 
+                      </SignInButton>
+                      <SignUpButton mode="modal">
+                        <Button
                           variant="default"
                           className="w-full btn-cta"
+                          onClick={() => setMobileMenuOpen(false)}
                         >
                           <UserPlus className="w-4 h-4 mr-2" />
                           Register
                         </Button>
-                      </Link>
+                      </SignUpButton>
                     </div>
                   )}
                 </div>
