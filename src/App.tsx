@@ -14,6 +14,7 @@ import { SessionTracker } from "@/components/SessionTracker";
 import { TIMEZONE_CONFIG } from "@/config/timezone";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Seo } from "@/components/Seo";
+import AuthModalProvider from "@/components/AuthModal";
 
 // Critical path components - imported directly for fast initial load
 import Auth from "./pages/Auth";
@@ -31,6 +32,7 @@ const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
 const ShippioCompanyPage = lazy(() => import("./pages/ShippioCompanyPage"));
 const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
+const SsoCallback = lazy(() => import("./pages/SsoCallback"));
 const Roles = lazy(() => import("./pages/Roles"));
 const RoleDetail = lazy(() => import("./pages/RoleDetail"));
 // Loading fallback component
@@ -104,6 +106,7 @@ function App() {
           <Toaster />
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <AuthModalProvider>
             <SessionTracker />
             <AppSeo />
             <Routes>
@@ -242,8 +245,17 @@ function App() {
                 </Suspense>
               } 
             />
+              <Route
+                path="/sso-callback"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <SsoCallback />
+                  </Suspense>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </AuthModalProvider>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

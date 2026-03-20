@@ -4,14 +4,15 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LogOut, BookOpen, Settings, Menu, User, ChevronRight, LogIn, UserPlus } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { SignInButton, SignUpButton } from "@clerk/react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/AuthModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationBadge } from "@/components/ui/notification-badge";
 import { useAssignedCoursesCount } from "@/hooks/useAssignedCoursesCount";
 
 export const NavigationHeader = memo(() => {
   const { signOut, isAdmin, user, loading: authLoading } = useAuth();
+  const { openSignIn, openSignUp } = useAuthModal();
   const isAuthenticated = !authLoading && !!user;
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -167,24 +168,22 @@ export const NavigationHeader = memo(() => {
         </>
       ) : (
         <>
-          <SignInButton mode="modal">
-            <Button
-              variant="ghost"
-              className="transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Sign In
-            </Button>
-          </SignInButton>
-          <SignUpButton mode="modal">
-            <Button
-              variant="default"
-              className="btn-cta"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Register
-            </Button>
-          </SignUpButton>
+          <Button
+            variant="ghost"
+            className="transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
+            onClick={openSignIn}
+          >
+            <LogIn className="w-4 h-4 mr-2" />
+            Sign In
+          </Button>
+          <Button
+            variant="default"
+            className="btn-cta"
+            onClick={openSignUp}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Register
+          </Button>
         </>
       )}
     </>
@@ -359,26 +358,22 @@ export const NavigationHeader = memo(() => {
                     </>
                   ) : (
                     <div className="flex flex-col gap-2 mt-2 border-t pt-4">
-                      <SignInButton mode="modal">
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          <LogIn className="w-4 h-4 mr-2" />
-                          Sign In
-                        </Button>
-                      </SignInButton>
-                      <SignUpButton mode="modal">
-                        <Button
-                          variant="default"
-                          className="w-full btn-cta"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Register
-                        </Button>
-                      </SignUpButton>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start transition-colors font-medium text-muted-foreground hover:text-accent-foreground"
+                        onClick={() => { setMobileMenuOpen(false); openSignIn(); }}
+                      >
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Sign In
+                      </Button>
+                      <Button
+                        variant="default"
+                        className="w-full btn-cta"
+                        onClick={() => { setMobileMenuOpen(false); openSignUp(); }}
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Register
+                      </Button>
                     </div>
                   )}
                 </div>

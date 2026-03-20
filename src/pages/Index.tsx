@@ -10,7 +10,7 @@ import { Seo } from "@/components/Seo";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Lock, LogIn, UserPlus } from "lucide-react";
-import { SignInButton, SignUpButton } from "@clerk/react";
+import { useAuthModal } from "@/components/AuthModal";
 
 // Lazy load non-critical components
 const ResourcesPreview = React.lazy(() => import("@/components/ResourcesPreview").then(module => ({ default: module.ResourcesPreview })));
@@ -19,6 +19,7 @@ const QuestionsSection = React.lazy(() => import("@/components/QuestionsSection"
 
 const Index = () => {
   const { user, isAdmin, loading: authLoading, profile } = useAuth();
+  const { openSignIn, openSignUp } = useAuthModal();
   const { toast } = useToast();
   const isAuthenticated = !authLoading && !!user;
 
@@ -119,18 +120,14 @@ const Index = () => {
                     Sign in to access all interview questions, detailed answers, and track your progress.
                   </p>
                   <div className="flex gap-3">
-                    <SignInButton mode="modal">
-                      <Button className="flex-1 btn-cta">
-                        <LogIn className="w-4 h-4 mr-2" />
-                        Sign In
-                      </Button>
-                    </SignInButton>
-                    <SignUpButton mode="modal">
-                      <Button variant="outline" className="flex-1 border-neutral-600 text-neutral-200 hover:bg-neutral-800 hover:text-neutral-100">
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Register
-                      </Button>
-                    </SignUpButton>
+                    <Button className="flex-1 btn-cta" onClick={openSignIn}>
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Sign In
+                    </Button>
+                    <Button variant="outline" className="flex-1 border-neutral-600 text-neutral-200 hover:bg-neutral-800 hover:text-neutral-100" onClick={openSignUp}>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Register
+                    </Button>
                   </div>
                 </div>
               </div>

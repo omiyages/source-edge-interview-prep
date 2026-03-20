@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen, MessageSquare, Lock, LogIn, UserPlus } from "lucide-react";
-import { SignInButton, SignUpButton } from "@clerk/react";
+import { useAuthModal } from "@/components/AuthModal";
 import { CourseHeader } from "@/components/CourseHeader";
 import { StageNavigation } from "@/components/StageNavigation";
 import { CourseProgress } from "@/components/CourseProgress";
@@ -34,6 +34,7 @@ interface CourseStage {
 const CourseDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user, loading, isAdmin } = useAuth();
+  const { openSignIn, openSignUp } = useAuthModal();
   const isAuthenticated = !loading && !!user;
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -205,18 +206,14 @@ const CourseDetail = () => {
                     Sign in to access course stages, questions, resources, and track your progress.
                   </p>
                   <div className="flex gap-3">
-                    <SignInButton mode="modal">
-                      <Button className="flex-1 btn-cta">
-                        <LogIn className="w-4 h-4 mr-2" />
-                        Sign In
-                      </Button>
-                    </SignInButton>
-                    <SignUpButton mode="modal">
-                      <Button variant="outline" className="flex-1">
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Register
-                      </Button>
-                    </SignUpButton>
+                    <Button className="flex-1 btn-cta" onClick={openSignIn}>
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Sign In
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={openSignUp}>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Register
+                    </Button>
                   </div>
                 </div>
               </div>

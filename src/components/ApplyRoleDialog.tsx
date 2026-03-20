@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { Role } from '@/types/role';
 import { Loader2, Upload, FileText, CheckCircle, X, Lock, LogIn, UserPlus } from 'lucide-react';
-import { SignInButton, SignUpButton } from '@clerk/react';
+import { useAuthModal } from '@/components/AuthModal';
 
 interface ApplyRoleDialogProps {
   open: boolean;
@@ -26,6 +26,7 @@ const ALLOWED_TYPES = [
 
 export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogProps) => {
   const { user, profile, loading: authLoading } = useAuth();
+  const { openSignIn, openSignUp } = useAuthModal();
   const isAuthenticated = !authLoading && !!user;
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -206,18 +207,14 @@ export const ApplyRoleDialog = ({ open, onOpenChange, role }: ApplyRoleDialogPro
                   Create an account or sign in to submit your application.
                 </p>
                 <div className="flex gap-3">
-                  <SignInButton mode="modal">
-                    <Button className="flex-1 btn-cta" onClick={() => onOpenChange(false)}>
-                      <LogIn className="w-4 h-4 mr-1.5" />
-                      Sign In
-                    </Button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-                      <UserPlus className="w-4 h-4 mr-1.5" />
-                      Register
-                    </Button>
-                  </SignUpButton>
+                  <Button className="flex-1 btn-cta" onClick={() => { onOpenChange(false); openSignIn(); }}>
+                    <LogIn className="w-4 h-4 mr-1.5" />
+                    Sign In
+                  </Button>
+                  <Button variant="outline" className="flex-1" onClick={() => { onOpenChange(false); openSignUp(); }}>
+                    <UserPlus className="w-4 h-4 mr-1.5" />
+                    Register
+                  </Button>
                 </div>
               </div>
             </div>

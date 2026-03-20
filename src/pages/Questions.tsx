@@ -19,12 +19,13 @@ const QuestionDetailDialog = lazy(() =>
 );
 import type { InterviewQuestion } from "@/services/questionsService";
 import { Search, Shuffle, Lock, LogIn, UserPlus } from "lucide-react";
-import { SignInButton, SignUpButton } from "@clerk/react";
+import { useAuthModal } from "@/components/AuthModal";
 
 const ITEMS_PER_PAGE = 10;
 
 const Questions = () => {
   const { isAdmin, user, loading: authLoading } = useAuth();
+  const { openSignIn, openSignUp } = useAuthModal();
   const isAuthenticated = !authLoading && !!user;
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -400,18 +401,14 @@ const Questions = () => {
                       Sign in to browse and practice interview questions, view detailed answers, and track your progress.
                     </p>
                     <div className="flex gap-3">
-                      <SignInButton mode="modal">
-                        <Button className="flex-1 btn-cta">
-                          <LogIn className="w-4 h-4 mr-2" />
-                          Sign In
-                        </Button>
-                      </SignInButton>
-                      <SignUpButton mode="modal">
-                        <Button variant="outline" className="flex-1">
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Register
-                        </Button>
-                      </SignUpButton>
+                      <Button className="flex-1 btn-cta" onClick={openSignIn}>
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Sign In
+                      </Button>
+                      <Button variant="outline" className="flex-1" onClick={openSignUp}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Register
+                      </Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-4">
                       Trusted by candidates at top tech companies.
