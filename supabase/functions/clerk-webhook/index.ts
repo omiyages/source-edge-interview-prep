@@ -98,49 +98,84 @@ function getFullName(user: ClerkUser): string | null {
   return parts.length > 0 ? parts.join(' ') : null
 }
 
+async function setClerkPublicMetadata(clerkUserId: string, supabaseUuid: string) {
+  const clerkSecretKey = Deno.env.get('CLERK_SECRET_KEY')
+  if (!clerkSecretKey) return
+  const resp = await fetch(`https://api.clerk.com/v1/users/${clerkUserId}/metadata`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${clerkSecretKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ public_metadata: { supabase_uuid: supabaseUuid } }),
+  })
+  if (!resp.ok) {
+    console.error(`Failed to set Clerk publicMetadata: ${resp.status} ${await resp.text()}`)
+  }
+}
+
 async function handleUserCreated(user: ClerkUser) {
-  // Check if a profile already exists with this clerk_id (idempotency)
-  const { data: existing } = await supabaseAdmin
+  // Idempotency — already linked
+  const { data: existingByClerkId } = await supabaseAdmin
     .from('profiles')
     .select('id')
     .eq('clerk_id', user.id)
     .maybeSingle()
 
-  if (existing) {
+  if (existingByClerkId) {
     console.log(`Profile already exists for clerk_id=${user.id}`)
-    return existing.id
+    return existingByClerkId.id
   }
 
-  // Generate a UUID for this user's Supabase identity
-  const supabaseUuid = crypto.randomUUID()
+  // Migration case — supabase_uuid was pre-set during bulk import
+  const presetUuid = user.public_metadata?.supabase_uuid as string | undefined
+  if (presetUuid) {
+    const { data: existingByUuid } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id', presetUuid)
+      .maybeSingle()
+
+    if (existingByUuid) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ clerk_id: user.id, updated_at: new Date().toISOString() })
+        .eq('id', presetUuid)
+      console.log(`Linked migrated profile ${presetUuid} to clerk_id=${user.id}`)
+      return presetUuid
+    }
+  }
+
+  // New user — generate a fresh UUID
+  const supabaseUuid = presetUuid ?? crypto.randomUUID()
+  const email = getPrimaryEmail(user)
 
   const { error } = await supabaseAdmin.from('profiles').insert({
     id: supabaseUuid,
     clerk_id: user.id,
-    email: getPrimaryEmail(user),
+    email,
     full_name: getFullName(user),
     role: 'user',
   })
 
   if (error) {
-    // If there's a unique constraint violation on email, the user may already
-    // exist from the old Supabase Auth system. Link them instead.
+    // Email already exists from old Supabase Auth — link by email
     if (error.code === '23505') {
       const { data: existingByEmail } = await supabaseAdmin
         .from('profiles')
         .select('id')
-        .eq('email', getPrimaryEmail(user))
+        .eq('email', email)
         .maybeSingle()
 
       if (existingByEmail) {
         await supabaseAdmin
           .from('profiles')
-          .update({ clerk_id: user.id })
+          .update({ clerk_id: user.id, updated_at: new Date().toISOString() })
           .eq('id', existingByEmail.id)
 
-        console.log(
-          `Linked existing profile ${existingByEmail.id} to clerk_id=${user.id}`
-        )
+        console.log(`Linked existing profile ${existingByEmail.id} to clerk_id=${user.id}`)
+        // publicMetadata may not have supabase_uuid yet — backfill it
+        await setClerkPublicMetadata(user.id, existingByEmail.id)
         return existingByEmail.id
       }
     }
@@ -148,36 +183,7 @@ async function handleUserCreated(user: ClerkUser) {
   }
 
   console.log(`Created profile ${supabaseUuid} for clerk_id=${user.id}`)
-
-  // Store the Supabase UUID in Clerk's publicMetadata so the JWT template
-  // can reference it as {{user.public_metadata.supabase_uuid}}.
-  // This requires a Clerk Backend API call.
-  const clerkSecretKey = Deno.env.get('CLERK_SECRET_KEY')
-  if (clerkSecretKey) {
-    try {
-      const resp = await fetch(
-        `https://api.clerk.com/v1/users/${user.id}/metadata`,
-        {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${clerkSecretKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            public_metadata: { supabase_uuid: supabaseUuid },
-          }),
-        }
-      )
-      if (!resp.ok) {
-        console.error(
-          `Failed to set Clerk publicMetadata: ${resp.status} ${await resp.text()}`
-        )
-      }
-    } catch (err) {
-      console.error('Error setting Clerk publicMetadata:', err)
-    }
-  }
-
+  await setClerkPublicMetadata(user.id, supabaseUuid)
   return supabaseUuid
 }
 
