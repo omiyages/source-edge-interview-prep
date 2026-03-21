@@ -129,19 +129,26 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     if (!signIn) return;
     setLoading(true);
     setError('');
-    // v6: signIn.password() handles identifier + password in one call
-    const { error } = await signIn.password({ identifier: email, password });
-    if (error) { setError(clerkErr(error)); setLoading(false); return; }
-    if (signIn.status === 'complete') {
-      const { error: fe } = await signIn.finalize();
-      if (fe) { setError(clerkErr(fe)); setLoading(false); return; }
-      onClose();
-    } else if (signIn.status === 'needs_second_factor') {
-      setError('Two-factor auth required. Please use the Omiyages sign-in page.');
-    } else {
-      setError('Sign in could not complete. Please try again or use a social login.');
+    try {
+      const { error } = await signIn.password({ identifier: email, password });
+      console.log('[SignIn] password result — error:', error, 'status:', signIn.status);
+      if (error) { setError(clerkErr(error)); return; }
+      if (signIn.status === 'complete') {
+        const { error: fe } = await signIn.finalize();
+        console.log('[SignIn] finalize result — error:', fe);
+        if (fe) { setError(clerkErr(fe)); return; }
+        onClose();
+      } else {
+        // needs_second_factor or unexpected status — do NOT call finalize (will hang)
+        console.warn('[SignIn] unexpected status after password():', signIn.status);
+        setError('Sign in could not complete. Status: ' + signIn.status + '. Check browser console.');
+      }
+    } catch (err) {
+      console.error('[SignIn] unexpected error:', err);
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -286,6 +293,8 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
                 </div>
 
                 {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
+
+                {mode === 'signup' && <div id="clerk-captcha" />}
 
                 <Button
                   type="submit"
