@@ -131,20 +131,15 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     setError('');
     try {
       const { error } = await signIn.password({ identifier: email, password });
-      console.log('[SignIn] password result — error:', error, 'status:', signIn.status);
       if (error) { setError(clerkErr(error)); return; }
       if (signIn.status === 'complete') {
         const { error: fe } = await signIn.finalize();
-        console.log('[SignIn] finalize result — error:', fe);
         if (fe) { setError(clerkErr(fe)); return; }
         onClose();
       } else {
-        // needs_second_factor or unexpected status — do NOT call finalize (will hang)
-        console.warn('[SignIn] unexpected status after password():', signIn.status);
-        setError('Sign in could not complete. Status: ' + signIn.status + '. Check browser console.');
+        setError('Sign in could not complete. Please try again or use a social login.');
       }
     } catch (err) {
-      console.error('[SignIn] unexpected error:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);

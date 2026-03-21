@@ -18,7 +18,6 @@ interface EnvironmentConfig {
   // Google OAuth Configuration
   google: {
     clientId: string;
-    clientSecret: string;
     redirectUri: string;
     sheetId: string;
   };
@@ -67,7 +66,6 @@ class EnvironmentManager {
     const clerkPublishableKey = this.getOptionalEnvVar('VITE_CLERK_PUBLISHABLE_KEY', '');
 
     const googleClientId = this.getOptionalEnvVar('VITE_GOOGLE_CLIENT_ID', '');
-    const googleClientSecret = this.getOptionalEnvVar('VITE_GOOGLE_CLIENT_SECRET', '');
     const googleRedirectUri = this.getOptionalEnvVar('VITE_GOOGLE_REDIRECT_URI', '');
     const googleSheetId = this.getOptionalEnvVar('VITE_GOOGLE_SHEET_ID', '');
     
@@ -95,7 +93,6 @@ class EnvironmentManager {
       },
       google: {
         clientId: googleClientId,
-        clientSecret: googleClientSecret,
         redirectUri: googleRedirectUri,
         sheetId: googleSheetId,
       },

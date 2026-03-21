@@ -38,3 +38,6 @@ quick-backup/
 # Cursor/IDE specific
 .cursor/
 .vercel
+# Data exports (contain PII)
+*.csv
+kanban_export*.csv
