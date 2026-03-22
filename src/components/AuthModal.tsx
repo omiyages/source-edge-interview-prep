@@ -86,9 +86,11 @@ const OAUTH_PROVIDERS = [
   { strategy: 'oauth_linkedin_oidc' as const,    Icon: LinkedInIcon, label: 'LinkedIn' },
 ] as const;
 
+const GENERIC_ERROR = 'Something went wrong. Please try again.';
+
 const clerkErr = (e: unknown): string => {
   const err = e as { longMessage?: string; message?: string };
-  return err?.longMessage ?? err?.message ?? 'Something went wrong.';
+  return err?.longMessage ?? err?.message ?? GENERIC_ERROR;
 };
 
 const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, initialMode }) => {
@@ -142,7 +144,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
         setError('Sign in could not complete. Please try again or use a social login.');
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError(GENERIC_ERROR);
     } finally {
       setLoading(false);
     }
@@ -160,7 +162,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
       if (ve) { setError(clerkErr(ve)); return; }
       setMode('verify');
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError(GENERIC_ERROR);
     } finally {
       setLoading(false);
     }
@@ -180,7 +182,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
         onClose();
       }
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError(GENERIC_ERROR);
     } finally {
       setLoading(false);
     }
@@ -198,7 +200,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
       });
       if (error) { setError(clerkErr(error)); }
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError(GENERIC_ERROR);
     } finally {
       setOauthLoading(null);
     }
@@ -304,7 +306,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
                 {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
 
-                <div id="clerk-captcha" className={mode !== 'signup' ? 'hidden' : ''} />
+                {mode === 'signup' && <div id="clerk-captcha" />}
 
                 <Button
                   type="submit"
