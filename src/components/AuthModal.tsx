@@ -86,6 +86,11 @@ const OAUTH_PROVIDERS = [
   { strategy: 'oauth_linkedin_oidc' as const,    Icon: LinkedInIcon, label: 'LinkedIn' },
 ] as const;
 
+const clerkErr = (e: unknown): string => {
+  const err = e as { longMessage?: string; message?: string };
+  return err?.longMessage ?? err?.message ?? 'Something went wrong.';
+};
+
 const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, initialMode }) => {
   // Clerk v6 Signal API — returns { signIn, errors, fetchStatus }, no isLoaded/setActive
   const { signIn } = useSignIn();
@@ -119,11 +124,6 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     setMode(next);
   };
 
-  const clerkErr = (e: unknown) => {
-    const err = e as { longMessage?: string; message?: string };
-    return err?.longMessage ?? err?.message ?? 'Something went wrong.';
-  };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!signIn) return;
@@ -151,13 +151,17 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     if (!signUp) return;
     setLoading(true);
     setError('');
-    // v6: signUp.password() creates the account; then send email verification code
-    const { error } = await signUp.password({ emailAddress: email, password });
-    if (error) { setError(clerkErr(error)); setLoading(false); return; }
-    const { error: ve } = await signUp.verifications.sendEmailCode();
-    if (ve) { setError(clerkErr(ve)); setLoading(false); return; }
-    setMode('verify');
-    setLoading(false);
+    try {
+      const { error } = await signUp.password({ emailAddress: email, password });
+      if (error) { setError(clerkErr(error)); return; }
+      const { error: ve } = await signUp.verifications.sendEmailCode();
+      if (ve) { setError(clerkErr(ve)); return; }
+      setMode('verify');
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -165,28 +169,37 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     if (!signUp) return;
     setLoading(true);
     setError('');
-    // v6: verifyEmailCode then finalize to activate session
-    const { error } = await signUp.verifications.verifyEmailCode({ code });
-    if (error) { setError(clerkErr(error)); setLoading(false); return; }
-    if (signUp.status === 'complete') {
-      const { error: fe } = await signUp.finalize();
-      if (fe) { setError(clerkErr(fe)); setLoading(false); return; }
-      onClose();
+    try {
+      const { error } = await signUp.verifications.verifyEmailCode({ code });
+      if (error) { setError(clerkErr(error)); return; }
+      if (signUp.status === 'complete') {
+        const { error: fe } = await signUp.finalize();
+        if (fe) { setError(clerkErr(fe)); return; }
+        onClose();
+      }
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleOAuth = async (strategy: typeof OAUTH_PROVIDERS[number]['strategy']) => {
     if (!signIn) return;
     setOauthLoading(strategy);
     setError('');
-    // v6: signIn.sso() replaces authenticateWithRedirect
-    const { error } = await signIn.sso({
-      strategy,
-      redirectUrl: `${window.location.origin}/sso-callback`,
-      redirectCallbackUrl: `${window.location.origin}/sso-callback`,
-    });
-    if (error) { setError(clerkErr(error)); setOauthLoading(null); }
+    try {
+      const { error } = await signIn.sso({
+        strategy,
+        redirectUrl: `${window.location.origin}/sso-callback`,
+        redirectCallbackUrl: `${window.location.origin}/sso-callback`,
+      });
+      if (error) { setError(clerkErr(error)); }
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setOauthLoading(null);
+    }
   };
 
   return (
