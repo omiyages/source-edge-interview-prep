@@ -17,7 +17,6 @@ import { Seo } from "@/components/Seo";
 import AuthModalProvider from "@/components/AuthModal";
 
 // Critical path components - imported directly for fast initial load
-import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 // Lazy loaded components - reduces initial bundle size
@@ -53,9 +52,7 @@ const STATIC_SEO: Record<string, SeoMeta> = {
   "/roles": { title: "Open Jobs", description: "Browse active tech job openings in Japan and match them with interview prep resources." },
   "/resources": { title: "Interview Resources", description: "Find curated interview resources to prepare faster and smarter." },
   "/company": { title: "Companies", description: "Explore companies hiring top tech talent in Japan." },
-  "/auth": { title: "Sign In", description: "Sign in to Omiyages to access interview questions, courses, and job prep tools." },
-  "/signup": { title: "Create Account", description: "Create your Omiyages account to unlock interview questions and preparation resources." },
-  "/dashboard": { title: "Dashboard", description: "Track your interview preparation progress in one place.", noindex: true },
+"/dashboard": { title: "Dashboard", description: "Track your interview preparation progress in one place.", noindex: true },
   "/admin": { title: "Admin Dashboard", description: "Manage questions, users, and content from the Omiyages admin dashboard.", noindex: true },
   "/relo": { title: "Relocation to Tokyo", description: "Guidance and resources for relocating to Tokyo for your next role." },
   "/404": { title: "Omiyages", description: "Interview preparation platform for tech roles in Japan.", noindex: true },
@@ -110,9 +107,8 @@ function App() {
             <SessionTracker />
             <AppSeo />
             <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/signup" element={<Navigate to="/auth" replace />} />
-            <Route 
+            <Route path="/signup" element={<Navigate to="/" replace />} />
+<Route 
               path="/" 
               element={
                 <Suspense fallback={<PageLoader />}>

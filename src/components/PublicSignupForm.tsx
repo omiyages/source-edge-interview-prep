@@ -234,7 +234,7 @@ export const PublicSignupForm = () => {
           <p className="text-sm text-neutral-400">
             Didn't receive the verification email? Check your spam folder.
           </p>
-          <Link to="/auth">
+          <Link to="/">
             <Button variant="outline" className="w-full mt-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Sign In
@@ -481,7 +481,7 @@ export const PublicSignupForm = () => {
             {/* Sign In Link */}
             <p className="text-center text-sm text-neutral-400">
               Already have an account?{" "}
-              <Link to="/auth" className="text-primary font-medium hover:underline">
+              <Link to="/" className="text-primary font-medium hover:underline">
                 Sign in
               </Link>
             </p>

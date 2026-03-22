@@ -27,7 +27,7 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
 
   // If no user, redirect to auth page
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/" replace />;
   }
 
   // If profile failed to load, show error with retry instead of spinning forever

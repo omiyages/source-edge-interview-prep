@@ -176,7 +176,7 @@ const AdminDashboard = () => {
 
   if (!user) {
     console.log('🚫 AdminDashboard: No user found, redirecting to auth');
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (!profile) {

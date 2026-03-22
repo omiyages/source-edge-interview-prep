@@ -13,7 +13,7 @@ const PublicSignup = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut({ scope: 'local' });
-    navigate("/auth");
+    navigate("/");
   };
 
   if (user) {

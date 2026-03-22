@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: AuthContextType = {
     user: mappedUser,
     loading: !isLoaded,
-    signOut: () => clerkSignOut({ redirectUrl: '/auth' }),
+    signOut: () => clerkSignOut({ redirectUrl: '/' }),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

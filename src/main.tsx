@@ -43,7 +43,7 @@ root.render(
       {...(import.meta.env.PROD && {
         clerkJSUrl: 'https://clerk.omiyages.com/npm/@clerk/clerk-js@6/dist/clerk.browser.js',
       })}
-      afterSignOutUrl="/auth"
+      afterSignOutUrl="/"
       appearance={clerkAppearance}
     >
       <HelmetProvider>
