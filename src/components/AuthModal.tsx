@@ -121,6 +121,8 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
   const switchMode = (next: 'signin' | 'signup') => {
     setError('');
+    setLoading(false);
+    setCode('');
     setMode(next);
   };
 
@@ -302,7 +304,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
                 {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
 
-                {mode === 'signup' && <div id="clerk-captcha" />}
+                <div id="clerk-captcha" className={mode !== 'signup' ? 'hidden' : ''} />
 
                 <Button
                   type="submit"
