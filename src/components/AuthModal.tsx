@@ -319,34 +319,6 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
                 </Button>
               </form>
 
-              {/* Divider */}
-              <div className="relative w-full mb-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-neutral-800" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-[#0d0d0d] px-3 text-[11px] text-neutral-600 uppercase tracking-wider">or</span>
-                </div>
-              </div>
-
-              {/* OAuth buttons — icon only to match the minimal dark design */}
-              <div className="flex gap-2.5 w-full">
-                {OAUTH_PROVIDERS.map(({ strategy, Icon, label }) => (
-                  <button
-                    key={strategy}
-                    type="button"
-                    onClick={() => handleOAuth(strategy)}
-                    disabled={!!oauthLoading}
-                    aria-label={`Continue with ${label}`}
-                    title={`Continue with ${label}`}
-                    className="flex-1 flex items-center justify-center h-10 rounded-lg border border-neutral-700/80 bg-neutral-800/40 hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {oauthLoading === strategy
-                      ? <Loader2 className="w-4 h-4 animate-spin text-neutral-400" />
-                      : <Icon />}
-                  </button>
-                ))}
-              </div>
             </>
           )}
         </div>
