@@ -62,15 +62,7 @@ const LinkedInIcon = () => (
   </svg>
 );
 
-const OmiyagesIcon = () => (
-  <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5" aria-hidden>
-    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-    <path d="M2 17l10 5 10-5"/>
-    <path d="M2 12l10 5 10-5"/>
-  </svg>
-);
-
-// ── Modal Dialog ─────────────────────────────────────────────────────────────
+//── Modal Dialog ─────────────────────────────────────────────────────────────
 
 type AuthMode = 'signin' | 'signup' | 'verify';
 
@@ -214,7 +206,7 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
 
           {/* Logo mark */}
           <div className="w-11 h-11 rounded-full bg-neutral-800 border border-neutral-700/60 flex items-center justify-center mb-5 shadow-inner">
-            <OmiyagesIcon />
+            <img src="/favicon.ico" alt="Omiyages" className="w-7 h-7" />
           </div>
 
           {mode === 'verify' ? (
