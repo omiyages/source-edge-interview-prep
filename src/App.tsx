@@ -160,34 +160,28 @@ function App() {
                 </Suspense>
               } 
             />
-            <Route 
-              path="/company" 
+            <Route
+              path="/company"
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Companies />
-                  </Suspense>
-                </ProtectedRoute>
-              } 
+                <Suspense fallback={<PageLoader />}>
+                  <Companies />
+                </Suspense>
+              }
             />
             <Route
               path="/company/shippio"
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <ShippioCompanyPage />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <ShippioCompanyPage />
+                </Suspense>
               }
             />
             <Route
               path="/company/:companyId"
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <CompanyDetail />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <CompanyDetail />
+                </Suspense>
               }
             />
             <Route 
