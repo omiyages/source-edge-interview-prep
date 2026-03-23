@@ -66,7 +66,7 @@ const COMPANIES_DIRECTORY: {
     industry: 'International Logistics / Trade DX',
     location: 'Tokyo, Japan',
     founded: '2016',
-    image: '/shippio-cover.svg',
+    image: '/shippio.jpg',
     divisions: ['Engineering', 'Product', 'Operations', 'Sales'],
   },
 ];

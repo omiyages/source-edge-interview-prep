@@ -36,7 +36,7 @@ const companies = [
     location: 'Tokyo, Japan',
     founded: '2016',
     employeeSize: '51-200' satisfies EmployeeSize,
-    image: '/shippio-cover.svg',
+    image: '/shippio.jpg',
   },
 ];
 
