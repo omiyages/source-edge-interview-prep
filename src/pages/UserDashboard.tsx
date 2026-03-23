@@ -434,7 +434,7 @@ const UserDashboard = () => {
                     
                     <Button 
                       size="lg" 
-                      className="bg-primary hover:bg-primary/90 text-white px-6 rounded-xl shadow-sm"
+                      className="px-6"
                       onClick={courseButton.action}
                     >
                       <courseButton.icon className="w-4 h-4 mr-2" />

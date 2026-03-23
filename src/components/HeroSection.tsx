@@ -78,7 +78,7 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
                     <Button
                       size="lg"
                       variant="gradient"
-                      className="px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+                      className="px-8 py-3"
                     >
                       <Plus className="w-5 h-5 mr-2" />
                       Submit Question
@@ -101,11 +101,11 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
 
                 {/* Sign In / Register Buttons */}
                 <div className="flex items-center justify-center gap-4">
-                  <Button size="lg" variant="gradient" className="px-8 py-3 rounded-lg" onClick={openSignIn}>
+                  <Button size="lg" variant="gradient" className="px-8 py-3" onClick={openSignIn}>
                     <LogIn className="w-5 h-5 mr-2" />
                     Sign In
                   </Button>
-                  <Button size="lg" variant="outline" className="px-8 py-3 rounded-lg border-neutral-600 text-neutral-200 hover:bg-neutral-800 hover:border-neutral-500" onClick={openSignUp}>
+                  <Button size="lg" variant="outline" className="px-8 py-3" onClick={openSignUp}>
                     <UserPlus className="w-5 h-5 mr-2" />
                     Register
                   </Button>

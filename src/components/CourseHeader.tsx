@@ -75,7 +75,7 @@ export const CourseHeader = ({
           {isAdmin && (
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" className="whitespace-nowrap rounded-lg border-neutral-700 hover:bg-neutral-800">
+                <Button variant="outline" className="whitespace-nowrap">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Course
                 </Button>

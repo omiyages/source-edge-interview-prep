@@ -6,22 +6,22 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default: "bg-[#E4E4E4] text-neutral-950 hover:bg-[#D4D4D4] transition-colors",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors",
+        outline: "border border-neutral-700 bg-neutral-900 text-neutral-100 hover:bg-neutral-800 hover:text-white transition-colors",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors",
         ghost: "hover:bg-accent hover:text-accent-foreground transition-colors",
         link: "text-primary underline-offset-4 hover:underline transition-colors",
-        gradient: "bg-[#E4E4E4] text-neutral-950 font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#D4D4D4]",
+        gradient: "bg-[#E4E4E4] text-neutral-950 font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#D4D4D4]",
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        sm: "h-9 rounded-lg px-3",
+        lg: "h-11 rounded-xl px-8",
         icon: "h-10 w-10",
       },
     },
