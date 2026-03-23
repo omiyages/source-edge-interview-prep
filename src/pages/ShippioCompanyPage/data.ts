@@ -46,6 +46,7 @@ export const SHIPPIO = {
   ],
 
   fundingRounds: [
+    { year: '2016', round: 'Founded', amount: 'Established in Tokyo, Japan', lead: '' },
     { year: '2017', round: 'Seed', amount: '¥50M', lead: 'Coral Capital' },
     { year: '2018', round: 'Series A', amount: '¥500M', lead: 'Global Brain' },
     { year: '2021', round: 'Series B', amount: '¥2.2B', lead: 'DNX Ventures' },

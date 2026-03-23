@@ -225,7 +225,7 @@ const ShippioCompanyPage: React.FC = () => {
                     <div className="timeline-year">{round.year}</div>
                     <div className="timeline-round">{round.round}</div>
                     <div className="timeline-detail">
-                      {round.amount} — Led by {round.lead}
+                      {round.amount}{round.lead ? ` — Led by ${round.lead}` : ''}
                     </div>
                   </div>
                 ))}
