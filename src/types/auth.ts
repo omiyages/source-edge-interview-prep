@@ -1,8 +1,9 @@
+import type { MinimalUser } from '@/hooks/useAuthContext';
 
-import type { User, Session } from '@supabase/supabase-js';
+export type { MinimalUser };
 
 export interface Profile {
-  id: string;
+  id: string;  // Clerk user ID (e.g. "user_2abc") — same as profiles.id in DB
   email: string;
   role: 'user' | 'admin';
   full_name?: string;
@@ -12,15 +13,4 @@ export interface Profile {
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface AuthContextType {
-  user: User | null;
-  profile: Profile | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
-  isAdmin: boolean;
 }

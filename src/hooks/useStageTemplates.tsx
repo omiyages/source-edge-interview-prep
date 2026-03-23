@@ -4,6 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface StageTemplate {
   id: string;
@@ -25,6 +26,7 @@ export interface CourseStage {
 
 export const useStageTemplates = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Fetch all stage templates
   const { data: templates, isLoading } = useQuery({
@@ -56,7 +58,7 @@ export const useStageTemplates = () => {
           title: stage.title,
           description: stage.description,
           information: stage.information,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
+          created_by: user?.id ?? null,
         })
         .select()
         .single();

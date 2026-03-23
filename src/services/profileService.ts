@@ -9,14 +9,13 @@ import type { Profile } from "@/types/auth";
 import { logAuthFailure, logSuspiciousActivity } from "@/utils/securityLogger";
 import { validateEmail, sanitizeInput } from "@/utils/inputSecurity";
 
-// Accept an optional authenticated Supabase client (e.g. from useClerkSupabase).
-// Falls back to the default anon client if none is provided, which will fail
-// RLS policies — callers should always pass the Clerk-authenticated client.
+// Requires a Clerk-authenticated Supabase client (from useClerkSupabase).
+// Using the unauthenticated client will fail RLS policies on the profiles table.
 export const loadOrCreateProfile = async (
   user: { id: string; email: string },
-  client?: SupabaseClient<Database>
+  client: SupabaseClient<Database>
 ): Promise<Profile | null> => {
-  const db = client ?? supabase;
+  const db = client;
 
   try {
     // Skip email validation if email is empty (some OAuth flows may omit it)

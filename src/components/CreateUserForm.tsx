@@ -14,6 +14,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, User, Mail, Shield, AlertTriangle, Key, RefreshCw } from "lucide-react";
 import { validateEmail, validateAndSanitizeInput } from "@/utils/secureInputValidation";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuth as useClerkAuth } from "@clerk/react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { generateSecurePassword, validatePasswordStrength } from "@/utils/passwordGenerator";
 import { Switch } from "@/components/ui/switch";
@@ -33,6 +34,7 @@ export const CreateUserForm = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { getToken } = useClerkAuth();
 
   const generatePassword = () => {
     const newPassword = generateSecurePassword(16);
@@ -98,9 +100,9 @@ export const CreateUserForm = () => {
         throw new Error('Validation failed');
       }
 
-      // Get current session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
+      // Get Clerk JWT for authentication
+      const token = await getToken();
+      if (!token) {
         throw new Error('No active session found');
       }
 
@@ -120,7 +122,7 @@ export const CreateUserForm = () => {
       const { data, error } = await supabase.functions.invoke('admin-user-management', {
         body: requestBody,
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
         }
       });
 
@@ -145,8 +147,7 @@ export const CreateUserForm = () => {
       
       // Send welcome email (non-blocking)
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token && data.user?.email) {
+        if (data.user?.email) {
           await supabase.functions.invoke('send-email', {
             body: {
               type: 'welcome',

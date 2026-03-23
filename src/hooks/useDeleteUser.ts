@@ -1,16 +1,18 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@clerk/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export const useDeleteUser = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
+      const token = await getToken();
+      if (!token) {
         throw new Error('No active session');
       }
 
@@ -20,7 +22,7 @@ export const useDeleteUser = () => {
           body: { userId }
         },
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
         }
       });
 

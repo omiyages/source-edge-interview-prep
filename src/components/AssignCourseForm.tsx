@@ -2,6 +2,8 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { clerkSupabaseClient } from "@/lib/clerk";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +21,7 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
   const [userSearch, setUserSearch] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['users-for-assignment'],
@@ -58,15 +61,14 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
 
   const assignCourseMutation = useMutation({
     mutationFn: async ({ userId, courseId }: { userId: string; courseId: string }) => {
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) throw new Error("Not authenticated");
+      if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
+      const { data, error } = await clerkSupabaseClient
         .from('course_assignments')
         .insert({
           user_id: userId,
           course_id: courseId,
-          assigned_by: currentUser.user.id
+          assigned_by: user.id
         })
         .select()
         .single();

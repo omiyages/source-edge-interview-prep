@@ -89,89 +89,20 @@ export class DatabaseUserService {
         };
       }
 
-      // Step 1: Create user through Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            full_name: userData.fullName,
-            role: userData.role || 'user'
-          }
-        }
-      });
-
-      if (authError) {
-        return {
-          name: userData.fullName,
-          email: userData.email,
-          status: 'error',
-          message: `Auth creation failed: ${authError.message}`
-        };
-      }
-
-      if (!authData.user) {
-        return {
-          name: userData.fullName,
-          email: userData.email,
-          status: 'error',
-          message: 'No user data returned from auth'
-        };
-      }
-
-      // Step 2: Create profile with the auth user ID
-      const possibleRoles = ['user', 'admin', 'candidate', 'student'];
-      let lastError = null;
-
-      for (const role of possibleRoles) {
-        try {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id, // Use the auth user ID
-              full_name: userData.fullName,
-              email: userData.email,
-              role: role,
-              position: userData.position || 'Unassigned',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-          if (!profileError) {
-            return {
-              name: userData.fullName,
-              email: userData.email,
-              status: 'success',
-              message: `User created successfully with role: ${role}`
-            };
-          } else {
-            lastError = profileError;
-            // If it's not an enum error, break out of the loop
-            if (!profileError.message.includes('enum')) {
-              break;
-            }
-          }
-        } catch (err) {
-          lastError = err;
-          if (!(err instanceof Error && err.message.includes('enum'))) {
-            break;
-          }
-        }
-      }
-
+      // Supabase Auth has been replaced by Clerk. Bulk user creation via this
+      // service is no longer supported. Use Clerk's dashboard or API to invite users.
       return {
         name: userData.fullName,
         email: userData.email,
         status: 'error',
-        message: lastError?.message || 'Failed to create profile with any valid role'
+        message: 'Bulk user creation is not supported after migrating to Clerk. Use the Clerk dashboard to invite users.',
       };
-
     } catch (error) {
       return {
         name: userData.fullName,
         email: userData.email,
         status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
