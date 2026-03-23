@@ -64,7 +64,7 @@ const Questions = () => {
       stage: filters.stage.length > 0 ? filters.stage : undefined,
       sortBy,
     },
-    isAuthenticated,
+    !authLoading,
   );
 
   // Fetch lightweight stats (counts only) — used for both authenticated (filter sidebar) and anonymous users
