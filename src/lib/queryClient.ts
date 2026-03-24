@@ -28,13 +28,6 @@ export const queryClient = new QueryClient({
 
 // Query keys for consistent caching
 export const queryKeys = {
-  // Kanban queries
-  kanban: {
-    all: ['kanban'] as const,
-    data: (showRejected: boolean) => ['kanban', 'data', showRejected] as const,
-    users: ['kanban', 'users'] as const,
-  },
-  
   // User queries
   users: {
     all: ['users'] as const,
@@ -73,56 +66,8 @@ export const queryKeys = {
   },
 } as const;
 
-// Optimistic update helpers
-export const optimisticUpdates = {
-  // Move user to new stage optimistically
-  moveUser: (queryClient: any, userId: string, newStage: string) => {
-    queryClient.setQueryData(queryKeys.kanban.data(false), (old: any) => {
-      if (!old) return old;
-      return old.map((user: any) => 
-        user.user_id === userId 
-          ? { ...user, stage_name: newStage, last_updated_at: new Date().toISOString() }
-          : user
-      );
-    });
-  },
-  
-  // Add new user optimistically
-  addUser: (queryClient: any, newUser: any) => {
-    queryClient.setQueryData(queryKeys.kanban.data(false), (old: any) => {
-      if (!old) return old;
-      return [...old, newUser];
-    });
-  },
-  
-  // Remove user optimistically
-  removeUser: (queryClient: any, userId: string) => {
-    queryClient.setQueryData(queryKeys.kanban.data(false), (old: any) => {
-      if (!old) return old;
-      return old.filter((user: any) => user.user_id !== userId);
-    });
-  },
-  
-  // Update user optimistically
-  updateUser: (queryClient: any, userId: string, updates: any) => {
-    queryClient.setQueryData(queryKeys.kanban.data(false), (old: any) => {
-      if (!old) return old;
-      return old.map((user: any) => 
-        user.user_id === userId 
-          ? { ...user, ...updates, last_updated_at: new Date().toISOString() }
-          : user
-      );
-    });
-  },
-};
-
 // Cache invalidation helpers
 export const invalidateQueries = {
-  // Invalidate all Kanban data
-  kanban: (queryClient: any) => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.kanban.all });
-  },
-  
   // Invalidate user-specific data
   user: (queryClient: any, userId: string) => {
     queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(userId) });

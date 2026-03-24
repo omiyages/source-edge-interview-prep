@@ -18,11 +18,7 @@ import { Search, Clock, UserCheck, UserX, ChevronLeft, ChevronRight, UserPlus } 
 
 const USERS_PER_PAGE = 20;
 
-interface UsersListProps {
-  onBulkCreate?: () => void;
-}
-
-export const UsersList: React.FC<UsersListProps> = ({ onBulkCreate }) => {
+export const UsersList: React.FC = () => {
   const { data: users, isLoading, refetchUsers } = useOptimizedUsers();
   const { toast } = useToast();
   const queryClient = useQueryClient();

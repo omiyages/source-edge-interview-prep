@@ -43,7 +43,6 @@ interface EnvironmentConfig {
   
   // Feature Flags
   features: {
-    kanban: boolean;
     bulkAdd: boolean;
     securityMonitoring: boolean;
   };
@@ -79,7 +78,6 @@ class EnvironmentManager {
     const monitoringEnabled = this.getBooleanEnvVar('VITE_MONITORING_ENABLED', true);
     const analyticsId = this.getOptionalEnvVar('VITE_ANALYTICS_ID', '');
     
-    const kanbanEnabled = this.getBooleanEnvVar('VITE_FEATURE_KANBAN_ENABLED', true);
     const bulkAddEnabled = this.getBooleanEnvVar('VITE_FEATURE_BULK_ADD_ENABLED', true);
     const securityMonitoringEnabled = this.getBooleanEnvVar('VITE_FEATURE_SECURITY_MONITORING', true);
 
@@ -110,7 +108,6 @@ class EnvironmentManager {
         analyticsId: analyticsId,
       },
       features: {
-        kanban: kanbanEnabled,
         bulkAdd: bulkAddEnabled,
         securityMonitoring: securityMonitoringEnabled,
       },

@@ -120,6 +120,8 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     setMode(next);
   };
 
+  const SIGN_IN_ERROR = 'Invalid email or password.';
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!signIn) return;
@@ -127,16 +129,16 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     setError('');
     try {
       const { error } = await signIn.password({ identifier: email, password });
-      if (error) { setError(clerkErr(error)); return; }
+      if (error) { setError(SIGN_IN_ERROR); return; }
       if (signIn.status === 'complete') {
         const { error: fe } = await signIn.finalize();
-        if (fe) { setError(clerkErr(fe)); return; }
+        if (fe) { setError(SIGN_IN_ERROR); return; }
         onClose();
       } else {
-        setError('Sign in could not complete. Please try again or use a social login.');
+        setError(SIGN_IN_ERROR);
       }
     } catch (err) {
-      setError(GENERIC_ERROR);
+      setError(SIGN_IN_ERROR);
     } finally {
       setLoading(false);
     }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, LogOut, Users, AlertCircle, Home, UserPlus, BarChart } from "lucide-react";
+import { Check, X, Clock, LogOut, Users, AlertCircle, Home } from "lucide-react";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
@@ -17,14 +17,9 @@ import { AssignCourseForm } from "@/components/AssignCourseForm";
 import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
 import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
-import { BulkUserCreation } from "@/components/BulkUserCreation";
 import { NavigationHeader } from "@/components/NavigationHeader";
 
 // Lazy load heavy tab components to reduce initial bundle
-const KanbanBoard = lazy(() => import("@/components/KanbanBoard").then(m => ({ default: m.KanbanBoard })));
-const UpcomingInterviews = lazy(() => import("@/components/UpcomingInterviews").then(m => ({ default: m.UpcomingInterviews })));
-const PendingTasks = lazy(() => import("@/components/PendingTasks").then(m => ({ default: m.PendingTasks })));
-const ReportTab = lazy(() => import("@/components/ReportTab").then(m => ({ default: m.ReportTab })));
 const ManageReloResources = lazy(() => import("@/components/ManageReloResources").then(m => ({ default: m.ManageReloResources })));
 
 // Loading fallback for lazy components
@@ -58,7 +53,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showBulkUserCreation, setShowBulkUserCreation] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState("users");
   const [activeQuestionsTab, setActiveQuestionsTab] = useState("management");
 
@@ -281,60 +275,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Users Tab with Subtabs */}
+          {/* Users Tab */}
           <TabsContent value="users">
-            <Tabs defaultValue="kanban" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 mb-6">
-                <TabsTrigger value="kanban">
-                  <Users className="w-4 h-4 mr-2" />
-                  Kanban Board
-                </TabsTrigger>
-                <TabsTrigger value="report">
-                  <BarChart className="w-4 h-4 mr-2" />
-                  Report
-                </TabsTrigger>
-                <TabsTrigger value="upcoming-interviews">
-                  <Clock className="w-4 h-4 mr-2" />
-                  Upcoming Interviews
-                </TabsTrigger>
-                <TabsTrigger value="pending-tasks">
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  Pending Tasks
-                </TabsTrigger>
-                <TabsTrigger value="users-list">
-                  <Users className="w-4 h-4 mr-2" />
-                  Users List
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="kanban">
-                <Suspense fallback={<TabLoader />}>
-                  <KanbanBoard />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="report">
-                <Suspense fallback={<TabLoader />}>
-                  <ReportTab />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="upcoming-interviews">
-                <Suspense fallback={<TabLoader />}>
-                  <UpcomingInterviews />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="pending-tasks">
-                <Suspense fallback={<TabLoader />}>
-                  <PendingTasks />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="users-list">
-                <UsersList onBulkCreate={() => setShowBulkUserCreation(true)} />
-              </TabsContent>
-            </Tabs>
+            <UsersList />
           </TabsContent>
 
           {/* Course Management Tab with Subtabs */}
@@ -498,11 +441,6 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Bulk User Creation Modal */}
-      {showBulkUserCreation && (
-        <BulkUserCreation onClose={() => setShowBulkUserCreation(false)} />
-      )}
 
       {/* Footer */}
       <footer className="bg-neutral-900 border-t border-border/30 mt-auto py-6">
