@@ -3,7 +3,7 @@
 // ABOUTME: Provides efficient user data fetching for admin components
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { clerkSupabaseClient } from '@/lib/clerk';
 import { UserProfile } from '@/types/user';
 
 export const useOptimizedUsers = () => {
@@ -13,7 +13,7 @@ export const useOptimizedUsers = () => {
     queryKey: ['admin-users'],
     queryFn: async () => {
       console.log('📥 Fetching users for admin...');
-      const { data, error } = await supabase
+      const { data, error } = await clerkSupabaseClient
         .from('profiles')
         .select('id, email, full_name, role, is_active, last_login_at, total_session_time_minutes, created_at, updated_at')
         .order('created_at', { ascending: false });

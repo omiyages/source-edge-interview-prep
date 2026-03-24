@@ -26,7 +26,7 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['users-for-assignment'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await clerkSupabaseClient
         .from('profiles')
         .select('id, full_name, email, role, is_active')
         .eq('role', 'user')

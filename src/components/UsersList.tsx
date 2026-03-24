@@ -12,7 +12,7 @@ import { UserTableRow } from './UserTableRow';
 import { CreateUserForm } from './CreateUserForm';
 import { useOptimizedUsers } from '@/hooks/useOptimizedUsers';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { clerkSupabaseClient } from '@/lib/clerk';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Clock, UserCheck, UserX, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
 
@@ -31,7 +31,7 @@ export const UsersList: React.FC = () => {
   // Approve / reject mutation for pending users
   const approvalMutation = useMutation({
     mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
-      const { error } = await supabase
+      const { error } = await clerkSupabaseClient
         .from('profiles')
         .update({
           is_active: approve,
