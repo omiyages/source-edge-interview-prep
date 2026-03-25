@@ -1,98 +1,68 @@
 // ABOUTME: Shippio company page — uses the shared company page template design system
 // ABOUTME: Accent color: teal (#00C2A8). Sections: Hero, About, Products, Funding, Tech Stack, Global Presence, CTA
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ExternalLink, MapPin } from 'lucide-react';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { Button } from '@/components/ui/button';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { RevealSection, SectionHeader } from '@/components/company';
 import { SHIPPIO } from './data';
 import '@/styles/companyTemplate.css';
 
 const ACCENT = '#00C2A8';
 const ACCENT_DIM = 'rgba(0,194,168,0.12)';
 
-// ── Scroll-reveal hook ──────────────────────────────────────
-function useReveal() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add('visible');
-          observer.unobserve(el);
-        }
-      },
-      { threshold: 0.15 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  return ref;
-}
-
-function RevealSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  const ref = useReveal();
-  return (
-    <div ref={ref} className={`company-reveal ${className}`}>
-      {children}
-    </div>
-  );
-}
-
 // ── Animated counter ────────────────────────────────────────
 function AnimatedStat({ value, label }: { value: string; label: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const hasAnimated = useRef(false);
-
-  const animate = useCallback(() => {
-    const el = ref.current;
-    if (!el || hasAnimated.current) return;
-    hasAnimated.current = true;
-
-    const numMatch = value.match(/[\d.]+/);
-    if (!numMatch) {
-      el.textContent = value;
-      return;
-    }
-
-    const target = parseFloat(numMatch[0]);
-    const prefix = value.slice(0, value.indexOf(numMatch[0]));
-    const suffix = value.slice(value.indexOf(numMatch[0]) + numMatch[0].length);
-    const isInteger = !numMatch[0].includes('.');
-    const duration = 1200;
-    const start = performance.now();
-
-    function tick(now: number) {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = target * eased;
-      if (el) {
-        el.textContent = prefix + (isInteger ? Math.round(current).toString() : current.toFixed(1)) + suffix;
-      }
-      if (progress < 1) requestAnimationFrame(tick);
-    }
-
-    requestAnimationFrame(tick);
-  }, [value]);
+  const rafId = useRef<number>(0);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          animate();
-          observer.unobserve(el);
+        if (!entry.isIntersecting || hasAnimated.current) return;
+        hasAnimated.current = true;
+        observer.unobserve(el);
+
+        const numMatch = value.match(/[\d.]+/);
+        if (!numMatch) {
+          el.textContent = value;
+          return;
         }
+
+        const target = parseFloat(numMatch[0]);
+        const prefix = value.slice(0, value.indexOf(numMatch[0]));
+        const suffix = value.slice(value.indexOf(numMatch[0]) + numMatch[0].length);
+        const isInteger = !numMatch[0].includes('.');
+        const duration = 1200;
+        const start = performance.now();
+
+        function tick(now: number) {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const current = target * eased;
+          if (el) {
+            el.textContent = prefix + (isInteger ? Math.round(current).toString() : current.toFixed(1)) + suffix;
+          }
+          if (progress < 1) {
+            rafId.current = requestAnimationFrame(tick);
+          }
+        }
+
+        rafId.current = requestAnimationFrame(tick);
       },
       { threshold: 0.5 }
     );
     observer.observe(el);
-    return () => observer.disconnect();
-  }, [animate]);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(rafId.current);
+    };
+  }, [value]);
 
   return (
     <div className="text-center">
@@ -102,16 +72,6 @@ function AnimatedStat({ value, label }: { value: string; label: string }) {
       <span className="text-sm mt-1 block" style={{ color: 'var(--color-text-2)' }}>
         {label}
       </span>
-    </div>
-  );
-}
-
-function SectionHeader({ label, heading }: { label: string; heading: string }) {
-  return (
-    <div className="mb-8">
-      <span className="section-label">{label}</span>
-      <div className="section-rule" />
-      <h2 className="section-heading">{heading}</h2>
     </div>
   );
 }

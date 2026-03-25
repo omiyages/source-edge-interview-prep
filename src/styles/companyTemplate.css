@@ -234,6 +234,19 @@
   background: var(--color-accent-dim);
 }
 
+/* ── Division check dot ────────────────────────── */
+
+.division-check-dot {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* ── Tech stack tags ───────────────────────────── */
 
 .tech-tag {
