@@ -29,6 +29,7 @@ const CourseDetail = lazy(() => import("./pages/CourseDetail"));
 const Companies = lazy(() => import("./pages/Companies"));
 const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
 const ShippioCompanyPage = lazy(() => import("./pages/ShippioCompanyPage"));
+const WovenCompanyPage = lazy(() => import("./pages/WovenCompanyPage"));
 const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
 const SsoCallback = lazy(() => import("./pages/SsoCallback"));
@@ -173,6 +174,14 @@ function App() {
               element={
                 <Suspense fallback={<PageLoader />}>
                   <ShippioCompanyPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/company/woven"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <WovenCompanyPage />
                 </Suspense>
               }
             />

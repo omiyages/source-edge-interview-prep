@@ -299,6 +299,108 @@ All timestamps use **Japan Standard Time (JST, UTC+9)**. See `src/config/timezon
 
 ---
 
+## Company Page Template
+
+All company pages use a **unified dark design system** defined in `src/styles/companyTemplate.css`. The template provides a consistent brand identity across all company profiles.
+
+### Design System
+
+- **Background:** `#0A0C0F` with a dot-grid hero pattern
+- **Typography:** IBM Plex Sans (body), Syne (headings), IBM Plex Mono (stats/labels)
+- **Accent color:** Per-company, set via CSS custom properties on the root element
+- **Animations:** Scroll-reveal (`company-reveal`) and hero entrance (`company-hero-enter`)
+- **Section pattern:** `section-label` (mono caps) → `section-rule` (1px line) → `section-heading` (Syne bold)
+
+### Accent Color
+
+Set per company via inline style on the root `<div className="company-page">`:
+
+```tsx
+<div
+  className="company-page"
+  style={{ '--color-accent': '#DC2626', '--color-accent-dim': 'rgba(220,38,38,0.12)' } as React.CSSProperties}
+>
+```
+
+Current accent colors:
+- **Woven by Toyota:** `#DC2626` (red)
+- **Shippio:** `#00C2A8` (teal)
+
+### File Structure
+
+Each company gets its own directory under `src/pages/`:
+
+```
+src/pages/AcmeCompanyPage/
+├── index.tsx   # Page component — imports companyTemplate.css, uses company-* classes
+└── data.ts     # Company data (no JSX — just plain objects)
+```
+
+Route added in `src/App.tsx`:
+```tsx
+const AcmeCompanyPage = lazy(() => import("./pages/AcmeCompanyPage"));
+// ...
+<Route path="/company/acme" element={<Suspense fallback={<PageLoader />}><AcmeCompanyPage /></Suspense>} />
+```
+
+Also add the company to the `companies` array in `src/pages/Companies.tsx` using `id: 'acme'` so the card links to `/company/acme`.
+
+### Standard Sections
+
+Every company page should include these sections (in order):
+
+| Section | CSS anchor | Description |
+|---------|-----------|-------------|
+| Hero | — | Full-viewport, dot-grid background, stat pills, optional right image |
+| Page Nav | — | Sticky nav bar linking to sections |
+| About | `#about` | Company overview text + 3 icon pillars |
+| Products/Divisions | `#divisions` or `#products` | Feature cards with icons and bullet highlights |
+| Interview Process | `#interview` | Numbered steps (if applicable) |
+| Culture | `#culture` | YouTube embed + reasons to join (if applicable) |
+
+Optional sections (include if data available): Funding timeline (`#funding`), Tech Stack (`#tech-stack`), Global Presence (`#global`), CTA block.
+
+### CSS Classes Reference
+
+| Class | Purpose |
+|-------|---------|
+| `company-page` | Root wrapper — sets CSS variables and typography |
+| `company-hero-bg` | Dot-grid hero background |
+| `company-hero-vh` | Full-viewport-height hero container |
+| `company-hero-enter` | Staggered entrance animation for hero children |
+| `company-page-nav` | Sticky section navigation bar |
+| `company-nav-link` | Navigation link with accent hover |
+| `company-reveal` | Scroll-triggered fade-in (add `visible` class via IntersectionObserver) |
+| `company-card` | Surface card with accent border-glow on hover |
+| `division-card` | Wider card for division/product rows |
+| `division-icon-wrap` | Colored square icon container |
+| `pillar-icon` | Circular icon container for About pillars |
+| `interview-step` | Centered column for interview steps |
+| `interview-step-num` | Accent-colored circular step number |
+| `culture-reason-icon` | Small square icon for culture reasons |
+| `stat-pill` | Monospaced key:value badge for hero stats |
+| `tech-tag` | Monospaced tech stack tag with accent hover |
+| `timeline` / `timeline-item` | Vertical funding timeline |
+| `company-cta-btn` | Filled accent CTA button |
+| `company-cta-outline` | Outlined accent CTA button |
+| `company-learn-more-btn` | Outline button styled with accent |
+| `section-label` | Small mono uppercase section label |
+| `section-rule` | 1px horizontal rule under section label |
+| `section-heading` | Large Syne bold section title |
+| `body-text` | Standard body paragraph style |
+| `stat-value` | Large mono stat number in accent color |
+
+### Adding a New Company — Checklist
+
+1. Create `src/pages/<Name>CompanyPage/index.tsx` using the pattern from `WovenCompanyPage` or `ShippioCompanyPage`
+2. Create `src/pages/<Name>CompanyPage/data.ts` with company facts
+3. Choose an accent color hex + rgba dim variant
+4. Add lazy import + route in `src/App.tsx` (`path="/company/<slug>"`)
+5. Add entry to `companies` array in `src/pages/Companies.tsx` with matching `id: '<slug>'`
+6. Add to `public/sitemap.xml`
+
+---
+
 ## Useful References
 
 - [Supabase Docs](https://supabase.com/docs)

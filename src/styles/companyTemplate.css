@@ -1,11 +1,22 @@
-/* Shippio Company Page — Custom Design System */
+/**
+ * Company Page Template — Shared Design System
+ *
+ * Usage:
+ *   import '@/styles/companyTemplate.css';
+ *
+ * Set per-company accent colors on the root element:
+ *   <div
+ *     className="company-page"
+ *     style={{ '--color-accent': '#DC2626', '--color-accent-dim': 'rgba(220,38,38,0.12)' } as React.CSSProperties}
+ *   >
+ */
 
-.shippio-page {
+.company-page {
   --color-bg: #0A0C0F;
   --color-surface: #111418;
   --color-border: #1E2329;
-  --color-accent: #00C2A8;
-  --color-accent-dim: rgba(0, 194, 168, 0.12);
+  --color-accent: #8B5CF6;
+  --color-accent-dim: rgba(139, 92, 246, 0.12);
   --color-text-1: #F0F2F5;
   --color-text-2: #8A9BB0;
   --color-text-3: #4A5568;
@@ -19,15 +30,11 @@
 
 /* ── Typography ────────────────────────────────── */
 
-.shippio-page .font-display {
+.company-page .font-display {
   font-family: 'Syne', system-ui, sans-serif;
 }
 
-.shippio-page .font-mono {
-  font-family: 'IBM Plex Mono', monospace;
-}
-
-.shippio-page .hero-title {
+.company-page .hero-title {
   font-family: 'Syne', system-ui, sans-serif;
   font-size: clamp(3rem, 7vw, 6rem);
   font-weight: 800;
@@ -36,7 +43,7 @@
   color: var(--color-text-1);
 }
 
-.shippio-page .section-label {
+.company-page .section-label {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.75rem;
   font-weight: 500;
@@ -45,27 +52,27 @@
   color: var(--color-text-3);
 }
 
-.shippio-page .section-rule {
+.company-page .section-rule {
   width: 3rem;
   height: 1px;
   background: var(--color-text-3);
   margin: 0.75rem 0 1rem;
 }
 
-.shippio-page .section-heading {
+.company-page .section-heading {
   font-family: 'Syne', system-ui, sans-serif;
   font-size: clamp(1.5rem, 3vw, 2.25rem);
   font-weight: 700;
   color: var(--color-text-1);
 }
 
-.shippio-page .body-text {
+.company-page .body-text {
   font-size: 1.0625rem;
   line-height: 1.75;
   color: var(--color-text-2);
 }
 
-.shippio-page .stat-value {
+.company-page .stat-value {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 2rem;
   font-weight: 600;
@@ -74,28 +81,28 @@
 
 /* ── Layout ────────────────────────────────────── */
 
-.shippio-page .page-container {
+.company-page .page-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
 
-.shippio-page .section-padding {
+.company-page .section-padding {
   padding-top: clamp(5rem, 10vw, 8rem);
   padding-bottom: clamp(5rem, 10vw, 8rem);
 }
 
-/* ── Dot-grid hero background ─────────────────── */
+/* ── Hero background ─────────────────────────── */
 
-.shippio-hero-bg {
+.company-hero-bg {
   position: relative;
   background-color: var(--color-bg);
   background-image: radial-gradient(circle, var(--color-border) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-.shippio-hero-vh {
-  min-height: calc(100vh - 64px); /* subtract nav height */
+.company-hero-vh {
+  min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -103,7 +110,7 @@
   padding-bottom: 2rem;
 }
 
-.shippio-hero-bg::after {
+.company-hero-bg::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -137,7 +144,7 @@
 
 /* ── Cards ─────────────────────────────────────── */
 
-.shippio-card {
+.company-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 2px;
@@ -145,9 +152,86 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.shippio-card:hover {
+.company-card:hover {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+/* ── Division / feature cards ────────────────────── */
+
+.division-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  padding: 1.5rem 2rem;
+  transition: border-color 0.2s;
+}
+
+.division-card:hover {
+  border-color: var(--color-accent);
+}
+
+.division-icon-wrap {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── About pillars ─────────────────────────────── */
+
+.pillar-icon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  background: var(--color-accent-dim);
+  border: 1px solid var(--color-border);
+}
+
+/* ── Interview process ─────────────────────────── */
+
+.interview-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.interview-step-num {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-bg);
+  background: var(--color-accent);
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+/* ── Culture reasons ─────────────────────────────── */
+
+.culture-reason-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 2px;
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--color-accent-dim);
 }
 
 /* ── Tech stack tags ───────────────────────────── */
@@ -244,7 +328,6 @@
   padding: 1rem;
   border: 1px solid var(--color-border);
   border-radius: 2px;
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-2);
@@ -260,13 +343,16 @@
 
 /* ── Page navigation bar ──────────────────────── */
 
-.shippio-page-nav {
+.company-page-nav {
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
   padding: 1rem 0;
+  position: sticky;
+  top: 64px;
+  z-index: 10;
 }
 
-.shippio-nav-link {
+.company-nav-link {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
@@ -275,108 +361,23 @@
   transition: color 0.2s;
 }
 
-.shippio-nav-link:hover {
+.company-nav-link:hover {
   color: var(--color-accent);
 }
 
-/* ── Back button & Learn More overrides ──────── */
+/* ── Buttons ──────────────────────────────────── */
 
-.shippio-back-btn {
-  border-color: var(--color-border) !important;
-  color: var(--color-text-2) !important;
-  background: transparent !important;
-}
-
-.shippio-back-btn:hover {
-  border-color: var(--color-accent) !important;
-  color: var(--color-text-1) !important;
-}
-
-.shippio-learn-more-btn {
+.company-learn-more-btn {
   border-color: var(--color-accent) !important;
   color: var(--color-accent) !important;
   background: transparent !important;
 }
 
-.shippio-learn-more-btn:hover {
+.company-learn-more-btn:hover {
   background: var(--color-accent-dim) !important;
 }
 
-/* ── Scroll animation ──────────────────────────── */
-
-.shippio-reveal {
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-}
-
-.shippio-reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Hero staggered animation */
-.shippio-hero-enter {
-  opacity: 0;
-  transform: translateY(24px);
-  animation: shippio-fade-up 0.6s ease-out forwards;
-}
-
-.shippio-hero-enter:nth-child(1) { animation-delay: 0.1s; }
-.shippio-hero-enter:nth-child(2) { animation-delay: 0.25s; }
-.shippio-hero-enter:nth-child(3) { animation-delay: 0.4s; }
-.shippio-hero-enter:nth-child(4) { animation-delay: 0.55s; }
-
-@keyframes shippio-fade-up {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ── Responsive ────────────────────────────────── */
-
-@media (max-width: 768px) {
-  .shippio-page .hero-title {
-    font-size: clamp(2rem, 10vw, 3rem);
-  }
-
-  .shippio-page .stat-value {
-    font-size: 1.5rem;
-  }
-
-  .stat-pill {
-    font-size: 0.75rem;
-    padding: 0.375rem 0.75rem;
-  }
-
-  .timeline {
-    padding-left: 1.5rem;
-  }
-
-  .investor-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  }
-
-  .shippio-page .section-padding {
-    padding-top: 3rem;
-    padding-bottom: 3rem;
-  }
-
-  .shippio-page-nav nav {
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-
-  .shippio-nav-link {
-    font-size: 0.8125rem;
-  }
-}
-
-/* ── Footer CTA ────────────────────────────────── */
-
-.shippio-cta-btn {
+.company-cta-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -393,11 +394,11 @@
   text-decoration: none;
 }
 
-.shippio-cta-btn:hover {
+.company-cta-btn:hover {
   opacity: 0.85;
 }
 
-.shippio-cta-outline {
+.company-cta-outline {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -414,6 +415,78 @@
   text-decoration: none;
 }
 
-.shippio-cta-outline:hover {
+.company-cta-outline:hover {
   background: var(--color-accent-dim);
+}
+
+/* ── Scroll animations ─────────────────────────── */
+
+.company-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.company-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.company-hero-enter {
+  opacity: 0;
+  transform: translateY(24px);
+  animation: company-fade-up 0.6s ease-out forwards;
+}
+
+.company-hero-enter:nth-child(1) { animation-delay: 0.1s; }
+.company-hero-enter:nth-child(2) { animation-delay: 0.25s; }
+.company-hero-enter:nth-child(3) { animation-delay: 0.4s; }
+.company-hero-enter:nth-child(4) { animation-delay: 0.55s; }
+.company-hero-enter:nth-child(5) { animation-delay: 0.7s; }
+
+@keyframes company-fade-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Responsive ────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .company-page .hero-title {
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .company-page .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-pill {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .timeline {
+    padding-left: 1.5rem;
+  }
+
+  .investor-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .company-page .section-padding {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  .company-page-nav nav {
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .company-nav-link {
+    font-size: 0.8125rem;
+  }
 }
