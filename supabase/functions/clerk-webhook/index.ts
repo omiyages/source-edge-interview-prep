@@ -12,7 +12,7 @@
  *   3. Subscribe to events: user.created, user.updated, user.deleted
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -215,16 +215,32 @@ async function handleUserUpdated(user: ClerkUser) {
 }
 
 async function handleUserDeleted(data: { id: string }) {
+  // Look up the profile first so we have the UUID for cleaning up related rows
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('id')
+    .eq('clerk_id', data.id)
+    .maybeSingle()
+
+  if (!profile) {
+    console.log(`No profile found for clerk_id=${data.id}, nothing to delete`)
+    return
+  }
+
+  // Delete dependent rows before removing the profile
+  await supabaseAdmin.from('course_assignments').delete().eq('user_id', profile.id)
+  await supabaseAdmin.from('user_progress').delete().eq('user_id', profile.id)
+
   const { error } = await supabaseAdmin
     .from('profiles')
-    .update({ is_active: false })
+    .delete()
     .eq('clerk_id', data.id)
 
   if (error) {
-    throw new Error(`Failed to deactivate profile: ${error.message}`)
+    throw new Error(`Failed to delete profile: ${error.message}`)
   }
 
-  console.log(`Deactivated profile for clerk_id=${data.id}`)
+  console.log(`Deleted profile ${profile.id} for clerk_id=${data.id}`)
 }
 
 // ---------- Main Handler ----------

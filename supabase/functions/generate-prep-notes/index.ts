@@ -3,7 +3,7 @@
 // Idempotency via prompt hash; fail gracefully returning existing or empty notes.
 //
 // Required secret: Set OPENAI_API_KEY in Supabase Dashboard → Edge Functions → generate-prep-notes → Secrets.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 const ALLOWED_ORIGINS = [
   "https://omiyages.com",
   "https://www.omiyages.com",

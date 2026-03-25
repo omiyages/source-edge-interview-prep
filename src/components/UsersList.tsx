@@ -14,7 +14,7 @@ import { useOptimizedUsers } from '@/hooks/useOptimizedUsers';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { clerkSupabaseClient } from '@/lib/clerk';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Clock, UserCheck, UserX, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
+import { Search, Clock, UserCheck, UserX, ChevronLeft, ChevronRight, UserPlus, RefreshCw } from 'lucide-react';
 
 const USERS_PER_PAGE = 20;
 
@@ -27,6 +27,28 @@ export const UsersList: React.FC = () => {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncWithClerk = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await clerkSupabaseClient.functions.invoke('clerk-sync');
+      if (error) throw error;
+      toast({
+        title: 'Sync complete',
+        description: `Removed ${data.deleted} orphaned profile${data.deleted !== 1 ? 's' : ''}. (${data.orphansFound} found, ${data.scanned} scanned)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    } catch (err: any) {
+      toast({
+        title: 'Sync failed',
+        description: err?.message ?? 'Could not connect to clerk-sync function.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Approve / reject mutation for pending users
   const approvalMutation = useMutation({
@@ -133,6 +155,15 @@ export const UsersList: React.FC = () => {
         <Button onClick={() => setShowCreateDialog(true)}>
           <UserPlus className="w-4 h-4 mr-2" />
           Create User
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleSyncWithClerk}
+          disabled={isSyncing}
+          title="Remove profiles for users deleted from Clerk"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+          {isSyncing ? 'Syncing…' : 'Sync with Clerk'}
         </Button>
       </div>
 
