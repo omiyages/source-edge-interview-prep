@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, LogOut, Users, AlertCircle, Home } from "lucide-react";
+import { Check, X, Clock, LogOut, Users, AlertCircle, Home, BarChart2 } from "lucide-react";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
 import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
 import { NavigationHeader } from "@/components/NavigationHeader";
+import { AdminAnalytics } from "@/components/AdminAnalytics";
 
 // Lazy load heavy tab components to reduce initial bundle
 const ManageReloResources = lazy(() => import("@/components/ManageReloResources").then(m => ({ default: m.ManageReloResources })));
@@ -262,7 +263,7 @@ const AdminDashboard = () => {
         )}
 
         <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -272,6 +273,10 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="questions">
               Questions ({pendingQuestions?.length || 0} pending)
+            </TabsTrigger>
+            <TabsTrigger value="analytics">
+              <BarChart2 className="w-4 h-4 mr-2" />
+              Analytics
             </TabsTrigger>
           </TabsList>
 
@@ -307,6 +312,11 @@ const AdminDashboard = () => {
                 <CourseReviewsAdmin />
               </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <AdminAnalytics />
           </TabsContent>
 
           {/* Questions Tab with Subtabs */}
