@@ -30,11 +30,13 @@ const Companies = lazy(() => import("./pages/Companies"));
 const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
 const ShippioCompanyPage = lazy(() => import("./pages/ShippioCompanyPage"));
 const WovenCompanyPage = lazy(() => import("./pages/WovenCompanyPage"));
+const JapanAICompanyPage = lazy(() => import("./pages/JapanAICompanyPage"));
 const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
 const SsoCallback = lazy(() => import("./pages/SsoCallback"));
 const Roles = lazy(() => import("./pages/Roles"));
 const RoleDetail = lazy(() => import("./pages/RoleDetail"));
+const AssignedJobsPublic = lazy(() => import("./pages/AssignedJobsPublic"));
 // Loading fallback component
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -186,6 +188,14 @@ function App() {
               }
             />
             <Route
+              path="/company/japan-ai"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <JapanAICompanyPage />
+                </Suspense>
+              }
+            />
+            <Route
               path="/company/:companyId"
               element={
                 <Suspense fallback={<PageLoader />}>
@@ -244,6 +254,14 @@ function App() {
                 </Suspense>
               } 
             />
+              <Route
+                path="/jobs/shared/:token"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <AssignedJobsPublic />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/sso-callback"
                 element={

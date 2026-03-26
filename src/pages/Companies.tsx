@@ -26,7 +26,7 @@ const companies = [
     location: 'Global',
     founded: '2021',
     employeeSize: '1001+' satisfies EmployeeSize,
-    image: '/woven-office-image.jpg',
+    image: '/Woven City.jpg',
   },
   {
     id: 'shippio',
@@ -37,6 +37,16 @@ const companies = [
     founded: '2016',
     employeeSize: '51-200' satisfies EmployeeSize,
     image: '/shippio.jpg',
+  },
+  {
+    id: 'japan-ai',
+    name: 'Japan AI',
+    description: 'Strategic AI subsidiary of Geniee Inc. (TSE-listed), providing end-to-end enterprise AI transformation through consulting, a proprietary SaaS platform with 82.7% RAG accuracy, and custom AI development for ~200 enterprise clients.',
+    industry: 'Enterprise AI / SaaS',
+    location: 'Shinjuku, Tokyo',
+    founded: '2023',
+    employeeSize: '201-500' satisfies EmployeeSize,
+    image: '/japanai.jpg',
   },
 ];
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-/** Adds the `visible` CSS class (from companyTemplate.css) when the element enters the viewport. */
+/** Adds the `visible` CSS class (defined in index.css) when the element enters the viewport. */
 export function useCompanyReveal(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {

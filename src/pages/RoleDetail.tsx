@@ -54,7 +54,7 @@ const COMPANIES_DIRECTORY: {
     industry: 'Automotive Software',
     location: 'Global',
     founded: '2021',
-    image: '/woven-office-image.jpg',
+    image: '/Woven City.jpg',
     divisions: ['ADAS', 'Arene', 'Woven City', 'Enterprise Technology', 'Dojo'],
   },
   {
@@ -68,6 +68,18 @@ const COMPANIES_DIRECTORY: {
     founded: '2016',
     image: '/shippio.jpg',
     divisions: ['Engineering', 'Product', 'Operations', 'Sales'],
+  },
+  {
+    id: 'japan-ai',
+    name: 'Japan AI',
+    aliases: ['japan ai', 'japan-ai', 'japanai'],
+    description:
+      'Strategic AI subsidiary of Geniee Inc. (TSE-listed), providing end-to-end enterprise AI transformation through consulting, a proprietary SaaS platform, and custom AI development.',
+    industry: 'Enterprise AI / SaaS',
+    location: 'Shinjuku, Tokyo',
+    founded: '2023',
+    image: '/japanai.jpg',
+    divisions: ['AI Consulting', 'Platform', 'AI Development'],
   },
 ];
 

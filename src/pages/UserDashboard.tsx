@@ -14,21 +14,24 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { 
-  BookOpen, 
-  Play, 
-  Search, 
-  Filter, 
-  ChevronLeft, 
+import {
+  BookOpen,
+  Play,
+  Search,
+  Filter,
+  ChevronLeft,
   ChevronRight,
   Bookmark,
-  MessageSquare
+  MessageSquare,
+  Briefcase,
 } from 'lucide-react';
+import { AssignedJobsTab } from '@/components/AssignedJobsTab';
 import { slugify } from '@/utils/slugify';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { NavigationHeader } from '@/components/NavigationHeader';
@@ -447,6 +450,20 @@ const UserDashboard = () => {
           </Card>
         )}
 
+        {/* Tabbed Content */}
+        <Tabs defaultValue="overview">
+          <TabsList className="mb-6 bg-neutral-900 border border-neutral-800">
+            <TabsTrigger value="overview" className="gap-2">
+              <Bookmark className="w-4 h-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="assigned-jobs" className="gap-2">
+              <Briefcase className="w-4 h-4" />
+              Assigned Jobs
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Saved Questions Section */}
@@ -694,6 +711,12 @@ const UserDashboard = () => {
             </Card>
           </div>
         </div>
+          </TabsContent>
+
+          <TabsContent value="assigned-jobs">
+            <AssignedJobsTab />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Footer */}

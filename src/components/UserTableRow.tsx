@@ -2,15 +2,16 @@
 // ABOUTME: Secure user table row component with enhanced security controls
 // ABOUTME: Uses secure role management and proper input validation
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { UserProfile } from '@/types/user';
 import { EditCandidateDialog } from './EditCandidateDialog';
 import { AdminRoleManager } from './AdminRoleManager';
+import { AssignJobsPanel } from './AssignJobsPanel';
 import { useDeleteUser } from '@/hooks/useDeleteUser';
-import { Trash2, Shield, Lock } from 'lucide-react';
+import { Trash2, Shield, Lock, Briefcase } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface UserTableRowProps {
@@ -21,6 +22,7 @@ interface UserTableRowProps {
 export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) => {
   const deleteUserMutation = useDeleteUser();
   const { user: currentUser } = useAuth();
+  const [assignJobsOpen, setAssignJobsOpen] = useState(false);
 
   const handleDelete = () => {
     // Prevent self-deletion
@@ -98,6 +100,14 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) =>
       <TableCell>
         <div className="flex items-center gap-2">
           <EditCandidateDialog candidate={user} onUpdate={onUpdate} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAssignJobsOpen(true)}
+            title="Assign jobs to this candidate"
+          >
+            <Briefcase className="w-4 h-4" />
+          </Button>
           <div title={isSelfEdit ? "Cannot modify your own role" : "Manage user role"}>
             <AdminRoleManager 
               user={user} 
@@ -126,6 +136,12 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUpdate }) =>
           </div>
         </div>
       </TableCell>
+      <AssignJobsPanel
+        open={assignJobsOpen}
+        onOpenChange={setAssignJobsOpen}
+        candidateId={user.id}
+        candidateName={user.full_name || user.email}
+      />
     </TableRow>
   );
 };
