@@ -124,7 +124,7 @@ const DATA: CompanyPageData = {
     },
   ],
 
-  companyFilterName: 'Japan AI',
+  companyFilterName: 'Geniee',
 };
 
 export default DATA;

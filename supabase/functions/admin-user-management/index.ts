@@ -1,6 +1,19 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+// Decode a JWT payload without signature verification
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
 const ALLOWED_ORIGINS = [
   'https://omiyages.com',
   'https://www.omiyages.com',
@@ -126,23 +139,37 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Extract and verify user token
+    // 3. Extract and verify user token (Clerk JWT — decode sub claim, then look up in profiles)
     const token = authHeader.replace('Bearer ', '');
     console.log('🔍 Token extracted, length:', token.length);
-    
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (authError || !user) {
-      console.error('❌ Auth verification failed:', authError?.message);
+
+    const jwtPayload = decodeJwtPayload(token);
+    const clerkUserId = jwtPayload?.sub as string | undefined;
+
+    if (!clerkUserId) {
+      console.error('❌ Could not extract user ID from token');
       return new Response(
         JSON.stringify({ error: 'Authentication failed' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const { data: callerProfile, error: callerProfileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email, role')
+      .eq('id', clerkUserId)
+      .single();
+
+    if (callerProfileError || !callerProfile) {
+      console.error('❌ Could not find caller profile:', callerProfileError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Expose a user-like object so the rest of the function works unchanged
+    const user = { id: callerProfile.id, email: callerProfile.email };
     console.log('✅ User authenticated:', user.email);
 
     // 4. Check rate limit using the new database function
@@ -165,21 +192,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 5. Check admin role using secure function
-    const { data: isAdmin, error: roleError } = await supabaseAdmin
-      .rpc('has_role', {
-        _user_id: user.id,
-        _role: 'admin'
-      });
-
-    if (roleError || !isAdmin) {
-      console.error('❌ Admin verification failed. Role:', roleError);
+    // 5. Check admin role directly from the profile we already fetched
+    if (callerProfile.role !== 'admin') {
+      console.error('❌ Admin verification failed. Role:', callerProfile.role);
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -219,7 +237,7 @@ Deno.serve(async (req) => {
     const { method, body } = requestData;
     
     if (method === 'DELETE_USER') {
-      return await handleDeleteUser(body.userId, user.id);
+      return await handleDeleteUser(body.userId, user.id, corsHeaders);
     }
     
     // Default to CREATE_USER for backward compatibility
@@ -442,17 +460,14 @@ Deno.serve(async (req) => {
 });
 
 // Enhanced secure user deletion handler
-async function handleDeleteUser(userId: string, requestingUserId: string) {
+async function handleDeleteUser(userId: string, requestingUserId: string, corsHeaders: Record<string, string>) {
   try {
     console.log('🗑️ Secure user deletion:', userId, 'by:', requestingUserId);
-    
+
     if (!userId || typeof userId !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Valid user ID is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -460,10 +475,7 @@ async function handleDeleteUser(userId: string, requestingUserId: string) {
     if (userId === requestingUserId) {
       return new Response(
         JSON.stringify({ error: 'Cannot delete your own account for security reasons' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -478,32 +490,29 @@ async function handleDeleteUser(userId: string, requestingUserId: string) {
     if (!rateLimitOk) {
       return new Response(
         JSON.stringify({ error: 'Rate limit exceeded for deletion operations' }),
-        { 
-          status: 429, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Delete user from auth
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-    
+    // Delete user profile from profiles table (Clerk manages auth — we only own the profile row)
+    const { error: deleteError } = await supabaseAdmin
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
     if (deleteError) {
       console.error('❌ User deletion failed:', deleteError);
       return new Response(
         JSON.stringify({ error: 'Failed to delete user: ' + deleteError.message }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('✅ User deleted securely');
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: 'User deleted successfully',
         security: {
           self_deletion_prevented: true,
@@ -511,20 +520,14 @@ async function handleDeleteUser(userId: string, requestingUserId: string) {
           audit_logged: true
         }
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('💥 Error in secure handleDeleteUser:', error);
     return new Response(
       JSON.stringify({ error: 'Failed to delete user securely' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 }

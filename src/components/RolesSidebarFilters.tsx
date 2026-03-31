@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Menu } from "lucide-react";
+import { ChevronDown, ChevronUp, Menu } from "lucide-react";
 
 interface RolesSidebarFiltersProps {
   filters: {
@@ -44,6 +45,8 @@ export const RolesSidebarFilters = ({
   styles,
   isAdmin,
 }: RolesSidebarFiltersProps) => {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const hasActiveFilters =
     filters.company !== 'all' ||
     filters.divisions.length > 0 ||
@@ -54,22 +57,48 @@ export const RolesSidebarFilters = ({
 
   return (
     <div className="bg-neutral-900 rounded-lg border border-border shadow-sm p-4 sticky top-4">
-      <div className="flex items-center justify-between mb-4">
+      <button
+        type="button"
+        className="flex items-center justify-between w-full mb-4 lg:cursor-default"
+        onClick={() => setFiltersOpen((v) => !v)}
+      >
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Menu className="w-4 h-4" />
           Filters
+          {hasActiveFilters && (
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              {filters.divisions.length + filters.roleTypes.length + filters.locations.length + filters.styles.length + (filters.company !== 'all' ? 1 : 0)}
+            </span>
+          )}
         </h2>
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-xs h-7"
-          >
-            Clear All
-          </Button>
-        )}
-      </div>
+        <div className="flex items-center gap-2">
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); onClearFilters(); }}
+              className="text-xs h-7 hidden lg:inline-flex"
+            >
+              Clear All
+            </Button>
+          )}
+          <span className="lg:hidden text-muted-foreground">
+            {filtersOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </span>
+        </div>
+      </button>
+
+      <div className={`${filtersOpen ? 'block' : 'hidden'} lg:block`}>
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClearFilters}
+          className="text-xs h-7 mb-3 lg:hidden"
+        >
+          Clear All
+        </Button>
+      )}
 
       {/* Company */}
       <div className="mb-6">
@@ -168,6 +197,7 @@ export const RolesSidebarFilters = ({
       )}
 
       {/* Division and Status filters intentionally hidden per current UX request */}
+      </div>
     </div>
   );
 };

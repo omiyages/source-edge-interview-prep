@@ -101,14 +101,35 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
         </div>
 
         {/* AI Summary */}
-        {ai_summary && (
-          <div className="mt-4 p-3 rounded-lg bg-neutral-800 border border-neutral-700">
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
-              AI Summary
-            </p>
-            <p className="text-sm text-neutral-300">{ai_summary}</p>
-          </div>
-        )}
+        {ai_summary && (() => {
+          let parsed: { candidate?: string; responsibility?: string } | null = null;
+          try { parsed = JSON.parse(ai_summary); } catch { /* plain text fallback */ }
+          return (
+            <div className="mt-4 p-3 rounded-lg bg-neutral-800 border border-neutral-700">
+              <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+                AI Summary
+              </p>
+              {parsed?.candidate || parsed?.responsibility ? (
+                <div className="space-y-2">
+                  {parsed.candidate && (
+                    <div>
+                      <p className="text-xs text-neutral-500 mb-0.5">Ideal Candidate</p>
+                      <p className="text-sm text-neutral-300">{parsed.candidate}</p>
+                    </div>
+                  )}
+                  {parsed.responsibility && (
+                    <div>
+                      <p className="text-xs text-neutral-500 mb-0.5">Responsibilities</p>
+                      <p className="text-sm text-neutral-300">{parsed.responsibility}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-neutral-300">{ai_summary}</p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Job Description */}
         {job_description && (

@@ -166,9 +166,12 @@ const AssignedJobsPublic: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      {a.ai_summary && (
-                        <p className="mt-2 text-xs text-neutral-500 line-clamp-2">{a.ai_summary}</p>
-                      )}
+                      {a.ai_summary && (() => {
+                        let parsed: { candidate?: string; responsibility?: string } | null = null;
+                        try { parsed = JSON.parse(a.ai_summary!); } catch { /* plain text */ }
+                        const preview = parsed?.candidate ?? parsed?.responsibility ?? a.ai_summary;
+                        return <p className="mt-2 text-xs text-neutral-500 line-clamp-2">{preview}</p>;
+                      })()}
                     </div>
 
                     {/* Actions */}

@@ -31,6 +31,7 @@ export const QuestionsSidebarFilters = ({
   roles,
   stages,
 }: QuestionsSidebarFiltersProps) => {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [topicOpen, setTopicOpen] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
 
@@ -59,26 +60,48 @@ export const QuestionsSidebarFilters = ({
 
   return (
     <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-sm p-4 sticky top-4">
-      <div className="flex items-center justify-between mb-4">
+      <button
+        type="button"
+        className="flex items-center justify-between w-full mb-4 lg:cursor-default"
+        onClick={() => setFiltersOpen((v) => !v)}
+      >
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Menu className="w-4 h-4" />
           Filters
+          {hasActiveFilters && (
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              {filters.company.length + filters.category.length + filters.role.length + filters.stage.length}
+            </span>
+          )}
         </h2>
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-xs h-7"
-          >
-            Clear All
-          </Button>
-        )}
-      </div>
+        <div className="flex items-center gap-2">
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); onClearFilters(); }}
+              className="text-xs h-7 hidden lg:inline-flex"
+            >
+              Clear All
+            </Button>
+          )}
+          <span className="lg:hidden text-muted-foreground">
+            {filtersOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </span>
+        </div>
+      </button>
 
-      {/* Status Section - Removed as we don't track solved/unsolved status */}
-
-      {/* Difficulty Section - Removed as we don't have difficulty field in database */}
+      <div className={`${filtersOpen ? 'block' : 'hidden'} lg:block`}>
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClearFilters}
+          className="text-xs h-7 mb-3 lg:hidden"
+        >
+          Clear All
+        </Button>
+      )}
 
       {/* Company Section */}
       <div className="mb-6">
@@ -197,6 +220,7 @@ export const QuestionsSidebarFilters = ({
             </div>
           </CollapsibleContent>
         </Collapsible>
+      </div>
       </div>
     </div>
   );

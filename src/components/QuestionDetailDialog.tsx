@@ -136,9 +136,9 @@ export function QuestionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[96vh] overflow-hidden flex flex-col p-0 gap-0 rounded-xl border-0 shadow-xl top-[2vh] tranneutral-y-0 sm:top-[50%] sm:tranneutral-y-[-50%]">
-        <DialogHeader className="px-6 pt-6 pb-4 text-left space-y-0 border-b border-border/50">
-          <DialogTitle className="text-lg font-semibold text-foreground">
+      <DialogContent className="max-w-6xl w-[98vw] sm:w-[95vw] max-h-[95vh] sm:max-h-[96vh] overflow-hidden flex flex-col p-0 gap-0 rounded-xl border-0 shadow-xl translate-y-0 top-[2.5vh] sm:top-[50%] sm:-translate-y-1/2">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 text-left space-y-0 border-b border-border/50">
+          <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
             Question Details
           </DialogTitle>
         </DialogHeader>
@@ -146,15 +146,15 @@ export function QuestionDetailDialog({
         <div className="flex-1 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-0">
             {/* Left: Question content */}
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
-                    <Building2 className="h-3.5 w-3.5" />
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-md bg-primary px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-primary-foreground">
+                    <Building2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     {question.company.toUpperCase()}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300">
-                    <User className="h-3.5 w-3.5" />
+                  <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-md bg-neutral-800 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-neutral-300">
+                    <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     {question.role.toUpperCase()}
                   </span>
                 </div>
@@ -163,21 +163,21 @@ export function QuestionDetailDialog({
                   size="sm"
                   onClick={() => toggleBookmark()}
                   disabled={isBookmarkToggling || !user}
-                  className={`flex items-center gap-1.5 ${
-                    isBookmarked 
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                  className={`flex-shrink-0 flex items-center gap-1.5 ${
+                    isBookmarked
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
                       : ""
                   }`}
                   title={user ? (isBookmarked ? "Remove from saved" : "Save question") : "Sign in to save"}
                 >
                   <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""}`} />
-                  {isBookmarked ? "Saved" : "Save"}
+                  <span className="hidden sm:inline">{isBookmarked ? "Saved" : "Save"}</span>
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
                 QUESTION #{currentDisplayNumber}
               </p>
-              <h2 className="text-xl font-bold text-foreground leading-tight">
+              <h2 className="text-lg sm:text-xl font-bold text-foreground leading-tight">
                 {question.question}
               </h2>
               <div>
@@ -277,7 +277,7 @@ export function QuestionDetailDialog({
             </div>
 
             {/* Right: Sidebar */}
-            <div className="lg:border-l border-border/50 bg-muted/30 p-6 space-y-6">
+            <div className="border-t lg:border-t-0 lg:border-l border-border/50 bg-muted/30 p-4 sm:p-6 space-y-4 sm:space-y-6">
               <div>
                 <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
                   <Hash className="h-3.5 w-3.5" />
@@ -326,7 +326,7 @@ export function QuestionDetailDialog({
         </div>
 
         {/* Footer - no rounded corners so dialog's overflow-hidden clips it and no white sliver at corners */}
-        <footer className="flex items-center justify-between px-6 py-4 bg-black text-white mt-auto flex-shrink-0">
+        <footer className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-black text-white mt-auto flex-shrink-0">
           <button
             type="button"
             onClick={onPrev}
