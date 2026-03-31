@@ -142,11 +142,19 @@ export const AssignedJobsTab: React.FC = () => {
                       </span>
                     </div>
 
-                    {a.role.ai_summary && (
-                      <p className="mt-2 text-xs text-neutral-500 line-clamp-2">
-                        {a.role.ai_summary}
-                      </p>
-                    )}
+                    {a.role.ai_summary && (() => {
+                      let parsed: { candidate?: string; responsibility?: string } | null = null;
+                      try { parsed = JSON.parse(a.role.ai_summary!); } catch { /* plain text */ }
+                      if (parsed?.candidate || parsed?.responsibility) {
+                        return (
+                          <ul className="mt-2 space-y-0.5 list-disc list-inside">
+                            {parsed.candidate && <li className="text-xs text-neutral-500 line-clamp-2">{parsed.candidate}</li>}
+                            {parsed.responsibility && <li className="text-xs text-neutral-500 line-clamp-2">{parsed.responsibility}</li>}
+                          </ul>
+                        );
+                      }
+                      return <p className="mt-2 text-xs text-neutral-500 line-clamp-2">{a.role.ai_summary}</p>;
+                    })()}
                   </div>
 
                   {/* Actions */}
