@@ -136,6 +136,8 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
         onClose();
       } else if (signIn.status === 'needs_second_factor') {
         setCode('');
+        // Explicitly send the email code — Clerk does not auto-send it
+        try { await signIn.emailCode.sendCode(); } catch { /* ignore if already sent */ }
         setMode('mfa');
       } else {
         setError(SIGN_IN_ERROR);
@@ -241,7 +243,14 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
             <form onSubmit={handleMfa} className="w-full">
               <h2 className="text-base font-semibold text-white text-center mb-1">Check your email</h2>
               <p className="text-neutral-500 text-xs text-center mb-5 leading-relaxed">
-                We sent a verification code to <span className="text-neutral-300">{email}</span>.
+                We sent a verification code to <span className="text-neutral-300">{email}</span>.{' '}
+                <button
+                  type="button"
+                  onClick={async () => { try { await signIn?.emailCode.sendCode(); } catch { /* ignore */ } }}
+                  className="text-blue-500 hover:text-blue-400 transition-colors"
+                >
+                  Resend
+                </button>
               </p>
               <Input
                 value={code}
