@@ -64,7 +64,7 @@ const LinkedInIcon = () => (
 
 //── Modal Dialog ─────────────────────────────────────────────────────────────
 
-type AuthMode = 'signin' | 'signup' | 'verify';
+type AuthMode = 'signin' | 'signup' | 'verify' | 'mfa';
 
 interface AuthModalDialogProps {
   isOpen: boolean;
@@ -134,6 +134,9 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
         const { error: fe } = await signIn.finalize();
         if (fe) { setError(SIGN_IN_ERROR); return; }
         onClose();
+      } else if (signIn.status === 'needs_second_factor') {
+        setCode('');
+        setMode('mfa');
       } else {
         setError(SIGN_IN_ERROR);
       }
@@ -182,6 +185,28 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
     }
   };
 
+  const handleMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signIn) return;
+    setLoading(true);
+    setError('');
+    try {
+      const { error } = await signIn.emailCode.verifyCode({ code });
+      if (error) { setError(SIGN_IN_ERROR); return; }
+      if (signIn.status === 'complete') {
+        const { error: fe } = await signIn.finalize();
+        if (fe) { setError(SIGN_IN_ERROR); return; }
+        onClose();
+      } else {
+        setError(SIGN_IN_ERROR);
+      }
+    } catch {
+      setError(SIGN_IN_ERROR);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOAuth = async (strategy: typeof OAUTH_PROVIDERS[number]['strategy']) => {
     if (!signIn) return;
     setOauthLoading(strategy);
@@ -211,7 +236,33 @@ const AuthModalDialog: React.FC<AuthModalDialogProps> = ({ isOpen, onClose, init
             <img src="/favicon.ico" alt="Omiyages" className="w-7 h-7" />
           </div>
 
-          {mode === 'verify' ? (
+          {mode === 'mfa' ? (
+            /* ── MFA — Second Factor Email Code ── */
+            <form onSubmit={handleMfa} className="w-full">
+              <h2 className="text-base font-semibold text-white text-center mb-1">Check your email</h2>
+              <p className="text-neutral-500 text-xs text-center mb-5 leading-relaxed">
+                We sent a verification code to <span className="text-neutral-300">{email}</span>.
+              </p>
+              <Input
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="000000"
+                className="bg-neutral-800/50 border-neutral-700/80 text-white placeholder:text-neutral-600 text-center text-2xl tracking-[0.6em] mb-4 h-12 focus-visible:ring-neutral-600 focus-visible:border-neutral-600"
+                maxLength={6}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+              />
+              {error && <p className="text-red-400 text-xs mb-3 text-center">{error}</p>}
+              <Button
+                type="submit"
+                disabled={loading || code.length < 6}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900/50 disabled:text-blue-400/50 text-white font-semibold h-10 transition-colors"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+              </Button>
+            </form>
+          ) : mode === 'verify' ? (
             /* ── Email Verification ── */
             <form onSubmit={handleVerify} className="w-full">
               <h2 className="text-base font-semibold text-white text-center mb-1">Check your email</h2>
