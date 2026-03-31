@@ -169,8 +169,15 @@ const AssignedJobsPublic: React.FC = () => {
                       {a.ai_summary && (() => {
                         let parsed: { candidate?: string; responsibility?: string } | null = null;
                         try { parsed = JSON.parse(a.ai_summary!); } catch { /* plain text */ }
-                        const preview = parsed?.candidate ?? parsed?.responsibility ?? a.ai_summary;
-                        return <p className="mt-2 text-xs text-neutral-500 line-clamp-2">{preview}</p>;
+                        if (parsed?.candidate || parsed?.responsibility) {
+                          return (
+                            <ul className="mt-2 space-y-0.5 list-disc list-inside">
+                              {parsed.candidate && <li className="text-xs text-neutral-400 line-clamp-2">{parsed.candidate}</li>}
+                              {parsed.responsibility && <li className="text-xs text-neutral-400 line-clamp-2">{parsed.responsibility}</li>}
+                            </ul>
+                          );
+                        }
+                        return <p className="mt-2 text-xs text-neutral-400 line-clamp-2">{a.ai_summary}</p>;
                       })()}
                     </div>
 

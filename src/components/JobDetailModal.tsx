@@ -110,20 +110,10 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 AI Summary
               </p>
               {parsed?.candidate || parsed?.responsibility ? (
-                <div className="space-y-2">
-                  {parsed.candidate && (
-                    <div>
-                      <p className="text-xs text-neutral-500 mb-0.5">Ideal Candidate</p>
-                      <p className="text-sm text-neutral-300">{parsed.candidate}</p>
-                    </div>
-                  )}
-                  {parsed.responsibility && (
-                    <div>
-                      <p className="text-xs text-neutral-500 mb-0.5">Responsibilities</p>
-                      <p className="text-sm text-neutral-300">{parsed.responsibility}</p>
-                    </div>
-                  )}
-                </div>
+                <ul className="space-y-1 list-disc list-inside">
+                  {parsed.candidate && <li className="text-sm text-neutral-300">{parsed.candidate}</li>}
+                  {parsed.responsibility && <li className="text-sm text-neutral-300">{parsed.responsibility}</li>}
+                </ul>
               ) : (
                 <p className="text-sm text-neutral-300">{ai_summary}</p>
               )}
