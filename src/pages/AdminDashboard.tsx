@@ -1,13 +1,13 @@
 import { useState, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, LogOut, Users, AlertCircle, Home, BarChart2 } from "lucide-react";
+import { Check, X, Clock, LogOut, Users, AlertCircle, Home, BarChart2, Briefcase } from "lucide-react";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,14 @@ import { CourseProgressList } from "@/components/CourseProgressList";
 import { CreateUserForm } from "@/components/CreateUserForm";
 import { NavigationHeader } from "@/components/NavigationHeader";
 import { AdminAnalytics } from "@/components/AdminAnalytics";
+import { AdminBdJobsPanel } from "@/components/AdminBdJobsPanel";
+
+const MAIN_TABS = ["users", "courses", "questions", "analytics", "bd-jobs"] as const;
+type MainTab = (typeof MAIN_TABS)[number];
+
+function isMainTab(v: string | null): v is MainTab {
+  return v !== null && (MAIN_TABS as readonly string[]).includes(v);
+}
 
 // Lazy load heavy tab components to reduce initial bundle
 const ManageReloResources = lazy(() => import("@/components/ManageReloResources").then(m => ({ default: m.ManageReloResources })));
@@ -52,9 +60,27 @@ interface InterviewQuestion {
 const AdminDashboard = () => {
   const { user, profile, isAdmin, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeMainTab, setActiveMainTab] = useState("users");
+
+  const activeMainTab: MainTab = isMainTab(searchParams.get("tab"))
+    ? (searchParams.get("tab") as MainTab)
+    : "users";
+
+  const handleMainTabChange = (value: string) => {
+    if (!(MAIN_TABS as readonly string[]).includes(value)) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value === "users") next.delete("tab");
+        else next.set("tab", value);
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
   const [activeQuestionsTab, setActiveQuestionsTab] = useState("management");
 
   console.log('🚀 AdminDashboard: Component mounted/rendered');
@@ -235,7 +261,7 @@ const AdminDashboard = () => {
               Welcome back, {profile?.full_name || profile?.email}
             </p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <Button 
               variant="outline" 
               onClick={() => navigate('/')}
@@ -262,21 +288,25 @@ const AdminDashboard = () => {
           </Alert>
         )}
 
-        <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="users">
-              <Users className="w-4 h-4 mr-2" />
+        <Tabs value={activeMainTab} onValueChange={handleMainTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 mb-6 h-auto p-1">
+            <TabsTrigger value="users" className="flex-wrap gap-1">
+              <Users className="w-4 h-4 shrink-0" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="courses">
+            <TabsTrigger value="courses" className="text-center">
               Course Management
             </TabsTrigger>
-            <TabsTrigger value="questions">
+            <TabsTrigger value="questions" className="text-center">
               Questions ({pendingQuestions?.length || 0} pending)
             </TabsTrigger>
-            <TabsTrigger value="analytics">
-              <BarChart2 className="w-4 h-4 mr-2" />
+            <TabsTrigger value="analytics" className="flex-wrap gap-1">
+              <BarChart2 className="w-4 h-4 shrink-0" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="bd-jobs" className="flex-wrap gap-1">
+              <Briefcase className="w-4 h-4 shrink-0" />
+              BD jobs
             </TabsTrigger>
           </TabsList>
 
@@ -317,6 +347,10 @@ const AdminDashboard = () => {
           {/* Analytics Tab */}
           <TabsContent value="analytics">
             <AdminAnalytics />
+          </TabsContent>
+
+          <TabsContent value="bd-jobs">
+            {user?.id ? <AdminBdJobsPanel userId={user.id} /> : null}
           </TabsContent>
 
           {/* Questions Tab with Subtabs */}

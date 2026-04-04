@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      bd_companies: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          name: string
+          careers_url: string
+          ats_platform: string | null
+          jobs_count: number
+          status: string
+          last_parsed_at: string | null
+          parse_error: string | null
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          name: string
+          careers_url: string
+          ats_platform?: string | null
+          jobs_count?: number
+          status?: string
+          last_parsed_at?: string | null
+          parse_error?: string | null
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          name?: string
+          careers_url?: string
+          ats_platform?: string | null
+          jobs_count?: number
+          status?: string
+          last_parsed_at?: string | null
+          parse_error?: string | null
+          created_by?: string | null
+        }
+        Relationships: []
+      }
       course_assignments: {
         Row: {
           assigned_at: string
