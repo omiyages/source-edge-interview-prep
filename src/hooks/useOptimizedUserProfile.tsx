@@ -93,7 +93,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
 
   // Optimized session tracking with debouncing
   useEffect(() => {
-    if (!user?.id || !profile) return;
+    if (!user?.id || !profile || !authClient) return;
 
     const sessionStart = Date.now();
     let lastUpdateTime = sessionStart;
@@ -104,7 +104,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
       const incrementalMinutes = Math.floor((now - lastUpdateTime) / 1000 / 60); // minutes since last update
 
       if (incrementalMinutes > 0) {
-        updateSessionTime(user.id, incrementalMinutes);
+        updateSessionTime(user.id, incrementalMinutes, authClient);
         lastUpdateTime = now; // Update the last update time
       }
     };
@@ -129,7 +129,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       updateSessionTimeDebounced(); // Final update when component unmounts
     };
-  }, [user?.id, profile?.id]);
+  }, [user?.id, profile?.id, authClient]);
 
   return { profile, loading, loadFailed, refetch: loadProfile };
 };

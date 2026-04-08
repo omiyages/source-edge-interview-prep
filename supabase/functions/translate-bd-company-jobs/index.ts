@@ -138,9 +138,20 @@ Deno.serve(async (req) => {
     });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const openaiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error("translate_bd_company_jobs_missing_supabase_secrets", {
+      hasUrl: Boolean(supabaseUrl),
+      hasServiceRole: Boolean(supabaseServiceKey),
+    });
+    return new Response(JSON.stringify({ success: false, error: "Supabase service key not configured" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
 
   const { company, limit = 50 } = (await req.json().catch(() => ({}))) as { company?: string; limit?: number };

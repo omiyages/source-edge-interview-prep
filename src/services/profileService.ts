@@ -109,28 +109,36 @@ export const updateLastLogin = async (userId: string): Promise<void> => {
   }
 };
 
-export const updateSessionTime = async (userId: string, additionalMinutes: number): Promise<void> => {
+// Requires a Clerk-authenticated Supabase client (from useClerkSupabase).
+// Using the unauthenticated client can fail RLS and `.single()` can produce 406 when no row exists.
+export const updateSessionTime = async (
+  userId: string,
+  additionalMinutes: number,
+  client: SupabaseClient<Database>
+): Promise<void> => {
   try {
-    const { data: currentProfile } = await supabase
+    if (!userId || additionalMinutes <= 0) return;
+
+    const db = client;
+    const { data: currentProfile, error: readError } = await db
       .from('profiles')
       .select('total_session_time_minutes')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    if (currentProfile) {
-      const currentTime = currentProfile.total_session_time_minutes || 0;
-      const newTime = currentTime + additionalMinutes;
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          total_session_time_minutes: newTime,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
+    if (readError) return;
+    if (!currentProfile) return;
 
-      // error handled silently - non-critical
-    }
+    const currentTime = currentProfile.total_session_time_minutes || 0;
+    const newTime = currentTime + additionalMinutes;
+
+    await db
+      .from('profiles')
+      .update({
+        total_session_time_minutes: newTime,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
   } catch (error) {
     // Silently handle - non-critical
   }
