@@ -160,6 +160,29 @@ function atsLabel(platform: string | null): string {
   return platform.charAt(0).toUpperCase() + platform.slice(1);
 }
 
+function cityFromLocation(location: string | null): string {
+  const raw = (location ?? "").trim();
+  if (!raw) return "—";
+
+  // Common: "Ota-ku, Tokyo, Japan" → "Tokyo"
+  const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+  const jpPrefOrCity = /(?:東京都|大阪府|京都府|北海道|.{2,3}県)/;
+  if (parts.length >= 2) {
+    // Prefer the middle segment when it's a common city/prefecture token.
+    const middle = parts[1];
+    if (jpPrefOrCity.test(middle) || /^[A-Za-z .'-]+$/.test(middle)) return middle;
+  }
+
+  // Japanese-only strings (no commas), heuristics.
+  if (jpPrefOrCity.test(raw)) {
+    const m = raw.match(jpPrefOrCity);
+    if (m?.[0]) return m[0];
+  }
+
+  // Fallback to first segment.
+  return parts[0] ?? raw;
+}
+
 interface AdminBdJobsPanelProps {
   userId: string;
 }
@@ -1095,7 +1118,12 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
                             ) : null}
                           </div>
                         </TableCell>
-                        <TableCell className="text-neutral-400 whitespace-nowrap">{job.location || "—"}</TableCell>
+                        <TableCell
+                          className="text-neutral-400 whitespace-nowrap"
+                          title={job.location || ""}
+                        >
+                          {cityFromLocation(job.location)}
+                        </TableCell>
                         <TableCell className="text-neutral-400 max-w-[160px] truncate">{job.department || "—"}</TableCell>
                         <TableCell className="text-neutral-400 whitespace-nowrap">
                           {job.japanese_level && job.japanese_level !== "None" ? job.japanese_level : "—"}
