@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { ClerkProvider } from '@clerk/react';
+import { AuthModalProvider } from '@/components/AuthModal';
 import App from './App.tsx';
 import './index.css';
 
@@ -47,7 +48,9 @@ root.render(
       appearance={clerkAppearance}
     >
       <HelmetProvider>
-        <App />
+        <AuthModalProvider>
+          <App />
+        </AuthModalProvider>
       </HelmetProvider>
     </ClerkProvider>
   </StrictMode>
