@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.translate-bd-company-jobs]
 verify_jwt = false
+
+[functions.persist-bd-company-jobs]
+verify_jwt = false

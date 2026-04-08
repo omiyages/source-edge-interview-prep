@@ -306,13 +306,19 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     const validRows = rows.filter((r) => r.company && r.ats_platform && r.external_id && r.title);
     if (validRows.length === 0) return;
 
-    const { error } = await clerkSupabaseClient.from("bd_company_jobs").upsert(validRows, {
-      onConflict: "company,ats_platform,external_id",
-    });
-    if (error) {
-      const anyErr = error as any;
-      const extra = [anyErr?.code, anyErr?.hint, anyErr?.details].filter(Boolean).join(" | ");
-      throw new Error(`Failed to persist BD jobs: ${error.message}${extra ? ` (${extra})` : ""}`);
+    const { data, error } = await clerkSupabaseClient.functions.invoke<{
+      success?: boolean;
+      upserted?: number;
+      error?: string;
+      code?: string | null;
+      hint?: string | null;
+      details?: string | null;
+    }>("persist-bd-company-jobs", { body: { rows: validRows } });
+
+    if (error) throw new Error(error.message);
+    if (!data?.success) {
+      const extra = [data?.code, data?.hint, data?.details].filter(Boolean).join(" | ");
+      throw new Error(`Failed to persist BD jobs: ${data?.error || "unknown error"}${extra ? ` (${extra})` : ""}`);
     }
   }, []);
 
