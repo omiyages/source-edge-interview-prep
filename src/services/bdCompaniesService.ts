@@ -7,33 +7,37 @@ export type BdCompanyRow = {
   created_at: string;
   updated_at: string;
   name: string;
+  /** Board URL — stored as `ats_url` in DB (legacy column name). */
   careers_url: string;
   ats_platform: ATSPlatform | null;
   jobs_count: number;
   status: "pending" | "parsed" | "error";
   last_parsed_at: string | null;
-  parse_error: string | null;
-  created_by: string | null;
 };
+
+function normalizeStatus(raw: unknown): BdCompanyRow["status"] {
+  const s = typeof raw === "string" ? raw : "";
+  if (s === "parsed" || s === "error") return s;
+  // Legacy / alternate values (e.g. never_parsed) → treat as not yet successfully parsed
+  return "pending";
+}
 
 function mapRow(r: Record<string, unknown>): BdCompanyRow {
   const platform = r.ats_platform as string | null;
   const valid: ATSPlatform[] = ["lever", "greenhouse", "workable", "teamtailor", "hrmos"];
   const ats_platform =
     platform && (valid as string[]).includes(platform) ? (platform as ATSPlatform) : null;
-  const status = r.status === "parsed" || r.status === "error" ? r.status : "pending";
+  const atsUrl = r.ats_url ?? r.careers_url;
   return {
     id: String(r.id),
     created_at: String(r.created_at),
     updated_at: String(r.updated_at),
     name: String(r.name),
-    careers_url: String(r.careers_url),
+    careers_url: atsUrl != null ? String(atsUrl) : "",
     ats_platform,
     jobs_count: Number(r.jobs_count ?? 0),
-    status,
+    status: normalizeStatus(r.status),
     last_parsed_at: r.last_parsed_at ? String(r.last_parsed_at) : null,
-    parse_error: r.parse_error != null ? String(r.parse_error) : null,
-    created_by: r.created_by != null ? String(r.created_by) : null,
   };
 }
 
@@ -50,7 +54,6 @@ export async function listBdCompanies(): Promise<BdCompanyRow[]> {
 export async function createBdCompany(input: {
   name: string;
   careers_url: string;
-  created_by: string;
 }): Promise<BdCompanyRow> {
   const url = input.careers_url.trim();
   const { platform } = detectATS(url);
@@ -59,10 +62,8 @@ export async function createBdCompany(input: {
     .from("bd_companies")
     .insert({
       name: input.name.trim(),
-      careers_url: url,
+      ats_url: url,
       ats_platform: platform,
-      created_by: input.created_by,
-      status: "pending",
       jobs_count: 0,
     })
     .select()
@@ -83,7 +84,6 @@ export async function updateBdCompanyParseResult(
     jobs_count: number;
     status: "parsed" | "error";
     last_parsed_at: string;
-    parse_error: string | null;
     ats_platform?: ATSPlatform | null;
   },
 ): Promise<void> {
@@ -91,7 +91,6 @@ export async function updateBdCompanyParseResult(
     jobs_count: patch.jobs_count,
     status: patch.status,
     last_parsed_at: patch.last_parsed_at,
-    parse_error: patch.parse_error,
   };
   if (patch.ats_platform !== undefined) update.ats_platform = patch.ats_platform;
 

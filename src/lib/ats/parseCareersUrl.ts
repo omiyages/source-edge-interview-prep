@@ -1,6 +1,7 @@
 import { detectATS } from "./detector";
 import { greenhouseParser } from "./greenhouse";
 import { hrmosParser } from "./hrmos";
+import { herpParser } from "./herp";
 import { leverParser } from "./lever";
 import { teamtailorParser } from "./teamtailor";
 import type { ATSParser, ATSPlatform, ParseResult } from "./types";
@@ -12,6 +13,7 @@ const parsers: Record<ATSPlatform, ATSParser> = {
   workable: workableParser,
   teamtailor: teamtailorParser,
   hrmos: hrmosParser,
+  herp: herpParser,
 };
 
 export type ParseCareersUrlResult = ParseResult & {
@@ -39,7 +41,7 @@ export async function parseJobsFromCareersUrl(url: string): Promise<ParseCareers
       platform: null,
       slug: null,
       error:
-        "Unsupported URL. Try Lever, Greenhouse, Workable, Teamtailor, or HRMOS job board links.",
+        "Unsupported URL. Try Lever, Greenhouse, Workable, Teamtailor, HRMOS, or HERP job board links.",
     };
   }
 

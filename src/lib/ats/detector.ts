@@ -27,9 +27,9 @@ const ATS_PATTERNS: URLPattern[] = [
   {
     platform: "workable",
     patterns: [
-      /^https?:\/\/jobs\.workable\.com\/company\/([^/\s?#]+)/i,
-      /^https?:\/\/apply\.workable\.com\/api\/v1\/widget\/accounts\/([^/\s?#]+)/i,
-      /^https?:\/\/apply\.workable\.com\/([^/\s?#]+)/i,
+      /^https?:\/\/(?:www\.)?jobs\.workable\.com\/company\/([^/\s?#]+)/i,
+      /^https?:\/\/(?:www\.)?apply\.workable\.com\/api\/v1\/widget\/accounts\/([^/\s?#]+)/i,
+      /^https?:\/\/(?:www\.)?apply\.workable\.com\/([^/\s?#]+)/i,
     ],
   },
   {
@@ -43,6 +43,12 @@ const ATS_PATTERNS: URLPattern[] = [
     platform: "hrmos",
     patterns: [
       /^https?:\/\/hrmos\.co\/pages\/([^/\s?#]+)/i,
+    ],
+  },
+  {
+    platform: "herp",
+    patterns: [
+      /^https?:\/\/herp\.careers\/v1\/([^/\s?#]+)/i,
     ],
   },
 ];

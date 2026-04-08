@@ -1,4 +1,4 @@
-export type ATSPlatform = "lever" | "greenhouse" | "workable" | "teamtailor" | "hrmos";
+export type ATSPlatform = "lever" | "greenhouse" | "workable" | "teamtailor" | "hrmos" | "herp";
 
 export interface DetectionResult {
   platform: ATSPlatform | null;

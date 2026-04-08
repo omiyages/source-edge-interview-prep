@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { clerkSupabaseClient } from '@/lib/clerk';
 import type { Role, RoleFormData } from '@/types/role';
 
 /** Turn job title + company into a stable URL slug. */
@@ -11,7 +12,7 @@ function generateSlug(jobTitle: string, company: string): string {
 }
 
 async function getExistingSlugsForBase(baseSlug: string): Promise<Set<string>> {
-  const { data, error } = await supabase
+  const { data, error } = await clerkSupabaseClient
     .from('roles')
     .select('slug')
     .or(`slug.eq.${baseSlug},slug.like.${baseSlug}-%`);
@@ -35,7 +36,7 @@ function nextUniqueSlug(baseSlug: string, taken: Set<string>): string {
 }
 
 export async function fetchRoles(): Promise<Role[]> {
-  const { data, error } = await supabase
+  const { data, error } = await clerkSupabaseClient
     .from('roles')
     .select('*')
     .order('created_at', { ascending: false });
@@ -45,7 +46,7 @@ export async function fetchRoles(): Promise<Role[]> {
 }
 
 export async function fetchRoleById(id: string): Promise<Role> {
-  const { data, error } = await supabase
+  const { data, error } = await clerkSupabaseClient
     .from('roles')
     .select('*')
     .eq('id', id)
@@ -57,7 +58,7 @@ export async function fetchRoleById(id: string): Promise<Role> {
 
 export async function fetchRoleBySlug(slugOrId: string): Promise<Role> {
   // Try slug first
-  const { data: bySlug } = await supabase
+  const { data: bySlug } = await clerkSupabaseClient
     .from('roles')
     .select('*')
     .eq('slug', slugOrId)
@@ -66,7 +67,7 @@ export async function fetchRoleBySlug(slugOrId: string): Promise<Role> {
   if (bySlug) return bySlug as unknown as Role;
 
   // Fall back to UUID lookup (for roles created before slugs existed)
-  const { data: byId, error } = await supabase
+  const { data: byId, error } = await clerkSupabaseClient
     .from('roles')
     .select('*')
     .eq('id', slugOrId)
@@ -81,7 +82,7 @@ export async function createRole(role: RoleFormData, createdBy: string): Promise
   const takenSlugs = await getExistingSlugsForBase(baseSlug);
   const slug = nextUniqueSlug(baseSlug, takenSlugs);
 
-  const { data, error } = await supabase
+  const { data, error } = await clerkSupabaseClient
     .from('roles')
     .insert({
       job_title: role.job_title,
@@ -92,6 +93,14 @@ export async function createRole(role: RoleFormData, createdBy: string): Promise
       japanese_level: role.japanese_level,
       division: role.division || null,
       job_description: role.job_description || null,
+      job_title_ja: role.job_title_ja ?? null,
+      job_description_ja: role.job_description_ja ?? null,
+      location_ja: role.location_ja ?? null,
+      commitment_ja: role.commitment_ja ?? null,
+      ats_platform: role.ats_platform ?? null,
+      ats_external_id: role.ats_external_id ?? null,
+      ats_hosted_url: role.ats_hosted_url ?? null,
+      translation_status: role.translation_status ?? 'pending',
       requirements: role.requirements || null,
       nice_to_haves: role.nice_to_haves || null,
       benefits: role.benefits || null,
@@ -106,13 +115,59 @@ export async function createRole(role: RoleFormData, createdBy: string): Promise
   return data as unknown as Role;
 }
 
+export async function fetchExistingAtsExternalIds(input: {
+  company: string;
+  ats_platform: string;
+  external_ids: string[];
+}): Promise<Set<string>> {
+  const company = input.company.trim();
+  const platform = input.ats_platform.trim();
+  const ids = [...new Set(input.external_ids.map((x) => String(x).trim()).filter(Boolean))];
+  if (!company || !platform || ids.length === 0) return new Set();
+
+  const { data, error } = await clerkSupabaseClient
+    .from('roles')
+    .select('ats_external_id')
+    .eq('company', company)
+    .eq('ats_platform', platform)
+    .in('ats_external_id', ids);
+
+  if (error) throw new Error(`Failed to fetch existing ATS roles: ${error.message}`);
+
+  const set = new Set<string>();
+  (data || []).forEach((row: any) => {
+    if (row?.ats_external_id) set.add(String(row.ats_external_id));
+  });
+  return set;
+}
+
+export async function fetchActiveAtsRolesForCompany(input: {
+  company: string;
+  ats_platform: string;
+}): Promise<Array<{ id: string; ats_external_id: string; job_title: string | null; job_title_ja: string | null; ats_hosted_url: string | null }>> {
+  const company = input.company.trim();
+  const platform = input.ats_platform.trim();
+  if (!company || !platform) return [];
+
+  const { data, error } = await clerkSupabaseClient
+    .from('roles')
+    .select('id, ats_external_id, job_title, job_title_ja, ats_hosted_url, status')
+    .eq('company', company)
+    .eq('ats_platform', platform)
+    .eq('status', 'active')
+    .not('ats_external_id', 'is', null);
+
+  if (error) throw new Error(`Failed to fetch active ATS roles: ${error.message}`);
+  return (data || []) as any;
+}
+
 export async function updateRole(id: string, role: Partial<RoleFormData>): Promise<Role> {
   const updatePayload: Record<string, unknown> = {
     ...role,
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await clerkSupabaseClient
     .from('roles')
     .update(updatePayload as any)
     .eq('id', id)
@@ -124,7 +179,7 @@ export async function updateRole(id: string, role: Partial<RoleFormData>): Promi
 }
 
 export async function deleteRole(id: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await clerkSupabaseClient
     .from('roles')
     .delete()
     .eq('id', id);

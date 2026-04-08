@@ -168,9 +168,7 @@ export const leverParser: ATSParser = {
         commitment: posting.categories?.commitment ?? null,
         workplace_type: posting.workplaceType ?? null,
         hosted_url: posting.hostedUrl ?? null,
-        description_plain: posting.descriptionPlain
-          ? posting.descriptionPlain.slice(0, 2000)
-          : null,
+        description_plain: posting.descriptionPlain?.trim() || null,
         japanese_level: detectJapaneseLevel(posting),
         role_category: classifyRole(
           posting.text,

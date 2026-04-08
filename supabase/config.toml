@@ -67,3 +67,21 @@ verify_jwt = true
 
 [functions.send-email]
 verify_jwt = true
+
+# Clerk JWT verified inside handler; uses service role for admin check
+[functions.scrape-workable-jobs]
+verify_jwt = false
+
+# Clerk JWT verified inside handler; uses service role for admin check
+[functions.scrape-herp-jobs]
+verify_jwt = false
+
+# Scheduled (Cron) jobs: protect with CRON_SECRET header
+[functions.translate-pending-roles]
+verify_jwt = false
+
+[functions.cleanup-recently-closed-jobs]
+verify_jwt = false
+
+[functions.translate-bd-company-jobs]
+verify_jwt = false
