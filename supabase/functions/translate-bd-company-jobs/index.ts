@@ -1,10 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const OPENAI_MODEL = "gpt-4o-mini";
-const OPENAI_TIMEOUT_MS = 25_000;
+const OPENAI_TIMEOUT_MS = 12_000;
 // Edge Functions can be terminated around ~150s; keep each click bounded.
-const MAX_CHAR_BUDGET_PER_BATCH = 9_000;
-const MAX_BATCHES_PER_REQUEST = 3;
+const MAX_CHAR_BUDGET_PER_BATCH = 6_000;
+const MAX_BATCHES_PER_REQUEST = 1;
 
 const ALLOWED_ORIGINS = [
   "https://omiyages.com",
