@@ -72,6 +72,10 @@ verify_jwt = true
 [functions.scrape-workable-jobs]
 verify_jwt = false
 
+# Public proxy; no Supabase JWT required (CORS + external fetch only)
+[functions.scrape-lever-jobs]
+verify_jwt = false
+
 # Clerk JWT verified inside handler; uses service role for admin check
 [functions.scrape-herp-jobs]
 verify_jwt = false

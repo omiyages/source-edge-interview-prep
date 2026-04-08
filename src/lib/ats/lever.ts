@@ -1,5 +1,6 @@
 import type { ATSParser, ParseResult, ParsedJob, JapaneseLevel } from "./types";
 import { classifyRole } from "./classify";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LeverPosting {
   id: string;
@@ -132,24 +133,22 @@ export const leverParser: ATSParser = {
 
   async fetchJobs(slug: string): Promise<ParseResult> {
     const isEU = false;
-    const baseUrl = isEU
-      ? "https://api.eu.lever.co/v0/postings"
-      : "https://api.lever.co/v0/postings";
 
     try {
-      const response = await fetch(`${baseUrl}/${slug}?mode=json`, {
-        headers: { Accept: "application/json" },
-      });
+      const { data, error } = await supabase.functions.invoke<{
+        success?: boolean;
+        postings?: LeverPosting[];
+        error?: string;
+      }>("scrape-lever-jobs", { body: { slug, region: isEU ? "eu" : "us" } });
 
-      if (!response.ok) {
-        return {
-          success: false,
-          jobs: [],
-          error: `Lever API returned ${response.status}: ${response.statusText}`,
-        };
+      if (error) {
+        return { success: false, jobs: [], error: `Lever proxy failed: ${error.message}` };
+      }
+      if (!data?.success || !Array.isArray(data.postings)) {
+        return { success: false, jobs: [], error: data?.error || "Lever proxy failed" };
       }
 
-      let postings: LeverPosting[] = await response.json();
+      let postings: LeverPosting[] = data.postings;
 
       if (slug.toLowerCase() === "woven-by-toyota") {
         postings = postings.filter((p) => {

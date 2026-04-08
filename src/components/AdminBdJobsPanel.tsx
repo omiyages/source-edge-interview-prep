@@ -279,18 +279,18 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
         return {
           company,
           ats_platform: platform,
-          external_id: j.external_id,
-          hosted_url: j.hosted_url,
-          title: j.title,
-          description_plain: j.description_plain,
-          location: j.location,
-          department: j.department,
-          team: j.team,
-          commitment: j.commitment,
-          workplace_type: j.workplace_type,
+          external_id: String(j.external_id ?? "").trim(),
+          hosted_url: j.hosted_url ?? null,
+          title: j.title ?? "",
+          description_plain: j.description_plain ?? null,
+          location: j.location ?? null,
+          department: j.department ?? null,
+          team: j.team ?? null,
+          commitment: j.commitment ?? null,
+          workplace_type: j.workplace_type ?? null,
           japanese_level: j.japanese_level,
-          role_category: j.role_category,
-          tech_stack: j.tech_stack,
+          role_category: j.role_category ?? null,
+          tech_stack: j.tech_stack ?? null,
           translation_status: needsTranslation ? "pending" : "skipped",
           title_ja: titleJa,
           description_plain_ja: descJa,
@@ -302,10 +302,18 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
 
     if (rows.length === 0) return;
 
-    const { error } = await clerkSupabaseClient.from("bd_company_jobs").upsert(rows, {
+    // Guard against empty identity fields (these cause hard-to-diagnose PostgREST 400s).
+    const validRows = rows.filter((r) => r.company && r.ats_platform && r.external_id && r.title);
+    if (validRows.length === 0) return;
+
+    const { error } = await clerkSupabaseClient.from("bd_company_jobs").upsert(validRows, {
       onConflict: "company,ats_platform,external_id",
     });
-    if (error) throw new Error(`Failed to persist BD jobs: ${error.message}`);
+    if (error) {
+      const anyErr = error as any;
+      const extra = [anyErr?.code, anyErr?.hint, anyErr?.details].filter(Boolean).join(" | ");
+      throw new Error(`Failed to persist BD jobs: ${error.message}${extra ? ` (${extra})` : ""}`);
+    }
   }, []);
 
   const {
