@@ -1,5 +1,5 @@
 // ABOUTME: BD helper — Target companies (Supabase) + Jobs tab (ATS fetch / draft import)
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { parseJobsFromCareersUrl } from "@/lib/ats/parseCareersUrl";
@@ -179,12 +179,13 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
 
   const [careersUrl, setCareersUrl] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [fetching, setFetching] = useState(false);
   /** `company:external_id` so batch rows stay distinct while importing. */
   const [importingKey, setImportingKey] = useState<string | null>(null);
   const [parseMeta, setParseMeta] = useState<{ platform: string; slug: string } | null>(null);
   const [jobs, setJobs] = useState<ListedJob[]>([]);
   const [importedAtsKeys, setImportedAtsKeys] = useState<Set<string>>(new Set());
+  /** Latest-run discoveries only (clears on refresh / next parse). */
+  const [latestNewKeys, setLatestNewKeys] = useState<Set<string>>(new Set());
   const [parseError, setParseError] = useState<string | null>(null);
   const [previewJob, setPreviewJob] = useState<ListedJob | null>(null);
   const [aiPending, setAiPending] = useState(false);
@@ -206,7 +207,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
       )
       .order("updated_at", { ascending: false })
       .limit(1000);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(`Failed to load saved jobs: ${error.message}`);
 
     const listed: ListedJob[] = (data || [])
       .filter((r: any) => r?.is_open !== false)
@@ -230,6 +231,13 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     setJobs(listed);
     setImportedAtsKeys(new Set());
   }, []);
+
+  // Persisted-first: whenever the user enters the Jobs tab, auto-load saved jobs.
+  useEffect(() => {
+    if (bdSubTab !== "jobs") return;
+    // Best-effort: don’t block UI if load fails.
+    loadPersistedJobs().catch(() => {});
+  }, [bdSubTab, loadPersistedJobs]);
 
   const triggerAiTranslate = useCallback(async () => {
     const company = aiCompany;
@@ -294,9 +302,10 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
 
     if (rows.length === 0) return;
 
-    await clerkSupabaseClient.from("bd_company_jobs").upsert(rows, {
+    const { error } = await clerkSupabaseClient.from("bd_company_jobs").upsert(rows, {
       onConflict: "company,ats_platform,external_id",
     });
+    if (error) throw new Error(`Failed to persist BD jobs: ${error.message}`);
   }, []);
 
   const {
@@ -374,8 +383,11 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     let fail = 0;
     const workableApplyZeroNames: string[] = [];
     const accumulated: ListedJob[] = [];
+    const newKeysThisRun = new Set<string>();
     let lastMeta: { platform: string; slug: string } | null = null;
     const now = new Date().toISOString();
+    // Reset latest-run “New” badges.
+    setLatestNewKeys(new Set());
     for (const row of toParse) {
       try {
         const result = await parseJobsFromCareersUrl(row.careers_url);
@@ -405,6 +417,27 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
         ok += 1;
         const nameForImport = row.name.trim();
         const platform = (result.platform ?? row.ats_platform ?? "").trim();
+
+        // Compute “New” keys by diffing against already persisted jobs (before upsert).
+        if (nameForImport && platform) {
+          try {
+            const { data: existing, error: existingErr } = await clerkSupabaseClient
+              .from("bd_company_jobs")
+              .select("external_id")
+              .eq("company", nameForImport)
+              .eq("ats_platform", platform);
+            if (!existingErr) {
+              const existingIds = new Set<string>((existing || []).map((r: any) => String(r.external_id)));
+              result.jobs.forEach((j) => {
+                const id = String(j.external_id);
+                if (!existingIds.has(id)) newKeysThisRun.add(`${nameForImport}:${platform}:${id}`);
+              });
+            }
+          } catch {
+            // Ignore “New” computation failures; should not block parsing.
+          }
+        }
+
         if (platform) {
           try {
             const currentExternalIds = new Set(result.jobs.map((j) => j.external_id));
@@ -451,8 +484,6 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     invalidateCompanies();
     setParsingPending(false);
 
-    setJobs(accumulated);
-    setImportedAtsKeys(new Set());
     setParseError(null);
     const distinctCompanies = new Set(accumulated.map((j) => j.import_company)).size;
     if (toParse.length === 1) {
@@ -475,6 +506,17 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     } catch {
       // best-effort; don't block UI
     }
+
+    // Source of truth: show persisted jobs after parse.
+    try {
+      await loadPersistedJobs();
+    } catch {
+      // Fallback: if persistence/query fails, still show what we just parsed.
+      setJobs(accumulated);
+    }
+
+    // Expose “New” badges for latest parse run only.
+    setLatestNewKeys(newKeysThisRun);
 
     // Best-effort: mark already-imported jobs (disable import button).
     try {
@@ -523,7 +565,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     } else {
       toast({ title: "Parse finished", description: `${base}${jobsHint}` });
     }
-  }, [companies, invalidateCompanies, persistBdJobs, toast]);
+  }, [companies, invalidateCompanies, loadPersistedJobs, persistBdJobs, toast]);
 
   const goToJobsWithCompany = useCallback((c: BdCompanyRow) => {
     setCompanyName(c.name);
@@ -540,64 +582,6 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     setCompanySubTab("closed");
     setBdSubTab("company");
   }, []);
-
-  const handleFetch = useCallback(async () => {
-    setFetching(true);
-    setParseError(null);
-    setJobs([]);
-    setParseMeta(null);
-    setImportedAtsKeys(new Set());
-    try {
-      const result = await parseJobsFromCareersUrl(careersUrl);
-      if (!result.success) {
-        setParseError(
-          result.error ||
-            "Could not load jobs. For Workable, confirm you use the jobs.workable.com/company/… URL.",
-        );
-        return;
-      }
-      const cn = companyName.trim();
-      const listed = result.jobs.map((j) => ({
-        ...j,
-        import_company: cn || "—",
-        import_ats_platform: result.platform ?? null,
-      }));
-      setJobs(listed);
-      if (result.platform && result.slug) {
-        setParseMeta({ platform: result.platform, slug: result.slug });
-      }
-      if (cn && result.platform) {
-        const existing = await fetchExistingAtsExternalIds({
-          company: cn,
-          ats_platform: result.platform,
-          external_ids: listed.map((j) => j.external_id),
-        });
-        const keys = new Set<string>();
-        existing.forEach((id) => keys.add(`${cn}:${result.platform}:${id}`));
-        setImportedAtsKeys(keys);
-      }
-      try {
-        await persistBdJobs(listed);
-      } catch {
-        // ignore
-      }
-      if (result.jobs.length === 0) {
-        const workableHint =
-          result.platform === "workable" && isApplyWorkableHost(careersUrl)
-            ? WORKABLE_USE_JOBS_BOARD_URL
-            : "The board responded but returned zero listings.";
-        toast({
-          title: "No open roles found",
-          description: workableHint,
-          duration: result.platform === "workable" && isApplyWorkableHost(careersUrl) ? 12_000 : 5_000,
-        });
-      }
-    } catch (e) {
-      setParseError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setFetching(false);
-    }
-  }, [careersUrl, companyName, persistBdJobs, toast]);
 
   const handleImport = useCallback(
     async (job: ListedJob): Promise<boolean> => {
@@ -985,22 +969,6 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Button type="button" onClick={handleFetch} disabled={fetching || !careersUrl.trim()}>
-                {fetching ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Fetching…
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Fetch listings
-                  </>
-                )}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => loadPersistedJobs()}>
-                Load saved jobs
-              </Button>
               <Button type="button" variant="secondary" onClick={triggerAiTranslate} disabled={aiPending || !aiCompany}>
                 {aiPending ? (
                   <>
@@ -1076,6 +1044,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
                         const platform = (job.import_ats_platform || "").trim();
                         const atsKey = company && platform ? `${company}:${platform}:${job.external_id}` : null;
                         const isImported = atsKey ? importedAtsKeys.has(atsKey) : false;
+                    const isNew = atsKey ? latestNewKeys.has(atsKey) : false;
                         const rowKey = `${job.import_company}:${job.external_id}`;
 
                         return (
@@ -1095,7 +1064,16 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
                         <TableCell className="text-neutral-300 max-w-[140px] truncate" title={job.import_company}>
                           {job.import_company}
                         </TableCell>
-                        <TableCell className="font-medium max-w-[240px] text-left">{job.title}</TableCell>
+                        <TableCell className="font-medium max-w-[240px] text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate">{job.title}</span>
+                            {isNew ? (
+                              <Badge className="bg-emerald-950/50 text-emerald-200 border border-emerald-800/60">
+                                New
+                              </Badge>
+                            ) : null}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-neutral-400 whitespace-nowrap">{job.location || "—"}</TableCell>
                         <TableCell className="text-neutral-400 max-w-[160px] truncate">{job.department || "—"}</TableCell>
                         <TableCell className="text-neutral-400 whitespace-nowrap">
