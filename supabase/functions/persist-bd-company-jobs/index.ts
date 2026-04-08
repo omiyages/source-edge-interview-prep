@@ -81,6 +81,7 @@ async function verifyAdmin(authHeader: string | null): Promise<boolean> {
 }
 
 type PersistRow = {
+  company_id?: string | null;
   company: string;
   ats_platform: string;
   external_id: string;
@@ -114,6 +115,7 @@ function normalizeRow(r: any): PersistRow | null {
   const safeStatus = allowed.has(translation_status) ? translation_status : "pending";
 
   return {
+    company_id: r?.company_id ?? null,
     company,
     ats_platform,
     external_id,
@@ -162,9 +164,47 @@ Deno.serve(async (req) => {
     return jsonResponse({ success: true, upserted: 0 }, { corsHeaders });
   }
 
+  // Some deployments have bd_company_jobs.company_id NOT NULL.
+  // Populate it from bd_companies by matching on company name.
+  const companyNames = [...new Set(rows.map((r) => r.company).filter(Boolean))];
+  const { data: companies, error: companiesErr } = await supabaseAdmin
+    .from("bd_companies")
+    .select("id, name")
+    .in("name", companyNames);
+
+  if (companiesErr) {
+    return jsonResponse(
+      { success: false, error: `Failed to resolve company_id: ${companiesErr.message}` },
+      { status: 400, corsHeaders },
+    );
+  }
+
+  const nameToId = new Map<string, string>();
+  (companies || []).forEach((c: any) => {
+    if (c?.name && c?.id) nameToId.set(String(c.name), String(c.id));
+  });
+
+  const missingCompanyIds = new Set<string>();
+  const rowsWithCompanyId = rows.map((r) => {
+    const company_id = r.company_id ?? nameToId.get(r.company) ?? null;
+    if (!company_id) missingCompanyIds.add(r.company);
+    return { ...r, company_id };
+  });
+
+  if (missingCompanyIds.size > 0) {
+    return jsonResponse(
+      {
+        success: false,
+        error: "Missing bd_companies row for one or more companies",
+        missing_companies: [...missingCompanyIds],
+      },
+      { status: 400, corsHeaders },
+    );
+  }
+
   const { error } = await supabaseAdmin
     .from("bd_company_jobs")
-    .upsert(rows as any, { onConflict: "company,ats_platform,external_id" });
+    .upsert(rowsWithCompanyId as any, { onConflict: "company,ats_platform,external_id" });
 
   if (error) {
     console.error("persist_bd_company_jobs_upsert_failed", {
