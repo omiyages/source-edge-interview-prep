@@ -1,6 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const OPENAI_MODEL = "gpt-4o-mini";
+const OPENAI_TIMEOUT_MS = 25_000;
+// Edge Functions can be terminated around ~150s; keep each click bounded.
+const MAX_CHAR_BUDGET_PER_BATCH = 9_000;
+const MAX_BATCHES_PER_REQUEST = 3;
 
 const ALLOWED_ORIGINS = [
   "https://omiyages.com",
@@ -86,11 +90,14 @@ async function translateBatch(openaiKey: string, batch: Translatable[]): Promise
     temperature: 0.2,
   };
 
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(t));
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
@@ -172,7 +179,7 @@ Deno.serve(async (req) => {
     .eq("company", companyName)
     .eq("translation_status", "pending")
     .order("updated_at", { ascending: false })
-    .limit(Math.min(Math.max(Number(limit) || 50, 1), 200));
+    .limit(Math.min(Math.max(Number(limit) || 50, 1), 80));
 
   if (error) {
     return new Response(JSON.stringify({ success: false, error: error.message }), {
@@ -209,8 +216,13 @@ Deno.serve(async (req) => {
     tech_stack: null,
   }));
 
-  const chunks = chunkByCharBudget(payload, 18_000, (j) => `${j.key}\n${j.title}\n${j.location ?? ""}\n${j.commitment ?? ""}\n${j.description ?? ""}\n`);
+  const chunks = chunkByCharBudget(
+    payload,
+    MAX_CHAR_BUDGET_PER_BATCH,
+    (j) => `${j.key}\n${j.title}\n${j.location ?? ""}\n${j.commitment ?? ""}\n${j.description ?? ""}\n`,
+  ).slice(0, MAX_BATCHES_PER_REQUEST);
   const now = new Date().toISOString();
+  let updatedCount = 0;
 
   for (const batch of chunks) {
     const translated = await translateBatch(openaiKey, batch);
@@ -231,12 +243,24 @@ Deno.serve(async (req) => {
         translation_error: null,
       };
     });
-    await supabase.from("bd_company_jobs").upsert(updates, { onConflict: "company,ats_platform,external_id" });
+    const { error: upErr } = await supabase
+      .from("bd_company_jobs")
+      .upsert(updates, { onConflict: "company,ats_platform,external_id" });
+    if (upErr) console.error("translate_bd_company_jobs_upsert_failed", upErr);
+    updatedCount += updates.length;
   }
 
-  return new Response(JSON.stringify({ success: true, translated: candidates.length }), {
+  return new Response(
+    JSON.stringify({
+      success: true,
+      translated: updatedCount,
+      // If there are more pending jobs, the user can click again.
+      remaining_pending_hint: Math.max(0, candidates.length - updatedCount),
+    }),
+    {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+    },
+  );
 });
 
