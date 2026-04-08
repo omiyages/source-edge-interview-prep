@@ -1013,7 +1013,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Button type="button" variant="secondary" onClick={triggerAiTranslate} disabled={aiPending || !aiCompany}>
+              <Button type="button" variant="secondary" onClick={triggerAiTranslate} disabled={aiPending}>
                 {aiPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
