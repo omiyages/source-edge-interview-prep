@@ -42,6 +42,7 @@ import { stripAllHtml } from "@/utils/xssProtection";
 import { SecureRichTextDisplay } from "@/components/SecureRichTextDisplay";
 import { Building2, ExternalLink, ListPlus, Loader2, RefreshCw } from "lucide-react";
 import { clerkSupabaseClient } from "@/lib/clerk";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 
 const BD_COMPANIES_QK = ["bd-companies"] as const;
 
@@ -191,6 +192,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { refreshClient } = useClerkSupabase();
 
   const [bdSubTab, setBdSubTab] = useState<"company" | "jobs">("company");
   const [companySubTab, setCompanySubTab] = useState<"targets" | "closed">("targets");
@@ -222,14 +224,23 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
   const aiCompany = (companyName.trim() && companyName.trim() !== "—" ? companyName.trim() : inferredSingleCompany) || "";
 
   const loadPersistedJobs = useCallback(async () => {
-    // Load last 1000 persisted jobs (open + recently parsed), across companies.
-    const { data, error } = await clerkSupabaseClient
-      .from("bd_company_jobs")
-      .select(
-        "company, ats_platform, external_id, hosted_url, title, description_plain, location, department, team, commitment, workplace_type, japanese_level, role_category, tech_stack, translation_status, title_ja, description_plain_ja, location_ja, commitment_ja, is_open",
-      )
-      .order("updated_at", { ascending: false })
-      .limit(1000);
+    // Re-sync Clerk → Supabase JWT before large reads. Long parses / many AI clicks can expire the token;
+    // without a fresh JWT PostgREST returns 401 for admin-only `bd_company_jobs`.
+    await refreshClient();
+    const q = () =>
+      clerkSupabaseClient
+        .from("bd_company_jobs")
+        .select(
+          "company, ats_platform, external_id, hosted_url, title, description_plain, location, department, team, commitment, workplace_type, japanese_level, role_category, tech_stack, translation_status, title_ja, description_plain_ja, location_ja, commitment_ja, is_open",
+        )
+        .order("updated_at", { ascending: false })
+        .limit(1000);
+
+    let { data, error } = await q();
+    if (error) {
+      await refreshClient();
+      ({ data, error } = await q());
+    }
     if (error) throw new Error(`Failed to load saved jobs: ${error.message}`);
 
     const listed: ListedJob[] = (data || [])
@@ -253,7 +264,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
 
     setJobs(listed);
     setImportedAtsKeys(new Set());
-  }, []);
+  }, [refreshClient]);
 
   // Persisted-first: whenever the user enters the Jobs tab, auto-load saved jobs.
   useEffect(() => {
@@ -270,6 +281,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     }
     setAiPending(true);
     try {
+      await refreshClient();
       const { data, error } = await clerkSupabaseClient.functions.invoke<{ success?: boolean; translated?: number; error?: string }>(
         "translate-bd-company-jobs",
         { body: { company, limit: 80 } },
@@ -283,7 +295,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     } finally {
       setAiPending(false);
     }
-  }, [aiCompany, loadPersistedJobs, toast]);
+  }, [aiCompany, loadPersistedJobs, refreshClient, toast]);
 
   const persistBdJobs = useCallback(async (listed: ListedJob[]) => {
     if (listed.length === 0) return;
