@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 interface SessionData {
   sessionId: string;
@@ -18,14 +17,12 @@ export const useSessionTracking = () => {
   // Update session time in database
   const updateSessionTime = useCallback(async (additionalMinutes: number) => {
     if (!user?.id) return;
+    // This RPC expects a UUID, but Clerk user IDs are strings like "user_...".
+    // Until we migrate session tracking to Clerk-compatible schema, skip DB updates to avoid noisy 400s.
+    if (typeof user.id === 'string' && user.id.startsWith('user_')) return;
 
     try {
-      const { error } = await supabase.rpc('update_user_session_time', {
-        user_id: user.id,
-        additional_minutes: additionalMinutes
-      });
-
-      // error handled silently
+      // no-op (see note above)
     } catch (error) {
       // Silently handle
     }

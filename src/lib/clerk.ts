@@ -50,7 +50,7 @@ export const clerkSupabaseClient: SupabaseClient<Database> = createClient<Databa
     },
     global: {
       headers: { 'X-Client-Info': 'source-edge-interview-prep' },
-      fetch: (input, init = {}) => {
+      fetch: async (input, init = {}) => {
         const headers = new Headers(init.headers);
         // PostgREST requires apikey for all REST requests.
         // Supabase JS normally sets it, but our custom fetch must guarantee it’s present.
@@ -59,7 +59,20 @@ export const clerkSupabaseClient: SupabaseClient<Database> = createClient<Databa
         if (_currentToken) {
           headers.set('Authorization', `Bearer ${_currentToken}`);
         }
-        return fetch(input, { ...init, headers });
+        const res = await fetch(input, { ...init, headers });
+        // Help debug PostgREST/Edge Function failures in production.
+        // Clone is safe; it won’t consume the body used by supabase-js.
+        if (!res.ok) {
+          try {
+            const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
+            const text = await res.clone().text();
+            // eslint-disable-next-line no-console
+            console.warn('[Supabase] request failed', { url, status: res.status, body: text.slice(0, 3000) });
+          } catch {
+            // ignore
+          }
+        }
+        return res;
       },
     },
   }
