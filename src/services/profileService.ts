@@ -118,6 +118,9 @@ export const updateSessionTime = async (
 ): Promise<void> => {
   try {
     if (!userId || additionalMinutes <= 0) return;
+    // Clerk IDs look like `user_...`. Legacy session tracking used Supabase Auth UUIDs + RPC.
+    // Skip DB reads/writes here to avoid repeated 401/406 when JWT timing or RLS does not match.
+    if (typeof userId === 'string' && userId.startsWith('user_')) return;
 
     const db = client;
     const { data: currentProfile, error: readError } = await db
