@@ -204,7 +204,9 @@ Deno.serve(async (req) => {
 
   const { error } = await supabaseAdmin
     .from("bd_company_jobs")
-    .upsert(rowsWithCompanyId as any, { onConflict: "company,ats_platform,external_id" });
+    // Some DBs enforce uniqueness on (company_id, external_id).
+    // Use that conflict target so repeated parses update instead of failing.
+    .upsert(rowsWithCompanyId as any, { onConflict: "company_id,external_id" });
 
   if (error) {
     console.error("persist_bd_company_jobs_upsert_failed", {
