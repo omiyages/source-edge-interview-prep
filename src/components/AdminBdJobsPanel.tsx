@@ -511,8 +511,15 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     // Persist parsed listings so refresh doesn't wipe the Jobs tab.
     try {
       await persistBdJobs(accumulated);
-    } catch {
-      // best-effort; don't block UI
+    } catch (e) {
+      // If persistence fails, still show parsed results so the user can proceed.
+      toast({
+        variant: "destructive",
+        title: "Could not save parsed jobs",
+        description: e instanceof Error ? e.message : String(e),
+        duration: 10_000,
+      });
+      setJobs(accumulated);
     }
 
     // Source of truth: show persisted jobs after parse.
