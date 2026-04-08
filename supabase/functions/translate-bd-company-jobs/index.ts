@@ -90,14 +90,20 @@ async function translateBatch(openaiKey: string, batch: Translatable[]): Promise
     temperature: 0.2,
   };
 
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: controller.signal,
-  }).finally(() => clearTimeout(t));
+  let res: Response;
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    }).finally(() => clearTimeout(t));
+  } catch (err) {
+    console.error("translate_bd_jobs_openai_exception", { message: err instanceof Error ? err.message : String(err) });
+    return out;
+  }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
