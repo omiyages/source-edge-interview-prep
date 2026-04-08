@@ -60,7 +60,11 @@ class EnvironmentManager {
   private loadAndValidateConfig(): EnvironmentConfig {
     // Load environment variables with fallbacks
     const supabaseUrl = this.getRequiredEnvVar('VITE_SUPABASE_URL');
-    const supabaseAnonKey = this.getRequiredEnvVar('VITE_SUPABASE_ANON_KEY');
+    // Backward-compatible: older envs used VITE_SUPABASE_PUBLISHABLE_KEY for the anon key.
+    const supabaseAnonKey =
+      this.getOptionalEnvVar('VITE_SUPABASE_ANON_KEY', '') ||
+      this.getOptionalEnvVar('VITE_SUPABASE_PUBLISHABLE_KEY', '') ||
+      this.getRequiredEnvVar('VITE_SUPABASE_ANON_KEY');
     
     const clerkPublishableKey = this.getOptionalEnvVar('VITE_CLERK_PUBLISHABLE_KEY', '');
 
