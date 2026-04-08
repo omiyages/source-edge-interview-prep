@@ -52,6 +52,10 @@ export const clerkSupabaseClient: SupabaseClient<Database> = createClient<Databa
       headers: { 'X-Client-Info': 'source-edge-interview-prep' },
       fetch: (input, init = {}) => {
         const headers = new Headers(init.headers);
+        // PostgREST requires apikey for all REST requests.
+        // Supabase JS normally sets it, but our custom fetch must guarantee it’s present.
+        if (!headers.has('apikey')) headers.set('apikey', SUPABASE_ANON_KEY);
+        if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${SUPABASE_ANON_KEY}`);
         if (_currentToken) {
           headers.set('Authorization', `Bearer ${_currentToken}`);
         }
