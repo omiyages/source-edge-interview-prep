@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const OPENAI_MODEL = "gpt-4o-mini";
-const OPENAI_TIMEOUT_MS = 12_000;
+const OPENAI_TIMEOUT_MS = 20_000;
 // Edge Functions can be terminated around ~150s; keep each click bounded.
 const MAX_CHAR_BUDGET_PER_BATCH = 6_000;
 const MAX_BATCHES_PER_REQUEST = 1;
@@ -33,6 +33,7 @@ function safeString(v: unknown): string | null {
 
 type JobRow = {
   company: string;
+  company_id: string | null;
   ats_platform: string;
   external_id: string;
   title: string;
@@ -48,6 +49,9 @@ type JobRow = {
 
 type Translatable = {
   key: string;
+  /** Avoid splitting `key` on `:` — company names can contain colons. */
+  ats_platform: string;
+  external_id: string;
   title: string;
   description: string | null;
   location: string | null;
@@ -177,10 +181,13 @@ Deno.serve(async (req) => {
     });
   }
 
+  const { data: companyRow } = await supabase.from("bd_companies").select("id").eq("name", companyName).maybeSingle();
+  const companyIdFromBd = companyRow && typeof companyRow.id === "string" ? companyRow.id : null;
+
   const { data, error } = await supabase
     .from("bd_company_jobs")
     .select(
-      "company, ats_platform, external_id, title, description_plain, location, commitment, title_ja, description_plain_ja, location_ja, commitment_ja, translation_status",
+      "company, company_id, ats_platform, external_id, title, description_plain, location, commitment, title_ja, description_plain_ja, location_ja, commitment_ja, translation_status",
     )
     .eq("company", companyName)
     .eq("translation_status", "pending")
@@ -195,6 +202,19 @@ Deno.serve(async (req) => {
   }
 
   const rows = (data || []) as JobRow[];
+  const resolvedCompanyId = rows.find((r) => r.company_id)?.company_id ?? companyIdFromBd;
+
+  if (!resolvedCompanyId) {
+    console.error("translate_bd_company_jobs_missing_company_id", { company: companyName });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "No company_id for this company — add it under BD target companies so it persists with company_id.",
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
   const candidates = rows.filter((r) => {
     const joined = [r.title_ja ?? r.title, r.description_plain_ja ?? "", r.location_ja ?? "", r.commitment_ja ?? ""].join("\n");
     return looksJapanese(joined);
@@ -215,6 +235,8 @@ Deno.serve(async (req) => {
 
   const payload: Translatable[] = candidates.map((r) => ({
     key: `${r.company}:${r.ats_platform}:${r.external_id}`,
+    ats_platform: r.ats_platform,
+    external_id: r.external_id,
     title: r.title_ja ?? r.title,
     description: r.description_plain_ja ?? r.description_plain,
     location: r.location_ja ?? r.location,
@@ -234,11 +256,11 @@ Deno.serve(async (req) => {
     const translated = await translateBatch(openaiKey, batch);
     const updates = batch.map((b) => {
       const t = translated.get(b.key) ?? b;
-      const [_c, _p, id] = b.key.split(":");
       return {
+        company_id: resolvedCompanyId,
         company: companyName,
-        ats_platform: _p,
-        external_id: id,
+        ats_platform: b.ats_platform,
+        external_id: b.external_id,
         title: t.title,
         description_plain: t.description,
         location: t.location,
@@ -249,10 +271,14 @@ Deno.serve(async (req) => {
         translation_error: null,
       };
     });
-    const { error: upErr } = await supabase
-      .from("bd_company_jobs")
-      .upsert(updates, { onConflict: "company,ats_platform,external_id" });
-    if (upErr) console.error("translate_bd_company_jobs_upsert_failed", upErr);
+    const { error: upErr } = await supabase.from("bd_company_jobs").upsert(updates, { onConflict: "company_id,external_id" });
+    if (upErr) {
+      console.error("translate_bd_company_jobs_upsert_failed", upErr);
+      return new Response(
+        JSON.stringify({ success: false, error: upErr.message, code: upErr.code, details: upErr.details }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     updatedCount += updates.length;
   }
 

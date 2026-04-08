@@ -36,7 +36,7 @@ function setCachedProfile(profile: Profile | null) {
 }
 
 export const useOptimizedUserProfile = (user: MinimalUser | null) => {
-  const { client: authClient, isReady: clientReady } = useClerkSupabase();
+  const { client: authClient, isReady: clientReady, hasClerkJwt } = useClerkSupabase();
 
   // Try to hydrate instantly from localStorage to avoid loading flash
   const cachedProfile = user?.id ? getCachedProfile(user.id) : null;
@@ -93,7 +93,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
 
   // Optimized session tracking with debouncing
   useEffect(() => {
-    if (!user?.id || !profile || !authClient) return;
+    if (!user?.id || !profile || !authClient || !hasClerkJwt) return;
 
     const sessionStart = Date.now();
     let lastUpdateTime = sessionStart;
@@ -129,7 +129,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       updateSessionTimeDebounced(); // Final update when component unmounts
     };
-  }, [user?.id, profile?.id, authClient]);
+  }, [user?.id, profile?.id, authClient, hasClerkJwt]);
 
   return { profile, loading, loadFailed, refetch: loadProfile };
 };
