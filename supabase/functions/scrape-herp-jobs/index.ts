@@ -372,23 +372,71 @@ function safeString(v: unknown): string | null {
   return t ? t : null;
 }
 
+function richTextFromProps(props: Record<string, unknown>, key: string): string | null {
+  const field = props[key];
+  if (!field || typeof field !== "object") return null;
+  return safeString((field as Record<string, unknown>)["text"]);
+}
+
+function mergeSections(sections: Array<string | null | undefined>): string | null {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const section of sections) {
+    const text = safeString(section);
+    if (!text) continue;
+    const normalized = text.replace(/\s+/g, " ").trim();
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    out.push(text);
+  }
+  if (out.length === 0) return null;
+  return out.join("\n\n");
+}
+
+function jsonLdDescriptionFromProps(props: Record<string, unknown>): string | null {
+  const raw = safeString(props["jsonld"]);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return safeString(parsed["description"]);
+  } catch {
+    return null;
+  }
+}
+
 function mapHerpPropsToJob(props: Record<string, unknown>, companySlug: string): ParsedJobPayload | null {
   const careerPageId = safeString(props["careerPageId"]);
   const title = safeString(props["name"]);
   if (!careerPageId || !title) return null;
   if (isClosedTitle(title)) return null;
 
-  const summary = props["summary"];
-  const summaryText =
-    summary && typeof summary === "object"
-      ? safeString((summary as Record<string, unknown>)["text"])
-      : null;
+  const summaryText = richTextFromProps(props, "summary");
+  const requiredSkillsText = richTextFromProps(props, "requiredSkills");
+  const preferredSkillsText = richTextFromProps(props, "preferredSkills");
+  const personalityText = richTextFromProps(props, "personality");
+  const salaryText = richTextFromProps(props, "salary");
+  const workingConditionsText = richTextFromProps(props, "workingConditions");
+  const welfareText = richTextFromProps(props, "welfare");
 
-  const location = props["location"];
-  const locationText =
-    location && typeof location === "object"
-      ? safeString((location as Record<string, unknown>)["text"])
-      : null;
+  const locationText = richTextFromProps(props, "location");
+
+  // HERP often splits posting details across summary + section fields.
+  // Merge these so BD preview/import has the full job content.
+  const mergedDescription = mergeSections([
+    summaryText,
+    requiredSkillsText,
+    preferredSkillsText,
+    personalityText,
+    salaryText,
+    workingConditionsText,
+    welfareText,
+    locationText,
+  ]);
+  const jsonLdDescription = jsonLdDescriptionFromProps(props);
+  const fullDescription =
+    jsonLdDescription && jsonLdDescription.length > (mergedDescription?.length ?? 0)
+      ? jsonLdDescription
+      : mergedDescription;
 
   const hostedUrl =
     safeString(props["canonicalUrl"]) ?? `https://herp.careers/v1/${companySlug}/${careerPageId}`;
@@ -406,10 +454,10 @@ function mapHerpPropsToJob(props: Record<string, unknown>, companySlug: string):
     commitment,
     workplace_type: null,
     hosted_url: hostedUrl,
-    description_plain: summaryText,
-    japanese_level: detectJapaneseLevelFromText([title, summaryText ?? "", locationText ?? ""].join("\n")) ?? "None",
+    description_plain: fullDescription,
+    japanese_level: detectJapaneseLevelFromText([title, fullDescription ?? "", locationText ?? ""].join("\n")) ?? "None",
     role_category: null,
-    tech_stack: extractTechStackFromText([title, summaryText ?? ""].join(" ")) ?? null,
+    tech_stack: extractTechStackFromText([title, fullDescription ?? ""].join(" ")) ?? null,
   };
 }
 
@@ -500,45 +548,7 @@ Deno.serve(async (req) => {
       return baseJob;
     });
 
-    const baseJobs = detailJobs.filter((j): j is ParsedJobPayload => Boolean(j));
-    const translationMap = await translateJobsToEnglish(
-      baseJobs.map((j) => ({
-        id: j.external_id,
-        title: j.title,
-        description: j.description_plain,
-        location: j.location,
-        commitment: j.commitment,
-      })),
-    );
-
-    const jobs = baseJobs.map((baseJob) => {
-      const translated = translationMap.get(baseJob.external_id);
-      const title = translated?.title ?? baseJob.title;
-      const description = translated?.description ?? baseJob.description_plain;
-      const location = translated?.location ?? baseJob.location;
-      const commitment = translated?.commitment ?? baseJob.commitment;
-
-      const combinedForHeuristics = [
-        baseJob.title,
-        baseJob.description_plain ?? "",
-        baseJob.location ?? "",
-        title,
-        description ?? "",
-        location ?? "",
-      ].join("\n");
-
-      return {
-        ...baseJob,
-        title,
-        description_plain: description,
-        location,
-        commitment,
-        japanese_level: detectJapaneseLevelFromText(combinedForHeuristics) ?? baseJob.japanese_level,
-        tech_stack:
-          extractTechStackFromText([title, description ?? "", baseJob.title, baseJob.description_plain ?? ""].join(" ")) ??
-          baseJob.tech_stack,
-      };
-    });
+    const jobs = detailJobs.filter((j): j is ParsedJobPayload => Boolean(j));
     console.log("scrape_herp_jobs_done", { returned: jobs.length });
 
     return new Response(JSON.stringify({ success: true, jobs }), {
