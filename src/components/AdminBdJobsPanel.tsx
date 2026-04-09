@@ -184,6 +184,10 @@ function cityFromLocation(location: string | null): string {
   return parts[0] ?? raw;
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 interface AdminBdJobsPanelProps {
   userId: string;
 }
@@ -213,6 +217,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
   const [latestNewKeys, setLatestNewKeys] = useState<Set<string>>(new Set());
   /** Keys translated by the most recent Trigger AI click. */
   const [latestTranslatedKeys, setLatestTranslatedKeys] = useState<Set<string>>(new Set());
+  const [aiProgressText, setAiProgressText] = useState<string>("");
   const [parseError, setParseError] = useState<string | null>(null);
   const [previewJob, setPreviewJob] = useState<ListedJob | null>(null);
   const [aiPending, setAiPending] = useState(false);
@@ -283,36 +288,96 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
     }
     setAiPending(true);
     setLatestTranslatedKeys(new Set());
+    setAiProgressText("Starting AI translation...");
     try {
-      await refreshClient();
-      const { data, error } = await clerkSupabaseClient.functions.invoke<{
-        success?: boolean;
-        translated?: number;
-        translated_jobs?: Array<{ key: string; external_id: string; ats_platform: string; title: string }>;
-        remaining_pending_hint?: number;
-        error?: string;
-      }>(
-        "translate-bd-company-jobs",
-        { body: { company, limit: 80 } },
+      const translatedUnion = new Set<string>();
+      const MAX_CYCLES = 40;
+      const STARTED_AT = Date.now();
+      const MAX_LOOP_MS = 480_000;
+      let totalTranslated = 0;
+      let cycles = 0;
+      let remaining: number | null = null;
+      let stalledCycles = 0;
+
+      while (cycles < MAX_CYCLES && Date.now() - STARTED_AT < MAX_LOOP_MS) {
+        cycles += 1;
+        setAiProgressText(
+          `Translating... cycle ${cycles}${remaining === null ? "" : ` · ${remaining} remaining`}`,
+        );
+
+        await refreshClient();
+        let data:
+          | {
+              success?: boolean;
+              translated?: number;
+              translated_jobs?: Array<{ key: string; external_id: string; ats_platform: string; title: string }>;
+              failed_jobs?: Array<{ key: string; external_id: string; ats_platform: string; reason: string }>;
+              remaining_pending_hint?: number;
+              error?: string;
+            }
+          | null = null;
+        let invokeError: Error | null = null;
+
+        for (let attempt = 1; attempt <= 2; attempt += 1) {
+          const { data: responseData, error } = await clerkSupabaseClient.functions.invoke<{
+            success?: boolean;
+            translated?: number;
+            translated_jobs?: Array<{ key: string; external_id: string; ats_platform: string; title: string }>;
+            failed_jobs?: Array<{ key: string; external_id: string; ats_platform: string; reason: string }>;
+            remaining_pending_hint?: number;
+            error?: string;
+          }>("translate-bd-company-jobs", { body: { company, limit: 80 } });
+          if (!error && responseData?.success) {
+            data = responseData;
+            invokeError = null;
+            break;
+          }
+          invokeError = new Error(error?.message || responseData?.error || "AI translate failed");
+          if (attempt < 2) await delay(1200 * attempt);
+        }
+
+        if (!data || invokeError) throw invokeError ?? new Error("AI translate failed");
+
+        const translatedNow = Number(data.translated ?? 0);
+        totalTranslated += translatedNow;
+        for (const j of data.translated_jobs || []) {
+          if (j?.key) translatedUnion.add(j.key);
+        }
+        setLatestTranslatedKeys(new Set(translatedUnion));
+
+        remaining = typeof data.remaining_pending_hint === "number" ? data.remaining_pending_hint : null;
+        if (remaining === 0) break;
+
+        if (translatedNow === 0) {
+          stalledCycles += 1;
+          if (stalledCycles >= 2) break;
+        } else {
+          stalledCycles = 0;
+        }
+        await delay(250);
+      }
+
+      setAiProgressText(
+        remaining === 0
+          ? "Translation complete."
+          : remaining === null
+            ? "Translation completed this run."
+            : `Paused with ${remaining} remaining.`,
       );
-      if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || "AI translate failed");
-      const keys = new Set<string>((data.translated_jobs || []).map((j) => j.key).filter(Boolean));
-      setLatestTranslatedKeys(keys);
-      const translatedCount = (data.translated ?? keys.size ?? 0) as number;
-      const remaining = typeof data.remaining_pending_hint === "number" ? data.remaining_pending_hint : null;
+
       toast({
-        title: "AI translation done",
+        title: "AI translation run finished",
         description:
-          remaining === null
-            ? `${translatedCount} job${translatedCount === 1 ? "" : "s"} translated.`
-            : `${translatedCount} translated · ${remaining} remaining`,
+          remaining === 0
+            ? `${totalTranslated} translated in ${cycles} cycle${cycles === 1 ? "" : "s"}.`
+            : `${totalTranslated} translated in ${cycles} cycle${cycles === 1 ? "" : "s"} · ${remaining ?? "unknown"} remaining.`,
       });
       await loadPersistedJobs();
     } catch (e) {
       toast({ variant: "destructive", title: "AI translation failed", description: e instanceof Error ? e.message : String(e) });
     } finally {
       setAiPending(false);
+      setTimeout(() => setAiProgressText(""), 2500);
     }
   }, [aiCompany, loadPersistedJobs, refreshClient, toast]);
 
@@ -1048,7 +1113,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
                 {aiPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Triggering AI…
+                    Running AI…
                   </>
                 ) : (
                   "Trigger AI"
@@ -1061,6 +1126,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
                 Back to companies
               </Button>
             </div>
+            {aiProgressText ? <p className="text-xs text-neutral-400">{aiProgressText}</p> : null}
 
             {jobs.length > 0 && (
               <p className="text-sm text-neutral-400">

@@ -1,10 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const OPENAI_MODEL = "gpt-4o-mini";
-const OPENAI_TIMEOUT_MS = 20_000;
+const OPENAI_TIMEOUT_MS = 45_000;
 // Edge Functions can be terminated around ~150s; keep each click bounded.
-const MAX_CHAR_BUDGET_PER_BATCH = 14_000;
-const MAX_BATCHES_PER_REQUEST = 6;
+const MAX_CHAR_BUDGET_PER_BATCH = 1_200;
+const MAX_BATCHES_PER_REQUEST = 1;
 const REQUEST_TIME_BUDGET_MS = 105_000;
 
 const ALLOWED_ORIGINS = [
@@ -30,6 +30,11 @@ function looksJapanese(text: string): boolean {
 
 function safeString(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v : null;
+}
+
+function clampForModel(text: string | null, maxChars = 5000): string | null {
+  if (!text) return text;
+  return text.length > maxChars ? text.slice(0, maxChars) : text;
 }
 
 type JobRow = {
@@ -61,6 +66,12 @@ type Translatable = {
 };
 
 type TranslatedJobResult = { key: string; external_id: string; ats_platform: string; title: string };
+type FailedJobResult = { key: string; external_id: string; ats_platform: string; reason: string };
+type BatchTranslateResult = {
+  out: Map<string, Translatable>;
+  ok: boolean;
+  reason: string | null;
+};
 
 function chunkByCharBudget<T>(items: T[], budget: number, toText: (item: T) => string): T[][] {
   const chunks: T[][] = [];
@@ -80,7 +91,7 @@ function chunkByCharBudget<T>(items: T[], budget: number, toText: (item: T) => s
   return chunks;
 }
 
-async function translateBatch(openaiKey: string, batch: Translatable[]): Promise<Map<string, Translatable>> {
+async function translateBatch(openaiKey: string, batch: Translatable[]): Promise<BatchTranslateResult> {
   const out = new Map<string, Translatable>();
   batch.forEach((b) => out.set(b.key, b));
 
@@ -108,23 +119,24 @@ async function translateBatch(openaiKey: string, batch: Translatable[]): Promise
       signal: controller.signal,
     }).finally(() => clearTimeout(t));
   } catch (err) {
-    console.error("translate_bd_jobs_openai_exception", { message: err instanceof Error ? err.message : String(err) });
-    return out;
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("translate_bd_jobs_openai_exception", { message });
+    return { out, ok: false, reason: message || "openai_exception" };
   }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     console.error("translate_bd_jobs_openai_failed", { status: res.status, body: errText.slice(0, 500) });
-    return out;
+    return { out, ok: false, reason: `openai_http_${res.status}` };
   }
 
   const data = await res.json().catch(() => null);
   const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== "string") return out;
+  if (typeof content !== "string") return { out, ok: false, reason: "openai_missing_content" };
 
   try {
     const parsed = JSON.parse(content) as { jobs?: unknown };
-    if (!Array.isArray(parsed.jobs)) return out;
+    if (!Array.isArray(parsed.jobs)) return { out, ok: false, reason: "openai_bad_shape" };
     for (const item of parsed.jobs) {
       if (!item || typeof item !== "object") continue;
       const obj = item as Record<string, unknown>;
@@ -142,10 +154,10 @@ async function translateBatch(openaiKey: string, batch: Translatable[]): Promise
       });
     }
   } catch {
-    return out;
+    return { out, ok: false, reason: "openai_bad_json" };
   }
 
-  return out;
+  return { out, ok: true, reason: null };
 }
 
 Deno.serve(async (req) => {
@@ -241,7 +253,7 @@ Deno.serve(async (req) => {
     ats_platform: r.ats_platform,
     external_id: r.external_id,
     title: r.title_ja ?? r.title,
-    description: r.description_plain_ja ?? r.description_plain,
+    description: clampForModel(r.description_plain_ja ?? r.description_plain),
     location: r.location_ja ?? r.location,
     commitment: r.commitment_ja ?? r.commitment,
     tech_stack: null,
@@ -255,13 +267,36 @@ Deno.serve(async (req) => {
   const now = new Date().toISOString();
   let updatedCount = 0;
   const translatedKeys: TranslatedJobResult[] = [];
+  const failedJobs: FailedJobResult[] = [];
   const startedAt = Date.now();
 
   for (const batch of chunks.slice(0, MAX_BATCHES_PER_REQUEST)) {
     if (Date.now() - startedAt > REQUEST_TIME_BUDGET_MS) break;
     const translated = await translateBatch(openaiKey, batch);
+    if (!translated.ok) {
+      failedJobs.push(
+        ...batch.map((b) => ({
+          key: b.key,
+          external_id: b.external_id,
+          ats_platform: b.ats_platform,
+          reason: translated.reason ?? "translation_batch_failed",
+        })),
+      );
+      // Keep failed rows pending so a subsequent cycle/click can retry.
+      const pendingUpdates = batch.map((b) => ({
+        company_id: resolvedCompanyId,
+        company: companyName,
+        ats_platform: b.ats_platform,
+        external_id: b.external_id,
+        translation_status: "pending",
+        translation_error: translated.reason ?? "translation_batch_failed",
+      }));
+      await supabase.from("bd_company_jobs").upsert(pendingUpdates, { onConflict: "company_id,external_id" });
+      continue;
+    }
+
     const updates = batch.map((b) => {
-      const t = translated.get(b.key) ?? b;
+      const t = translated.out.get(b.key) ?? b;
       translatedKeys.push({ key: b.key, external_id: b.external_id, ats_platform: b.ats_platform, title: t.title });
       return {
         company_id: resolvedCompanyId,
@@ -294,6 +329,7 @@ Deno.serve(async (req) => {
       success: true,
       translated: updatedCount,
       translated_jobs: translatedKeys,
+      failed_jobs: failedJobs,
       // If there are more pending jobs, the user can click again.
       remaining_pending_hint: Math.max(0, candidates.length - updatedCount),
     }),
