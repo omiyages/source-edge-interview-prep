@@ -211,6 +211,8 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
   const [importedAtsKeys, setImportedAtsKeys] = useState<Set<string>>(new Set());
   /** Latest-run discoveries only (clears on refresh / next parse). */
   const [latestNewKeys, setLatestNewKeys] = useState<Set<string>>(new Set());
+  /** Keys translated by the most recent Trigger AI click. */
+  const [latestTranslatedKeys, setLatestTranslatedKeys] = useState<Set<string>>(new Set());
   const [parseError, setParseError] = useState<string | null>(null);
   const [previewJob, setPreviewJob] = useState<ListedJob | null>(null);
   const [aiPending, setAiPending] = useState(false);
@@ -280,15 +282,32 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
       return;
     }
     setAiPending(true);
+    setLatestTranslatedKeys(new Set());
     try {
       await refreshClient();
-      const { data, error } = await clerkSupabaseClient.functions.invoke<{ success?: boolean; translated?: number; error?: string }>(
+      const { data, error } = await clerkSupabaseClient.functions.invoke<{
+        success?: boolean;
+        translated?: number;
+        translated_jobs?: Array<{ key: string; external_id: string; ats_platform: string; title: string }>;
+        remaining_pending_hint?: number;
+        error?: string;
+      }>(
         "translate-bd-company-jobs",
         { body: { company, limit: 80 } },
       );
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || "AI translate failed");
-      toast({ title: "AI translation done", description: `${data.translated ?? 0} jobs translated.` });
+      const keys = new Set<string>((data.translated_jobs || []).map((j) => j.key).filter(Boolean));
+      setLatestTranslatedKeys(keys);
+      const translatedCount = (data.translated ?? keys.size ?? 0) as number;
+      const remaining = typeof data.remaining_pending_hint === "number" ? data.remaining_pending_hint : null;
+      toast({
+        title: "AI translation done",
+        description:
+          remaining === null
+            ? `${translatedCount} job${translatedCount === 1 ? "" : "s"} translated.`
+            : `${translatedCount} translated · ${remaining} remaining`,
+      });
       await loadPersistedJobs();
     } catch (e) {
       toast({ variant: "destructive", title: "AI translation failed", description: e instanceof Error ? e.message : String(e) });
@@ -1100,7 +1119,8 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
                         const platform = (job.import_ats_platform || "").trim();
                         const atsKey = company && platform ? `${company}:${platform}:${job.external_id}` : null;
                         const isImported = atsKey ? importedAtsKeys.has(atsKey) : false;
-                    const isNew = atsKey ? latestNewKeys.has(atsKey) : false;
+                        const isNew = atsKey ? latestNewKeys.has(atsKey) : false;
+                        const justTranslated = atsKey ? latestTranslatedKeys.has(atsKey) : false;
                         const rowKey = `${job.import_company}:${job.external_id}`;
 
                         return (
@@ -1126,6 +1146,11 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
                             {isNew ? (
                               <Badge className="bg-emerald-950/50 text-emerald-200 border border-emerald-800/60">
                                 New
+                              </Badge>
+                            ) : null}
+                            {justTranslated ? (
+                              <Badge className="bg-sky-950/50 text-sky-200 border border-sky-800/60">
+                                Translated
                               </Badge>
                             ) : null}
                           </div>

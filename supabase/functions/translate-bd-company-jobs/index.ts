@@ -3,8 +3,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const OPENAI_MODEL = "gpt-4o-mini";
 const OPENAI_TIMEOUT_MS = 20_000;
 // Edge Functions can be terminated around ~150s; keep each click bounded.
-const MAX_CHAR_BUDGET_PER_BATCH = 6_000;
-const MAX_BATCHES_PER_REQUEST = 1;
+const MAX_CHAR_BUDGET_PER_BATCH = 14_000;
+const MAX_BATCHES_PER_REQUEST = 6;
+const REQUEST_TIME_BUDGET_MS = 105_000;
 
 const ALLOWED_ORIGINS = [
   "https://omiyages.com",
@@ -58,6 +59,8 @@ type Translatable = {
   commitment: string | null;
   tech_stack: string | null;
 };
+
+type TranslatedJobResult = { key: string; external_id: string; ats_platform: string; title: string };
 
 function chunkByCharBudget<T>(items: T[], budget: number, toText: (item: T) => string): T[][] {
   const chunks: T[][] = [];
@@ -248,14 +251,18 @@ Deno.serve(async (req) => {
     payload,
     MAX_CHAR_BUDGET_PER_BATCH,
     (j) => `${j.key}\n${j.title}\n${j.location ?? ""}\n${j.commitment ?? ""}\n${j.description ?? ""}\n`,
-  ).slice(0, MAX_BATCHES_PER_REQUEST);
+  );
   const now = new Date().toISOString();
   let updatedCount = 0;
+  const translatedKeys: TranslatedJobResult[] = [];
+  const startedAt = Date.now();
 
-  for (const batch of chunks) {
+  for (const batch of chunks.slice(0, MAX_BATCHES_PER_REQUEST)) {
+    if (Date.now() - startedAt > REQUEST_TIME_BUDGET_MS) break;
     const translated = await translateBatch(openaiKey, batch);
     const updates = batch.map((b) => {
       const t = translated.get(b.key) ?? b;
+      translatedKeys.push({ key: b.key, external_id: b.external_id, ats_platform: b.ats_platform, title: t.title });
       return {
         company_id: resolvedCompanyId,
         company: companyName,
@@ -286,6 +293,7 @@ Deno.serve(async (req) => {
     JSON.stringify({
       success: true,
       translated: updatedCount,
+      translated_jobs: translatedKeys,
       // If there are more pending jobs, the user can click again.
       remaining_pending_hint: Math.max(0, candidates.length - updatedCount),
     }),
