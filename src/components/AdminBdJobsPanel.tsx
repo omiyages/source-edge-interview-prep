@@ -165,23 +165,40 @@ function cityFromLocation(location: string | null): string {
   const raw = (location ?? "").trim();
   if (!raw) return "—";
 
-  // Common: "Ota-ku, Tokyo, Japan" → "Tokyo"
-  const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+  // Some ATS rows (notably HERP) include HTML fragments in `location`.
+  const cleaned = stripAllHtml(raw).replace(/\s+/g, " ").trim();
+  if (!cleaned) return "—";
+
+  // Prefer explicit city/prefecture signals if present anywhere in the text.
+  const citySignals: Array<{ re: RegExp; city: string }> = [
+    { re: /(?:\bTokyo\b|東京都)/i, city: "Tokyo" },
+    { re: /(?:\bOsaka\b|大阪(?:市|府)?)/i, city: "Osaka" },
+    { re: /(?:\bKyoto\b|京都(?:市|府)?)/i, city: "Kyoto" },
+    { re: /(?:\bYokohama\b|横浜市)/i, city: "Yokohama" },
+    { re: /(?:\bNagoya\b|名古屋市)/i, city: "Nagoya" },
+    { re: /(?:\bFukuoka\b|福岡市)/i, city: "Fukuoka" },
+    { re: /(?:\bSapporo\b|札幌市)/i, city: "Sapporo" },
+    { re: /(?:\bKobe\b|神戸市)/i, city: "Kobe" },
+    { re: /(?:\bSendai\b|仙台市)/i, city: "Sendai" },
+    { re: /(?:\bHiroshima\b|広島市)/i, city: "Hiroshima" },
+  ];
+  for (const s of citySignals) {
+    if (s.re.test(cleaned)) return s.city;
+  }
+
+  // Common: "Ota-ku, Tokyo, Japan" -> "Tokyo"
+  const parts = cleaned
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p && !/^japan$/i.test(p));
+  if (parts.length >= 2) return parts[1];
+
+  // Japanese-only fallback: prefer prefecture-level token.
   const jpPrefOrCity = /(?:東京都|大阪府|京都府|北海道|.{2,3}県)/;
-  if (parts.length >= 2) {
-    // Prefer the middle segment when it's a common city/prefecture token.
-    const middle = parts[1];
-    if (jpPrefOrCity.test(middle) || /^[A-Za-z .'-]+$/.test(middle)) return middle;
-  }
+  const m = cleaned.match(jpPrefOrCity);
+  if (m?.[0]) return m[0];
 
-  // Japanese-only strings (no commas), heuristics.
-  if (jpPrefOrCity.test(raw)) {
-    const m = raw.match(jpPrefOrCity);
-    if (m?.[0]) return m[0];
-  }
-
-  // Fallback to first segment.
-  return parts[0] ?? raw;
+  return parts[0] ?? cleaned;
 }
 
 function delay(ms: number): Promise<void> {
@@ -1289,7 +1306,7 @@ export function AdminBdJobsPanel({ userId }: AdminBdJobsPanelProps) {
                           </div>
                           {(previewJob.location || previewJob.department || previewJob.workplace_type) && (
                             <div className="flex flex-wrap gap-x-3 gap-y-1">
-                              {previewJob.location ? <span>{previewJob.location}</span> : null}
+                              {previewJob.location ? <span title={previewJob.location}>{cityFromLocation(previewJob.location)}</span> : null}
                               {previewJob.department ? <span>Team: {previewJob.department}</span> : null}
                               {previewJob.workplace_type ? <span>{previewJob.workplace_type}</span> : null}
                             </div>
