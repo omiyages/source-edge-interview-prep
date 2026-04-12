@@ -1,5 +1,5 @@
 
-// ABOUTME: Optimized user profile hook with localStorage caching for instant loads
+// ABOUTME: Optimized user profile hook with in-memory state only
 // ABOUTME: Uses the Clerk-authenticated Supabase client so RLS policies resolve correctly
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -8,31 +8,13 @@ import type { Profile } from '@/types/auth';
 import { loadOrCreateProfile, updateLastLogin, updateSessionTime } from '@/services/profileService';
 import { useClerkSupabase } from '@/hooks/useClerkSupabase';
 
-const PROFILE_CACHE_KEY = 'se-cached-profile';
-
-function getCachedProfile(userId: string): Profile | null {
-  try {
-    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
-    if (!raw) return null;
-    const cached = JSON.parse(raw);
-    // Only use cache if it matches the current user
-    if (cached && cached.id === userId) return cached as Profile;
-  } catch {
-    // Ignore parse errors
-  }
+function getCachedProfile(_userId: string): Profile | null {
+  // Avoid persisting profile details in browser storage.
   return null;
 }
 
-function setCachedProfile(profile: Profile | null) {
-  try {
-    if (profile) {
-      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
-    } else {
-      localStorage.removeItem(PROFILE_CACHE_KEY);
-    }
-  } catch {
-    // Ignore quota errors
-  }
+function setCachedProfile(_profile: Profile | null) {
+  // Intentionally no-op to reduce client-side sensitive data persistence.
 }
 
 export const useOptimizedUserProfile = (user: MinimalUser | null) => {
@@ -73,7 +55,7 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
 
       // Update last login time when profile is loaded
       if (profileData) {
-        await updateLastLogin(user.id);
+        await updateLastLogin(user.id, authClient);
       }
     } catch (error) {
       setProfile(null);
@@ -131,5 +113,13 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
     };
   }, [user?.id, profile?.id, authClient, hasClerkJwt]);
 
-  return { profile, loading, loadFailed, refetch: loadProfile };
+  return {
+    profile,
+    loading,
+    loadFailed,
+    refetch: loadProfile,
+    /** Clerk JWT is on the singleton client — required for admin RLS on roles, etc. */
+    hasClerkJwt,
+    clerkClientReady: clientReady,
+  };
 };

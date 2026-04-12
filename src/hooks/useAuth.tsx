@@ -7,7 +7,14 @@ import { useOptimizedUserProfile } from './useOptimizedUserProfile';
 
 export const useAuth = () => {
   const authContext = useAuthContext();
-  const { profile, loading: profileLoading, loadFailed: profileLoadFailed, refetch } = useOptimizedUserProfile(authContext.user);
+  const {
+    profile,
+    loading: profileLoading,
+    loadFailed: profileLoadFailed,
+    refetch,
+    hasClerkJwt,
+    clerkClientReady,
+  } = useOptimizedUserProfile(authContext.user);
 
   // More robust admin check with memoization
   const isAdmin = Boolean(
@@ -20,6 +27,11 @@ export const useAuth = () => {
 
   const loading = authContext.loading || profileLoading;
 
+  /** Run Supabase role queries only after Clerk JWT is set — avoids caching anon-only (active) rows for admins. */
+  const rolesRlsReady =
+    !authContext.loading &&
+    (!authContext.user || (clerkClientReady && hasClerkJwt));
+
   return {
     ...authContext,
     profile,
@@ -27,6 +39,9 @@ export const useAuth = () => {
     isAdmin,
     profileLoadFailed,
     refetchProfile: refetch,
+    hasClerkJwt,
+    clerkClientReady,
+    rolesRlsReady,
   };
 };
 

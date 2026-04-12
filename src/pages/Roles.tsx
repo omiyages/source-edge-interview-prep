@@ -79,7 +79,7 @@ function companyLogo(company: string) {
 const Roles = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin, rolesRlsReady } = useAuth();
 
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,10 +97,11 @@ const Roles = () => {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
 
-  // Fetch roles
+  // Fetch roles — wait for Clerk JWT when signed in so RLS returns admin-visible rows (incl. closed), not anon-only active rows.
   const { data: roles = [], isLoading } = useQuery({
-    queryKey: ['roles'],
+    queryKey: ['roles', user?.id ?? 'anon'],
     queryFn: fetchRoles,
+    enabled: rolesRlsReady,
     staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
   });
@@ -120,9 +121,11 @@ const Roles = () => {
 
   // Base list: guests/members see active only; admins see open board (non-closed) or closed-only when toggled
   const baseRoles = useMemo(() => {
-    if (!isAdmin) return roles.filter((r) => r.status === 'active');
-    if (adminViewClosedJobs) return roles.filter((r) => r.status === 'closed');
-    return roles.filter((r) => r.status !== 'closed');
+    const isClosed = (r: Role) => String(r.status ?? '').trim().toLowerCase() === 'closed';
+    const isActive = (r: Role) => String(r.status ?? '').trim().toLowerCase() === 'active';
+    if (!isAdmin) return roles.filter(isActive);
+    if (adminViewClosedJobs) return roles.filter(isClosed);
+    return roles.filter((r) => !isClosed(r));
   }, [roles, isAdmin, adminViewClosedJobs]);
 
   // Derived filter options with counts
