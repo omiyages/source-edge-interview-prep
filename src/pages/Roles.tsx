@@ -22,11 +22,14 @@ import {
   Briefcase,
   Edit,
   Trash2,
+  Archive,
 } from 'lucide-react';
 
 /** Build the URL path for a role detail page. Falls back to id if no slug. */
 function roleHref(role: Role): string {
-  return `/job/${role.slug || role.id}`;
+  const candidate = (role.slug || role.id || '').trim();
+  const isSafeSegment = /^[a-z0-9][a-z0-9-]{0,119}$/i.test(candidate);
+  return isSafeSegment ? `/job/${candidate}` : '/roles';
 }
 
 /** Parse the ai_summary JSON string into candidate + responsibility lines. */
@@ -87,6 +90,8 @@ const Roles = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  /** Admin-only: list only closed roles (default board hides closed). */
+  const [adminViewClosedJobs, setAdminViewClosedJobs] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -113,11 +118,12 @@ const Roles = () => {
     },
   });
 
-  // Base list (non-admins only see active)
-  const baseRoles = useMemo(
-    () => (isAdmin ? roles : roles.filter((r) => r.status === 'active')),
-    [roles, isAdmin]
-  );
+  // Base list: guests/members see active only; admins see open board (non-closed) or closed-only when toggled
+  const baseRoles = useMemo(() => {
+    if (!isAdmin) return roles.filter((r) => r.status === 'active');
+    if (adminViewClosedJobs) return roles.filter((r) => r.status === 'closed');
+    return roles.filter((r) => r.status !== 'closed');
+  }, [roles, isAdmin, adminViewClosedJobs]);
 
   // Derived filter options with counts
   const uniqueCompanies = useMemo(() => {
@@ -194,7 +200,9 @@ const Roles = () => {
     }
     if (selectedLocations.length > 0) list = list.filter((r) => selectedLocations.includes(r.location));
     if (selectedStyles.length > 0) list = list.filter((r) => selectedStyles.includes(r.working_style));
-    if (isAdmin && statusFilter !== 'all') list = list.filter((r) => r.status === statusFilter);
+    if (isAdmin && statusFilter !== 'all' && !adminViewClosedJobs) {
+      list = list.filter((r) => r.status === statusFilter);
+    }
 
     // Sort
     if (sortBy === 'newest') list = [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -202,7 +210,19 @@ const Roles = () => {
     else if (sortBy === 'company') list = [...list].sort((a, b) => a.company.localeCompare(b.company));
 
     return list;
-  }, [baseRoles, searchTerm, companyFilter, selectedDivisions, selectedRoleTypes, selectedLocations, selectedStyles, statusFilter, sortBy, isAdmin]);
+  }, [
+    baseRoles,
+    searchTerm,
+    companyFilter,
+    selectedDivisions,
+    selectedRoleTypes,
+    selectedLocations,
+    selectedStyles,
+    statusFilter,
+    sortBy,
+    isAdmin,
+    adminViewClosedJobs,
+  ]);
 
   // Pagination
   const totalPages = Math.ceil(filteredRoles.length / ROLES_PER_PAGE);
@@ -234,6 +254,7 @@ const Roles = () => {
     setSelectedLocations([]);
     setSelectedStyles([]);
     setStatusFilter('all');
+    setAdminViewClosedJobs(false);
     setCurrentPage(1);
   }, []);
 
@@ -278,15 +299,29 @@ const Roles = () => {
           <main className="flex-1 min-w-0">
             {/* Header */}
             <div className="mb-6">
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between mb-2 gap-4 flex-wrap">
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-2">Open Jobs</h1>
+                  <h1 className="text-3xl font-bold text-foreground mb-2">
+                    {isAdmin && adminViewClosedJobs ? 'Closed Jobs' : 'Open Jobs'}
+                  </h1>
                   <p className="text-muted-foreground">
-                    Browse {baseRoles.length > 0 ? `${baseRoles.length} ` : ''}active job listings across tech companies in Japan.
+                    {isAdmin && adminViewClosedJobs
+                      ? `Review ${baseRoles.length > 0 ? `${baseRoles.length} ` : ''}closed listings (not visible on the public job board).`
+                      : `Browse ${baseRoles.length > 0 ? `${baseRoles.length} ` : ''}open job listings across tech companies in Japan.`}
                   </p>
                 </div>
                 {isAdmin && (
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                    <Button
+                      variant={adminViewClosedJobs ? 'secondary' : 'outline'}
+                      onClick={() => {
+                        setAdminViewClosedJobs((v) => !v);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <Archive className="w-4 h-4 mr-2" />
+                      {adminViewClosedJobs ? 'View Open Jobs' : 'View Closed Jobs'}
+                    </Button>
                     <Button variant="outline" onClick={() => setShowImportDialog(true)}>
                       <Upload className="w-4 h-4 mr-2" />
                       Import CSV
@@ -337,14 +372,22 @@ const Roles = () => {
               <div className="text-center py-16 border rounded-lg bg-neutral-900">
                 <Briefcase className="w-12 h-12 mx-auto text-neutral-500 mb-3" />
                 <p className="text-lg font-semibold text-neutral-400">
-                  {baseRoles.length === 0 ? 'No open jobs yet' : 'No open jobs match your filters'}
+                  {baseRoles.length === 0
+                    ? isAdmin && adminViewClosedJobs
+                      ? 'No closed jobs'
+                      : 'No open jobs yet'
+                    : isAdmin && adminViewClosedJobs
+                      ? 'No closed jobs match your filters'
+                      : 'No open jobs match your filters'}
                 </p>
                 <p className="text-sm text-neutral-400 mt-1">
                   {baseRoles.length === 0
-                    ? 'Create your first role or import from CSV.'
+                    ? isAdmin && adminViewClosedJobs
+                      ? 'Closed roles you archive will appear here.'
+                      : 'Create your first role or import from CSV.'
                     : 'Try adjusting your search or filters.'}
                 </p>
-                {baseRoles.length === 0 && isAdmin && (
+                {baseRoles.length === 0 && isAdmin && !adminViewClosedJobs && (
                   <div className="flex justify-center gap-3 mt-4">
                     <Button onClick={() => setShowCreateDialog(true)}>
                       <Plus className="w-4 h-4 mr-2" />
