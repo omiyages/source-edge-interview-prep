@@ -1,10 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { clerkSupabaseClient } from '@/lib/clerk';
 import { useToast } from '@/hooks/use-toast';
 import { useCallback } from 'react';
 
 async function fetchOptions(fieldName: string): Promise<string[]> {
-  const { data, error } = await supabase
+  const { data, error } = await clerkSupabaseClient
     .from('dropdown_options')
     .select('value')
     .eq('field_name', fieldName)
@@ -31,7 +31,7 @@ export const useDropdownOptions = (fieldName: string) => {
       if (!trimmed) return false;
 
       try {
-        const { error } = await supabase
+        const { error } = await clerkSupabaseClient
           .from('dropdown_options')
           .insert({ field_name: fieldName, value: trimmed });
 
