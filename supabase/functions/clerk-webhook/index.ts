@@ -117,81 +117,35 @@ async function setClerkPublicMetadata(clerkUserId: string, supabaseUuid: string)
     body: JSON.stringify({ public_metadata: { supabase_uuid: supabaseUuid } }),
   })
   if (!resp.ok) {
-    console.error(`Failed to set Clerk publicMetadata: ${resp.status} ${await resp.text()}`)
+    console.error(`Failed to set Clerk publicMetadata: ${resp.status}`)
   }
 }
 
 async function handleUserCreated(user: ClerkUser) {
-  // Idempotency — already linked
-  const { data: existingByClerkId } = await supabaseAdmin
-    .from('profiles')
-    .select('id')
-    .eq('clerk_id', user.id)
-    .maybeSingle()
-
-  if (existingByClerkId) {
-    console.log(`Profile already exists for clerk_id=${user.id}`)
-    return existingByClerkId.id
-  }
-
-  // Migration case — supabase_uuid was pre-set during bulk import
-  const presetUuid = user.public_metadata?.supabase_uuid as string | undefined
-  if (presetUuid) {
-    const { data: existingByUuid } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', presetUuid)
-      .maybeSingle()
-
-    if (existingByUuid) {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ clerk_id: user.id, updated_at: new Date().toISOString() })
-        .eq('id', presetUuid)
-      console.log(`Linked migrated profile ${presetUuid} to clerk_id=${user.id}`)
-      return presetUuid
-    }
-  }
-
-  // New user — generate a fresh UUID
-  const supabaseUuid = presetUuid ?? crypto.randomUUID()
   const email = getPrimaryEmail(user)
+  const fullName = getFullName(user)
 
-  const { error } = await supabaseAdmin.from('profiles').insert({
-    id: supabaseUuid,
-    clerk_id: user.id,
-    email,
-    full_name: getFullName(user),
-    role: 'user',
-  })
+  // Primary key for profiles is the Clerk user ID (TEXT) after migration.
+  // Use upsert to make this handler idempotent.
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .upsert(
+      {
+        id: user.id,
+        clerk_id: user.id,
+        email,
+        full_name: fullName,
+        role: 'user',
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' },
+    )
 
-  if (error) {
-    // Email already exists from old Supabase Auth — link by email
-    if (error.code === '23505') {
-      const { data: existingByEmail } = await supabaseAdmin
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle()
+  if (error) throw new Error(`Failed to upsert profile: ${error.message}`)
 
-      if (existingByEmail) {
-        await supabaseAdmin
-          .from('profiles')
-          .update({ clerk_id: user.id, updated_at: new Date().toISOString() })
-          .eq('id', existingByEmail.id)
-
-        console.log(`Linked existing profile ${existingByEmail.id} to clerk_id=${user.id}`)
-        // publicMetadata may not have supabase_uuid yet — backfill it
-        await setClerkPublicMetadata(user.id, existingByEmail.id)
-        return existingByEmail.id
-      }
-    }
-    throw new Error(`Failed to create profile: ${error.message}`)
-  }
-
-  console.log(`Created profile ${supabaseUuid} for clerk_id=${user.id}`)
-  await setClerkPublicMetadata(user.id, supabaseUuid)
-  return supabaseUuid
+  console.log(`Upserted profile for clerk user ${user.id}`)
+  return user.id
 }
 
 async function handleUserUpdated(user: ClerkUser) {
@@ -205,42 +159,32 @@ async function handleUserUpdated(user: ClerkUser) {
       full_name: fullName,
       updated_at: new Date().toISOString(),
     })
-    .eq('clerk_id', user.id)
+    .eq('id', user.id)
 
   if (error) {
     throw new Error(`Failed to update profile: ${error.message}`)
   }
 
-  console.log(`Updated profile for clerk_id=${user.id}`)
+  console.log(`Updated profile for user ${user.id}`)
 }
 
 async function handleUserDeleted(data: { id: string }) {
-  // Look up the profile first so we have the UUID for cleaning up related rows
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id')
-    .eq('clerk_id', data.id)
-    .maybeSingle()
-
-  if (!profile) {
-    console.log(`No profile found for clerk_id=${data.id}, nothing to delete`)
-    return
-  }
+  const profileId = data.id
 
   // Delete dependent rows before removing the profile
-  await supabaseAdmin.from('course_assignments').delete().eq('user_id', profile.id)
-  await supabaseAdmin.from('user_progress').delete().eq('user_id', profile.id)
+  await supabaseAdmin.from('course_assignments').delete().eq('user_id', profileId)
+  await supabaseAdmin.from('user_progress').delete().eq('user_id', profileId)
 
   const { error } = await supabaseAdmin
     .from('profiles')
     .delete()
-    .eq('clerk_id', data.id)
+    .eq('id', profileId)
 
   if (error) {
     throw new Error(`Failed to delete profile: ${error.message}`)
   }
 
-  console.log(`Deleted profile ${profile.id} for clerk_id=${data.id}`)
+  console.log(`Deleted profile ${profileId} for user ${data.id}`)
 }
 
 // ---------- Main Handler ----------
@@ -283,9 +227,9 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (err) {
-    console.error(`Error handling ${eventType}:`, err)
+    console.error(`Error handling ${eventType}`)
     return new Response(
-      JSON.stringify({ error: (err as Error).message }),
+      JSON.stringify({ error: 'Webhook processing failed' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
