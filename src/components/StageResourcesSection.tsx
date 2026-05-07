@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { ExternalLink, Plus } from "lucide-react";
 
 interface Resource {
@@ -18,9 +19,14 @@ interface StageResourcesSectionProps {
 }
 
 export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: StageResourcesSectionProps) => {
+  const { user, hasClerkJwt, clerkClientReady, refreshClerkToken } = useAuth();
+  const { client: supabase } = useClerkSupabase();
   const { data: stageResources, isLoading } = useQuery({
     queryKey: ['stage-resources-display', stageId],
     queryFn: async () => {
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
       const { data, error } = await supabase
         .from('stage_resources')
         .select(`
@@ -32,6 +38,7 @@ export const StageResourcesSection = ({ stageId, isAdmin, onManageClick }: Stage
       if (error) throw error;
       return data.map(item => item.resources) as Resource[];
     },
+    enabled: Boolean(stageId && user?.id && clerkClientReady && hasClerkJwt),
     staleTime: 30000, // Cache for 30 seconds
   });
 

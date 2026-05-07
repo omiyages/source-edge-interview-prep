@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,8 @@ interface ManageStageResourcesTableProps {
 export const ManageStageResourcesTable = ({ stageId, onSuccess }: ManageStageResourcesTableProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, hasClerkJwt, clerkClientReady, refreshClerkToken } = useAuth();
+  const { client: supabase } = useClerkSupabase();
   const [selectedResources, setSelectedResources] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,26 +28,29 @@ export const ManageStageResourcesTable = ({ stageId, onSuccess }: ManageStageRes
   const { data: allResources, isLoading: isLoadingResources } = useQuery({
     queryKey: ['all-resources'],
     queryFn: async () => {
-      console.log('🔍 Fetching all resources for stage management...');
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
       const { data, error } = await supabase
         .from('resources')
         .select('id, title, description, url, category, created_at')
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ Error fetching resources:', error);
         throw error;
       }
-      
-      console.log('✅ Resources fetched successfully:', data?.length || 0, 'resources');
       return data as Resource[];
     },
+    enabled: Boolean(user?.id && clerkClientReady && hasClerkJwt),
   });
 
   // Fetch currently assigned resources
   const { data: currentResources, isLoading: isLoadingCurrent } = useQuery({
     queryKey: ['current-stage-resources', stageId],
     queryFn: async () => {
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
       const { data, error } = await supabase
         .from('stage_resources')
         .select('resource_id')
@@ -53,6 +59,7 @@ export const ManageStageResourcesTable = ({ stageId, onSuccess }: ManageStageRes
       if (error) throw error;
       return new Set(data.map(item => item.resource_id));
     },
+    enabled: Boolean(stageId && user?.id && clerkClientReady && hasClerkJwt),
   });
 
   // Initialize selected resources when current resources are loaded
@@ -76,6 +83,13 @@ export const ManageStageResourcesTable = ({ stageId, onSuccess }: ManageStageRes
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      if (!user?.id) {
+        throw new Error("You must be signed in to assign resources.");
+      }
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
+
       // First, remove all existing resources for this stage
       const { error: deleteError } = await supabase
         .from('stage_resources')
@@ -112,7 +126,10 @@ export const ManageStageResourcesTable = ({ stageId, onSuccess }: ManageStageRes
       console.error('Error updating stage resources:', error);
       toast({
         title: "Error",
-        description: "Failed to update resources. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update resources. Please try again.",
         variant: "destructive",
       });
     } finally {
