@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,8 @@ interface CopyCourseFormProps {
 }
 
 export const CopyCourseForm = ({ onSuccess }: CopyCourseFormProps) => {
-  const { user } = useAuth();
+  const { user, hasClerkJwt, clerkClientReady, refreshClerkToken } = useAuth();
+  const { client: supabase } = useClerkSupabase();
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,11 +39,31 @@ export const CopyCourseForm = ({ onSuccess }: CopyCourseFormProps) => {
   const [copying, setCopying] = useState(false);
 
   useEffect(() => {
+    if (!user?.id) {
+      setCourses([]);
+      setLoading(false);
+      return;
+    }
+
+    // Wait until the Clerk JWT is available to avoid 401 on RLS-protected tables.
+    if (!clerkClientReady || !hasClerkJwt) return;
+
     fetchCourses();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, clerkClientReady, hasClerkJwt]);
 
   const fetchCourses = async () => {
+    setLoading(true);
     try {
+      if (!user?.id) {
+        setCourses([]);
+        return;
+      }
+
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
+
       const { data, error } = await supabase
         .from('courses')
         .select('id, title, description, company, created_at')
@@ -65,6 +86,14 @@ export const CopyCourseForm = ({ onSuccess }: CopyCourseFormProps) => {
   const handleSelectCourse = async (course: Course) => {
     setCopying(true);
     try {
+      if (!user?.id) {
+        throw new Error("You must be signed in to copy a course.");
+      }
+
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
+
       // Fetch stages for the selected course
       const { data: stages, error } = await supabase
         .from('course_stages')
@@ -93,7 +122,10 @@ export const CopyCourseForm = ({ onSuccess }: CopyCourseFormProps) => {
       console.error('Error fetching course stages:', error);
       toast({
         title: "Error",
-        description: "Failed to load course details.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to load course details.",
         variant: "destructive",
       });
     } finally {

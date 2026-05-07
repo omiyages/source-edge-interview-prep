@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useToast } from "@/hooks/use-toast";
 import { CreateCourseStep1 } from "./CreateCourseStep1";
 import { CreateCourseStep2 } from "./CreateCourseStep2";
@@ -26,7 +26,8 @@ interface CreateCourseWorkflowProps {
 }
 
 export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStages }: CreateCourseWorkflowProps) => {
-  const { user } = useAuth();
+  const { user, hasClerkJwt, clerkClientReady, refreshClerkToken } = useAuth();
+  const { client: supabase } = useClerkSupabase();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
@@ -56,6 +57,16 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
 
   const createCourseMutation = useMutation({
     mutationFn: async () => {
+      if (!user?.id) {
+        throw new Error("You must be signed in to create a course.");
+      }
+
+      // Ensure the Clerk JWT has been set on the singleton client before any RLS queries.
+      // Without it, PostgREST will frequently respond 401 for authenticated-only tables.
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
+
       // Create the course
       const { data: courseData_, error: courseError } = await supabase
         .from('courses')
@@ -64,7 +75,7 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
           description: courseData.description,
           company: courseData.company,
           attached_jobs: courseData.attachedJobs,
-          created_by: user?.id,
+          created_by: user.id,
         })
         .select()
         .single();
@@ -112,7 +123,10 @@ export const CreateCourseWorkflow = ({ onSuccess, initialCourseData, initialStag
       console.error('Error creating course:', error);
       toast({
         title: "Error",
-        description: "Failed to create course. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to create course. Please try again.",
         variant: "destructive",
       });
     },
