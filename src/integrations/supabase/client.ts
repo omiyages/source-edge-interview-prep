@@ -23,6 +23,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   global: {
     headers: {
       'X-Client-Info': 'source-edge-interview-prep',
+      // Keep default Supabase headers even when overriding global.headers.
+      // PostgREST rejects requests without apikey.
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
     },
   },
 });

@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useAuth } from "@/hooks/useAuth";
 
 interface InterviewQuestion {
   id: string;
@@ -20,6 +21,8 @@ interface InterviewQuestion {
 export const useQuestionManager = (stageId: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, hasClerkJwt, clerkClientReady, refreshClerkToken } = useAuth();
+  const { client: supabase } = useClerkSupabase();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
@@ -34,6 +37,10 @@ export const useQuestionManager = (stageId: string) => {
   const { data: stageExists } = useQuery({
     queryKey: ['stage-exists', stageId],
     queryFn: async () => {
+      if (!user?.id) return false;
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
       const { data, error } = await supabase
         .from('course_stages')
         .select('id')
@@ -45,12 +52,16 @@ export const useQuestionManager = (stageId: string) => {
       }
       return !!data;
     },
+    enabled: Boolean(stageId && user?.id),
   });
 
   // Fetch all questions
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
     queryKey: ['all-questions-for-stage'],
     queryFn: async () => {
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, category, interview_stage, additional_context, team, position_name, source_website')
@@ -61,12 +72,16 @@ export const useQuestionManager = (stageId: string) => {
       }
       return data as InterviewQuestion[];
     },
+    enabled: Boolean(user?.id && clerkClientReady && hasClerkJwt),
   });
 
   // Fetch currently assigned questions
   const { data: currentQuestions, isLoading: isLoadingCurrent } = useQuery({
     queryKey: ['current-stage-questions', stageId],
     queryFn: async () => {
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
       const { data, error } = await supabase
         .from('stage_questions')
         .select('question_id')
@@ -77,7 +92,7 @@ export const useQuestionManager = (stageId: string) => {
       }
       return new Set(data.map(item => item.question_id));
     },
-    enabled: !!stageExists, // Only fetch if stage exists
+    enabled: Boolean(stageExists && user?.id && clerkClientReady && hasClerkJwt), // Only fetch if stage exists
   });
 
   useEffect(() => {
@@ -148,6 +163,13 @@ export const useQuestionManager = (stageId: string) => {
 
     setIsSaving(true);
     try {
+      if (!user?.id) {
+        throw new Error("You must be signed in to assign questions.");
+      }
+      if (!clerkClientReady || !hasClerkJwt) {
+        await refreshClerkToken?.();
+      }
+
       // First, remove all existing questions for this stage
       const { error: deleteError } = await supabase
         .from('stage_questions')
