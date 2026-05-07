@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { clerkSupabaseClient } from "@/lib/clerk";
 import { useAuth } from "@/hooks/useAuth";
+import { useOptimizedUsers } from "@/hooks/useOptimizedUsers";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,28 +24,21 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const { data: users, isLoading: usersLoading } = useQuery({
-    queryKey: ['users-for-assignment'],
-    queryFn: async () => {
-      const { data, error } = await clerkSupabaseClient
-        .from('profiles')
-        .select('id, full_name, email, role, is_active')
-        .eq('role', 'user')
-        .eq('is_active', true);
-      
-      if (error) throw error;
-      return data as UserProfile[];
-    },
-  });
+  // Reuse the centralized, Clerk-backed users hook and filter client-side to active non-admin users.
+  const { data: allUsers, isLoading: usersLoading } = useOptimizedUsers();
 
   const filteredUsers = useMemo(() => {
-    if (!users || !userSearch.trim()) return users || [];
+    const eligible =
+      (allUsers || []).filter(
+        (u) => u.role === "user" && (u.is_active === null || u.is_active === true)
+      );
+    if (!eligible.length || !userSearch.trim()) return eligible;
     const term = userSearch.toLowerCase();
-    return (users || []).filter((u) =>
+    return eligible.filter((u) =>
       (u.full_name || "").toLowerCase().includes(term) ||
       (u.email || "").toLowerCase().includes(term)
     );
-  }, [users, userSearch]);
+  }, [allUsers, userSearch]);
 
   const { data: courses, isLoading: coursesLoading } = useQuery({
     queryKey: ['courses-for-assignment'],
@@ -81,7 +75,7 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
       try {
         const course = courses?.find(c => c.id === data.courseId);
         if (course) {
-          await supabase.functions.invoke('send-email', {
+          await clerkSupabaseClient.functions.invoke('send-email', {
             body: {
               type: 'course_assigned',
               data: {
