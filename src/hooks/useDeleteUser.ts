@@ -1,8 +1,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@clerk/react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@clerk/react";
+import { environment } from "@/config/environment";
 
 export const useDeleteUser = () => {
   const { toast } = useToast();
@@ -11,25 +11,28 @@ export const useDeleteUser = () => {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      const token = await getToken();
-      if (!token) {
-        throw new Error('No active session');
-      }
+      const clerkJwt = await getToken({ skipCache: true });
+      if (!clerkJwt) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          method: 'DELETE_USER',
-          body: { userId }
-        },
+      const resp = await fetch(`${environment.supabase.url}/functions/v1/admin-user-management`, {
+        method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
-        }
+          "Content-Type": "application/json",
+          apikey: environment.supabase.anonKey,
+          "x-clerk-jwt": clerkJwt,
+        },
+        body: JSON.stringify({
+          method: "DELETE_USER",
+          body: { userId },
+        }),
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      return data;
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(json?.error || `Failed to delete user (${resp.status})`);
+      }
+      if (json?.error) throw new Error(json.error);
+      return json;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });

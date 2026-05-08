@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { clerkSupabaseClient } from "@/lib/clerk";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, User, Mail, Shield, AlertTriangle, Key, RefreshCw } from "lucide-react";
 import { validateEmail, validateAndSanitizeInput } from "@/utils/secureInputValidation";
@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { generateSecurePassword, validatePasswordStrength } from "@/utils/passwordGenerator";
 import { Switch } from "@/components/ui/switch";
 import { StickyFormActions } from "@/components/ui/sticky-form-actions";
+import { environment } from "@/config/environment";
 
 export const CreateUserForm = () => {
   const [email, setEmail] = useState("");
@@ -100,12 +101,6 @@ export const CreateUserForm = () => {
         throw new Error('Validation failed');
       }
 
-      // Get Clerk JWT for authentication
-      const token = await getToken();
-      if (!token) {
-        throw new Error('No active session found');
-      }
-
       // Prepare request body
       const requestBody: any = {
         email: userData.email.toLowerCase().trim(),
@@ -119,20 +114,24 @@ export const CreateUserForm = () => {
       }
 
       // Call secure edge function
-      const { data, error } = await supabase.functions.invoke('admin-user-management', {
-        body: requestBody,
+      const clerkJwt = await getToken({ skipCache: true });
+      if (!clerkJwt) throw new Error("Not authenticated");
+
+      const resp = await fetch(`${environment.supabase.url}/functions/v1/admin-user-management`, {
+        method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
-        }
+          "Content-Type": "application/json",
+          apikey: environment.supabase.anonKey,
+          "x-clerk-jwt": clerkJwt,
+        },
+        body: JSON.stringify(requestBody),
       });
 
-      if (error) {
-        throw error;
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data?.error || `Failed to create user (${resp.status})`);
       }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
+      if (data?.error) throw new Error(data.error);
 
       // Store the generated password to show to admin
       if (data?.temporaryPassword) {
@@ -148,7 +147,7 @@ export const CreateUserForm = () => {
       // Send welcome email (non-blocking)
       try {
         if (data.user?.email) {
-          await supabase.functions.invoke('send-email', {
+          await clerkSupabaseClient.functions.invoke('send-email', {
             body: {
               type: 'welcome',
               data: {
