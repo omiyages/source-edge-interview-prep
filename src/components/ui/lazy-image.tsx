@@ -17,6 +17,8 @@ export const LazyImage = ({
   fallback = '/placeholder.svg',
   className,
   skeletonClassName,
+  loading = 'lazy',
+  decoding = 'async',
   ...props 
 }: LazyImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -66,6 +68,8 @@ export const LazyImage = ({
         <img
           src={hasError ? fallback : src}
           alt={alt}
+          loading={loading}
+          decoding={decoding}
           className={cn(
             "transition-opacity duration-300",
             isLoaded ? "opacity-100" : "opacity-0",

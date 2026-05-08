@@ -1,6 +1,8 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Suspense, lazy, useMemo, useState } from 'react';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { NavigationHeader } from '@/components/NavigationHeader';
+import { Seo } from '@/components/Seo';
 import { fetchRoleBySlug, deleteRole } from '@/services/rolesService';
 import { fetchRecommendedCourseForRole, type CourseMatch } from '@/services/coursesService';
 import { slugify } from '@/utils/slugify';
@@ -9,11 +11,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { RoleForm } from '@/components/RoleForm';
-import { ApplyRoleDialog } from '@/components/ApplyRoleDialog';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { LazyImage } from '@/components/ui/lazy-image';
 import { RichTextDisplay } from '@/components/ui/rich-text-display';
+import { sanitizeHtml } from '@/utils/htmlSanitizer';
+import { buildBreadcrumbJsonLd, buildJobPostingJsonLd, stripHtml, trimDescription } from '@/lib/seo';
 import {
   ArrowLeft,
   MapPin,
@@ -31,7 +33,11 @@ import {
   Globe,
   Users,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+
+const RoleForm = lazy(() => import('@/components/RoleForm').then((module) => ({ default: module.RoleForm })));
+const ApplyRoleDialog = lazy(() =>
+  import('@/components/ApplyRoleDialog').then((module) => ({ default: module.ApplyRoleDialog }))
+);
 
 /** Static company directory — matches the data on the /company page. */
 const COMPANIES_DIRECTORY: {
@@ -121,7 +127,8 @@ function escapeHtml(text: string): string {
 
 function compactRichTextForPdf(html: string | null): string {
   if (!html) return '';
-  return html
+  const sanitized = sanitizeHtml(html);
+  return sanitized
     // Remove common Quill empty lines
     .replace(/<p><br><\/p>/gi, '')
     .replace(/<p>\s*<\/p>/gi, '')
@@ -133,6 +140,7 @@ function compactRichTextForPdf(html: string | null): string {
 
 const RoleDetail = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -175,6 +183,30 @@ const RoleDetail = () => {
 
   const summary = role ? parseAiSummary(role.ai_summary) : null;
   const companyInfo = useMemo(() => (role ? findCompanyInfo(role.company) : null), [role]);
+  const isAliasRoute = location.pathname.startsWith('/role/');
+  const canonicalPath = useMemo(() => {
+    if (!slug) return '/jobs';
+    return `/job/${role?.slug || slug}`;
+  }, [role?.slug, slug]);
+  const roleDescription = useMemo(() => {
+    if (!role) return '';
+    const base = summary?.candidate || stripHtml(role.job_description || role.ai_summary);
+    return trimDescription(
+      `${role.job_title} at ${role.company} in ${role.location}. ${base}`.trim(),
+      165
+    );
+  }, [role, summary]);
+  const roleJsonLd = useMemo(() => {
+    if (!role) return null;
+    return [
+      buildBreadcrumbJsonLd([
+        { name: 'Home', path: '/' },
+        { name: 'Jobs', path: '/jobs' },
+        { name: role.job_title, path: canonicalPath },
+      ]),
+      buildJobPostingJsonLd(role, canonicalPath),
+    ];
+  }, [canonicalPath, role]);
 
   const handleDownloadPdf = () => {
     if (!role) return;
@@ -243,7 +275,7 @@ const RoleDetail = () => {
           </style>
         </head>
         <body>
-          <div class="pdf-brand">Presented by Source Edge</div>
+          <div class="pdf-brand">Presented by Omiyages</div>
           <header class="pdf-header">
             <h1>${escapeHtml(role.job_title)}</h1>
             <p class="subtitle">${headerMetaLine}</p>
@@ -268,8 +300,7 @@ const RoleDetail = () => {
       return;
     }
 
-    printWindow.document.write(contentHtml);
-    printWindow.document.close();
+    printWindow.location.replace(`data:text/html;charset=utf-8,${encodeURIComponent(contentHtml)}`);
     printWindow.focus();
     setTimeout(() => {
       printWindow.print();
@@ -311,6 +342,14 @@ const RoleDetail = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title={`${role.job_title} at ${role.company}`}
+        description={roleDescription}
+        path={canonicalPath}
+        noindex={isAliasRoute}
+        type="article"
+        jsonLd={roleJsonLd ?? undefined}
+      />
       <NavigationHeader />
 
       <div className="container mx-auto px-4 py-8 flex-1">
@@ -361,6 +400,9 @@ const RoleDetail = () => {
                       Posted {new Date(role.created_at).toLocaleDateString()}
                     </span>
                   </div>
+                  <p className="max-w-3xl text-sm text-muted-foreground leading-6">
+                    Review this role in the context of Tokyo and Japan tech hiring, including work style, Japanese-language expectations, and the company background you may need before interviewing.
+                  </p>
 
                   <div className="flex flex-wrap gap-2">
                     {role.division && (
@@ -380,6 +422,10 @@ const RoleDetail = () => {
                       </Badge>
                     )}
                   </div>
+
+                  <p className="max-w-3xl text-sm text-muted-foreground leading-7">
+                    {roleDescription}
+                  </p>
                 </div>
 
                 {isAdmin && (
@@ -575,11 +621,13 @@ const RoleDetail = () => {
       </footer>
 
       {/* Apply Dialog */}
-      <ApplyRoleDialog
-        open={applyDialogOpen}
-        onOpenChange={setApplyDialogOpen}
-        role={role}
-      />
+      <Suspense fallback={null}>
+        <ApplyRoleDialog
+          open={applyDialogOpen}
+          onOpenChange={setApplyDialogOpen}
+          role={role}
+        />
+      </Suspense>
 
       {/* Edit Role Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -587,15 +635,17 @@ const RoleDetail = () => {
           <DialogHeader>
             <DialogTitle>Edit Role</DialogTitle>
           </DialogHeader>
-          <RoleForm
-            role={role}
-            onSuccess={() => {
-              setEditDialogOpen(false);
-              queryClient.invalidateQueries({ queryKey: ['role', slug] });
-              queryClient.invalidateQueries({ queryKey: ['roles'] });
-            }}
-            onCancel={() => setEditDialogOpen(false)}
-          />
+          <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading role form…</div>}>
+            <RoleForm
+              role={role}
+              onSuccess={() => {
+                setEditDialogOpen(false);
+                queryClient.invalidateQueries({ queryKey: ['role', slug] });
+                queryClient.invalidateQueries({ queryKey: ['roles'] });
+              }}
+              onCancel={() => setEditDialogOpen(false)}
+            />
+          </Suspense>
         </DialogContent>
       </Dialog>
     </div>

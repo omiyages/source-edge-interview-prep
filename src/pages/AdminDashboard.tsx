@@ -7,21 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Clock, LogOut, Users, AlertCircle, Home, BarChart2, Briefcase } from "lucide-react";
+import { Check, X, Clock, LogOut, Users, AlertCircle, Home, BarChart2 } from "lucide-react";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
-import { UsersList } from "@/components/UsersList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AssignCourseForm } from "@/components/AssignCourseForm";
-import { CourseReviewsAdmin } from "@/components/CourseReviewsAdmin";
-import { CourseProgressList } from "@/components/CourseProgressList";
-import { CreateUserForm } from "@/components/CreateUserForm";
 import { NavigationHeader } from "@/components/NavigationHeader";
-import { AdminAnalytics } from "@/components/AdminAnalytics";
-import { AdminBdJobsPanel } from "@/components/AdminBdJobsPanel";
-
-const MAIN_TABS = ["users", "courses", "questions", "analytics", "bd-jobs"] as const;
+import { Seo } from "@/components/Seo";
+const MAIN_TABS = ["users", "courses", "questions", "analytics"] as const;
 type MainTab = (typeof MAIN_TABS)[number];
 
 function isMainTab(v: string | null): v is MainTab {
@@ -30,6 +23,11 @@ function isMainTab(v: string | null): v is MainTab {
 
 // Lazy load heavy tab components to reduce initial bundle
 const ManageReloResources = lazy(() => import("@/components/ManageReloResources").then(m => ({ default: m.ManageReloResources })));
+const UsersList = lazy(() => import("@/components/UsersList").then(m => ({ default: m.UsersList })));
+const AssignCourseForm = lazy(() => import("@/components/AssignCourseForm").then(m => ({ default: m.AssignCourseForm })));
+const CourseReviewsAdmin = lazy(() => import("@/components/CourseReviewsAdmin").then(m => ({ default: m.CourseReviewsAdmin })));
+const CourseProgressList = lazy(() => import("@/components/CourseProgressList").then(m => ({ default: m.CourseProgressList })));
+const AdminAnalytics = lazy(() => import("@/components/AdminAnalytics").then(m => ({ default: m.AdminAnalytics })));
 
 // Loading fallback for lazy components
 const TabLoader = () => (
@@ -83,18 +81,6 @@ const AdminDashboard = () => {
 
   const [activeQuestionsTab, setActiveQuestionsTab] = useState("management");
 
-  console.log('🚀 AdminDashboard: Component mounted/rendered');
-  console.log('🔧 AdminDashboard render - DETAILED:', {
-    hasUser: !!user,
-    userEmail: user?.email,
-    hasProfile: !!profile,
-    profileRole: profile?.role,
-    isAdmin,
-    authLoading,
-    currentUrl: window.location.href,
-    timestamp: new Date().toISOString()
-  });
-
   // Move ALL hooks to the top - this is critical for React's Rules of Hooks
   const shouldFetchData = !!user && isAdmin && !authLoading;
   const shouldFetchQuestions = shouldFetchData && activeMainTab === "questions";
@@ -104,7 +90,6 @@ const AdminDashboard = () => {
   const { data: pendingQuestions, isLoading: loadingPending, error: pendingError } = useQuery({
     queryKey: ['admin-pending-questions'],
     queryFn: async () => {
-      console.log('📥 Fetching pending questions...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, interview_stage, category, submitted_by, additional_context, created_at, question_type, source_url, source_website, scraped_at, status, approved_by, approved_at')
@@ -112,11 +97,8 @@ const AdminDashboard = () => {
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ Error fetching pending questions:', error);
         throw error;
       }
-      
-      console.log('✅ Pending questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
     enabled: shouldFetchQuestions,
@@ -126,18 +108,14 @@ const AdminDashboard = () => {
   const { data: allQuestions, isLoading: loadingAll, error: allError } = useQuery({
     queryKey: ['admin-all-questions'],
     queryFn: async () => {
-      console.log('📥 Fetching all questions...');
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, question, company, role, interview_stage, category, submitted_by, additional_context, created_at, question_type, source_url, source_website, scraped_at, status, approved_by, approved_at')
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ Error fetching all questions:', error);
         throw error;
       }
-      
-      console.log('✅ All questions loaded:', data?.length || 0);
       return data as InterviewQuestion[];
     },
     enabled: shouldFetchAllQuestions,
@@ -146,7 +124,6 @@ const AdminDashboard = () => {
   // Question approval mutation - always call this hook
   const approveQuestionMutation = useMutation({
     mutationFn: async ({ questionId, status }: { questionId: string; status: 'approved' | 'rejected' }) => {
-      console.log('🔄 Updating question status:', { questionId, status });
       const { error } = await supabase
         .from('interview_questions')
         .update({
@@ -169,7 +146,6 @@ const AdminDashboard = () => {
       });
     },
     onError: (error) => {
-      console.error('❌ Error updating question status:', error);
       toast({
         title: "Error",
         description: "Failed to update question status.",
@@ -180,7 +156,6 @@ const AdminDashboard = () => {
 
   // NOW do conditional rendering after all hooks are called
   if (authLoading) {
-    console.log('🔄 AdminDashboard: Still loading auth, showing spinner...');
     return (
       <div className="min-h-screen bg-neutral-950">
         <NavigationHeader />
@@ -196,12 +171,10 @@ const AdminDashboard = () => {
   }
 
   if (!user) {
-    console.log('🚫 AdminDashboard: No user found, redirecting to auth');
     return <Navigate to="/" replace />;
   }
 
   if (!profile) {
-    console.log('🔄 AdminDashboard: User exists but no profile, showing loading...');
     return (
       <div className="min-h-screen bg-neutral-950">
         <NavigationHeader />
@@ -217,16 +190,8 @@ const AdminDashboard = () => {
   }
 
   if (!isAdmin) {
-    console.log('🚫 AdminDashboard: User is not admin, redirecting home:', { 
-      hasUser: !!user, 
-      email: user.email, 
-      role: profile?.role,
-      isAdmin
-    });
     return <Navigate to="/" replace />;
   }
-
-  console.log('✅ AdminDashboard: All checks passed, rendering dashboard');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -249,6 +214,12 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title="Admin Dashboard"
+        description="Private Omiyages admin workspace for user management, analytics, and content operations."
+        path="/admin"
+        noindex
+      />
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         {/* Header */}
@@ -289,7 +260,7 @@ const AdminDashboard = () => {
         )}
 
         <Tabs value={activeMainTab} onValueChange={handleMainTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 mb-6 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 mb-6 h-auto p-1">
             <TabsTrigger value="users" className="flex-wrap gap-1">
               <Users className="w-4 h-4 shrink-0" />
               Users
@@ -304,15 +275,13 @@ const AdminDashboard = () => {
               <BarChart2 className="w-4 h-4 shrink-0" />
               Analytics
             </TabsTrigger>
-            <TabsTrigger value="bd-jobs" className="flex-wrap gap-1">
-              <Briefcase className="w-4 h-4 shrink-0" />
-              BD jobs
-            </TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
           <TabsContent value="users">
-            <UsersList />
+            <Suspense fallback={<TabLoader />}>
+              <UsersList />
+            </Suspense>
           </TabsContent>
 
           {/* Course Management Tab with Subtabs */}
@@ -331,26 +300,30 @@ const AdminDashboard = () => {
               </TabsList>
 
               <TabsContent value="assignments">
-                <AssignCourseForm />
+                <Suspense fallback={<TabLoader />}>
+                  <AssignCourseForm />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="progress">
-                <CourseProgressList />
+                <Suspense fallback={<TabLoader />}>
+                  <CourseProgressList />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="reviews">
-                <CourseReviewsAdmin />
+                <Suspense fallback={<TabLoader />}>
+                  <CourseReviewsAdmin />
+                </Suspense>
               </TabsContent>
             </Tabs>
           </TabsContent>
 
           {/* Analytics Tab */}
           <TabsContent value="analytics">
-            <AdminAnalytics />
-          </TabsContent>
-
-          <TabsContent value="bd-jobs">
-            {user?.id ? <AdminBdJobsPanel userId={user.id} /> : null}
+            <Suspense fallback={<TabLoader />}>
+              <AdminAnalytics />
+            </Suspense>
           </TabsContent>
 
           {/* Questions Tab with Subtabs */}

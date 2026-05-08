@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EditResourceForm } from "@/components/EditResourceForm";
 import { useToast } from "@/hooks/use-toast";
 import { ResourcesHeader } from "@/components/ResourcesHeader";
 import { ResourcesFilters } from "@/components/ResourcesFilters";
@@ -13,6 +12,8 @@ import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FolderX } from "lucide-react";
 import { NavigationHeader } from "@/components/NavigationHeader";
+import { Seo } from "@/components/Seo";
+import { buildBreadcrumbJsonLd } from "@/lib/seo";
 
 interface Resource {
   id: string;
@@ -22,6 +23,10 @@ interface Resource {
   category: string;
   created_at: string;
 }
+
+const EditResourceForm = lazy(() =>
+  import("@/components/EditResourceForm").then((module) => ({ default: module.EditResourceForm }))
+);
 
 const Resources = () => {
   const { isAdmin, user } = useAuth();
@@ -181,6 +186,15 @@ const Resources = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title="Interview Resources for Tech Jobs in Japan"
+        description="Find curated interview resources for software engineering, machine learning, product, and technical roles in Tokyo and Japan."
+        path="/resources"
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Resources', path: '/resources' },
+        ])}
+      />
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         <ResourcesHeader 
@@ -218,10 +232,12 @@ const Resources = () => {
               <DialogHeader>
                 <DialogTitle>Edit Resource</DialogTitle>
               </DialogHeader>
-              <EditResourceForm 
-                resource={editingResource} 
-                onSuccess={handleEditSuccess} 
-              />
+              <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading editor…</div>}>
+                <EditResourceForm 
+                  resource={editingResource} 
+                  onSuccess={handleEditSuccess} 
+                />
+              </Suspense>
             </DialogContent>
           </Dialog>
         )}

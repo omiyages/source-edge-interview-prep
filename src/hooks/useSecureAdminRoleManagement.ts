@@ -35,7 +35,8 @@ export const useSecureAdminRoleManagement = () => {
       const { data: rateLimitCheck, error: rateLimitError } = await (supabase as any).rpc('check_rate_limit', { 
         operation_name: 'role_update',
         max_attempts: 3,
-        window_minutes: 10
+        window_minutes: 10,
+        actor_key: user?.id ?? 'anonymous'
       });
 
       if (rateLimitError) {

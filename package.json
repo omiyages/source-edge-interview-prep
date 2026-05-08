@@ -7,8 +7,8 @@
     "dev": "vite --host",
     "dev:clean": "rm -rf node_modules/.vite .vite dist && vite --host",
     "dev:reset": "./reset-dev-server.sh",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "tsx scripts/generate-sitemap.ts && vite build && tsx scripts/prerender-seo-pages.ts",
+    "build:dev": "vite build --mode development && tsx scripts/prerender-seo-pages.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "security:test": "node test-https-security.js",
@@ -19,7 +19,9 @@
     "secrets:validate": "node -e \"import('./src/config/environment.js').then(env => { const validation = env.environment.validateSecrets(); if (!validation.isValid) { console.error('❌ Secrets validation failed:', validation.errors); process.exit(1); } console.log('✅ Secrets validation passed'); });\"",
     "secrets:scan": "grep -r 'sk-\\|pk_\\|AKIA\\|AIza' src/ --exclude-dir=node_modules || echo '✅ No hardcoded secrets found'",
     "secrets:report": "node -e \"import('./src/utils/secretsManager.js').then(secrets => { const report = secrets.secretsManager.generateSecurityReport(); console.log('🔐 Security Report:'); console.log('Risk Level:', report.riskLevel); console.log('Errors:', report.validation.errors.length); console.log('Warnings:', report.validation.warnings.length); });\"",
-    "secrets:check": "npm run secrets:validate && npm run secrets:scan && npm run secrets:report"
+    "secrets:check": "npm run secrets:validate && npm run secrets:scan && npm run secrets:report",
+    "seo:sitemap": "tsx scripts/generate-sitemap.ts",
+    "seo:prerender": "tsx scripts/prerender-seo-pages.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.1.1",
@@ -89,6 +91,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "autoprefixer": "^10.4.20",
+    "esbuild": "^0.28.0",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
@@ -99,7 +102,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^7.2.7",
+    "vite": "^7.3.2",
     "vite-plugin-compression2": "^2.5.2"
   }
 }

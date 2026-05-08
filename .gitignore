@@ -37,6 +37,7 @@ quick-backup/
 
 # Cursor/IDE specific
 .cursor/
+.playwright-mcp/
 .vercel
 # Data exports (contain PII)
 *.csv

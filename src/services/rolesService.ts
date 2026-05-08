@@ -1,4 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
 import { clerkSupabaseClient } from '@/lib/clerk';
 import type { Role, RoleFormData } from '@/types/role';
 
@@ -38,7 +37,7 @@ function nextUniqueSlug(baseSlug: string, taken: Set<string>): string {
 export async function fetchRoles(): Promise<Role[]> {
   const { data, error } = await clerkSupabaseClient
     .from('roles')
-    .select('*')
+    .select('id, slug, job_title, role_type, company, location, working_style, japanese_level, division, status, ai_summary, created_at')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch roles: ${error.message}`);
@@ -115,52 +114,6 @@ export async function createRole(role: RoleFormData, createdBy: string): Promise
   return data as unknown as Role;
 }
 
-export async function fetchExistingAtsExternalIds(input: {
-  company: string;
-  ats_platform: string;
-  external_ids: string[];
-}): Promise<Set<string>> {
-  const company = input.company.trim();
-  const platform = input.ats_platform.trim();
-  const ids = [...new Set(input.external_ids.map((x) => String(x).trim()).filter(Boolean))];
-  if (!company || !platform || ids.length === 0) return new Set();
-
-  const { data, error } = await clerkSupabaseClient
-    .from('roles')
-    .select('ats_external_id')
-    .eq('company', company)
-    .eq('ats_platform', platform)
-    .in('ats_external_id', ids);
-
-  if (error) throw new Error(`Failed to fetch existing ATS roles: ${error.message}`);
-
-  const set = new Set<string>();
-  (data || []).forEach((row: any) => {
-    if (row?.ats_external_id) set.add(String(row.ats_external_id));
-  });
-  return set;
-}
-
-export async function fetchActiveAtsRolesForCompany(input: {
-  company: string;
-  ats_platform: string;
-}): Promise<Array<{ id: string; ats_external_id: string; job_title: string | null; job_title_ja: string | null; ats_hosted_url: string | null }>> {
-  const company = input.company.trim();
-  const platform = input.ats_platform.trim();
-  if (!company || !platform) return [];
-
-  const { data, error } = await clerkSupabaseClient
-    .from('roles')
-    .select('id, ats_external_id, job_title, job_title_ja, ats_hosted_url, status')
-    .eq('company', company)
-    .eq('ats_platform', platform)
-    .eq('status', 'active')
-    .not('ats_external_id', 'is', null);
-
-  if (error) throw new Error(`Failed to fetch active ATS roles: ${error.message}`);
-  return (data || []) as any;
-}
-
 export async function updateRole(id: string, role: Partial<RoleFormData>): Promise<Role> {
   const updatePayload: Record<string, unknown> = {
     ...role,
@@ -196,7 +149,7 @@ export async function generateRoleSummary(
   force = false
 ): Promise<string | null> {
   try {
-    const { data, error } = await supabase.functions.invoke(
+    const { data, error } = await clerkSupabaseClient.functions.invoke(
       'generate-role-summary',
       { body: { role_id: roleId, force } }
     );
@@ -244,7 +197,7 @@ export async function bulkCreateRoles(roles: RoleFormData[], createdBy: string):
     })
   );
 
-  const { data, error } = await supabase
+  const { data, error } = await clerkSupabaseClient
     .from('roles')
     .insert(rolesToInsert as any)
     .select('id');

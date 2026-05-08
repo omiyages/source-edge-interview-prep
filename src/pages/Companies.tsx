@@ -5,6 +5,8 @@ import { LazyImage } from '@/components/ui/lazy-image';
 import { Link } from 'react-router-dom';
 import { Building2, Globe, Users } from 'lucide-react';
 import { NavigationHeader } from '@/components/NavigationHeader';
+import { Seo } from '@/components/Seo';
+import { buildBreadcrumbJsonLd } from '@/lib/seo';
 
 type EmployeeSize = '1-10' | '11-50' | '51-200' | '201-500' | '501-1000' | '1001+';
 
@@ -53,6 +55,15 @@ const companies = [
 const Companies: React.FC = () => {
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title="Tech Companies Hiring in Tokyo and Japan"
+        description="Research English-friendly and bilingual-friendly tech companies in Tokyo and Japan, then move from company research to jobs and interview prep."
+        path="/company"
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Companies', path: '/company' },
+        ])}
+      />
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         {/* Header */}
@@ -61,7 +72,10 @@ const Companies: React.FC = () => {
             Companies
           </h1>
           <p className="text-lg text-foreground font-semibold max-w-2xl mx-auto">
-            Explore list of companies hiring top talents in Japan
+            Explore tech companies in Tokyo and Japan that are relevant to English-speaking and bilingual candidates.
+          </p>
+          <p className="text-base text-muted-foreground max-w-3xl mx-auto mt-3">
+            Start with company context, then move into open roles, interview expectations, and preparation resources tailored to software engineering, AI, machine learning, product, and technical careers.
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             Showing {companies.length} company{companies.length !== 1 ? 'ies' : ''}
@@ -78,6 +92,7 @@ const Companies: React.FC = () => {
                     <LazyImage
                       src={company.image}
                       alt={`${company.name}`}
+                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
@@ -89,9 +104,9 @@ const Companies: React.FC = () => {
               </div>
 
               <CardContent className="p-6 flex flex-col flex-1">
-                <h3 className="text-xl font-bold text-neutral-100 group-hover:text-red-600 transition-colors mb-3">
+                <h2 className="text-xl font-bold text-neutral-100 group-hover:text-red-600 transition-colors mb-3">
                   {company.name}
-                </h3>
+                </h2>
 
                 <p className="text-neutral-400 mb-4 line-clamp-3">
                   {company.description}

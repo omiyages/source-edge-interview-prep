@@ -3,7 +3,7 @@
 
 import { memo, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { clerkSupabaseClient } from '@/lib/clerk';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
 interface StageSummaryData {
@@ -37,7 +37,7 @@ export const StageSummary = memo(({
   const { data: summary, isLoading, isFetched } = useQuery({
     queryKey: ['stage-summary', stageId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await clerkSupabaseClient
         .from('stage_summaries')
         .select('*')
         .eq('stage_id', stageId)
@@ -64,7 +64,7 @@ export const StageSummary = memo(({
     const generateSummary = async () => {
       hasTriggeredGeneration.current = true;
       try {
-        const { data, error } = await supabase.functions.invoke('generate-stage-summary', {
+        const { data, error } = await clerkSupabaseClient.functions.invoke('generate-stage-summary', {
           body: { stage_id: stageId, force: false },
         });
 

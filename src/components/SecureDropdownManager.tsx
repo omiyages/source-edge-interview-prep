@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { clerkSupabaseClient } from '@/lib/clerk';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ export const SecureDropdownManager: React.FC = () => {
   const { data: options, isLoading } = useQuery({
     queryKey: ['dropdown-options'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await clerkSupabaseClient
         .from('dropdown_options')
         .select('id, field_name, value, created_at')
         .order('field_name', { ascending: true })
@@ -56,7 +56,7 @@ export const SecureDropdownManager: React.FC = () => {
     mutationFn: async (option: { field_name: string; value: string }) => {
       if (!isAdmin) throw new Error('Admin privileges required');
 
-      const { data, error } = await supabase.functions.invoke('dropdown-options', {
+      const { data, error } = await clerkSupabaseClient.functions.invoke('dropdown-options', {
         body: {
           field_name: option.field_name,
           option_value: option.value,
@@ -88,7 +88,7 @@ export const SecureDropdownManager: React.FC = () => {
     mutationFn: async (id: string) => {
       if (!isAdmin) throw new Error('Admin privileges required');
 
-      const { error } = await supabase
+      const { error } = await clerkSupabaseClient
         .from('dropdown_options')
         .delete()
         .eq('id', id);

@@ -1,19 +1,17 @@
-import { useState, useMemo, useEffect } from "react";
+import { lazy, Suspense, useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Calculator, Info, CircleDollarSign, Lock, Unlock } from "lucide-react";
+import { Calculator, Info, CircleDollarSign } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationHeader } from "@/components/NavigationHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ResourceCard } from "@/components/ResourceCard";
-import { ResourceSkeletonCard } from "@/components/ResourceSkeletonCard";
+import { Seo } from "@/components/Seo";
+import { buildBreadcrumbJsonLd } from "@/lib/seo";
 import {
   Table,
   TableBody,
@@ -22,12 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+
+const ReloDeepDiveSection = lazy(() =>
+  import("@/components/ReloDeepDiveSection").then((module) => ({ default: module.ReloDeepDiveSection }))
+);
 
 interface TaxBreakdown {
   grossSalary: number;
@@ -234,8 +230,6 @@ const Relo = () => {
   const [peopleCount, setPeopleCount] = useState<"1" | "2">("1");
   
   // Woven by Toyota Salary Breakdown state
-  const [isWovenSectionUnlocked, setIsWovenSectionUnlocked] = useState(false);
-  const [wovenPassword, setWovenPassword] = useState("");
   const [includeRelocationBonus, setIncludeRelocationBonus] = useState(false);
   const HOUSING_ALLOWANCE = 600000;
   const RETENTION_BONUS = 900000;
@@ -334,6 +328,15 @@ const Relo = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title="Relocation to Tokyo Guide for Tech Job Seekers"
+        description="Estimate Tokyo take-home salary, review relocation resources, and understand the cost of moving to Japan for a technical role."
+        path="/relo"
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Relocation to Tokyo Guide', path: '/relo' },
+        ])}
+      />
       <NavigationHeader />
       <div className="container mx-auto py-8 px-4 max-w-7xl flex-1">
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Relocation to Tokyo Guide' }]} className="mb-4" />
@@ -342,7 +345,7 @@ const Relo = () => {
           <span className="text-4xl">🇯🇵</span> Relocation to Tokyo Guide
         </h1>
         <p className="text-muted-foreground text-lg">
-          Calculate your rough take-home salary and living costs in Tokyo
+          Estimate take-home salary, compare living costs, and plan your move to Tokyo with a practical guide for English-speaking and bilingual tech candidates.
         </p>
       </div>
 
@@ -546,592 +549,36 @@ const Relo = () => {
         </Card>
       </div>
 
-      {/* Detailed Breakdown */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Detailed Tax Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="deductions">
-              <AccordionTrigger>Deductions</AccordionTrigger>
-              <AccordionContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Deduction Type</TableHead>
-                      <TableHead className="text-right">Amount (JPY)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>Employment Income Deduction (給与所得控除)</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(year1Breakdown.employmentIncomeDeduction)}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Basic Deduction (基礎控除)</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(year1Breakdown.basicDeduction)}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Dependent Deduction ({parseInt(dependents)} × ¥380,000)</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(year1Breakdown.dependentDeduction)}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow className="font-bold">
-                      <TableCell>Total Deductions</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(year1Breakdown.totalDeductions)}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="social-insurance">
-              <AccordionTrigger>Social Insurance Breakdown</AccordionTrigger>
-              <AccordionContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Insurance Type</TableHead>
-                      <TableHead className="text-right">Amount (JPY)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>Health Insurance (健康保険)</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(year1Breakdown.healthInsurance)}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Pension Insurance (厚生年金保険)</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(year1Breakdown.pensionInsurance)}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Unemployment Insurance (雇用保険)</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(year1Breakdown.unemploymentInsurance)}
-                      </TableCell>
-                    </TableRow>
-                    {ageRange === "40-64" && (
-                      <TableRow>
-                        <TableCell>Nursing Care Insurance (介護保険)</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(year1Breakdown.nursingCareInsurance)}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    <TableRow className="font-bold">
-                      <TableCell>Total Social Insurance</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(year1Breakdown.totalSocialInsurance)}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
-
-      {/* Cost of Living in Tokyo */}
-      <Card className="mb-8">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Cost of Living in Tokyo</CardTitle>
-              <CardDescription>Estimated monthly expenses</CardDescription>
-            </div>
-            <Tabs value={peopleCount} onValueChange={(v) => setPeopleCount(v as "1" | "2")}>
-              <TabsList>
-                <TabsTrigger value="1">1 Person</TabsTrigger>
-                <TabsTrigger value="2">2 People</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-3 gap-6 mb-6">
-            {/* Fixed Costs */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <span className="text-xl">🏠</span>
-                  Fixed Costs
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      Rent ({peopleCount === "1" ? "1LDK" : "2LDK"})
-                    </span>
-                    <span className="font-medium">{formatCurrency(peopleCount === "1" ? 120000 : 150000)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Utilities</span>
-                    <span className="font-medium">{formatCurrency(peopleCount === "1" ? 15000 : 20000)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Internet</span>
-                    <span className="font-medium">{formatCurrency(4500)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Phone Bill</span>
-                    <span className="font-medium">{formatCurrency(peopleCount === "1" ? 5000 : 8000)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center font-semibold">
-                    <span>Monthly</span>
-                    <span className="text-lg">
-                      {formatCurrency(peopleCount === "1" ? 144500 : 172500)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Living Expenses */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <span className="text-xl">🛒</span>
-                  Living Expenses
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Breakfast</span>
-                      <span className="font-medium">{formatCurrency(peopleCount === "1" ? 15000 : 30000)}</span>
-                    </div>
-                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 500 : 1000)}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Lunch</span>
-                      <span className="font-medium">{formatCurrency(peopleCount === "1" ? 30000 : 60000)}</span>
-                    </div>
-                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 1000 : 2000)}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Dinner</span>
-                      <span className="font-medium">{formatCurrency(peopleCount === "1" ? 30000 : 60000)}</span>
-                    </div>
-                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 1000 : 2000)}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Coffee</span>
-                      <span className="font-medium">{formatCurrency(peopleCount === "1" ? 15000 : 30000)}</span>
-                    </div>
-                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 500 : 1000)}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Transportation</span>
-                      <span className="font-medium">{formatCurrency(peopleCount === "1" ? 12000 : 24000)}</span>
-                    </div>
-                    <span className="text-xs text-neutral-400 ml-auto">Daily: {formatCurrency(peopleCount === "1" ? 400 : 800)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center font-semibold">
-                    <span>Monthly</span>
-                    <span className="text-lg">{formatCurrency(peopleCount === "1" ? 102000 : 204000)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Entertainment */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <span className="text-xl">🎉</span>
-                  Entertainment
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Nice Dinner/Drinking x4</span>
-                      <span className="font-medium">{formatCurrency(peopleCount === "1" ? 20000 : 40000)}</span>
-                    </div>
-                    <span className="text-xs text-neutral-400 ml-auto">Each Time: {formatCurrency(peopleCount === "1" ? 5000 : 10000)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Movie Theater</span>
-                    <span className="font-medium">{formatCurrency(peopleCount === "1" ? 1900 : 3800)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Gym Membership</span>
-                    <span className="font-medium">{formatCurrency(peopleCount === "1" ? 8000 : 16000)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Shopping</span>
-                    <span className="font-medium">{formatCurrency(peopleCount === "1" ? 30000 : 60000)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center font-semibold">
-                    <span>Monthly</span>
-                    <span className="text-lg">{formatCurrency(peopleCount === "1" ? 59900 : 119800)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Total Monthly Expenses */}
-          <div className="bg-primary/10 rounded-lg p-6 text-center">
-            <div className="text-sm text-muted-foreground mb-2">Total Monthly Expenses</div>
-            <div className="text-4xl font-bold text-primary">
-              {formatCurrency(peopleCount === "1" ? 306400 : 496300)}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Financial Summary */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">📊</span>
-            Financial Summary
-          </CardTitle>
-          <CardDescription>Your salary breakdown and savings potential</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Year 1 Summary */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Year 1</h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-sm text-muted-foreground mb-2">Total Annual Salary (Gross)</div>
-                    <div className="text-2xl font-bold">{formatCurrency(year1Breakdown.grossSalary)}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Monthly: {formatCurrency(Math.floor(year1Breakdown.grossSalary / 12))}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-sm text-muted-foreground mb-2">Salary After Tax (Take-home)</div>
-                    <div className="text-2xl font-bold text-primary">{formatCurrency(year1Breakdown.takeHomeSalary)}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Monthly: {formatCurrency(year1Breakdown.monthlyTakeHome)}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-sm text-muted-foreground mb-2">Savings After Costs</div>
-                    {(() => {
-                      const monthlyExpenses = peopleCount === "1" ? 306400 : 496300;
-                      const annualExpenses = monthlyExpenses * 12;
-                      const savings = year1Breakdown.takeHomeSalary - annualExpenses;
-                      return (
-                        <>
-                          <div className={`text-2xl font-bold ${savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(savings)}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Monthly: {formatCurrency(year1Breakdown.monthlyTakeHome - monthlyExpenses)}
-                          </div>
-                          <div className="text-xs text-neutral-400 mt-2">
-                            {formatCurrency(year1Breakdown.takeHomeSalary)} - {formatCurrency(annualExpenses)} = {formatCurrency(savings)}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Year 2 Summary */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Year 2+</h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-sm text-muted-foreground mb-2">Total Annual Salary (Gross)</div>
-                    <div className="text-2xl font-bold">{formatCurrency(year2Breakdown.grossSalary)}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Monthly: {formatCurrency(Math.floor(year2Breakdown.grossSalary / 12))}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-sm text-muted-foreground mb-2">Salary After Tax (Take-home)</div>
-                    <div className="text-2xl font-bold text-primary">{formatCurrency(year2Breakdown.takeHomeSalary)}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Monthly: {formatCurrency(year2Breakdown.monthlyTakeHome)}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-sm text-muted-foreground mb-2">Savings After Costs</div>
-                    {(() => {
-                      const monthlyExpenses = peopleCount === "1" ? 306400 : 496300;
-                      const annualExpenses = monthlyExpenses * 12;
-                      const savings = year2Breakdown.takeHomeSalary - annualExpenses;
-                      return (
-                        <>
-                          <div className={`text-2xl font-bold ${savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(savings)}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Monthly: {formatCurrency(year2Breakdown.monthlyTakeHome - monthlyExpenses)}
-                          </div>
-                          <div className="text-xs text-neutral-400 mt-2">
-                            {formatCurrency(year2Breakdown.takeHomeSalary)} - {formatCurrency(annualExpenses)} = {formatCurrency(savings)}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Woven by Toyota Salary Breakdown */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">💰</span>
-            Woven by Toyota Salary Breakdown
-          </CardTitle>
-          <CardDescription>Detailed salary breakdown for Woven by Toyota employees</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!isWovenSectionUnlocked ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Lock className="w-4 h-4" />
-                <span>This section is password protected</span>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  type="password"
-                  placeholder="Enter password"
-                  value={wovenPassword}
-                  onChange={(e) => setWovenPassword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && wovenPassword === "Namtae") {
-                      setIsWovenSectionUnlocked(true);
-                    }
-                  }}
-                  className="max-w-xs"
-                />
-                <Button
-                  onClick={() => {
-                    if (wovenPassword === "Namtae") {
-                      setIsWovenSectionUnlocked(true);
-                    } else {
-                      alert("Incorrect password");
-                      setWovenPassword("");
-                    }
-                  }}
-                >
-                  Unlock
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-green-600">
-                  <Unlock className="w-4 h-4" />
-                  <span className="text-sm">Section unlocked</span>
-                </div>
-                <Button
-                  variant={includeRelocationBonus ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIncludeRelocationBonus(!includeRelocationBonus)}
-                >
-                  International Relocation
-                </Button>
-              </div>
-
-              <Separator />
-
-              {/* Calculations */}
-              {(() => {
-                const totalAnnual = grossSalary;
-                const annualBonusDecimal = 0.20;
-                const denominator = 12 * (1 + BASIC_RATIO * annualBonusDecimal + BASIC_RATIO * PENSION_RATE);
-                const adjustedAnnual = totalAnnual - HOUSING_ALLOWANCE - RETENTION_BONUS;
-                const computedMonthlyBase = denominator > 0 ? adjustedAnnual / denominator : 0;
-                const monthlyBase = Math.max(computedMonthlyBase, 0);
-                
-                const basicSalaryPerMonth = BASIC_RATIO * monthlyBase;
-                const discretionaryPerMonth = DISCRETIONARY_RATIO * monthlyBase;
-                const annualBonus = annualBonusDecimal * (basicSalaryPerMonth * 12);
-                const toyotaPension = PENSION_RATE * (basicSalaryPerMonth * 12);
-                const totalBase = monthlyBase * 12;
-
-                const totalWithoutRelocation = totalBase + annualBonus + toyotaPension + HOUSING_ALLOWANCE + RETENTION_BONUS;
-                const showLevel4 = totalWithoutRelocation >= 8000000 && totalWithoutRelocation <= 14500000;
-
-                if (!showLevel4) {
-                  return (
-                    <Card>
-                      <CardContent className="py-8">
-                        <div className="text-center text-muted-foreground">
-                          <p className="text-lg">Calculation is only available for Level 4 at the moment</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                }
-
-                return (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">Total Compensation Breakdown</CardTitle>
-                        <Badge variant="secondary" className="ml-auto">
-                          Level 4
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex flex-col">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Total Base</span>
-                            <span className="font-medium">{formatCurrency(Math.round(totalBase))}</span>
-                          </div>
-                          <div className="text-xs text-right mt-1 space-y-0.5">
-                            <div className="text-cyan-500">
-                              Basic salary (80%): {formatCurrency(Math.round(basicSalaryPerMonth * 12))}
-                            </div>
-                            <div className="text-neutral-400">
-                              Discretionary (20%): {formatCurrency(Math.round(discretionaryPerMonth * 12))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Annual Bonus</span>
-                            <span className="font-medium">{formatCurrency(Math.round(annualBonus))}</span>
-                          </div>
-                          <div className="text-xs text-neutral-400 text-right mt-1">
-                            20% of the basic salary, paid once a year
-                          </div>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Toyota Pension</span>
-                            <span className="font-medium">{formatCurrency(Math.round(toyotaPension))}</span>
-                          </div>
-                          <div className="text-xs text-neutral-400 text-right mt-1">
-                            7.5% of basic salary
-                          </div>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Housing Allowance</span>
-                            <span className="font-medium">{formatCurrency(HOUSING_ALLOWANCE)}</span>
-                          </div>
-                          <div className="text-xs text-neutral-400 text-right mt-1">
-                            50,000 yen per month
-                          </div>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Retention Bonus</span>
-                            <span className="font-medium">{formatCurrency(RETENTION_BONUS)}</span>
-                          </div>
-                          <div className="text-xs text-neutral-400 text-right mt-1">
-                            2,700,000 yen vested across 3 years
-                          </div>
-                        </div>
-                        {includeRelocationBonus && (
-                          <div className="flex flex-col">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Relocation Bonus</span>
-                              <span className="font-medium">{formatCurrency(RELOCATION_BONUS)}</span>
-                            </div>
-                            <div className="text-xs text-neutral-400 text-right mt-1">
-                              1 time bonus that is paid in the 2nd month paycheck
-                            </div>
-                          </div>
-                        )}
-                        <Separator />
-                        <div className="flex justify-between font-semibold">
-                          <span>Total</span>
-                          <span className="text-lg">
-                            {formatCurrency(Math.round(totalWithoutRelocation + (includeRelocationBonus ? RELOCATION_BONUS : 0)))}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })()}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Relevant Resources */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Relevant Resources</CardTitle>
-          <CardDescription>Helpful resources for relocating to Tokyo</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Resources Grid */}
-          {resourcesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <ResourceSkeletonCard key={index} />
-              ))}
-            </div>
-          ) : resources.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No resources found.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {resources.map((resource) => (
-                <ResourceCard key={resource.id} resource={resource} />
-              ))}
-            </div>
-          )}
-
-          {!resourcesLoading && resources.length > 0 && (
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Showing {resources.length} resource{resources.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Suspense
+        fallback={
+          <Card className="mb-8">
+            <CardContent className="py-16 text-center text-sm text-muted-foreground">
+              Loading relocation deep dive…
+            </CardContent>
+          </Card>
+        }
+      >
+        <ReloDeepDiveSection
+          year1Breakdown={year1Breakdown}
+          year2Breakdown={year2Breakdown}
+          ageRange={ageRange}
+          dependents={dependents}
+          peopleCount={peopleCount}
+          onPeopleCountChange={setPeopleCount}
+          resources={resources}
+          resourcesLoading={resourcesLoading}
+          includeRelocationBonus={includeRelocationBonus}
+          onToggleRelocationBonus={() => setIncludeRelocationBonus((value) => !value)}
+          grossSalary={grossSalary}
+          formatCurrency={formatCurrency}
+          housingAllowance={HOUSING_ALLOWANCE}
+          retentionBonus={RETENTION_BONUS}
+          relocationBonus={RELOCATION_BONUS}
+          basicRatio={BASIC_RATIO}
+          discretionaryRatio={DISCRETIONARY_RATIO}
+          pensionRate={PENSION_RATE}
+        />
+      </Suspense>
       </div>
 
       {/* Footer */}

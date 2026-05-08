@@ -61,6 +61,19 @@ async function sha256Hex(text: string): Promise<string> {
     .join("");
 }
 
+async function isAdminUser(supabaseClient: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const { data } = await supabaseClient
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle();
+  return data?.role === 'admin';
+}
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+  return forwarded.split(",")[0].trim().slice(0, 64);
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
@@ -89,6 +102,19 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
+  }
+  const actorKey = `${user.id}:${getClientIp(req)}`;
+  const { data: rateLimitOk, error: rateLimitError } = await supabaseClient.rpc('check_rate_limit', {
+    operation_name: 'ai_generate_role_summary',
+    max_attempts: 30,
+    window_minutes: 60,
+    actor_key: actorKey,
+  });
+  if (rateLimitError || !rateLimitOk) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+      status: 429,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -166,6 +192,19 @@ Deno.serve(async (req) => {
       JSON.stringify({ ai_summary: role.ai_summary, cached: true }),
       {
         status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+  const canGenerate = await isAdminUser(supabaseClient, user.id);
+  if (!canGenerate) {
+    return new Response(
+      JSON.stringify({
+        ai_summary: role.ai_summary || null,
+        error: "Insufficient permissions to generate role summary",
+      }),
+      {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

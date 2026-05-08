@@ -170,9 +170,10 @@ const CoursePlaceholderImage = ({ colorIndex, leafIndex }: { colorIndex: number;
 
 interface FeaturedCoursesPreviewProps {
   enabled?: boolean;
+  limit?: number;
 }
 
-const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewProps) => {
+const FeaturedCoursesPreview = memo(({ enabled = true, limit = 3 }: FeaturedCoursesPreviewProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -205,11 +206,12 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
 
   // Share the same queryKey as Track page so navigating there is instant
   const { data: courses, isLoading } = useQuery({
-    queryKey: ['courses'],
+    queryKey: ['courses', 'homepage-preview', limit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('courses')
         .select('id, title, description, company, created_at')
+        .limit(limit)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -222,8 +224,8 @@ const FeaturedCoursesPreview = memo(({ enabled = true }: FeaturedCoursesPreviewP
   });
 
   const displayCourses = useMemo(() => {
-    return (courses || []).slice(0, 3);
-  }, [courses]);
+    return (courses || []).slice(0, limit);
+  }, [courses, limit]);
 
   if (isLoading) {
     return (

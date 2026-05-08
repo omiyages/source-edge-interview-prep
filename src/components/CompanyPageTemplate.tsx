@@ -5,6 +5,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import {
   MapPin, Users, DollarSign, Calendar, ChevronRight,
   Building2, Briefcase,
@@ -16,8 +17,11 @@ import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { LazyImage } from '@/components/ui/lazy-image';
 import { CourseCard } from '@/components/CourseCard';
+import { seoLandingPages } from '@/content/seoLandingPages';
 import { useCompanyReveal } from '@/hooks/useCompanyReveal';
 import { supabase } from '@/integrations/supabase/client';
+import { Seo } from '@/components/Seo';
+import { buildBreadcrumbJsonLd, trimDescription } from '@/lib/seo';
 import type { Role } from '@/types/role';
 import type { Course } from '@/types/course';
 import type { CompanyPageData, CompanyValue, CompanyService } from '@/types/company';
@@ -45,6 +49,24 @@ function RevealSection({ children, className = '' }: { children: React.ReactNode
     <div ref={ref} className={`company-reveal ${className}`}>
       {children}
     </div>
+  );
+}
+
+function CompanyPageFonts() {
+  return (
+    <Helmet>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        rel="preload"
+        as="style"
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      />
+    </Helmet>
   );
 }
 
@@ -345,7 +367,8 @@ function RolesSection({ roles, companyName, isLoading }: { roles: Role[]; compan
 }
 
 function RoleRow({ role }: { role: Role }) {
-  const href = role.slug ? `/job/${role.slug}` : `/roles`;
+  const safeSegment = (role.slug || '').trim();
+  const href = /^[a-z0-9][a-z0-9-]{0,119}$/i.test(safeSegment) ? `/job/${safeSegment}` : '/roles';
   return (
     <Link
       to={href}
@@ -448,13 +471,23 @@ function CoursesSection({ courses, companyName, isLoading }: { courses: Course[]
 
 const CompanyPageTemplate: React.FC<{ data: CompanyPageData }> = ({ data }) => {
   const companyFilter = data.companyFilterName ?? data.name;
+  const pagePath = `/company/${data.slug}`;
+  const pageDescription = trimDescription(
+    `${data.description} Explore company context, interview preparation tips, and relevant jobs for ${data.name} on Omiyages.`,
+    165
+  );
+  const jsonLd = buildBreadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'Companies', path: '/company' },
+    { name: data.name, path: pagePath },
+  ]);
 
   const { data: roles = [], isLoading: rolesLoading } = useQuery<Role[]>({
     queryKey: ['roles', 'company', companyFilter],
     queryFn: async () => {
       const { data: rows, error } = await supabase
         .from('roles')
-        .select('*')
+        .select('id, slug, job_title, company, location, working_style, japanese_level, division, status, created_at')
         .ilike('company', companyFilter)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
@@ -477,9 +510,17 @@ const CompanyPageTemplate: React.FC<{ data: CompanyPageData }> = ({ data }) => {
     },
     staleTime: 5 * 60_000,
   });
+  const featuredGuides = seoLandingPages.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <CompanyPageFonts />
+      <Seo
+        title={`${data.name} Jobs, Interview Guide & Company Overview`}
+        description={pageDescription}
+        path={pagePath}
+        jsonLd={jsonLd}
+      />
       <NavigationHeader />
       <HeroSection data={data} />
       <InfoBlocks data={data} />
@@ -487,6 +528,30 @@ const CompanyPageTemplate: React.FC<{ data: CompanyPageData }> = ({ data }) => {
       <ServicesSection data={data} />
       <TechStackSection data={data} />
       <WhyJoinSection data={data} />
+      <section className="company-section py-20 border-t border-neutral-900/80 bg-neutral-950">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mb-10">
+            <p className="section-label">More Prep Guides</p>
+            <div className="section-rule" />
+            <h2 className="section-heading">Broaden your Japan tech job search</h2>
+            <p className="body-text mt-4">
+              Use these guides to compare language expectations, interview process patterns, and role-search strategy across Tokyo and Japan before you apply.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {featuredGuides.map((guide) => (
+              <Link
+                key={guide.slug}
+                to={guide.path}
+                className="company-card rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+              >
+                <p className="text-sm font-semibold text-white">{guide.title}</p>
+                <p className="mt-3 text-sm text-neutral-400 leading-6">{guide.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
       <RolesSection roles={roles} companyName={data.name} isLoading={rolesLoading} />
       <CoursesSection courses={courses} companyName={data.name} isLoading={coursesLoading} />
       <footer className="bg-neutral-900 border-t border-neutral-800 mt-auto py-6">

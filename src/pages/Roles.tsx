@@ -1,20 +1,20 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import React, { Suspense, useState, useMemo, useCallback } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { RolesSidebarFilters } from '@/components/RolesSidebarFilters';
+import { Seo } from '@/components/Seo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RoleForm } from '@/components/RoleForm';
-import { RoleCSVImport } from '@/components/RoleCSVImport';
 import { fetchRoles, deleteRole } from '@/services/rolesService';
 import type { Role } from '@/types/role';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { buildBreadcrumbJsonLd } from '@/lib/seo';
 import {
   Search,
   Plus,
@@ -49,6 +49,10 @@ function parseAiSummary(raw: string | null): { candidate: string; responsibility
 }
 
 const ROLES_PER_PAGE = 10;
+const RoleForm = React.lazy(() => import('@/components/RoleForm').then((module) => ({ default: module.RoleForm })));
+const RoleCSVImport = React.lazy(() =>
+  import('@/components/RoleCSVImport').then((module) => ({ default: module.RoleCSVImport }))
+);
 
 const statusColors: Record<string, string> = {
   active: 'bg-green-900/40 text-green-400',
@@ -80,6 +84,8 @@ const Roles = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isAdmin, rolesRlsReady } = useAuth();
+  const location = useLocation();
+  const isAliasRoute = location.pathname.startsWith('/roles');
 
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -268,6 +274,16 @@ const Roles = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title="Tech Jobs in Tokyo and Japan"
+        description="Browse software engineering, machine learning, product, and other technical jobs in Tokyo and Japan for English-speaking and bilingual candidates."
+        path="/jobs"
+        noindex={isAliasRoute}
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Jobs', path: '/jobs' },
+        ])}
+      />
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         <div className="flex flex-col lg:flex-row gap-6">
@@ -310,7 +326,7 @@ const Roles = () => {
                   <p className="text-muted-foreground">
                     {isAdmin && adminViewClosedJobs
                       ? `Review ${baseRoles.length > 0 ? `${baseRoles.length} ` : ''}closed listings (not visible on the public job board).`
-                      : `Browse ${baseRoles.length > 0 ? `${baseRoles.length} ` : ''}open job listings across tech companies in Japan.`}
+                      : `Browse ${baseRoles.length > 0 ? `${baseRoles.length} ` : ''}open software engineering, machine learning, product, and technical job listings across Tokyo and Japan for English-speaking and bilingual candidates.`}
                   </p>
                 </div>
                 {isAdmin && (
@@ -578,10 +594,12 @@ const Roles = () => {
           <DialogHeader>
             <DialogTitle>Create New Role</DialogTitle>
           </DialogHeader>
-          <RoleForm
-            onSuccess={() => setShowCreateDialog(false)}
-            onCancel={() => setShowCreateDialog(false)}
-          />
+          <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading role form…</div>}>
+            <RoleForm
+              onSuccess={() => setShowCreateDialog(false)}
+              onCancel={() => setShowCreateDialog(false)}
+            />
+          </Suspense>
         </DialogContent>
       </Dialog>
 
@@ -591,11 +609,13 @@ const Roles = () => {
           <DialogHeader>
             <DialogTitle>Edit Role</DialogTitle>
           </DialogHeader>
-          <RoleForm
-            role={editingRole}
-            onSuccess={() => setEditingRole(null)}
-            onCancel={() => setEditingRole(null)}
-          />
+          <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading role form…</div>}>
+            <RoleForm
+              role={editingRole}
+              onSuccess={() => setEditingRole(null)}
+              onCancel={() => setEditingRole(null)}
+            />
+          </Suspense>
         </DialogContent>
       </Dialog>
 
@@ -608,7 +628,9 @@ const Roles = () => {
               Import Roles from CSV
             </DialogTitle>
           </DialogHeader>
-          <RoleCSVImport onSuccess={() => setShowImportDialog(false)} />
+          <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading import tool…</div>}>
+            <RoleCSVImport onSuccess={() => setShowImportDialog(false)} />
+          </Suspense>
         </DialogContent>
       </Dialog>
 

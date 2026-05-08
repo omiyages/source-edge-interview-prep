@@ -184,8 +184,8 @@ const Questions = () => {
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
       <Seo
-        title="Interview Questions"
-        description="Browse interview questions by company, role, category, and stage to prepare for your next technical interview."
+        title="Interview Questions for Tech Jobs in Japan"
+        description="Practice interview questions for software engineering, machine learning, product, and technical roles in Tokyo and Japan."
         path="/questions"
       />
       <NavigationHeader />
@@ -212,7 +212,7 @@ const Questions = () => {
                 <div>
                   <h1 className="text-3xl font-bold text-foreground mb-2">Practice Questions</h1>
                   <p className="text-muted-foreground">
-                    Browse and solve over {totalQuestionCount} questions to prepare for your next interview.
+                    Browse and solve over {totalQuestionCount} questions to prepare for software, machine learning, product, and other technical interviews in Japan.
                   </p>
                 </div>
                 {isAuthenticated && (

@@ -22,6 +22,8 @@ import { CoursePaywall } from "@/components/CoursePaywall";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Seo } from "@/components/Seo";
+import { buildBreadcrumbJsonLd, trimDescription } from "@/lib/seo";
 
 interface CourseStage {
   id: string;
@@ -151,6 +153,19 @@ const CourseDetail = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title={`${course.title} Interview Prep Track`}
+        description={trimDescription(
+          `${course.title}${course.company ? ` for ${course.company}` : ""}. ${course.description || "Structured interview preparation track for technical roles in Japan."}`,
+          165
+        )}
+        path={`/course/${slug}`}
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Tracks', path: '/tracks' },
+          { name: course.title, path: `/course/${slug}` },
+        ])}
+      />
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tracks', href: '/tracks' }, { label: course?.title || 'Course' }]} className="mb-4" />

@@ -30,12 +30,7 @@ class SecurityLogger {
       this.events = this.events.slice(-this.maxEvents);
     }
 
-    // Store in localStorage for persistence
-    try {
-      localStorage.setItem('security_events', JSON.stringify(this.events));
-    } catch (error) {
-      // Silently handle localStorage persistence failure
-    }
+    // Keep events in-memory only to avoid persisting sensitive telemetry in browser storage.
 
     // Only alert on critical events in production
     if (event.severity === 'critical' && import.meta.env.PROD) {
@@ -57,26 +52,11 @@ class SecurityLogger {
 
   clearEvents(): void {
     this.events = [];
-    try {
-      localStorage.removeItem('security_events');
-    } catch (error) {
-      // Silently handle localStorage clear failure
-    }
   }
 
-  // Load events from localStorage on initialization
+  // Browser persistence intentionally disabled.
   loadStoredEvents(): void {
-    try {
-      const stored = localStorage.getItem('security_events');
-      if (stored) {
-        this.events = JSON.parse(stored).map((event: any) => ({
-          ...event,
-          timestamp: new Date(event.timestamp)
-        }));
-      }
-    } catch (error) {
-      // Silently handle stored events load failure
-    }
+    this.events = [];
   }
 }
 

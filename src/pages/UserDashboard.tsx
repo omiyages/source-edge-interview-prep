@@ -37,6 +37,7 @@ import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { QuestionDetailDialog } from '@/components/QuestionDetailDialog';
 import type { InterviewQuestion } from '@/services/questionsService';
+import { Seo } from '@/components/Seo';
 
 const QUESTIONS_PER_PAGE = 4;
 
@@ -356,6 +357,12 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title="Dashboard"
+        description="Private Omiyages dashboard for saved progress, assigned tracks, and personal interview preparation."
+        path="/dashboard"
+        noindex
+      />
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         

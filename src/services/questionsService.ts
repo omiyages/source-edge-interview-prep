@@ -3,6 +3,7 @@
 // ABOUTME: Handles question retrieval with admin/user filtering and pagination support
 
 import { supabase } from '@/integrations/supabase/client';
+import { clerkSupabaseClient } from '@/lib/clerk';
 
 export interface WinningAnswerFramework {
   situation: string;
@@ -41,10 +42,10 @@ export const fetchQuestions = async (
   limit?: number
 ): Promise<InterviewQuestion[]> => {
   try {
-    // Lightweight payload for list pages; detail dialog lazy-loads AI fields on demand.
+    // Lightweight homepage/list payload; detail dialog lazy-loads AI fields on demand.
     let query = supabase
       .from('interview_questions')
-      .select('id, question, company, role, interview_stage, category, approved_at, approved_by, additional_context, team, position_name, submitted_by, created_at, question_type, source_url, source_website, scraped_at, status')
+      .select('id, question, company, role, interview_stage, category, additional_context, created_at, question_type, status')
       .order('created_at', { ascending: false });
 
     // Only filter out pending questions for non-admin users
@@ -173,7 +174,7 @@ export const fetchPaginatedQuestionsCount = async (
 
 export const getOrGeneratePreparationNotes = async (questionId: string): Promise<string[]> => {
   try {
-    const { data, error } = await supabase.functions.invoke('generate-prep-notes', {
+    const { data, error } = await clerkSupabaseClient.functions.invoke('generate-prep-notes', {
       body: { question_id: questionId },
     });
     if (error) throw error;
@@ -207,7 +208,7 @@ export const getOrGenerateQuestionCoaching = async (
   questionId: string
 ): Promise<{ interviewer_intent: string[]; winning_answer_framework: WinningAnswerFramework }> => {
   try {
-    const { data, error } = await supabase.functions.invoke('generate-question-coaching', {
+    const { data, error } = await clerkSupabaseClient.functions.invoke('generate-question-coaching', {
       body: { question_id: questionId },
     });
     if (error) throw error;

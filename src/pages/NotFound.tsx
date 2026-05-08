@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Seo } from "@/components/Seo";
 
 const NotFound = () => {
   const location = useLocation();
@@ -13,6 +14,12 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-950">
+      <Seo
+        title="Page Not Found"
+        description="The page you requested could not be found on Omiyages."
+        path={location.pathname}
+        noindex
+      />
       <div className="text-center">
         <h1 className="text-4xl font-black text-foreground mb-4">404</h1>
         <p className="text-xl text-foreground font-semibold mb-4">Oops! Page not found</p>

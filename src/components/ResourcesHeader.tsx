@@ -1,7 +1,11 @@
+import { Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CreateResourceForm } from "@/components/CreateResourceForm";
 import { Plus } from "lucide-react";
+
+const CreateResourceForm = lazy(() =>
+  import("@/components/CreateResourceForm").then((module) => ({ default: module.CreateResourceForm }))
+);
 
 interface ResourcesHeaderProps {
   isAdmin: boolean;
@@ -24,7 +28,7 @@ export const ResourcesHeader = ({
             Interview Resources
         </h1>
           <p className="text-base text-muted-foreground">
-            Curated guides, videos, and articles to help you ace your next technical or behavioral interview.
+            Curated guides, videos, and articles to help English-speaking and bilingual candidates prepare for software, ML, product, and technical interviews in Japan.
           </p>
         </div>
         {isAdmin && (
@@ -39,7 +43,9 @@ export const ResourcesHeader = ({
               <DialogHeader>
                 <DialogTitle>Create New Resource</DialogTitle>
               </DialogHeader>
-              <CreateResourceForm onSuccess={onCreateSuccess} />
+              <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading resource form…</div>}>
+                <CreateResourceForm onSuccess={onCreateSuccess} />
+              </Suspense>
             </DialogContent>
           </Dialog>
         )}

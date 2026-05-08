@@ -2,42 +2,122 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://omiyages.com/</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://omiyages.com/questions</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://omiyages.com/tracks</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/jobs</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://omiyages.com/resources</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/blog</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/relo</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/company</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://omiyages.com/auth</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://omiyages.com/company/woven</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://omiyages.com/signup</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://omiyages.com/company/shippio</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/company/japan-ai</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/software-engineer-jobs-tokyo</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/machine-learning-jobs-japan</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/product-manager-jobs-tokyo</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/english-speaking-jobs-japan</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/visa-sponsorship-tech-jobs-japan</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/remote-software-jobs-japan</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/bilingual-product-manager-jobs-tokyo</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/machine-learning-engineer-salary-japan</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/guides/interview-process-japanese-tech-companies</loc>
+    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>

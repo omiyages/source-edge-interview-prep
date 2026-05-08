@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { lazy, Suspense, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, BookOpen, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CreateCourseForm } from "@/components/CreateCourseForm";
 import { CourseCard } from "@/components/CourseCard";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { NavigationHeader } from "@/components/NavigationHeader";
+import { Seo } from "@/components/Seo";
+import { buildBreadcrumbJsonLd } from "@/lib/seo";
 
 interface Course {
   id: string;
@@ -22,6 +23,10 @@ interface Course {
   created_at: string;
   created_by: string | null;
 }
+
+const CreateCourseForm = lazy(() =>
+  import("@/components/CreateCourseForm").then((module) => ({ default: module.CreateCourseForm }))
+);
 
 const Track = () => {
   const { user, loading, isAdmin } = useAuth();
@@ -140,6 +145,15 @@ const Track = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
+      <Seo
+        title="Interview Prep Tracks for Tech Jobs in Japan"
+        description="Follow structured interview prep tracks for software engineering, machine learning, product, and other technical careers in Tokyo and Japan."
+        path="/tracks"
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Tracks', path: '/tracks' },
+        ])}
+      />
       <NavigationHeader />
       <div className="container mx-auto px-4 py-8 flex-1">
         {/* Header — left-aligned like Resources */}
@@ -150,7 +164,7 @@ const Track = () => {
                 Interview Tracks
               </h1>
               <p className="text-base text-muted-foreground">
-                Structured interview preparation courses with organized stages and curated questions.
+                Structured prep tracks for software engineering, machine learning, product, and other technical interviews in Tokyo and Japan.
               </p>
             </div>
             {isAdmin && (
@@ -165,12 +179,14 @@ const Track = () => {
                   <DialogHeader>
                     <DialogTitle>Create New Course</DialogTitle>
                   </DialogHeader>
-                  <CreateCourseForm
-                    onSuccess={() => {
-                      setIsCreateDialogOpen(false);
-                      refetch();
-                    }}
-                  />
+                  <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading course form…</div>}>
+                    <CreateCourseForm
+                      onSuccess={() => {
+                        setIsCreateDialogOpen(false);
+                        refetch();
+                      }}
+                    />
+                  </Suspense>
                 </DialogContent>
               </Dialog>
             )}

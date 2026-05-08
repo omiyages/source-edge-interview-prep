@@ -60,6 +60,18 @@ function parseCoachingJson(raw) {
     return null;
   }
 }
+async function isAdminUser(supabaseClient, userId) {
+  const { data } = await supabaseClient
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle();
+  return data?.role === 'admin';
+}
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+  return forwarded.split(",")[0].trim().slice(0, 64);
+}
 Deno.serve(async (req)=>{
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
@@ -85,6 +97,22 @@ Deno.serve(async (req)=>{
       error: "Method not allowed"
     }), {
       status: 405,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json"
+      }
+    });
+  }
+  const actorKey = `${user.id}:${getClientIp(req)}`;
+  const { data: rateLimitOk, error: rateLimitError } = await supabaseClient.rpc('check_rate_limit', {
+    operation_name: 'ai_generate_question_coaching',
+    max_attempts: 40,
+    window_minutes: 60,
+    actor_key: actorKey,
+  });
+  if (rateLimitError || !rateLimitOk) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+      status: 429,
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json"
@@ -155,6 +183,20 @@ Deno.serve(async (req)=>{
       winning_answer_framework: existingFramework
     }), {
       status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json"
+      }
+    });
+  }
+  const canGenerate = await isAdminUser(supabaseClient, user.id);
+  if (!canGenerate) {
+    return new Response(JSON.stringify({
+      interviewer_intent: existingIntent,
+      winning_answer_framework: existingFramework,
+      error: "Insufficient permissions to generate coaching"
+    }), {
+      status: 403,
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json"

@@ -24,6 +24,10 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
     "Vary": "Origin",
   };
 }
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+  return forwarded.split(",")[0].trim().slice(0, 64);
+}
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
@@ -49,6 +53,19 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
       { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  const actorKey = `${user.id}:${getClientIp(req)}`;
+  const { data: rateLimitOk, error: rateLimitError } = await supabaseAuthClient.rpc('check_rate_limit', {
+    operation_name: 'send_role_application_email',
+    max_attempts: 10,
+    window_minutes: 60,
+    actor_key: actorKey,
+  });
+  if (rateLimitError || !rateLimitOk) {
+    return new Response(
+      JSON.stringify({ error: "Rate limit exceeded" }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -200,11 +217,10 @@ Deno.serve(async (req) => {
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error("Resend error:", res.status, errText);
+      console.error("Resend error status:", res.status);
       return new Response(
-        JSON.stringify({ error: "Failed to send email", details: errText }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Failed to send email" }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -213,10 +229,10 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("send-role-application error:", err);
+    console.error("send-role-application error");
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Send failed" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Send failed" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

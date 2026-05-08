@@ -4,6 +4,23 @@ import react from "@vitejs/plugin-react-swc";
 import { compression } from "vite-plugin-compression2";
 import path from "path";
 
+const googleSearchConsolePlugin = () => ({
+  name: "google-search-console-meta",
+  transformIndexHtml(html: string) {
+    const verificationToken =
+      process.env.VITE_GOOGLE_SITE_VERIFICATION || process.env.GOOGLE_SITE_VERIFICATION;
+
+    if (!verificationToken) {
+      return html;
+    }
+
+    return html.replace(
+      "</head>",
+      `    <meta name="google-site-verification" content="${verificationToken}" />\n  </head>`
+    );
+  },
+});
+
 // Vite plugin to handle Supabase module issues
 const supabasePlugin = () => ({
   name: 'supabase-fix',
@@ -39,6 +56,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     supabasePlugin(),
+    googleSearchConsolePlugin(),
     // Gzip compression for production builds (~70% smaller transfers)
     mode === 'production' && compression({ algorithm: 'gzip', threshold: 1024 }),
     // Brotli compression for modern browsers (~80% smaller transfers)
@@ -51,7 +69,7 @@ export default defineConfig(({ mode }) => ({
     dedupe: ['@supabase/supabase-js']
   },
   build: {
-    target: ['es2020', 'chrome80', 'firefox80', 'safari14'],
+    target: 'esnext',
     minify: 'esbuild',
     cssCodeSplit: true,
     sourcemap: false,
@@ -60,49 +78,39 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         format: 'es',
-        manualChunks: {
-          'react-vendor': [
-            'react',
-            'react-dom',
-            'react-router-dom',
-            'scheduler'
-          ],
-          'supabase': [
-            '@supabase/supabase-js',
-            '@supabase/postgrest-js',
-            '@supabase/realtime-js',
-            '@supabase/storage-js',
-            '@supabase/functions-js',
-            '@supabase/auth-js'
-          ],
-          'ui-vendor': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-label',
-            '@radix-ui/react-slot',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-separator',
-            '@radix-ui/react-progress',
-            '@radix-ui/react-scroll-area',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-collapsible'
-          ],
-          'query': [
-            '@tanstack/react-query'
-          ],
-          'utils': [
-            'date-fns',
-            'zod',
-            'clsx',
-            'class-variance-authority',
-            'tailwind-merge'
-          ]
+        manualChunks: (id: string) => {
+          if (!id.includes('node_modules')) return;
+
+          if (
+            id.includes('/react/') ||
+            id.includes('/react-dom/') ||
+            id.includes('/react-router-dom/') ||
+            id.includes('/scheduler/')
+          ) return 'react-vendor';
+
+          if (
+            id.includes('/@supabase/supabase-js/') ||
+            id.includes('/@supabase/postgrest-js/') ||
+            id.includes('/@supabase/realtime-js/') ||
+            id.includes('/@supabase/storage-js/') ||
+            id.includes('/@supabase/functions-js/') ||
+            id.includes('/@supabase/auth-js/')
+          ) return 'supabase';
+
+          if (
+            id.includes('/@radix-ui/')
+          ) return 'ui-vendor';
+
+          if (id.includes('/@tanstack/react-query/')) return 'query';
+          if (id.includes('/@clerk/react/')) return 'clerk';
+
+          if (
+            id.includes('/date-fns/') ||
+            id.includes('/zod/') ||
+            id.includes('/clsx/') ||
+            id.includes('/class-variance-authority/') ||
+            id.includes('/tailwind-merge/')
+          ) return 'utils';
         },
         // Optimize chunk names for better caching
         chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -122,7 +130,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   esbuild: {
-    target: 'es2020',
+    target: 'esnext',
   },
   optimizeDeps: {
     include: [

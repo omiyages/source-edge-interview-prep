@@ -1,11 +1,14 @@
-import { memo, useState } from "react";
+import { lazy, memo, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthModal } from "@/components/AuthModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { SubmitQuestionForm } from "@/components/SubmitQuestionForm";
 import { NavigationHeader } from "@/components/NavigationHeader";
+
+const SubmitQuestionForm = lazy(() =>
+  import("@/components/SubmitQuestionForm").then((module) => ({ default: module.SubmitQuestionForm }))
+);
 
 interface HeroSectionProps {
   isAdmin: boolean;
@@ -50,16 +53,15 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
 
             {/* Main Heading */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-[1.15] tracking-tight">
-              Real interview questions to help{' '}
-              <span className="italic font-normal text-primary">prepare</span>{' '}
-              for your next win.
+              Interview prep, jobs, and guides for{' '}
+              <span className="italic font-normal text-primary">tech careers in Tokyo</span>.
             </h1>
             
             {authLoading ? (
               <>
                 {/* Neutral placeholder while auth loads — no flash */}
                 <p className="text-base sm:text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-                  Browse our curated database of real interview questions from top companies.
+                  Explore software engineering, machine learning, product, and other technical opportunities in Japan with interview questions, company guides, and prep tracks built for English-speaking and bilingual candidates.
                 </p>
                 <div className="h-11" /> {/* spacer matching button height */}
               </>
@@ -69,7 +71,7 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
                 <p className="text-base sm:text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
                   Welcome back, <span className="font-semibold text-foreground">{profile?.full_name || profile?.email}</span>
                   {isAdmin && <span className="text-primary font-semibold ml-1">Admin</span>}
-                  . Ready to prepare for your upcoming interview?
+                  . Ready to prepare for software, ML, product, and other technical interviews in Japan?
                 </p>
 
                 {/* Submit Question Button */}
@@ -88,7 +90,9 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
                     <DialogHeader>
                       <DialogTitle>Submit New Interview Question</DialogTitle>
                     </DialogHeader>
-                    <SubmitQuestionForm onSuccess={onSubmitSuccess} onCancel={() => setDialogOpen(false)} />
+                    <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading question form…</div>}>
+                      <SubmitQuestionForm onSuccess={onSubmitSuccess} onCancel={() => setDialogOpen(false)} />
+                    </Suspense>
                   </DialogContent>
                 </Dialog>
               </>
@@ -96,7 +100,7 @@ const HeroSection = memo(({ isAdmin, dialogOpen, setDialogOpen, onSubmitSuccess 
               <>
                 {/* Description for logged-out users */}
                 <p className="text-base sm:text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-                  Browse our curated database of real interview questions from top companies. Sign in to unlock all questions, detailed coaching, and track your progress.
+                  Discover Tokyo and Japan tech jobs, real interview questions, company research, and prep tracks for software engineers, machine learning candidates, product managers, and bilingual job seekers.
                 </p>
 
                 {/* Sign In / Register Buttons */}
