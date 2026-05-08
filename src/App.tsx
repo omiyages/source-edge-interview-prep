@@ -31,9 +31,6 @@ const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
 const Roles = lazy(() => import("./pages/Roles"));
 const RoleDetail = lazy(() => import("./pages/RoleDetail"));
-const Blog = lazy(() => import("./pages/Blog"));
-const BlogPost = lazy(() => import("./pages/BlogPost"));
-const BlogEditor = lazy(() => import("./pages/BlogEditor"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -199,38 +196,10 @@ function App() {
                 </Suspense>
               } 
             />
-            <Route
-              path="/blog"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Blog />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/blog/new"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <BlogEditor />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/blog/edit/:slug"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <BlogEditor />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/blog/:slug"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <BlogPost />
-                </Suspense>
-              }
-            />
+            <Route path="/blog" element={<NotFound />} />
+            <Route path="/blog/new" element={<NotFound />} />
+            <Route path="/blog/edit/:slug" element={<NotFound />} />
+            <Route path="/blog/:slug" element={<NotFound />} />
             <Route
               path="/guides/:slug"
               element={<NotFound />}
