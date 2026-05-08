@@ -29,18 +29,22 @@ export const useCourseAssignment = (courseId: string | undefined) => {
     mutationFn: async () => {
       if (!user || !courseId) throw new Error("User or course ID missing");
 
-      // Insert without selecting to avoid permission issues
       const { error } = await clerkSupabaseClient
-        .from('course_assignments')
+        .from("course_assignments")
         .insert({
           user_id: user.id,
           course_id: courseId,
-          assigned_by: user.id
+          assigned_by: user.id,
         });
 
+      // If the assignment already exists, that's fine (unique(user_id, course_id)).
       if (error) {
-        console.error('Error starting course:', error);
-        throw error;
+        const isConflict =
+          (error as any)?.code === "23505" || (error as any)?.status === 409;
+        if (!isConflict) {
+          console.error("Error starting course:", error);
+          throw error;
+        }
       }
       
       return { success: true };

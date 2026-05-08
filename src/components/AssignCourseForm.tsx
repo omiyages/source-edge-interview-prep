@@ -57,20 +57,51 @@ export const AssignCourseForm = ({ onSuccess }: AssignCourseFormProps) => {
     mutationFn: async ({ userId, courseId }: { userId: string; courseId: string }) => {
       if (!user) throw new Error("Not authenticated");
 
+      const insertPayload = {
+        user_id: userId,
+        course_id: courseId,
+        assigned_by: user.id,
+      };
+
       const { data, error } = await clerkSupabaseClient
-        .from('course_assignments')
-        .insert({
-          user_id: userId,
-          course_id: courseId,
-          assigned_by: user.id
-        })
+        .from("course_assignments")
+        .insert(insertPayload)
         .select()
         .single();
 
-      if (error) throw error;
-      return { assignment: data, userId, courseId };
+      // 409 is typically a unique constraint violation (course already assigned).
+      if (error) {
+        const isConflict =
+          (error as any)?.code === "23505" || (error as any)?.status === 409;
+        if (!isConflict) throw error;
+
+        const { data: existing, error: existingError } = await clerkSupabaseClient
+          .from("course_assignments")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("course_id", courseId)
+          .maybeSingle();
+
+        if (existingError) throw existingError;
+        if (!existing) throw error;
+
+        return { assignment: existing, userId, courseId, alreadyAssigned: true };
+      }
+
+      return { assignment: data, userId, courseId, alreadyAssigned: false };
     },
     onSuccess: async (data) => {
+      if (data.alreadyAssigned) {
+        toast({
+          title: "Already assigned",
+          description: "This user already has that course assigned.",
+        });
+        setSelectedUser("");
+        setSelectedCourse("");
+        onSuccess?.();
+        return;
+      }
+
       // Send course assignment email (non-blocking)
       try {
         const course = courses?.find(c => c.id === data.courseId);
