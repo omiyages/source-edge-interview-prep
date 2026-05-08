@@ -31,7 +31,6 @@ const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
 const Roles = lazy(() => import("./pages/Roles"));
 const RoleDetail = lazy(() => import("./pages/RoleDetail"));
-const SeoLandingPage = lazy(() => import("./pages/SeoLandingPage"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const BlogEditor = lazy(() => import("./pages/BlogEditor"));
@@ -234,11 +233,7 @@ function App() {
             />
             <Route
               path="/guides/:slug"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <SeoLandingPage />
-                </Suspense>
-              }
+              element={<NotFound />}
             />
               <Route path="*" element={<NotFound />} />
             </Routes>
