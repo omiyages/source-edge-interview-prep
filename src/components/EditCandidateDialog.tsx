@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
+import { clerkSupabaseClient } from '@/lib/clerk';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/types/user';
 import { Edit } from 'lucide-react';
@@ -55,18 +55,24 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
     setIsLoading(true);
 
     try {
+      // Role should be managed via the secure role workflow (AdminRoleManager).
+      // Use the Clerk-authenticated Supabase client so RLS policies evaluate as admin.
       const updateData = {
         full_name: formData.full_name.trim(),
         email: formData.email.trim() || null,
-        role: formData.role,
       };
 
-      const { error } = await supabase
+      const { data, error } = await clerkSupabaseClient
         .from('profiles')
         .update(updateData)
-        .eq('id', candidate.id);
+        .eq('id', candidate.id)
+        .select('id')
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error("Update was blocked (no rows updated). Check admin permissions / RLS.");
+      }
 
       toast({
         title: "Success",
@@ -131,19 +137,8 @@ export const EditCandidateDialog: React.FC<EditCandidateDialogProps> = ({
             />
           </div>
 
-          <div>
-            <Label htmlFor="edit_role" className="text-sm font-medium">
-              Role *
-            </Label>
-            <Select value={formData.role} onValueChange={(value: 'user' | 'admin') => handleInputChange('role', value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="text-xs text-muted-foreground">
+            Role is managed from the shield icon action (secure role update).
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

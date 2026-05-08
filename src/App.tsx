@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { queryClient } from "@/lib/queryClient";
@@ -15,7 +15,6 @@ import { TIMEZONE_CONFIG } from "@/config/timezone";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Critical path components - imported directly for fast initial load
-import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import PublicSignup from "./pages/PublicSignup";
 
@@ -32,6 +31,10 @@ const Relo = lazy(() => import("./pages/Relo"));
 const Questions = lazy(() => import("./pages/Questions"));
 const Roles = lazy(() => import("./pages/Roles"));
 const RoleDetail = lazy(() => import("./pages/RoleDetail"));
+const SeoLandingPage = lazy(() => import("./pages/SeoLandingPage"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const BlogEditor = lazy(() => import("./pages/BlogEditor"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -52,18 +55,6 @@ function App() {
     // Set timezone for the application
     document.documentElement.setAttribute('data-timezone', TIMEZONE_CONFIG.timezone);
     
-    // Set locale for date formatting
-    if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
-      // Configure default locale
-      const originalToLocaleString = Date.prototype.toLocaleString;
-      Date.prototype.toLocaleString = function(...args) {
-        if (args.length === 0) {
-          return originalToLocaleString.call(this, TIMEZONE_CONFIG.locale, { timeZone: TIMEZONE_CONFIG.timezone });
-        }
-        return originalToLocaleString.apply(this, args);
-      };
-    }
-
   }, []);
 
   return (
@@ -75,7 +66,6 @@ function App() {
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <SessionTracker />
             <Routes>
-            <Route path="/auth" element={<Auth />} />
             <Route path="/signup" element={<PublicSignup />} />
             <Route 
               path="/" 
@@ -105,14 +95,6 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-            <Route
-              path="/admin/bd-jobs"
-              element={
-                <ProtectedRoute requireAdmin={true}>
-                  <Navigate to="/admin?tab=bd-jobs" replace />
-                </ProtectedRoute>
-              }
-            />
             <Route 
               path="/resources" 
               element={
@@ -140,31 +122,41 @@ function App() {
             <Route 
               path="/company" 
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Companies />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <Companies />
+                </Suspense>
               } 
+            />
+            <Route
+              path="/companies"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Companies />
+                </Suspense>
+              }
             />
             <Route 
               path="/company/:companyId" 
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <CompanyDetail />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <CompanyDetail />
+                </Suspense>
               } 
+            />
+            <Route
+              path="/companies/:companyId"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <CompanyDetail />
+                </Suspense>
+              }
             />
             <Route 
               path="/relo" 
               element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Relo />
-                  </Suspense>
-                </ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <Relo />
+                </Suspense>
               } 
             />
             <Route 
@@ -207,6 +199,46 @@ function App() {
                   <RoleDetail />
                 </Suspense>
               } 
+            />
+            <Route
+              path="/blog"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Blog />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/blog/new"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <BlogEditor />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/blog/edit/:slug"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <BlogEditor />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/blog/:slug"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <BlogPost />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/guides/:slug"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <SeoLandingPage />
+                </Suspense>
+              }
             />
               <Route path="*" element={<NotFound />} />
             </Routes>
