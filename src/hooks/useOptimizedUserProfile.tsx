@@ -18,7 +18,12 @@ function setCachedProfile(_profile: Profile | null) {
 }
 
 export const useOptimizedUserProfile = (user: MinimalUser | null) => {
-  const { client: authClient, isReady: clientReady, hasClerkJwt } = useClerkSupabase();
+  const {
+    client: authClient,
+    isReady: clientReady,
+    hasClerkJwt,
+    refreshClient: refreshClerkToken,
+  } = useClerkSupabase();
 
   // Try to hydrate instantly from localStorage to avoid loading flash
   const cachedProfile = user?.id ? getCachedProfile(user.id) : null;
@@ -121,5 +126,6 @@ export const useOptimizedUserProfile = (user: MinimalUser | null) => {
     /** Clerk JWT is on the singleton client — required for admin RLS on roles, etc. */
     hasClerkJwt,
     clerkClientReady: clientReady,
+    refreshClerkToken,
   };
 };

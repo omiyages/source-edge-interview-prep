@@ -25,6 +25,7 @@ const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = environment.supabase;
 
 // Module-level token — updated by setClerkToken() from useClerkSupabase.
 let _currentToken: string | null = null;
+let _tokenProvider: (() => Promise<string | null>) | null = null;
 
 /**
  * Update the Clerk JWT used by the singleton Supabase client.
@@ -32,6 +33,14 @@ let _currentToken: string | null = null;
  */
 export function setClerkToken(token: string | null) {
   _currentToken = token;
+}
+
+/**
+ * Register a token provider used to refresh Clerk JWTs for outgoing requests.
+ * Useful when cached tokens expire during long-lived sessions.
+ */
+export function setClerkTokenProvider(provider: (() => Promise<string | null>) | null) {
+  _tokenProvider = provider;
 }
 
 /**
@@ -51,6 +60,15 @@ export const clerkSupabaseClient: SupabaseClient<Database> = createClient<Databa
     global: {
       headers: { 'X-Client-Info': 'source-edge-interview-prep' },
       fetch: async (input, init = {}) => {
+        if (_tokenProvider) {
+          try {
+            _currentToken = await _tokenProvider();
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn('[Clerk-Supabase] Failed to refresh request token:', err);
+          }
+        }
+
         const headers = new Headers(init.headers);
         // PostgREST requires apikey for all REST requests.
         // Supabase JS normally sets it, but our custom fetch must guarantee it’s present.

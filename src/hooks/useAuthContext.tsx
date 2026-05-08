@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useCallback, useContext, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/react';
 
 export interface MinimalUser {
@@ -21,19 +21,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Map Clerk's UserResource to the minimal shape the app needs.
   // profiles.id is the Clerk user ID — no UUID mapping needed.
-  const mappedUser: MinimalUser | null =
-    isSignedIn && user
-      ? {
-          id: user.id,
-          email: user.primaryEmailAddress?.emailAddress ?? '',
-        }
-      : null;
+  const mappedUser: MinimalUser | null = useMemo(
+    () =>
+      isSignedIn && user
+        ? {
+            id: user.id,
+            email: user.primaryEmailAddress?.emailAddress ?? '',
+          }
+        : null,
+    [isSignedIn, user]
+  );
 
-  const value: AuthContextType = {
-    user: mappedUser,
-    loading: !isLoaded,
-    signOut: () => clerkSignOut({ redirectUrl: '/' }),
-  };
+  const signOut = useCallback(() => clerkSignOut({ redirectUrl: '/' }), [clerkSignOut]);
+
+  const value: AuthContextType = useMemo(
+    () => ({
+      user: mappedUser,
+      loading: !isLoaded,
+      signOut,
+    }),
+    [mappedUser, isLoaded, signOut]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

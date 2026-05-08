@@ -2,7 +2,6 @@
 // ABOUTME: Consolidated profile service with enhanced security and performance
 // ABOUTME: Replaces multiple scattered profile services with a single, secure implementation
 
-import { supabase } from "@/integrations/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { Profile } from "@/types/auth";
@@ -91,9 +90,12 @@ export const loadOrCreateProfile = async (
   }
 };
 
-export const updateLastLogin = async (userId: string): Promise<void> => {
+export const updateLastLogin = async (
+  userId: string,
+  client: SupabaseClient<Database>
+): Promise<void> => {
   try {
-    const { error } = await supabase
+    const { error } = await client
       .from('profiles')
       .update({ 
         last_login_at: new Date().toISOString(),

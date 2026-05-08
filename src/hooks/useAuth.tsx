@@ -14,6 +14,7 @@ export const useAuth = () => {
     refetch,
     hasClerkJwt,
     clerkClientReady,
+    refreshClerkToken,
   } = useOptimizedUserProfile(authContext.user);
 
   // More robust admin check with memoization
@@ -42,6 +43,7 @@ export const useAuth = () => {
     hasClerkJwt,
     clerkClientReady,
     rolesRlsReady,
+    refreshClerkToken,
   };
 };
 

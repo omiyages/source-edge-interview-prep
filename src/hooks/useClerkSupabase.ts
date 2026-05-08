@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@clerk/react';
-import { clerkSupabaseClient, setClerkToken } from '@/lib/clerk';
+import { clerkSupabaseClient, setClerkToken, setClerkTokenProvider } from '@/lib/clerk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -23,29 +23,26 @@ export function useClerkSupabase() {
   /** False when signed in but JWT not yet available — avoid RLS requests with only the anon key (401). */
   const [hasClerkJwt, setHasClerkJwt] = useState(false);
 
-  const refreshClient = useCallback(async () => {
+  const refreshClient = useCallback(async (): Promise<boolean> => {
     if (!isSignedIn) {
       setClerkToken(null);
       setHasClerkJwt(false);
       setIsReady(true);
-      return;
+      return false;
     }
 
     try {
       // Get the raw Clerk session JWT — no custom template needed.
       // Supabase validates it via Third-Party Auth (JWKS endpoint).
-      const token = await getToken();
-      if (token) {
-        console.log('[Clerk-Supabase] JWT token acquired, length:', token.length);
-      } else {
-        console.warn('[Clerk-Supabase] getToken() returned null — user may not be fully signed in');
-      }
+      const token = await getToken({ skipCache: true });
       setClerkToken(token);
       setHasClerkJwt(Boolean(token));
+      return Boolean(token);
     } catch (err) {
       console.warn('[Clerk-Supabase] Failed to get JWT token:', err);
       setClerkToken(null);
       setHasClerkJwt(false);
+      return false;
     } finally {
       setIsReady(true);
     }
@@ -54,6 +51,52 @@ export function useClerkSupabase() {
   useEffect(() => {
     refreshClient();
   }, [refreshClient]);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      setClerkTokenProvider(null);
+      return;
+    }
+
+    setClerkTokenProvider(async () => {
+      try {
+        return await getToken({ skipCache: true });
+      } catch {
+        return null;
+      }
+    });
+
+    return () => {
+      setClerkTokenProvider(null);
+    };
+  }, [getToken, isSignedIn]);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+
+    const refreshOnFocus = () => {
+      refreshClient();
+    };
+
+    const refreshOnVisible = () => {
+      if (document.visibilityState === 'visible') {
+        refreshClient();
+      }
+    };
+
+    const interval = window.setInterval(() => {
+      refreshClient();
+    }, 4 * 60 * 1000);
+
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnVisible);
+    };
+  }, [isSignedIn, refreshClient]);
 
   return {
     client: clerkSupabaseClient as SupabaseClient<Database>,
