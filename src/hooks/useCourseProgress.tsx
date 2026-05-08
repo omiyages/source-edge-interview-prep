@@ -2,7 +2,7 @@
 // ABOUTME: Used in admin dashboard to track user progress across their assigned courses
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useClerkSupabase } from '@/hooks/useClerkSupabase';
 
 interface CourseProgressData {
   user_id: string;
@@ -18,11 +18,14 @@ interface CourseProgressData {
 }
 
 export const useCourseProgress = () => {
+  const { client, isReady, hasClerkJwt } = useClerkSupabase();
+
   const { data: progressData, isLoading, error, refetch } = useQuery({
     queryKey: ['course-progress'],
+    enabled: isReady && hasClerkJwt,
     queryFn: async () => {
       // Get course assignments with user and course details
-      const { data: assignments, error: assignmentError } = await supabase
+      const { data: assignments, error: assignmentError } = await client
         .from('course_assignments')
         .select(`
           user_id,
@@ -40,7 +43,7 @@ export const useCourseProgress = () => {
 
       // Get user details separately
       const userIds = [...new Set(assignments.map(a => a.user_id))];
-      const { data: users, error: usersError } = await supabase
+      const { data: users, error: usersError } = await client
         .from('profiles')
         .select('id, email, full_name')
         .in('id', userIds);
@@ -51,7 +54,7 @@ export const useCourseProgress = () => {
 
       // Get course details separately
       const courseIds = [...new Set(assignments.map(a => a.course_id))];
-      const { data: courses, error: coursesError } = await supabase
+      const { data: courses, error: coursesError } = await client
         .from('courses')
         .select('id, title')
         .in('id', courseIds);
@@ -60,7 +63,7 @@ export const useCourseProgress = () => {
       }
 
       // Get course stages count for each course
-      const { data: stagesData, error: stagesError } = await supabase
+      const { data: stagesData, error: stagesError } = await client
         .from('course_stages')
         .select('course_id, id')
         .in('course_id', courseIds);
@@ -70,7 +73,7 @@ export const useCourseProgress = () => {
       }
 
       // Get user progress
-      const { data: progressData, error: progressError } = await supabase
+      const { data: progressData, error: progressError } = await client
         .from('user_progress')
         .select('user_id, course_id, stage_id, completed_at')
         .in('user_id', userIds)
