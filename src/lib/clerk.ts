@@ -26,6 +26,21 @@ const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = environment.supabase;
 // Module-level token — updated by setClerkToken() from useClerkSupabase.
 let _currentToken: string | null = null;
 let _tokenProvider: (() => Promise<string | null>) | null = null;
+let _tokenExpMs: number | null = null;
+
+function safeParseJwtExpMs(token: string): number | null {
+  try {
+    const [, payloadB64] = token.split('.');
+    if (!payloadB64) return null;
+    const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const json = JSON.parse(atob(padded)) as { exp?: number };
+    if (typeof json.exp !== 'number') return null;
+    return json.exp * 1000;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Update the Clerk JWT used by the singleton Supabase client.
@@ -33,6 +48,7 @@ let _tokenProvider: (() => Promise<string | null>) | null = null;
  */
 export function setClerkToken(token: string | null) {
   _currentToken = token;
+  _tokenExpMs = token ? safeParseJwtExpMs(token) : null;
 }
 
 /**
@@ -60,12 +76,20 @@ export const clerkSupabaseClient: SupabaseClient<Database> = createClient<Databa
     global: {
       headers: { 'X-Client-Info': 'source-edge-interview-prep' },
       fetch: async (input, init = {}) => {
+        // Refresh only when missing or close to expiry (avoid token endpoint spam / 429s).
         if (_tokenProvider) {
-          try {
-            _currentToken = await _tokenProvider();
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.warn('[Clerk-Supabase] Failed to refresh request token:', err);
+          const now = Date.now();
+          const expMs = _tokenExpMs ?? (_currentToken ? safeParseJwtExpMs(_currentToken) : null);
+          const shouldRefresh = !_currentToken || !expMs || expMs - now < 90_000;
+          if (shouldRefresh) {
+            try {
+              const next = await _tokenProvider();
+              _currentToken = next;
+              _tokenExpMs = next ? safeParseJwtExpMs(next) : null;
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.warn('[Clerk-Supabase] Failed to refresh request token:', err);
+            }
           }
         }
 

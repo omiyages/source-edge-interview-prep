@@ -34,7 +34,7 @@ export function useClerkSupabase() {
     try {
       // Get the raw Clerk session JWT — no custom template needed.
       // Supabase validates it via Third-Party Auth (JWKS endpoint).
-      const token = await getToken({ skipCache: true });
+      const token = await getToken();
       setClerkToken(token);
       setHasClerkJwt(Boolean(token));
       return Boolean(token);
@@ -60,7 +60,7 @@ export function useClerkSupabase() {
 
     setClerkTokenProvider(async () => {
       try {
-        return await getToken({ skipCache: true });
+        return await getToken();
       } catch {
         return null;
       }
