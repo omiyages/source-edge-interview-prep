@@ -51,7 +51,12 @@ double_confirm_changes = true
 enable_confirmations = false
 
 [functions.admin-user-management]
-verify_jwt = true
+# Clerk RS256 JWT verified inside handler via `x-clerk-jwt`
+verify_jwt = false
+
+[functions.clerk-sync]
+# Clerk RS256 JWT verified inside handler via `x-clerk-jwt`
+verify_jwt = false
 
 [functions.dropdown-options]
 verify_jwt = true
