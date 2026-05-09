@@ -35,7 +35,9 @@ export const UsersList: React.FC = () => {
   const handleSyncWithClerk = async () => {
     setIsSyncing(true);
     try {
-      const clerkJwt = await getToken({ skipCache: true });
+      // Avoid `skipCache` here to prevent Clerk token endpoint rate-limits
+      // during rapid UI interactions (admins may click multiple times).
+      const clerkJwt = await getToken();
       if (!clerkJwt) throw new Error('Not authenticated');
 
       const resp = await fetch(`${environment.supabase.url}/functions/v1/clerk-sync`, {
