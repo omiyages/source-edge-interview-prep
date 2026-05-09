@@ -91,6 +91,7 @@ interface ClerkUser {
   last_name: string | null
   public_metadata: Record<string, unknown>
   image_url: string | null
+  username?: string | null
 }
 
 function getPrimaryEmail(user: ClerkUser): string {
@@ -101,8 +102,20 @@ function getPrimaryEmail(user: ClerkUser): string {
 }
 
 function getFullName(user: ClerkUser): string | null {
-  const parts = [user.first_name, user.last_name].filter(Boolean)
-  return parts.length > 0 ? parts.join(' ') : null
+  const direct = [user.first_name, user.last_name].filter(Boolean).join(' ').trim()
+  if (direct) return direct
+
+  const meta = user.public_metadata ?? {}
+  const metaName =
+    (typeof (meta as any).full_name === 'string' && String((meta as any).full_name).trim()) ||
+    (typeof (meta as any).name === 'string' && String((meta as any).name).trim())
+  if (metaName) return metaName
+
+  if (typeof user.username === 'string' && user.username.trim()) return user.username.trim()
+
+  const email = getPrimaryEmail(user)
+  const emailPrefix = email.split('@')[0]?.trim()
+  return emailPrefix || null
 }
 
 async function setClerkPublicMetadata(clerkUserId: string, supabaseUuid: string) {
@@ -152,14 +165,20 @@ async function handleUserUpdated(user: ClerkUser) {
   const email = getPrimaryEmail(user)
   const fullName = getFullName(user)
 
+  // Use upsert so a missing profile (e.g. webhook delivery order issues) is healed automatically.
   const { error } = await supabaseAdmin
     .from('profiles')
-    .update({
-      email,
-      full_name: fullName,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', user.id)
+    .upsert(
+      {
+        id: user.id,
+        clerk_id: user.id,
+        email,
+        full_name: fullName,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' },
+    )
 
   if (error) {
     throw new Error(`Failed to update profile: ${error.message}`)

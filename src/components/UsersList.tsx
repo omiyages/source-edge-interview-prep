@@ -15,6 +15,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { clerkSupabaseClient } from '@/lib/clerk';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Clock, UserCheck, UserX, ChevronLeft, ChevronRight, UserPlus, RefreshCw } from 'lucide-react';
+import { useAuth } from '@clerk/react';
+import { environment } from '@/config/environment';
 
 const USERS_PER_PAGE = 20;
 
@@ -22,6 +24,7 @@ export const UsersList: React.FC = () => {
   const { data: users, isLoading, refetchUsers } = useOptimizedUsers();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showPendingOnly, setShowPendingOnly] = useState(false);
@@ -32,8 +35,23 @@ export const UsersList: React.FC = () => {
   const handleSyncWithClerk = async () => {
     setIsSyncing(true);
     try {
-      const { data, error } = await clerkSupabaseClient.functions.invoke('clerk-sync');
-      if (error) throw error;
+      const clerkJwt = await getToken({ skipCache: true });
+      if (!clerkJwt) throw new Error('Not authenticated');
+
+      const resp = await fetch(`${environment.supabase.url}/functions/v1/clerk-sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: environment.supabase.anonKey,
+          'x-clerk-jwt': clerkJwt,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data?.error || `Sync failed (${resp.status})`);
+      }
       toast({
         title: 'Sync complete',
         description: `Removed ${data.deleted} orphaned profile${data.deleted !== 1 ? 's' : ''}. (${data.orphansFound} found, ${data.scanned} scanned)`,

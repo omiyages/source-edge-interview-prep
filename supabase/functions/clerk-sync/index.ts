@@ -11,6 +11,7 @@
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createRemoteJWKSet, jwtVerify } from 'npm:jose@5'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -27,7 +28,7 @@ function getCorsHeaders(origin: string | null) {
   const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-clerk-jwt, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
   }
@@ -37,33 +38,27 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
 
-async function verifyAdmin(authHeader: string | null): Promise<boolean> {
-  if (!authHeader) return false
-  const token = authHeader.replace('Bearer ', '').trim()
+const clerkJwksUrl =
+  Deno.env.get('CLERK_JWKS_URL') ?? 'https://clerk.omiyages.com/.well-known/jwks.json'
+const clerkIssuer = Deno.env.get('CLERK_ISSUER') ?? null
+
+async function verifyAdmin(req: Request): Promise<boolean> {
+  const token = req.headers.get('x-clerk-jwt')?.trim() ?? ''
   if (!token) return false
 
-  const supabaseAuthClient = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  )
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabaseAuthClient.auth.getUser()
-  if (authError || !user) return false
-
+  let clerkUserId: string | null = null
   try {
-    const { data } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-    return data?.role === 'admin'
+    const jwks = createRemoteJWKSet(new URL(clerkJwksUrl))
+    const verifyOptions = clerkIssuer ? { issuer: clerkIssuer } : undefined
+    const { payload } = await jwtVerify(token, jwks, verifyOptions)
+    if (typeof payload.sub !== 'string' || payload.sub.length === 0) return false
+    clerkUserId = payload.sub
   } catch {
     return false
   }
+
+  const { data } = await supabaseAdmin.from('profiles').select('role').eq('id', clerkUserId).maybeSingle()
+  return data?.role === 'admin'
 }
 
 async function fetchAllClerkUserIds(): Promise<Set<string>> {
@@ -95,6 +90,8 @@ type ClerkUser = {
   primary_email_address_id: string
   first_name: string | null
   last_name: string | null
+  username?: string | null
+  public_metadata?: Record<string, unknown>
 }
 
 function getPrimaryEmail(user: ClerkUser): string {
@@ -103,8 +100,20 @@ function getPrimaryEmail(user: ClerkUser): string {
 }
 
 function getFullName(user: ClerkUser): string | null {
-  const parts = [user.first_name, user.last_name].filter(Boolean)
-  return parts.length > 0 ? parts.join(' ') : null
+  const direct = [user.first_name, user.last_name].filter(Boolean).join(' ').trim()
+  if (direct) return direct
+
+  const meta = user.public_metadata ?? {}
+  const metaName =
+    (typeof meta.full_name === 'string' && meta.full_name.trim()) ||
+    (typeof meta.name === 'string' && meta.name.trim())
+  if (metaName) return metaName
+
+  if (typeof user.username === 'string' && user.username.trim()) return user.username.trim()
+
+  const email = getPrimaryEmail(user)
+  const emailPrefix = email.split('@')[0]?.trim()
+  return emailPrefix || null
 }
 
 async function fetchAllClerkUsers(): Promise<ClerkUser[]> {
@@ -146,7 +155,7 @@ Deno.serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: cors })
   }
 
-  const isAdmin = await verifyAdmin(req.headers.get('Authorization'))
+  const isAdmin = await verifyAdmin(req)
   if (!isAdmin) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,
