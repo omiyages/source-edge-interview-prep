@@ -400,9 +400,6 @@ const RoleDetail = () => {
                       Posted {new Date(role.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="max-w-3xl text-sm text-muted-foreground leading-6">
-                    Review this role in the context of Tokyo and Japan tech hiring, including work style, Japanese-language expectations, and the company background you may need before interviewing.
-                  </p>
 
                   <div className="flex flex-wrap gap-2">
                     {role.division && (
@@ -422,10 +419,6 @@ const RoleDetail = () => {
                       </Badge>
                     )}
                   </div>
-
-                  <p className="max-w-3xl text-sm text-muted-foreground leading-7">
-                    {roleDescription}
-                  </p>
                 </div>
 
                 {isAdmin && (
