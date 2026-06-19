@@ -5,6 +5,12 @@
 // Required secret: OPENAI_API_KEY (Supabase Dashboard → Edge Functions → Secrets).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  verifyClerkUser,
+  unauthorizedResponse,
+  appendCorsHeader,
+} from "../_shared/clerkAuth.ts";
+import { checkActorRateLimit } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGINS = [
   "https://omiyages.com",
@@ -61,38 +67,20 @@ async function sha256Hex(text: string): Promise<string> {
     .join("");
 }
 
-async function isAdminUser(supabaseClient: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
-  const { data } = await supabaseClient
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .maybeSingle();
-  return data?.role === 'admin';
-}
 function getClientIp(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
   return forwarded.split(",")[0].trim().slice(0, 64);
 }
 
 Deno.serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+  const corsHeaders = appendCorsHeader(getCorsHeaders(req.headers.get("origin")));
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
-  }
-  const supabaseClient = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: authHeader } } }
-  )
-  const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-  if (authError || !user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
-  }
+  const auth = await verifyClerkUser(req);
+  if (!auth.ok) return unauthorizedResponse(corsHeaders, auth.error);
+  const userId = auth.userId;
 
   if (req.method !== "POST") {
     return new Response(
@@ -103,27 +91,27 @@ Deno.serve(async (req) => {
       }
     );
   }
-  const actorKey = `${user.id}:${getClientIp(req)}`;
-  const { data: rateLimitOk, error: rateLimitError } = await supabaseClient.rpc('check_rate_limit', {
-    operation_name: 'ai_generate_role_summary',
-    max_attempts: 30,
-    window_minutes: 60,
-    actor_key: actorKey,
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const openaiKey = Deno.env.get("OPENAI_API_KEY");
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
   });
-  if (rateLimitError || !rateLimitOk) {
+  const actorKey = `${userId}:${getClientIp(req)}`;
+  const rateLimitOk = await checkActorRateLimit(
+    supabase,
+    userId,
+    "ai_generate_role_summary",
+    30,
+    60,
+    actorKey,
+  );
+  if (!rateLimitOk) {
     return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
       status: 429,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const openaiKey = Deno.env.get("OPENAI_API_KEY");
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
 
   let roleId: string;
   let forceRegenerate = false;
@@ -196,19 +184,7 @@ Deno.serve(async (req) => {
       }
     );
   }
-  const canGenerate = await isAdminUser(supabaseClient, user.id);
-  if (!canGenerate) {
-    return new Response(
-      JSON.stringify({
-        ai_summary: role.ai_summary || null,
-        error: "Insufficient permissions to generate role summary",
-      }),
-      {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  }
+  // Any authenticated Clerk user can generate a summary for their listing
 
   // Abort gracefully if OpenAI key is missing
   if (!openaiKey) {

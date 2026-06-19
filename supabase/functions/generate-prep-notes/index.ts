@@ -4,6 +4,13 @@
 //
 // Required secret: Set OPENAI_API_KEY in Supabase Dashboard → Edge Functions → generate-prep-notes → Secrets.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  verifyClerkUser,
+  unauthorizedResponse,
+  appendCorsHeader,
+  isAdminUserId,
+} from "../_shared/clerkAuth.ts";
+import { checkActorRateLimit } from "../_shared/rateLimit.ts";
 const ALLOWED_ORIGINS = [
   "https://omiyages.com",
   "https://www.omiyages.com",
@@ -50,55 +57,21 @@ function getClientIp(req: Request): string {
   return forwarded.split(",")[0].trim().slice(0, 64);
 }
 
-async function isAdminUser(supabaseClient, userId) {
-  const { data } = await supabaseClient
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .maybeSingle();
-  return data?.role === 'admin';
-}
 Deno.serve(async (req)=>{
-  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+  const corsHeaders = appendCorsHeader(getCorsHeaders(req.headers.get("origin")));
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: corsHeaders
     });
   }
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
-  }
-  const supabaseClient = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: authHeader } } }
-  )
-  const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-  if (authError || !user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
-  }
+  const auth = await verifyClerkUser(req);
+  if (!auth.ok) return unauthorizedResponse(corsHeaders, auth.error);
+  const userId = auth.userId;
   if (req.method !== "POST") {
     return new Response(JSON.stringify({
       error: "Method not allowed"
     }), {
       status: 405,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json"
-      }
-    });
-  }
-  const actorKey = `${user.id}:${getClientIp(req)}`;
-  const { data: rateLimitOk, error: rateLimitError } = await supabaseClient.rpc('check_rate_limit', {
-    operation_name: 'ai_generate_prep_notes',
-    max_attempts: 40,
-    window_minutes: 60,
-    actor_key: actorKey,
-  });
-  if (rateLimitError || !rateLimitOk) {
-    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-      status: 429,
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json"
@@ -173,7 +146,28 @@ Deno.serve(async (req)=>{
       }
     });
   }
-  const canGenerate = await isAdminUser(supabaseClient, user.id);
+  const actorKey = `${userId}:${getClientIp(req)}`;
+  const rateLimitOk = await checkActorRateLimit(
+    supabase,
+    userId,
+    'ai_generate_prep_notes',
+    40,
+    60,
+    actorKey,
+  );
+  if (!rateLimitOk) {
+    return new Response(JSON.stringify({
+      error: "Rate limit exceeded",
+      preparation_notes: existingNotes,
+    }), {
+      status: 429,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json"
+      }
+    });
+  }
+  const canGenerate = await isAdminUserId(userId);
   if (!canGenerate) {
     return new Response(JSON.stringify({
       preparation_notes: existingNotes,

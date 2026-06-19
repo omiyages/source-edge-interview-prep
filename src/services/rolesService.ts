@@ -111,6 +111,9 @@ export async function createRole(role: RoleFormData, createdBy: string): Promise
     .single();
 
   if (error) throw new Error(`Failed to create role: ${error.message}`);
+  if (data?.id) {
+    void generateRoleSummary(data.id);
+  }
   return data as unknown as Role;
 }
 

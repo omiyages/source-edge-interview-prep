@@ -101,6 +101,15 @@ export const clerkSupabaseClient: SupabaseClient<Database> = createClient<Databa
         if (_currentToken) {
           headers.set('Authorization', `Bearer ${_currentToken}`);
         }
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof Request
+              ? input.url
+              : String(input);
+        if (_currentToken && url.includes('/functions/v1/')) {
+          headers.set('x-clerk-jwt', _currentToken);
+        }
         const res = await fetch(input, { ...init, headers });
         // Help debug PostgREST/Edge Function failures in production.
         // Clone is safe; it won’t consume the body used by supabase-js.

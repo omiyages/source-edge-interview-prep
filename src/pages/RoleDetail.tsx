@@ -1,9 +1,9 @@
-import { Suspense, lazy, useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { NavigationHeader } from '@/components/NavigationHeader';
 import { Seo } from '@/components/Seo';
-import { fetchRoleBySlug, deleteRole } from '@/services/rolesService';
+import { fetchRoleBySlug, deleteRole, generateRoleSummary } from '@/services/rolesService';
 import { fetchRecommendedCourseForRole, type CourseMatch } from '@/services/coursesService';
 import { slugify } from '@/utils/slugify';
 import { useAuth } from '@/hooks/useAuth';
@@ -141,7 +141,7 @@ function compactRichTextForPdf(html: string | null): string {
 const RoleDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -183,6 +183,13 @@ const RoleDetail = () => {
 
   const summary = role ? parseAiSummary(role.ai_summary) : null;
   const companyInfo = useMemo(() => (role ? findCompanyInfo(role.company) : null), [role]);
+
+  useEffect(() => {
+    if (!user || !role?.id || role.ai_summary) return;
+    void generateRoleSummary(role.id).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['role', slug] });
+    });
+  }, [user, role?.id, role?.ai_summary, slug, queryClient]);
   const isAliasRoute = location.pathname.startsWith('/role/');
   const canonicalPath = useMemo(() => {
     if (!slug) return '/jobs';

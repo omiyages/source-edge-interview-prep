@@ -8,6 +8,11 @@
 //   FROM_EMAIL      — Sender address (default: notifications@omiyages.com)
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  verifyClerkUser,
+  unauthorizedResponse,
+  appendCorsHeader,
+} from "../_shared/clerkAuth.ts";
 
 const ALLOWED_ORIGINS = [
   "https://omiyages.com",
@@ -30,24 +35,20 @@ function getClientIp(req: Request): string {
 }
 
 Deno.serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+  const corsHeaders = appendCorsHeader(getCorsHeaders(req.headers.get("origin")));
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
-  }
-  const supabaseAuthClient = createClient(
+  const auth = await verifyClerkUser(req);
+  if (!auth.ok) return unauthorizedResponse(corsHeaders, auth.error);
+  const userId = auth.userId;
+
+  const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: authHeader } } }
-  )
-  const { data: { user }, error: authError } = await supabaseAuthClient.auth.getUser()
-  if (authError || !user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
-  }
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
 
   if (req.method !== "POST") {
     return new Response(
@@ -55,8 +56,8 @@ Deno.serve(async (req) => {
       { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-  const actorKey = `${user.id}:${getClientIp(req)}`;
-  const { data: rateLimitOk, error: rateLimitError } = await supabaseAuthClient.rpc('check_rate_limit', {
+  const actorKey = `${userId}:${getClientIp(req)}`;
+  const { data: rateLimitOk, error: rateLimitError } = await supabaseAdmin.rpc('check_rate_limit', {
     operation_name: 'send_role_application_email',
     max_attempts: 10,
     window_minutes: 60,
@@ -108,7 +109,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  if (resume_path && !resume_path.startsWith(user.id + '/')) {
+  if (resume_path && !resume_path.startsWith(userId + '/')) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders })
   }
 

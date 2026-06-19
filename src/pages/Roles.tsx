@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useMemo, useCallback } from 'react';
+import React, { Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { NavigationHeader } from '@/components/NavigationHeader';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { fetchRoles, deleteRole } from '@/services/rolesService';
+import { fetchRoles, deleteRole, generateRoleSummary } from '@/services/rolesService';
 import type { Role } from '@/types/role';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -237,6 +237,20 @@ const Roles = () => {
   const totalPages = Math.ceil(filteredRoles.length / ROLES_PER_PAGE);
   const startIndex = (currentPage - 1) * ROLES_PER_PAGE;
   const paginatedRoles = useMemo(() => filteredRoles.slice(startIndex, startIndex + ROLES_PER_PAGE), [filteredRoles, startIndex]);
+
+  const summaryBackfillStarted = useRef(new Set<string>());
+  useEffect(() => {
+    if (!user) return;
+    paginatedRoles
+      .filter((r) => !r.ai_summary)
+      .forEach((r) => {
+        if (summaryBackfillStarted.current.has(r.id)) return;
+        summaryBackfillStarted.current.add(r.id);
+        void generateRoleSummary(r.id).then((summary) => {
+          if (summary) queryClient.invalidateQueries({ queryKey: ['roles'] });
+        });
+      });
+  }, [paginatedRoles, user, queryClient]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

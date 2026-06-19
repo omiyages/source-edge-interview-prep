@@ -1,6 +1,12 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import {
+  verifyClerkUser,
+  unauthorizedResponse,
+  appendCorsHeader,
+  isAdminUserId,
+} from '../_shared/clerkAuth.ts'
 
 const ALLOWED_ORIGINS = [
   'https://omiyages.com',
@@ -12,50 +18,33 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-clerk-jwt, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Vary': 'Origin',
   };
 }
 
 serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  const corsHeaders = appendCorsHeader(getCorsHeaders(req.headers.get('origin')));
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const auth = await verifyClerkUser(req)
+    if (!auth.ok) {
+      return unauthorizedResponse(corsHeaders, auth.error)
     }
+    const userId = auth.userId
 
-    const supabaseClient = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    // Verify the user is authenticated
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     if (req.method === 'GET') {
-      // Get dropdown options
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from('dropdown_options')
         .select('field_name, value')
         .order('value')
@@ -69,14 +58,8 @@ serve(async (req) => {
     }
 
     if (req.method === 'POST') {
-      // Check if user is admin before allowing creation
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (!profile || profile.role !== 'admin') {
+      const isAdmin = await isAdminUserId(userId)
+      if (!isAdmin) {
         return new Response(
           JSON.stringify({ error: 'Admin privileges required' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -92,13 +75,12 @@ serve(async (req) => {
         )
       }
 
-      // Insert new dropdown option
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from('dropdown_options')
         .insert({
           field_name,
           value: option_value,
-          created_by: user.id
+          created_by: userId
         })
         .select()
 
@@ -116,8 +98,9 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal error'
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

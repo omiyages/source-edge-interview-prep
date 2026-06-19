@@ -762,6 +762,7 @@ export type Database = {
       }
       check_rate_limit: {
         Args: {
+          actor_key?: string
           max_attempts?: number
           operation_name: string
           window_minutes?: number

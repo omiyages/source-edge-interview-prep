@@ -59,19 +59,29 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.dropdown-options]
-verify_jwt = true
+# Clerk RS256 JWT verified inside handler via `x-clerk-jwt`
+verify_jwt = false
 
 [functions.generate-prep-notes]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-question-coaching]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-stage-summary]
-verify_jwt = true
+verify_jwt = false
+
+[functions.generate-role-summary]
+verify_jwt = false
 
 [functions.send-email]
-verify_jwt = true
+verify_jwt = false
+
+[functions.send-role-application]
+verify_jwt = false
+
+[functions.clerk-webhook]
+verify_jwt = false
 
 # Clerk JWT verified inside handler; uses service role for admin check
 [functions.scrape-workable-jobs]
