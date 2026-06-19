@@ -240,7 +240,6 @@ const Roles = () => {
 
   const summaryBackfillStarted = useRef(new Set<string>());
   useEffect(() => {
-    if (!user) return;
     paginatedRoles
       .filter((r) => !r.ai_summary)
       .forEach((r) => {
@@ -250,7 +249,7 @@ const Roles = () => {
           if (summary) queryClient.invalidateQueries({ queryKey: ['roles'] });
         });
       });
-  }, [paginatedRoles, user, queryClient]);
+  }, [paginatedRoles, queryClient]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

@@ -165,11 +165,10 @@ Deno.serve(async (req)=>{
   const actorKey = `${userId}:${getClientIp(req)}`;
   const rateLimitOk = await checkActorRateLimit(
     supabase,
-    userId,
+    actorKey,
     'ai_generate_question_coaching',
     40,
     60,
-    actorKey,
   );
   if (!rateLimitOk) {
     return new Response(JSON.stringify({

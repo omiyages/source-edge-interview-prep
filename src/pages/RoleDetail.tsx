@@ -141,7 +141,7 @@ function compactRichTextForPdf(html: string | null): string {
 const RoleDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -185,11 +185,11 @@ const RoleDetail = () => {
   const companyInfo = useMemo(() => (role ? findCompanyInfo(role.company) : null), [role]);
 
   useEffect(() => {
-    if (!user || !role?.id || role.ai_summary) return;
+    if (!role?.id || role.ai_summary) return;
     void generateRoleSummary(role.id).then(() => {
       queryClient.invalidateQueries({ queryKey: ['role', slug] });
     });
-  }, [user, role?.id, role?.ai_summary, slug, queryClient]);
+  }, [role?.id, role?.ai_summary, slug, queryClient]);
   const isAliasRoute = location.pathname.startsWith('/role/');
   const canonicalPath = useMemo(() => {
     if (!slug) return '/jobs';

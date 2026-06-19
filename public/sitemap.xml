@@ -2,121 +2,253 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://omiyages.com/</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://omiyages.com/questions</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://omiyages.com/tracks</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/jobs</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://omiyages.com/resources</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/blog</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/relo</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/company</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/company/woven</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/company/shippio</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/company/japan-ai</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/software-engineer-jobs-tokyo</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/machine-learning-jobs-japan</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/product-manager-jobs-tokyo</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/english-speaking-jobs-japan</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/visa-sponsorship-tech-jobs-japan</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/remote-software-jobs-japan</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/bilingual-product-manager-jobs-tokyo</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/machine-learning-engineer-salary-japan</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://omiyages.com/guides/interview-process-japanese-tech-companies</loc>
-    <lastmod>2026-05-08T17:34:18.837Z</lastmod>
+    <lastmod>2026-06-19T10:45:22.141Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/product-manager-ai-bcg-x</loc>
+    <lastmod>2026-06-19T10:36:02.197546+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/fullstack-engineer-omakase-ai</loc>
+    <lastmod>2026-05-27T03:20:03.855+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/product-manager-senior-product-manager-developer-tools-woven-by-toyota</loc>
+    <lastmod>2026-05-07T16:18:04.827094+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/machine-learning-engineer-enterprise-ai-solutions-woven-by-toyota</loc>
+    <lastmod>2026-05-07T06:58:49.248568+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/digital-technology-division-data-scientist-ai-engineer-wismettac</loc>
+    <lastmod>2026-04-13T11:45:17.170178+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/ai-engineer-givery</loc>
+    <lastmod>2026-03-02T15:44:08.126799+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/software-engineer-ai-agent-meetsmore</loc>
+    <lastmod>2026-03-02T15:40:46.772+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/web-application-engineer-senior-middle-meetsmore</loc>
+    <lastmod>2026-03-02T15:32:44.802062+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/senior-software-engineer-linkx</loc>
+    <lastmod>2026-03-02T15:22:10.158548+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/senior-back-end-engineer-shippio</loc>
+    <lastmod>2026-03-02T15:14:40.985486+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/back-end-engineer-shippio</loc>
+    <lastmod>2026-03-02T15:10:43.018812+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/backend-engineer-geniee</loc>
+    <lastmod>2026-03-02T15:09:12.82492+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/generative-ai-engineer-japan-ai-geniee</loc>
+    <lastmod>2026-03-02T14:59:51.280917+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/full-stack-engineer-geniee-zmlw</loc>
+    <lastmod>2026-03-02T14:57:56.872+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/embedded-software-engineer-application-framework-cockpit-sdk-woven-by-toyota-v98p</loc>
+    <lastmod>2026-03-02T11:48:13.011+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/job/senior-site-reliability-engineer-cloud-platform-woven-by-toyota-ohx6</loc>
+    <lastmod>2026-03-02T11:09:03.067+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/course/machine-learning-engineer</loc>
+    <lastmod>2026-05-07T07:06:06.084159+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/course/site-reliability-engineerdevops</loc>
+    <lastmod>2026-02-17T16:02:12.276146+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/course/engineering-manager</loc>
+    <lastmod>2026-02-05T11:48:25.144979+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/course/embedded-software-engineer</loc>
+    <lastmod>2026-02-05T11:48:25.144979+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/course/software-engineer</loc>
+    <lastmod>2026-02-05T11:48:25.144979+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://omiyages.com/blog/acing-your-system-design-interview-in-japan</loc>
+    <lastmod>2026-04-17T12:06:32.731823+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

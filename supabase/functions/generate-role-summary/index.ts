@@ -72,15 +72,15 @@ function getClientIp(req: Request): string {
   return forwarded.split(",")[0].trim().slice(0, 64);
 }
 
+function isActiveRole(status: string | null | undefined): boolean {
+  return String(status ?? "").trim().toLowerCase() === "active";
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = appendCorsHeader(getCorsHeaders(req.headers.get("origin")));
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  const auth = await verifyClerkUser(req);
-  if (!auth.ok) return unauthorizedResponse(corsHeaders, auth.error);
-  const userId = auth.userId;
 
   if (req.method !== "POST") {
     return new Response(
@@ -91,27 +91,13 @@ Deno.serve(async (req) => {
       }
     );
   }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const openaiKey = Deno.env.get("OPENAI_API_KEY");
   const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const actorKey = `${userId}:${getClientIp(req)}`;
-  const rateLimitOk = await checkActorRateLimit(
-    supabase,
-    userId,
-    "ai_generate_role_summary",
-    30,
-    60,
-    actorKey,
-  );
-  if (!rateLimitOk) {
-    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-      status: 429,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
 
   let roleId: string;
   let forceRegenerate = false;
@@ -140,11 +126,10 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Fetch role
   const { data: role, error: roleError } = await supabase
     .from("roles")
     .select(
-      "id, job_title, company, division, job_description, requirements, nice_to_haves, ai_summary, content_hash"
+      "id, job_title, company, division, job_description, requirements, nice_to_haves, ai_summary, content_hash, status"
     )
     .eq("id", roleId)
     .single();
@@ -159,7 +144,6 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Build content hash from the fields that matter for the summary
   const contentForHash = [
     role.job_title,
     role.company,
@@ -170,7 +154,6 @@ Deno.serve(async (req) => {
   ].join("|");
   const contentHash = await sha256Hex(contentForHash);
 
-  // Return existing summary if content hasn't changed
   if (
     role.ai_summary &&
     role.content_hash === contentHash &&
@@ -184,9 +167,35 @@ Deno.serve(async (req) => {
       }
     );
   }
-  // Any authenticated Clerk user can generate a summary for their listing
 
-  // Abort gracefully if OpenAI key is missing
+  const auth = await verifyClerkUser(req);
+  const clientIp = getClientIp(req);
+  const missingSummary = !role.ai_summary;
+  const contentChanged = !!role.ai_summary && role.content_hash !== contentHash;
+
+  if (forceRegenerate || contentChanged) {
+    if (!auth.ok) return unauthorizedResponse(corsHeaders, auth.error);
+  } else if (missingSummary) {
+    if (!isActiveRole(role.status)) {
+      if (!auth.ok) return unauthorizedResponse(corsHeaders, auth.error);
+    }
+  }
+
+  const actorKey = auth.ok ? `${auth.userId}:${clientIp}` : `anon:${clientIp}`;
+  const rateLimitOk = await checkActorRateLimit(
+    supabase,
+    actorKey,
+    "ai_generate_role_summary",
+    30,
+    60,
+  );
+  if (!rateLimitOk) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+      status: 429,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   if (!openaiKey) {
     return new Response(
       JSON.stringify({
@@ -200,7 +209,6 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Call OpenAI
   try {
     const userPrompt = buildUserPrompt({
       job_title: role.job_title,
@@ -261,7 +269,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse JSON from response (handle markdown-wrapped JSON)
     let summaryJson: string;
     try {
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -271,15 +278,27 @@ Deno.serve(async (req) => {
         responsibility: (parsed.responsibility || "").trim(),
       });
     } catch {
-      // Fallback: store raw text as candidate only
       summaryJson = JSON.stringify({ candidate: raw, responsibility: "" });
     }
 
-    // Persist summary + hash back to the roles row
-    await supabase
+    const { error: updateError } = await supabase
       .from("roles")
       .update({ ai_summary: summaryJson, content_hash: contentHash } as any)
       .eq("id", roleId);
+
+    if (updateError) {
+      console.error("Failed to persist ai_summary:", updateError.message);
+      return new Response(
+        JSON.stringify({
+          ai_summary: role.ai_summary || null,
+          error: "Failed to save summary",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     return new Response(
       JSON.stringify({ ai_summary: summaryJson, generated: true }),
