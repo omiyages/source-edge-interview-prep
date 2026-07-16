@@ -240,16 +240,19 @@ const Roles = () => {
 
   const summaryBackfillStarted = useRef(new Set<string>());
   useEffect(() => {
-    paginatedRoles
-      .filter((r) => !r.ai_summary)
-      .forEach((r) => {
-        if (summaryBackfillStarted.current.has(r.id)) return;
-        summaryBackfillStarted.current.add(r.id);
-        void generateRoleSummary(r.id).then((summary) => {
-          if (summary) queryClient.invalidateQueries({ queryKey: ['roles'] });
-        });
+    const missing = filteredRoles.filter((r) => !r.ai_summary);
+    missing.forEach((r) => {
+      if (summaryBackfillStarted.current.has(r.id)) return;
+      summaryBackfillStarted.current.add(r.id);
+      void generateRoleSummary(r.id).then((summary) => {
+        if (summary) {
+          queryClient.invalidateQueries({ queryKey: ['roles'] });
+        } else {
+          summaryBackfillStarted.current.delete(r.id);
+        }
       });
-  }, [paginatedRoles, queryClient]);
+    });
+  }, [filteredRoles, queryClient]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

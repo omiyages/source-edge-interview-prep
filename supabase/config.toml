@@ -102,6 +102,9 @@ verify_jwt = false
 [functions.cleanup-recently-closed-jobs]
 verify_jwt = false
 
+[functions.backfill-role-summaries]
+verify_jwt = false
+
 [functions.translate-bd-company-jobs]
 verify_jwt = false
 

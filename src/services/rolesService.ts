@@ -144,27 +144,41 @@ export async function deleteRole(id: string): Promise<void> {
 }
 
 /**
- * Fire-and-forget: call the generate-role-summary Edge Function.
+ * Call the generate-role-summary Edge Function with retries.
  * Returns the AI summary string on success, or null on failure.
  */
 export async function generateRoleSummary(
   roleId: string,
   force = false
 ): Promise<string | null> {
-  try {
-    const { data, error } = await clerkSupabaseClient.functions.invoke(
-      'generate-role-summary',
-      { body: { role_id: roleId, force } }
-    );
-    if (error) {
-      console.error('generateRoleSummary edge fn error:', error);
-      return null;
+  const maxAttempts = 3;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const { data, error } = await clerkSupabaseClient.functions.invoke(
+        'generate-role-summary',
+        { body: { role_id: roleId, force } }
+      );
+      if (error) {
+        console.error('generateRoleSummary edge fn error:', error);
+      } else if (data?.ai_summary) {
+        return data.ai_summary as string;
+      } else if (data?.error) {
+        console.warn('generateRoleSummary returned error:', data.error);
+      }
+
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+      }
+    } catch (err) {
+      console.error('generateRoleSummary failed:', err);
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+      }
     }
-    return data?.ai_summary || null;
-  } catch (err) {
-    console.error('generateRoleSummary failed:', err);
-    return null;
   }
+
+  return null;
 }
 
 export async function bulkCreateRoles(roles: RoleFormData[], createdBy: string): Promise<{ count: number; ids: string[] }> {

@@ -12,6 +12,9 @@ import {
 } from "../_shared/clerkAuth.ts";
 import { checkActorRateLimit } from "../_shared/rateLimit.ts";
 
+const OPENAI_MODEL = "gpt-4.1-mini";
+const OPENAI_MAX_RETRIES = 2;
+
 const ALLOWED_ORIGINS = [
   "https://omiyages.com",
   "https://www.omiyages.com",
@@ -37,7 +40,12 @@ Rules:
 
 function stripHtml(html: string | null): string {
   if (!html) return "";
-  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function buildUserPrompt(role: {
@@ -74,6 +82,122 @@ function getClientIp(req: Request): string {
 
 function isActiveRole(status: string | null | undefined): boolean {
   return String(status ?? "").trim().toLowerCase() === "active";
+}
+
+function parseSummaryContent(raw: string): string {
+  try {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    return JSON.stringify({
+      candidate: (parsed.candidate || "").trim(),
+      responsibility: (parsed.responsibility || "").trim(),
+    });
+  } catch {
+    return JSON.stringify({ candidate: raw.trim(), responsibility: "" });
+  }
+}
+
+function truncateWords(text: string, maxWords: number): string {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return text.trim();
+  return `${words.slice(0, maxWords).join(" ").trim()}…`;
+}
+
+function firstMeaningfulSentence(text: string | null, maxWords = 25): string {
+  const clean = stripHtml(text);
+  if (!clean) return "";
+  const sentence = clean.match(/[^.!?\n]+[.!?]/)?.[0]?.trim() ?? clean;
+  return truncateWords(sentence, maxWords);
+}
+
+function buildFallbackSummary(role: {
+  job_title: string;
+  company: string;
+  requirements: string | null;
+  job_description: string | null;
+}): string {
+  const fromReqs = firstMeaningfulSentence(role.requirements);
+  const fromDesc = firstMeaningfulSentence(role.job_description);
+
+  const candidate = fromReqs
+    ? `Ideal candidate: ${fromReqs}`
+    : `Experienced ${role.job_title} with skills aligned to ${role.company}'s needs.`;
+
+  const responsibility = fromDesc
+    ? fromDesc
+    : `Join ${role.company} as ${role.job_title} and help deliver on core product goals.`;
+
+  return JSON.stringify({
+    candidate: truncateWords(candidate, 25),
+    responsibility: truncateWords(responsibility, 25),
+  });
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function generateWithOpenAI(
+  openaiKey: string,
+  userPrompt: string,
+): Promise<{ raw: string | null; error: string | null }> {
+  let lastError = "Generation failed";
+
+  for (let attempt = 0; attempt <= OPENAI_MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          max_tokens: 200,
+          temperature: 0.3,
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        lastError = `OpenAI ${res.status}: ${errText.slice(0, 200)}`;
+        console.error("OpenAI error:", res.status, errText);
+        if (attempt < OPENAI_MAX_RETRIES && (res.status === 429 || res.status >= 500)) {
+          await sleep(1000 * (attempt + 1));
+          continue;
+        }
+        return { raw: null, error: lastError };
+      }
+
+      const data = (await res.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const raw = (data?.choices?.[0]?.message?.content ?? "").trim();
+      if (!raw) {
+        lastError = "Empty OpenAI response";
+        if (attempt < OPENAI_MAX_RETRIES) {
+          await sleep(1000 * (attempt + 1));
+          continue;
+        }
+        return { raw: null, error: lastError };
+      }
+      return { raw, error: null };
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+      console.error("OpenAI fetch error:", lastError);
+      if (attempt < OPENAI_MAX_RETRIES) {
+        await sleep(1000 * (attempt + 1));
+        continue;
+      }
+    }
+  }
+
+  return { raw: null, error: lastError };
 }
 
 Deno.serve(async (req) => {
@@ -209,115 +333,58 @@ Deno.serve(async (req) => {
     );
   }
 
-  try {
-    const userPrompt = buildUserPrompt({
+  const userPrompt = buildUserPrompt({
+    job_title: role.job_title,
+    company: role.company,
+    division: role.division,
+    requirements: role.requirements,
+    nice_to_haves: role.nice_to_haves,
+    job_description: role.job_description,
+  });
+
+  const { raw, error: openaiError } = await generateWithOpenAI(openaiKey, userPrompt);
+  const summaryJson = raw
+    ? parseSummaryContent(raw)
+    : buildFallbackSummary({
       job_title: role.job_title,
       company: role.company,
-      division: role.division,
       requirements: role.requirements,
-      nice_to_haves: role.nice_to_haves,
       job_description: role.job_description,
     });
 
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: 120,
-        temperature: 0.3,
-      }),
-    });
+  if (!raw) {
+    console.warn("Using fallback summary for role", roleId, openaiError);
+  }
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("OpenAI error:", res.status, errText);
-      return new Response(
-        JSON.stringify({
-          ai_summary: role.ai_summary || null,
-          error: "Generation failed",
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
+  const { error: updateError } = await supabase
+    .from("roles")
+    .update({ ai_summary: summaryJson, content_hash: contentHash } as any)
+    .eq("id", roleId);
 
-    const data = (await res.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const raw = (data?.choices?.[0]?.message?.content ?? "").trim();
-
-    if (!raw) {
-      return new Response(
-        JSON.stringify({
-          ai_summary: role.ai_summary || null,
-          error: "Empty response",
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    let summaryJson: string;
-    try {
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
-      summaryJson = JSON.stringify({
-        candidate: (parsed.candidate || "").trim(),
-        responsibility: (parsed.responsibility || "").trim(),
-      });
-    } catch {
-      summaryJson = JSON.stringify({ candidate: raw, responsibility: "" });
-    }
-
-    const { error: updateError } = await supabase
-      .from("roles")
-      .update({ ai_summary: summaryJson, content_hash: contentHash } as any)
-      .eq("id", roleId);
-
-    if (updateError) {
-      console.error("Failed to persist ai_summary:", updateError.message);
-      return new Response(
-        JSON.stringify({
-          ai_summary: role.ai_summary || null,
-          error: "Failed to save summary",
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ ai_summary: summaryJson, generated: true }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (err) {
-    console.error("generate-role-summary error:", err);
+  if (updateError) {
+    console.error("Failed to persist ai_summary:", updateError.message);
     return new Response(
       JSON.stringify({
         ai_summary: role.ai_summary || null,
-        error: err instanceof Error ? err.message : "Generation failed",
+        error: "Failed to save summary",
       }),
       {
-        status: 200,
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }
+
+  return new Response(
+    JSON.stringify({
+      ai_summary: summaryJson,
+      generated: !!raw,
+      fallback: !raw,
+      ...(raw ? {} : { warning: openaiError || "OpenAI unavailable; used content-based fallback" }),
+    }),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
 });
